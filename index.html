@@ -2276,6 +2276,124 @@ if (sessionStorage.getItem('withyou_admin_auth_token') === 'true') {
   appState.currentUserType = 'admin';
   appState.currentUserId = 'master_admin';
 }
+
+/* ==========================================================================
+   FIX FOR CLASS & SUBJECT DROPDOWN PERSISTENCE (Zero Reset Bug)
+   ========================================================================== */
+
+// 1. ತರಗತಿ ಅಥವಾ ವಿಷಯ ಬದಲಾಯಿಸಿದಾಗ ಡ್ರಾಪ್‌ಡೌನ್ ರೀಸೆಟ್ ಆಗದಂತೆ ಕೇವಲ ಪಾಠಗಳನ್ನು ಮಾತ್ರ ಅಪ್‌ಡೇಟ್ ಮಾಡುವುದು
+window.handleClassOrSubjectChange = function() {
+  renderChapterCheckboxes();
+};
+
+// 2. ಡ್ರಾಪ್‌ಡೌನ್‌ಗಳನ್ನು ಮೊದಲ ಬಾರಿ ಮಾತ್ರ ತುಂಬಿ, ಯೂಸರ್ ಸೆಲೆಕ್ಷನ್ ಅನ್ನು ಶಾಶ್ವತವಾಗಿ ಉಳಿಸಿಕೊಳ್ಳುವ ಸಿಂಕ್ ಫಂಕ್ಷನ್
+window.syncSubjectAndChapters = function() {
+  const mediumSelect = document.getElementById('cfg-medium');
+  const classSelect = document.getElementById('cfg-class');
+  const subjectSelect = document.getElementById('cfg-subject');
+  const schoolNameInput = document.getElementById('cfg-school-name');
+  const genNameEl = document.getElementById('gen-active-user-name');
+  const genSchoolEl = document.getElementById('gen-active-user-school');
+  const genBadge = document.getElementById('gen-active-badge');
+
+  if (!mediumSelect || !classSelect || !subjectSelect) return;
+
+  // ಬಳಕೆದಾರರು ಈಗಾಗಲೇ ಆಯ್ಕೆ ಮಾಡಿರುವ ವ್ಯಾಲ್ಯೂಗಳನ್ನು ನೆನಪಿಟ್ಟುಕೊಳ್ಳಿ
+  const prevMedium = mediumSelect.value || 'ಕನ್ನಡ (Kannada)';
+  const prevClass = classSelect.value || '6';
+  const prevSubject = subjectSelect.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+
+  const allMediums = getSystemMediums();
+  const allSubjects = getSystemSubjects();
+
+  const isAuthAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+  if (isAuthAdmin) {
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+
+    // 1. ಮಾಧ್ಯಮ ಡ್ರಾಪ್‌ಡೌನ್
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m === prevMedium ? 'selected' : ''}>${m}</option>`).join('');
+    mediumSelect.disabled = false;
+
+    // 2. ತರಗತಿ ಡ್ರಾಪ್‌ಡೌನ್ (ಯೂಸರ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿದ ತರಗತಿಯೇ ಉಳಿಯುತ್ತದೆ - NO 10TH FORCING)
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val === prevClass ? 'selected' : ''}>${c.label}</option>`).join('');
+    classSelect.disabled = false;
+
+    // 3. ವಿಷಯ ಡ್ರಾಪ್‌ಡೌನ್
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s === prevSubject ? 'selected' : ''}>${s}</option>`).join('');
+    subjectSelect.disabled = false;
+
+    // ಈವೆಂಟ್ ಲಿಸನರ್‌ಗಳನ್ನು ನೇರವಾಗಿ ಪಾಠಗಳ ಚೇಂಜ್‌ಗೆ ಲಿಂಕ್ ಮಾಡಿ
+    mediumSelect.onchange = handleClassOrSubjectChange;
+    classSelect.onchange = handleClassOrSubjectChange;
+    subjectSelect.onchange = handleClassOrSubjectChange;
+
+    if (genNameEl) genNameEl.innerText = "👑 Admin Master User";
+    if (genSchoolEl) genSchoolEl.innerText = "ಸಂಪೂರ್ಣ ಅಧಿಕಾರ (Full Unrestricted Access - No Watermark)";
+    if (genBadge) {
+      genBadge.innerText = "Admin Master";
+      genBadge.className = "text-[10px] bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full font-black border border-purple-300";
+    }
+
+  } else if (appState.currentUserType === 'school') {
+    const school = appState.schools.find(s => s.id === appState.currentUserId) || appState.schools[0];
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m === prevMedium ? 'selected' : ''}>${m}</option>`).join('');
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val === prevClass ? 'selected' : ''}>${c.label}</option>`).join('');
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s === prevSubject ? 'selected' : ''}>${s}</option>`).join('');
+
+    mediumSelect.onchange = handleClassOrSubjectChange;
+    classSelect.onchange = handleClassOrSubjectChange;
+    subjectSelect.onchange = handleClassOrSubjectChange;
+
+    if (school) {
+      if (schoolNameInput) schoolNameInput.value = school.name;
+      if (genNameEl) genNameEl.innerText = school.name;
+      if (genSchoolEl) genSchoolEl.innerText = `DISE: ${school.dise} &bull; HM: ${school.hm}`;
+    }
+
+  } else if (appState.currentUserType === 'teacher') {
+    const teacher = appState.teachers.find(t => t.id === appState.currentUserId) || appState.teachers[0];
+    if (teacher) {
+      if (schoolNameInput) schoolNameInput.value = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+      if (genNameEl) genNameEl.innerText = `${teacher.name} (ವಿಷಯ ಶಿಕ್ಷಕರು)`;
+      if (genSchoolEl) genSchoolEl.innerText = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+
+      const allowedMediums = teacher.mediums || ["ಕನ್ನಡ (Kannada)"];
+      mediumSelect.innerHTML = allowedMediums.map(m => `<option value="${m}" ${m === prevMedium ? 'selected' : ''}>${m}</option>`).join('');
+      mediumSelect.disabled = (allowedMediums.length === 1);
+
+      const allowedClasses = teacher.grades || ["6", "7", "8"];
+      classSelect.innerHTML = allowedClasses.map(g => {
+        const item = ALL_CLASSES_LIST.find(c => c.val === g);
+        return `<option value="${g}" ${g === prevClass ? 'selected' : ''}>${item ? item.label : g + ' ನೇ ತರಗತಿ'}</option>`;
+      }).join('');
+      classSelect.disabled = (allowedClasses.length === 1);
+
+      const allowedSubjs = teacher.subjects || [teacher.subject];
+      subjectSelect.innerHTML = allowedSubjs.map(s => `<option value="${s}" ${s === prevSubject ? 'selected' : ''}>${s}</option>`).join('');
+      subjectSelect.disabled = (allowedSubjs.length === 1);
+
+      mediumSelect.onchange = handleClassOrSubjectChange;
+      classSelect.onchange = handleClassOrSubjectChange;
+      subjectSelect.onchange = handleClassOrSubjectChange;
+    }
+
+  } else {
+    // Demo Mode
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m === prevMedium ? 'selected' : ''}>${m}</option>`).join('');
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val === prevClass ? 'selected' : ''}>${c.label}</option>`).join('');
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s === prevSubject ? 'selected' : ''}>${s}</option>`).join('');
+
+    mediumSelect.onchange = handleClassOrSubjectChange;
+    classSelect.onchange = handleClassOrSubjectChange;
+    subjectSelect.onchange = handleClassOrSubjectChange;
+  }
+
+  // ಪಾಠಗಳನ್ನು ತಕ್ಷಣ ರೆಂಡರ್ ಮಾಡಿ
+  renderChapterCheckboxes();
+};
+    
   </script>
 </body>
 </html>
