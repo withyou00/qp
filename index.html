@@ -3173,6 +3173,1477 @@ RETURN RAW JSON ONLY:
 
   if (generateBtn) { generateBtn.disabled = false; generateBtn.classList.remove('opacity-50'); }
 };
+
+    <!DOCTYPE html>
+<html lang="kn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>With You QP Generator - Offline Question Bank Pro</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@400;600;700;800;900&display=swap');
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Kannada', sans-serif;
+      background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 50%, #f1f5f9 100%);
+      color: #0f172a;
+      min-height: 100vh;
+    }
+
+    .btn-glow {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
+      transition: all 0.25s ease;
+    }
+    .btn-glow:hover {
+      transform: scale(1.015);
+      box-shadow: 0 12px 25px -4px rgba(16, 185, 129, 0.5);
+    }
+
+    @page { size: A4 portrait; margin: 8mm 10mm; }
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0 !important; background: white !important; }
+      .no-print { display: none !important; }
+      .a4-sheet-container {
+        border: 2.5px solid #000 !important;
+        padding: 12mm 14mm !important;
+        width: 100% !important;
+        min-height: 275mm !important;
+        box-sizing: border-box !important;
+        page-break-after: always !important;
+      }
+      .demo-watermark-text { color: rgba(0, 0, 0, 0.12) !important; border-color: rgba(0, 0, 0, 0.12) !important; }
+    }
+
+    .a4-sheet-container {
+      border: 2.5px solid #000;
+      padding: 20px 25px;
+      margin: 0 auto;
+      max-width: 820px;
+      background: #fff;
+      font-family: 'Noto Sans Kannada', sans-serif;
+      color: #000;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .watermark-wrapper { position: relative; overflow: hidden; }
+    .demo-watermark-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-32deg);
+      font-size: 38px;
+      font-weight: 900;
+      color: rgba(15, 23, 42, 0.08);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+      border: 4px dashed rgba(15, 23, 42, 0.08);
+      padding: 10px 30px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body class="flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 border-b-2 border-emerald-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateToSection('dashboard')">
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow text-white font-black text-xl">
+            WY
+          </div>
+          <div>
+            <h1 class="text-base sm:text-lg font-black tracking-wide text-white flex items-center gap-2">
+              <span>With You QP Generator</span>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded font-mono font-semibold">Question Bank Pro</span>
+            </h1>
+            <p class="text-[11px] text-slate-400">ಕರ್ನಾಟಕ ಶಾಲಾ ಅಧಿಕೃತ ಪ್ರಶ್ನೋತ್ತರ ಭಂಡಾರ & ಪರೀಕ್ಷಾ ಜನರೇಟರ್</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-1 bg-slate-800/90 p-1 rounded-2xl border border-slate-700 text-xs">
+          <button id="nav-btn-dashboard" onclick="navigateToSection('dashboard')" class="px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 bg-emerald-600 text-white shadow">
+            <i class="fa-solid fa-house"></i> <span class="hidden sm:inline">Dashboard</span>
+          </button>
+          <button id="nav-btn-profile" onclick="navigateToSection('profile')" class="px-3 py-1.5 rounded-xl font-bold transition text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-user-check"></i> <span class="hidden sm:inline">ಪ್ರೊಫೈಲ್</span>
+          </button>
+          <button id="nav-btn-generator" onclick="navigateToSection('generator')" class="px-3 py-1.5 rounded-xl font-bold transition text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-file-signature"></i> <span class="hidden sm:inline">ಜನರೇಟರ್</span>
+          </button>
+          <button id="nav-btn-admin" onclick="navigateToSection('admin')" class="px-3 py-1.5 rounded-xl font-bold transition text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-gear"></i> <span class="hidden sm:inline">Admin</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- 1. DASHBOARD VIEW -->
+    <section id="view-dashboard" class="space-y-6">
+      <div class="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-emerald-500/20">
+        <div class="relative z-10 max-w-3xl space-y-3">
+          <div class="inline-flex items-center space-x-2 bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 rounded-full text-xs font-bold text-emerald-300">
+            <i class="fa-solid fa-award"></i> <span>100% ದೋಷಮುಕ್ತ ಕರ್ನಾಟಕ DSERT ಪ್ರಶ್ನೋತ್ತರ ಭಂಡಾರ</span>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+            With You QP Generator <span class="text-emerald-400">Pro</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            ಯಾವುದೇ API Key ತಲೆನೋವಿಲ್ಲದೆ, ಪಠ್ಯಪುಸ್ತಕದ ಅಧಿಕೃತ ಪ್ರಶ್ನೋತ್ತರ ಭಂಡಾರದಿಂದ ಕ್ಷಣಾರ್ಧದಲ್ಲಿ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ, ಕೀ ಉತ್ತರ ಮತ್ತು 3D ನೀಲನಕ್ಷೆ ಸಿದ್ಧಪಡಿಸಿ.
+          </p>
+          <div class="pt-3 flex flex-wrap items-center gap-3">
+            <button onclick="navigateToSection('profile')" class="btn-glow text-white font-extrabold px-6 py-3 rounded-2xl shadow-xl transition flex items-center gap-2 text-xs sm:text-sm">
+              <span>🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ (Start Generator)</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            <button onclick="navigateToSection('admin')" class="bg-white/10 hover:bg-white/20 text-slate-200 font-bold px-4 py-3 rounded-2xl border border-white/20 transition text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-user-shield"></i> <span>Admin Control</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div onclick="navigateToSection('profile')" class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:border-emerald-500 hover:shadow-md transition cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold mb-3"><i class="fa-solid fa-bolt text-amber-500"></i></div>
+          <h3 class="font-extrabold text-slate-800 text-sm">0.01 ಸೆಕೆಂಡ್ ಸ್ಪೀಡ್</h3>
+          <p class="text-xs text-slate-500 mt-1">ಯಾವುದೇ ಕಾಯುವಿಕೆ ಇಲ್ಲದೆ ತಕ್ಷಣವೇ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಡಿ.</p>
+        </div>
+
+        <div onclick="navigateToSection('profile')" class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:border-emerald-500 hover:shadow-md transition cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-bold mb-3"><i class="fa-solid fa-microphone-lines"></i></div>
+          <h3 class="font-extrabold text-slate-800 text-sm">ಮೌಖಿಕ & ಲಿಖಿತ ಪರೀಕ್ಷೆ</h3>
+          <p class="text-xs text-slate-500 mt-1">FA, SA ಹಾಗೂ ಮೌಖಿಕ ಪರೀಕ್ಷೆಗಳಿಗೆ ಸೂಕ್ತ ವಿನ್ಯಾಸ.</p>
+        </div>
+
+        <div onclick="navigateToSection('profile')" class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:border-emerald-500 hover:shadow-md transition cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl font-bold mb-3"><i class="fa-solid fa-chart-pie"></i></div>
+          <h3 class="font-extrabold text-slate-800 text-sm">ಸ್ವಯಂಚಾಲಿತ 3D ನೀಲನಕ್ಷೆ</h3>
+          <p class="text-xs text-slate-500 mt-1">ಪ್ರಶ್ನೆಗಳ ಆಧಾರದ ಮೇಲೆ ಗಣಿತದ ನಿಖರ ನೀಲನಕ್ಷೆ ಕೋಷ್ಟಕಗಳು.</p>
+        </div>
+
+        <div onclick="openSelfRegistrationModal()" class="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm hover:border-emerald-500 hover:shadow-md transition cursor-pointer">
+          <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl font-bold mb-3"><i class="fa-brands fa-whatsapp text-2xl text-emerald-600"></i></div>
+          <h3 class="font-extrabold text-slate-800 text-sm">ಸಹಾಯವಾಣಿ & ನೋಂದಣಿ</h3>
+          <p class="text-xs text-slate-500 mt-1">ನೇರ ಸಂಪರ್ಕ: <b>9902090911</b> (Access Key ಪಡೆಯಲು).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. SECURE PROFILE PORTAL -->
+    <section id="view-profile" class="hidden space-y-6">
+      <div class="max-w-2xl mx-auto space-y-5">
+        <div class="text-center space-y-1">
+          <h2 class="text-2xl font-black text-slate-900">ಪ್ರೊಫೈಲ್ ಪರಿಶೀಲನೆ (User Access)</h2>
+          <p class="text-xs text-slate-500">ಮುಂದುವರಿಯಲು ನಿಮ್ಮ ಪ್ರವೇಶ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div id="tile-role-school" onclick="selectProfileRole('school')" class="p-6 bg-white border-2 border-slate-200 hover:border-blue-500 rounded-3xl shadow-sm cursor-pointer transition text-left space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center text-2xl font-bold"><i class="fa-solid fa-school"></i></div>
+            <h3 class="font-extrabold text-base text-slate-900">೧. ನೋಂದಾಯಿತ ಶಾಲೆಗಳು</h3>
+            <p class="text-xs text-slate-500">ಶಾಲಾ ಮಾಸ್ಟರ್ ಲಾಗಿನ್: ಎಲ್ಲಾ ತರಗತಿ ಮತ್ತು ವಿಷಯಗಳಿಗೆ ಪೂರ್ಣ ಅಧಿಕಾರ.</p>
+            <div class="pt-2 text-[11px] font-bold text-blue-700">ಶಾಲಾ ಪ್ರವೇಶ ಆಯ್ಕೆಮಾಡಿ ➔</div>
+          </div>
+
+          <div id="tile-role-teacher" onclick="selectProfileRole('teacher')" class="p-6 bg-white border-2 border-slate-200 hover:border-emerald-500 rounded-3xl shadow-sm cursor-pointer transition text-left space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl font-bold"><i class="fa-solid fa-chalkboard-user"></i></div>
+            <h3 class="font-extrabold text-base text-slate-900">೨. ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು</h3>
+            <p class="text-xs text-slate-500">ಶಿಕ್ಷಕರ ವೈಯಕ್ತಿಕ ಲಾಗಿನ್: ನಿಗದಿಪಡಿಸಿದ ತರಗತಿ ಮತ್ತು ವಿಷಯಗಳಿಗೆ ಪ್ರವೇಶ.</p>
+            <div class="pt-2 text-[11px] font-bold text-emerald-700">ಶಿಕ್ಷಕರ ಪ್ರವೇಶ ಆಯ್ಕೆಮಾಡಿ ➔</div>
+          </div>
+        </div>
+
+        <div onclick="selectProfileRole('demo')" class="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition">
+          <div class="flex items-center space-x-3 text-xs">
+            <div class="p-2 bg-amber-200/60 text-amber-900 rounded-xl font-bold text-base"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div>
+              <b class="text-amber-950 block text-sm">⭐ ಉಚಿತ ಡೆಮೋ ಪರೀಕ್ಷಿಸಿ (Free Guest Demo)</b>
+              <span class="text-amber-800">ನೋಂದಣಿ ಇಲ್ಲದೆ ಪರೀಕ್ಷಿಸಲು ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ ಡೆಮೋ ಲಾಗಿನ್ ಬಳಸಿ.</span>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-amber-900 bg-white px-3 py-1.5 rounded-xl border border-amber-300 shadow-sm">Try Demo</span>
+        </div>
+
+        <div id="private-verification-box" class="hidden bg-white rounded-3xl p-6 border border-slate-200 shadow-lg space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- 3. GENERATOR WORKSPACE -->
+    <section id="view-generator" class="hidden space-y-6">
+      
+      <!-- Top Profile Banner -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-sm">
+            <i class="fa-solid fa-pen-nib"></i>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-800 flex items-center gap-2">
+              <span id="gen-active-user-name">ಶಿಕ್ಷಕರ ಪ್ರೊಫೈಲ್</span>
+              <span id="gen-active-badge" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Active</span>
+            </div>
+            <p class="text-[11px] text-slate-500" id="gen-active-user-school">ಸರ್ಕಾರಿ ಶಾಲೆ</p>
+          </div>
+        </div>
+        <button onclick="navigateToSection('profile')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border border-slate-300 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i> <span>ಪ್ರೊಫೈಲ್ ಬದಲಿಸಿ</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- STEP 1: EXAM SETUP -->
+        <div class="lg:col-span-4 bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b">
+            <div class="flex items-center space-x-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">1</span>
+              <h2 class="font-extrabold text-sm text-slate-900">ಪರೀಕ್ಷಾ ವಿವರಗಳು (Exam Setup)</h2>
+            </div>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Step 1</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು (Header)</label>
+            <input type="text" id="cfg-school-name" value="ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ಮಾಧ್ಯಮ</label>
+              <select id="cfg-medium" onchange="renderChapterCheckboxes()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+              <select id="cfg-class" onchange="renderChapterCheckboxes()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"></select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+            <select id="cfg-subject" onchange="renderChapterCheckboxes()" class="w-full px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl text-xs font-bold text-emerald-950"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">ಪರೀಕ್ಷಾ ವಿಧಾನ</label>
+            <select id="cfg-exam-type" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold">
+              <option value="4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26" selected>4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ (FA-4)</option>
+              <option value="1ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26">1ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ (FA-1)</option>
+              <option value="2ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26">2ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ (FA-2)</option>
+              <option value="3ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26">3ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ (FA-3)</option>
+              <option value="ಸಂಕಲನಾತ್ಮಕ ಮೌಲ್ಯಮಾಪನ-1 (SA-1) 2025-26">SA-1 (ಮಧ್ಯವಾರ್ಷಿಕ)</option>
+              <option value="ಸಂಕಲನಾತ್ಮಕ ಮೌಲ್ಯಮಾಪನ-2 (SA-2) 2025-26">SA-2 (ವಾರ್ಷಿಕ)</option>
+              <option value="ಮೌಖಿಕ ಪರೀಕ್ಷೆ (Oral Exam)" class="font-bold text-emerald-800">🗣️ ಮೌಖಿಕ ಪರೀಕ್ಷೆ (Oral Exam)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ಗರಿಷ್ಠ ಅಂಕಗಳು</label>
+              <input type="number" id="cfg-total-marks" value="20" min="5" max="100" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-emerald-700" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ದಿನಾಂಕ</label>
+              <input type="text" id="cfg-exam-date" value="2025-26" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <button id="btn-generate" onclick="generateExamPackage()" class="w-full btn-glow text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg flex items-center justify-center space-x-2 text-sm tracking-wide mt-2">
+            <i class="fa-solid fa-bolt text-amber-300"></i>
+            <span>ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ (Instant 0.01s)</span>
+          </button>
+        </div>
+
+        <!-- STEP 2 & 3 -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- STEP 2: CHAPTERS -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between pb-3 border-b">
+              <div class="flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">2</span>
+                <h3 id="chapters-header-label" class="font-extrabold text-sm text-slate-900">ಅಧಿಕೃತ DSERT ಪಾಠಗಳ ಆಯ್ಕೆ</h3>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="toggleChapters(true)" class="text-xs bg-emerald-50 text-emerald-800 font-bold px-3 py-1 rounded-lg border border-emerald-300">Select All</button>
+                <button onclick="toggleChapters(false)" class="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg border border-slate-200">Clear</button>
+              </div>
+            </div>
+            <div id="chapter-list-box" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1"></div>
+            <div class="pt-2 flex items-center gap-2">
+              <input type="text" id="custom-chapter-input" placeholder="ಹೊಸ ಪಾಠದ ಹೆಸರು ಸೇರಿಸಿ..." class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+              <button onclick="addCustomChapter()" class="bg-slate-800 text-white text-xs px-3.5 py-2 rounded-xl font-bold shrink-0">+ Add Unit</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: FORMATS -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between pb-3 border-b">
+              <div class="flex items-center space-x-2">
+                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">3</span>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು (Question Formats)</h3>
+              </div>
+              <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full">Customizer</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800">
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಹು ಆಯ್ಕೆ (MCQ)</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಿಟ್ಟ ಸ್ಥಳ ಭರ್ತಿ</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="vsa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">1 ವಾಕ್ಯದ ಪ್ರಶ್ನೆ</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="sa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">2-3 ವಾಕ್ಯದ ಪ್ರಶ್ನೆ</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="la" class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">4-5 ವಾಕ್ಯದ ಪ್ರಶ್ನೆ</span>
+              </label>
+              <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <input type="checkbox" name="qtype_opt" value="map_diagram" class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- OUTPUT CONTAINER -->
+      <div id="output-section" class="bg-white rounded-3xl shadow-xl overflow-hidden hidden mt-8 border border-slate-200">
+        <div class="border-b border-slate-200 bg-slate-50 px-5 py-3.5 flex flex-wrap items-center justify-between gap-3 no-print">
+          <div class="flex items-center space-x-2">
+            <button id="tab-btn-paper" onclick="switchOutputTab('paper')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition bg-white text-emerald-800 shadow border border-slate-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-file-lines text-emerald-600"></i> <span>1. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (Question Paper)</span>
+            </button>
+            <button id="tab-btn-key" onclick="switchOutputTab('key')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-check-double text-teal-600"></i> <span>2. ಉತ್ತರ ಪತ್ರಿಕೆ (Answer Key)</span>
+            </button>
+            <button id="tab-btn-blueprint" onclick="switchOutputTab('blueprint')" class="px-4 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5">
+              <i class="fa-solid fa-table-cells text-indigo-600"></i> <span>3. ನೀಲನಕ್ಷೆಗಳು (3 Blueprints)</span>
+            </button>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="btn-edit-paper" onclick="toggleLiveEditMode()" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow flex items-center gap-1.5">
+              <i class="fa-solid fa-pen-to-square"></i> <span>Edit / ತಿದ್ದುಪಡಿ ಮಾಡಿ</span>
+            </button>
+            <button onclick="printCurrentTab()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold px-4 py-2 rounded-xl transition shadow-md flex items-center gap-1.5">
+              <i class="fa-solid fa-print"></i> <span>Print / Save PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="print-area" class="p-4 sm:p-8 bg-slate-100/50">
+          <div id="tab-content-paper" class="space-y-6"><div id="rendered-paper"></div></div>
+          <div id="tab-content-key" class="space-y-6 hidden"><div id="rendered-key"></div></div>
+          <div id="tab-content-blueprint" class="space-y-6 hidden"><div id="rendered-blueprint"></div></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 4. ADMIN VIEW -->
+    <section id="view-admin" class="hidden space-y-6"></section>
+
+  </main>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT MASTER QUESTION BANK ENGINE -->
+  <script>
+    /* ==========================================================================
+       AUTHENTIC DSERT QUESTION-ANSWER BANK (NO API KEYS NEEDED)
+       ========================================================================== */
+    const DSERT_QUESTION_BANK = {
+      // 1. CLASS 6 SOCIAL SCIENCE (ಸಮಾಜ ವಿಜ್ಞಾನ)
+      "social_6": {
+        mcqs: [
+          { q: "ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯದ ಅತ್ಯಂತ ಶ್ರೇಷ್ಠ ಅರಸ ಯಾರು?", a: "ಹರಿಹರ", b: "ಬುಕ್ಕರಾಯ", c: "ಕೃಷ್ಣದೇವರಾಯ", d: "ಎರಡನೇ ದೇವರಾಯ", ans: "(ಸಿ) ಕೃಷ್ಣದೇವರಾಯ", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ಆಫ್ರಿಕಾ ಖಂಡದ ಅತ್ಯಂತ ಎತ್ತರವಾದ ಶಿಖರ ಯಾವುದು?", a: "ಮೌಂಟ್ ಎವರೆಸ್ಟ್", b: "ಮೌಂಟ್ ಕೆನ್ಯಾ", c: "ಕಿಲಿಮಂಜಾರೋ", d: "ಅಟ್ಲಾಸ್", ans: "(ಸಿ) ಕಿಲಿಮಂಜಾರೋ", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ವಿಶ್ವ ಸಂಸ್ಥೆಯು ಮಾನವ ಹಕ್ಕುಗಳ ಸಾರ್ವತ್ರಿಕ ಘೋಷಣೆಯನ್ನು ಅಂಗೀಕರಿಸಿದ ದಿನ:", a: "ಜನವರಿ 26", b: "ಆಗಸ್ಟ್ 15", c: "ಡಿಸೆಂಬರ್ 10", d: "ನವೆಂಬರ್ 14", ans: "(ಸಿ) ಡಿಸೆಂಬರ್ 10", obj: "ಜ್ಞಾನ", diff: "ಸಾಧಾರಣ" },
+          { q: "'ದೀನ್-ಎ-ಇಲಾಹಿ' ಎಂಬ ಹೊಸ ಪಂಥವನ್ನು ಸ್ಥಾಪಿಸಿದ ಮೊಘಲ್ ಚಕ್ರವರ್ತಿ:", a: "ಬಾಬರ್", b: "ಅಕ್ಬರ್", c: "ಷಹಜಹಾನ್", d: "ಔರಂಗಜೇಬ್", ans: "(ಬಿ) ಅಕ್ಬರ್", obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ" }
+        ],
+        blanks: [
+          { q: "ಭಾರತದ ರಾಷ್ಟ್ರೀಯ ಪ್ರಾಣಿ ____________.", ans: "ಹುಲಿ", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ಶಿವಾಜಿಯು ____________ ಎಂಬಲ್ಲಿ ಜನಿಸಿದನು.", ans: "ಶಿವನೇರಿ", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ಶ್ರೀ ಬಸವೇಶ್ವರರು ಬಸವಕಲ್ಯಾಣದಲ್ಲಿ ____________ ಸ್ಥಾಪಿಸಿದರು.", ans: "ಅನುಭವ ಮಂಟಪ", obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ" },
+          { q: "ಪ್ರಪಂಚದ ಅತ್ಯಂತ ಉದ್ದವಾದ ನದಿ ____________.", ans: "ನೈಲ್ ನದಿ", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" }
+        ],
+        match: [
+          { a: "ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯ", b: "ಹಂಪಿ (ರಾಜಧಾನಿ)", ans: "(a) ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯ - (A) ಹಂಪಿ (ರಾಜಧಾನಿ)", obj: "ಜ್ಞಾನ" },
+          { a: "ಬಹಮನಿ ರಾಜ್ಯ", b: "ಗುಲ್ಬರ್ಗ (ರಾಜಧಾನಿ)", ans: "(b) ಬಹಮನಿ ರಾಜ್ಯ - (B) ಗುಲ್ಬರ್ಗ (ರಾಜಧಾನಿ)", obj: "ಜ್ಞಾನ" },
+          { a: "ಮೊಘಲರು", b: "ತಾಜ್ ಮಹಲ್", ans: "(c) ಮೊಘಲರು - (C) ತಾಜ್ ಮಹಲ್", obj: "ತಿಳುವಳಿಕೆ" },
+          { a: "ಮಾನವ ಹಕ್ಕುಗಳು", b: "ಸಮಾನತೆ ಮತ್ತು ರಕ್ಷಣೆ", ans: "(d) ಮಾನವ ಹಕ್ಕುಗಳು - (D) ಸಮಾನತೆ ಮತ್ತು ರಕ್ಷಣೆ", obj: "ಅನ್ವಯ" }
+        ],
+        vsa: [
+          { q: "ರಾಷ್ಟ್ರೀಯ ಭಾವೈಕ್ಯತೆ ಎಂದರೇನು?", ans: "ಜಾತಿ, ಮತ, ಭಾಷೆ ಮತ್ತು ಧರ್ಮದ ತಾರತಮ್ಯವಿಲ್ಲದೆ ನಾವೆಲ್ಲರೂ ಒಂದು ಎಂಬ ಭಾವನೆಯನ್ನು ಹೊಂದಿರುವುದೇ ರಾಷ್ಟ್ರೀಯ ಭಾವೈಕ್ಯತೆ.", obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ" },
+          { q: "ಬಹಮನಿ ರಾಜ್ಯದ ಸ್ಥಾಪಕ ಯಾರು?", ans: "ಅಲ್ಲಾವುದ್ದೀನ್ ಹಸನ್ ಗಂಗು ಬಹಮನ್ ಶಾ.", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ತುಳಸೀದಾಸರ ಪ್ರಸಿದ್ಧ ಕಾವ್ಯ ಯಾವುದು?", ans: "ರಾಮಚರಿತಮಾನಸ.", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ಸಂವಿಧಾನದ ಪ್ರಕಾರ ಎಷ್ಟು ವರ್ಷದ ಒಳಗಿನ ಮಕ್ಕಳನ್ನು ಕೆಲಸಕ್ಕೆ ನೇಮಿಸಿಕೊಳ್ಳುವುದು ಅಪರಾಧ?", ans: "14 ವರ್ಷದ ಒಳಗಿನ ಮಕ್ಕಳು.", obj: "ಅನ್ವಯ", diff: "ಸಾಧಾರಣ" },
+          { q: "'ಕಾಯಕವೇ ಕೈಲಾಸ' ಎಂದು ಸಾರಿದವರು ಯಾರು?", ans: "ಶ್ರೀ ಬಸವೇಶ್ವರರು.", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" },
+          { q: "ತಾಜ್‌ಮಹಲ್ ಕಟ್ಟಿಸಿದವರು ಯಾರು?", ans: "ಮೊಘಲ್ ಚಕ್ರವರ್ತಿ ಷಹಜಹಾನ್.", obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ" }
+        ],
+        sa: [
+          { q: "ಭಾರತದ ಸಂವಿಧಾನವು ಪ್ರಜೆಗಳಿಗೆ ನೀಡಿರುವ ಯಾವುದಾದರೂ ನಾಲ್ಕು ಮೂಲಭೂತ ಹಕ್ಕುಗಳನ್ನು ಹೆಸರಿಸಿ.", ans: "(1) ಸಮಾನತೆಯ ಹಕ್ಕು, (2) ಸ್ವಾತಂತ್ರ್ಯದ ಹಕ್ಕು, (3) ಶೋಷಣೆಯ ವಿರುದ್ಧದ ಹಕ್ಕು, (4) ಧಾರ್ಮಿಕ ಸ್ವಾತಂತ್ರ್ಯದ ಹಕ್ಕು.", obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ" },
+          { q: "ಆಫ್ರಿಕಾವನ್ನು 'ಕತ್ತಲೆ ಖಂಡ' ಎಂದು ಏಕೆ ಕರೆಯಲಾಗುತ್ತಿತ್ತು?", ans: "ಆಫ್ರಿಕಾದ ಬಹುಭಾಗದ ಪರಿಚಯ ಹೊರಜಗತ್ತಿಗೆ ಇಲ್ಲದಿದ್ದುದರಿಂದ ಮತ್ತು ಅದರ ಪ್ರಸ್ಥಭೂಮಿಗಳು ಸಾಗರ ತೀರದವರೆಗೂ ವಿಸ್ತರಿಸಿದ್ದುದರಿಂದ ದೀರ್ಘಕಾಲದವರೆಗೆ ಶೋಧನೆಗೆ ಒಳಗಾಗದೆ ಉಳಿದಿದ್ದರಿಂದ ಹೀಗೆ ಕರೆಯಲಾಗುತ್ತಿತ್ತು.", obj: "ತಿಳುವಳಿಕೆ", diff: "ಕಠಿಣ" },
+          { q: "ನಮ್ಮ ರಾಷ್ಟ್ರಧ್ವಜದ ಬಣ್ಣಗಳು ಏನನ್ನು ಸೂಚಿಸುತ್ತವೆ?", ans: "ಕೇಸರಿ-ತ್ಯಾಗ ಮತ್ತು ನಿಸ್ವಾರ್ಥ, ಬಿಳಿ-ಸತ್ಯ ಮತ್ತು ಶಾಂತಿ, ಹಸಿರು-ಸಮೃದ್ಧಿ ಮತ್ತು ಕೃಷಿಯ ಸಂಕೇತ.", obj: "ಅನ್ವಯ", diff: "ಸಾಧಾರಣ" }
+        ]
+      },
+
+      // 2. CLASS 10 ENGLISH
+      "english_10": {
+        mcqs: [
+          { q: "Swami's father wanted him to sleep alone in the office room to:", a: "Show his courage", b: "Punish him", c: "Make him read books", d: "Keep company", ans: "(A) Show his courage", obj: "Understanding", diff: "Easy" },
+          { q: "Baleshwar jumped off the moving train because:", a: "He wanted to help the girl", b: "He saw his friend", c: "He wanted to run away", d: "He lost his ticket", ans: "(A) He wanted to help the girl", obj: "Understanding", diff: "Easy" },
+          { q: "Don Anselmo sold his land but refused to sell the:", a: "House", b: "Trees in the orchard", c: "Animals", d: "Water stream", ans: "(B) Trees in the orchard", obj: "Knowledge", diff: "Average" },
+          { q: "Grandma was passionate about:", a: "Cooking", b: "Climbing trees", c: "Singing songs", d: "Traveling", ans: "(B) Climbing trees", obj: "Knowledge", diff: "Easy" }
+        ],
+        blanks: [
+          { q: "Swami caught the most notorious ____________ of the district.", ans: "burglar / house-breaker", obj: "Knowledge", diff: "Easy" },
+          { q: "Roma Talreja was a ____________ by profession.", ans: "call centre executive", obj: "Knowledge", diff: "Average" },
+          { q: "Dr. B. R. Ambedkar had a great thirst for ____________.", ans: "books / reading", obj: "Knowledge", diff: "Easy" },
+          { q: "The quality of mercy is not ____________.", ans: "strained", obj: "Knowledge", diff: "Average" }
+        ],
+        match: [
+          { a: "Swami", b: "A Hero", ans: "(a) Swami - (A) A Hero", obj: "Knowledge" },
+          { a: "Baleshwar Mishra", b: "There's a Girl by the Tracks", ans: "(b) Baleshwar - (B) There's a Girl by the Tracks", obj: "Knowledge" },
+          { a: "Don Anselmo", b: "Gentleman of Rio en Medio", ans: "(c) Don Anselmo - (C) Gentleman of Rio en Medio", obj: "Knowledge" },
+          { a: "Smita", b: "The Concert", ans: "(d) Smita - (D) The Concert", obj: "Knowledge" }
+        ],
+        vsa: [
+          { q: "Where did Swami's father ask him to sleep?", ans: "Swami's father asked him to sleep alone in his office room.", obj: "Knowledge", diff: "Easy" },
+          { q: "Who helped Baleshwar to take Roma to the hospital?", ans: "A Gujarati truck driver helped Baleshwar to take Roma to the hospital.", obj: "Knowledge", diff: "Easy" },
+          { q: "Why was Don Anselmo called 'The Gentleman of Rio en Medio'?", ans: "Because he was courteous, dignified, and generous to the children of the village.", obj: "Understanding", diff: "Average" },
+          { q: "What made Grandma feel miserable?", ans: "Being confined to bed in a room without trees made Grandma feel miserable.", obj: "Understanding", diff: "Average" }
+        ],
+        sa: [
+          { q: "How did Swami become a hero overnight?", ans: "Swami accidentally bit into the leg of a notorious house-breaker in the dark. The thief was caught by the police, making Swami a hero.", obj: "Understanding", diff: "Average" },
+          { q: "Describe the generosity of Don Anselmo towards the children.", ans: "Don Anselmo refused extra money for his land and stated that every tree planted in the orchard belonged to the children of Rio en Medio.", obj: "Application", diff: "Difficult" }
+        ]
+      }
+    };
+
+    /* ==========================================================================
+       SYLLABUS DATABASE FOR CHECKBOX DISPLAY
+       ========================================================================== */
+    const MASTER_DSERT_SYLLABUS = {
+      "social": {
+        "6": ["1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ ಮತ್ತು ಕರ್ನಾಟಕ", "2. ಸಿಂಧೂ-ಸರಸ್ವತಿ ನಾಗರಿಕತೆ ಮತ್ತು ವೇದಕಾಲ", "3. ಹೊಸ ಧರ್ಮಗಳ ಉದಯ", "4. ಮೌರ್ಯರು, ಗುಪ್ತರು ಮತ್ತು ವರ್ಧನರು", "5. ದಕ್ಷಿಣ ಭಾರತದ ರಾಜಮನೆತನಗಳು", "6. ಭಾರತದ ಸಂವಿಧಾನ ಮತ್ತು ಹಕ್ಕುಗಳು", "7. ಆಫ್ರಿಕಾ - ಕತ್ತಲೆಯ ಖಂಡ", "8. ಏಷ್ಯಾ ಮತ್ತು ಯುರೋಪ್"],
+        "7": ["1. ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯ", "2. ಬಹಮನಿ ಮತ್ತು ಆದಿಲ್ ಶಾಹಿಗಳು", "3. ಭಕ್ತಿ ಪಂಥ", "4. ಮೊಘಲರು ಮತ್ತು ಮರಾಠರು", "5. ಭೂಮಿಯ ಆಂತರಿಕ ರಚನೆ", "6. ಸಂವಿಧಾನ ಮತ್ತು ಪೌರನೀತಿ"],
+        "8": ["1. ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಯ ನೆಲೆಗೊಳ್ಳುವಿಕೆ", "2. 1857ರ ಪ್ರಥಮ ಸ್ವಾತಂತ್ರ್ಯ ಸಂಗ್ರಾಮ", "3. ಸಂವಿಧಾನ ರಚನೆ", "4. ಕರ್ನಾಟಕದ ಸಂಪನ್ಮೂಲಗಳು"],
+        "9": ["1. ಕ್ರೈಸ್ತ ಮತ್ತು ಇಸ್ಲಾಂ ಧರ್ಮಗಳು", "2. ಮಧ್ಯಕಾಲೀನ ಭಾರತ", "3. ನಮ್ಮ ಸಂವಿಧಾನ ಮತ್ತು ಪೌರತ್ವ", "4. ಭೂಗೋಳ ಮತ್ತು ಸಸ್ಯವರ್ಗ"],
+        "10": ["1. ಭಾರತಕ್ಕೆ ಯುರೋಪಿಯನ್ನರ ಆಗಮನ", "2. ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಯ ವಿಸ್ತರಣೆ", "3. 1857ರ ಸಂಗ್ರಾಮ", "4. ಸ್ವಾತಂತ್ರ್ಯ ಚಳವಳಿ", "5. ಭಾರತದ ಸಮಸ್ಯೆಗಳು ಮತ್ತು ಪರಿಹಾರಗಳು", "6. ಭೂಸ್ವರೂಪಗಳು ಮತ್ತು ಕೃಷಿ"]
+      },
+      "english": {
+        "6": ["Unit 1: The Lighthouse", "Unit 2: The King's Minister", "Unit 3: A Son's Devotion", "Unit 4: The Four Clever Brothers"],
+        "7": ["Unit 1: The Story of an Invitation", "Unit 2: A Lesson for Nakul", "Unit 3: The Courageous Rani of Jhansi", "Unit 4: The Model Millionaire"],
+        "8": ["Unit 1: A Day's Wait", "Unit 2: The Boy Who Broke the Bank", "Unit 3: Before the Match", "Unit 4: The Swan and the Princes"],
+        "9": ["Unit 1: The Best Advice I Ever Had", "Unit 2: The Three Questions", "Unit 3: A Day in the Ashram", "Unit 4: The Enchanted Pool"],
+        "10": ["Unit 1: A Hero & Grandma Climbs a Tree", "Unit 2: There's a Girl by the Tracks & Quality of Mercy", "Unit 3: Gentleman of Rio en Medio & I am the Land", "Unit 4: Dr. B. R. Ambedkar & Song of India", "Unit 5: The Concert & Jazz Poem Two"]
+      },
+      "science": {
+        "6": ["1. ಆಹಾರದ ಘಟಕಗಳು", "2. ವಸ್ತುಗಳನ್ನು ವಿಂಗಡಿಸುವುದು", "3. ಸಸ್ಯಗಳನ್ನು ತಿಳಿಯುವುದು", "4. ದೇಹದ ಚಲನೆಗಳು", "5. ಬೆಳಕು ಮತ್ತು ಪ್ರತಿಫಲನ", "6. ವಿದ್ಯುತ್ ಮತ್ತು ಕಾಂತಗಳು"],
+        "7": ["1. ಸಸ್ಯಗಳಲ್ಲಿ ಪೋಷಣೆ", "2. ಶಾಖ ಮತ್ತು ಉಷ್ಣತೆ", "3. ಆಮ್ಲ ಮತ್ತು ಲವಣಗಳು", "4. ಉಸಿರಾಟ", "5. ಬೆಳಕು ಮತ್ತು ವಿದ್ಯುತ್"],
+        "8": ["1. ಬೆಳೆ ಉತ್ಪಾದನೆ", "2. ಸೂಕ್ಷ್ಮಜೀವಿಗಳು", "3. ಲೋಹಗಳು ಮತ್ತು ಅಲೋಹಗಳು", "4. ಕೋಶ ರಚನೆ", "5. ಬಲ ಮತ್ತು ಒತ್ತಡ"],
+        "9": ["1. ನಮ್ಮ ಸುತ್ತಲಿನ ದ್ರವ್ಯಗಳು", "2. ಪರಮಾಣುಗಳು ಮತ್ತು ಅಣುಗಳು", "3. ಕೋಶ ಮತ್ತು ಅಂಗಾಂಶಗಳು", "4. ಚಲನೆ ಮತ್ತು ಬಲ", "5. ಕೆಲಸ ಮತ್ತು ಶಕ್ತಿ"],
+        "10": ["1. ರಾಸಾಯನಿಕ ಕ್ರಿಯೆಗಳು", "2. ಆಮ್ಲಗಳು ಮತ್ತು ಲವಣಗಳು", "3. ಲೋಹಗಳು", "4. ಜೀವ ಕ್ರಿಯೆಗಳು", "5. ನಿಯಂತ್ರಣ ಮತ್ತು ಸಹಭಾಗಿತ್ವ", "6. ಬೆಳಕು", "7. ವಿದ್ಯುಚ್ಛಕ್ತಿ"]
+      },
+      "math": {
+        "6": ["1. ನಮ್ಮ ಸಂಖ್ಯೆಗಳು", "2. ಪೂರ್ಣಾಂಕಗಳು", "3. ರೇಖಾಗಣಿತ", "4. ಭಿನ್ನರಾಶಿಗಳು", "5. ಕ್ಷೇತ್ರಗಣಿತ"],
+        "7": ["1. ಪೂರ್ಣಾಂಕಗಳು", "2. ಸರಳ ಸಮೀಕರಣಗಳು", "3. ರೇಖೆಗಳು ಮತ್ತು ಕೋನಗಳು", "4. ತ್ರಿಭುಜಗಳು"],
+        "8": ["1. ಭಾಗಲಬ್ಧ ಸಂಖ್ಯೆಗಳು", "2. ರೇಖಾತ್ಮಕ ಸಮೀಕರಣಗಳು", "3. ಚತುರ್ಭುಜಗಳು", "4. ವರ್ಗಮೂಲಗಳು"],
+        "9": ["1. ಸಂಖ್ಯಾ ಪದ್ಧತಿ", "2. ಬಹುಪದೋಕ್ತಿಗಳು", "3. ರೇಖಾಗಣಿತ", "4. ತ್ರಿಭುಜಗಳು"],
+        "10": ["1. ಸಮಾಂತರ ಶ್ರೇಢಿಗಳು", "2. ತ್ರಿಭುಜಗಳು", "3. ರೇಖಾತ್ಮಕ ಸಮೀಕರಣಗಳು", "4. ವೃತ್ತಗಳು", "5. ತ್ರಿಕೋನಮಿತಿ", "6. ಸಂಖ್ಯಾಶಾಸ್ತ್ರ"]
+      }
+    };
+
+    function getSyllabusChapters(grade, subject) {
+      const gStr = String(grade);
+      const sLower = (subject || '').toLowerCase();
+      let key = "social";
+      if (sLower.includes('english') || sLower.includes('ಇಂಗ್ಲಿಷ್')) key = "english";
+      else if (sLower.includes('science') || sLower.includes('ವಿಜ್ಞಾನ')) key = "science";
+      else if (sLower.includes('math') || sLower.includes('ಗಣಿತ')) key = "math";
+
+      if (MASTER_DSERT_SYLLABUS[key] && MASTER_DSERT_SYLLABUS[key][gStr]) {
+        return MASTER_DSERT_SYLLABUS[key][gStr];
+      }
+      return [`1. ${subject.split('(')[0]} - ಘಟಕ 1`, `2. ${subject.split('(')[0]} - ಘಟಕ 2`, `3. ${subject.split('(')[0]} - ಘಟಕ 3`];
+    }
+
+    /* ==========================================================================
+       APP STATE & LOCAL STORAGE
+       ========================================================================== */
+    const ALL_CLASSES_LIST = [
+      { val: "1", label: "1 ನೇ ತರಗತಿ" }, { val: "2", label: "2 ನೇ ತರಗತಿ" },
+      { val: "3", label: "3 ನೇ ತರಗತಿ" }, { val: "4", label: "4 ನೇ ತರಗತಿ" },
+      { val: "5", label: "5 ನೇ ತರಗತಿ" }, { val: "6", label: "6 ನೇ ತರಗತಿ" },
+      { val: "7", label: "7 ನೇ ತರಗತಿ" }, { val: "8", label: "8 ನೇ ತರಗತಿ" },
+      { val: "9", label: "9 ನೇ ತರಗತಿ" }, { val: "10", label: "10 ನೇ ತರಗತಿ (SSLC)" }
+    ];
+
+    let appState = {
+      teachers: JSON.parse(localStorage.getItem('kar_qgen_teachers') || '[]'),
+      schools: JSON.parse(localStorage.getItem('kar_qgen_schools') || '[]'),
+      currentUserType: 'demo',
+      currentUserId: 'guest'
+    };
+
+    let isAdminLoggedIn = (sessionStorage.getItem('withyou_admin_auth_token') === 'true');
+    let isEditModeActive = false;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (appState.schools.length === 0) {
+        appState.schools.push({ id: 'SCH001', name: 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ', dise: 'DISE-29150304', hm: 'ಬಸವರಾಜಪ್ಪ ಎಸ್.', hmPhone: '9876543210', accessKey: 'WY-SCH-2915' });
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      }
+      if (appState.teachers.length === 0) {
+        appState.teachers.push({ id: 'T001', name: 'ರಮೇಶ್ ಕುಮಾರ್', school: 'ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ', phone: '9876543210', mediums: ['ಕನ್ನಡ (Kannada)'], grades: ['6', '7', '8', '9', '10'], subjects: ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)', 'English', 'ವಿಜ್ಞಾನ (Science)', 'ಗಣಿತ (Mathematics)'], accessKey: 'WY-TCH-7492' });
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      }
+
+      buildAdminView();
+      syncSubjectAndChapters();
+      navigateToSection('dashboard');
+    });
+
+    /* ==========================================================================
+       NAVIGATION & SECTION CONTROLLER
+       ========================================================================== */
+    window.navigateToSection = function(section) {
+      if (section === 'admin' && !isAdminLoggedIn) {
+        showAdminLoginModal();
+        return;
+      }
+
+      ['dashboard', 'profile', 'generator', 'admin'].forEach(v => {
+        document.getElementById(`view-${v}`)?.classList.add('hidden');
+        const btn = document.getElementById(`nav-btn-${v}`);
+        if (btn) btn.className = 'px-3 py-1.5 rounded-xl font-bold transition text-slate-300 hover:text-white hover:bg-slate-700 flex items-center gap-1.5';
+      });
+
+      document.getElementById(`view-${section}`)?.classList.remove('hidden');
+      const activeBtn = document.getElementById(`nav-btn-${section}`);
+      if (activeBtn) activeBtn.className = 'px-3 py-1.5 rounded-xl font-bold transition bg-emerald-600 text-white shadow flex items-center gap-1.5';
+
+      if (section === 'generator') syncSubjectAndChapters();
+      if (section === 'admin') updateAdminStats();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    /* ==========================================================================
+       ADMIN LOGIN & CONTROLS
+       ========================================================================== */
+    window.showAdminLoginModal = function() {
+      let modal = document.getElementById('admin-login-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-login-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 space-y-5 text-center">
+          <div class="space-y-2">
+            <div class="h-14 w-14 bg-slate-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="font-extrabold text-lg text-slate-900">Admin Security Login</h3>
+            <p class="text-xs text-slate-500">ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಪ್ರವೇಶಿಸಲು ವಿವರ ನಮೂದಿಸಿ</p>
+          </div>
+
+          <form id="form-admin-login" onsubmit="handleAdminLoginSubmit(event)" class="space-y-3.5 text-left">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+              <input type="text" id="admin-login-user" required autocomplete="off" placeholder="Username ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+              <input type="password" id="admin-login-pass" required autocomplete="new-password" placeholder="Password ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none" />
+            </div>
+
+            <div id="admin-login-error" class="hidden text-xs text-red-600 font-bold bg-red-50 p-2 rounded-xl text-center">
+              ❌ ತಪ್ಪಾದ Username ಅಥವಾ Password!
+            </div>
+
+            <div class="pt-1 flex items-center space-x-2">
+              <button type="button" onclick="closeAdminLoginModal()" class="w-1/3 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+              <button type="submit" class="w-2/3 bg-slate-900 hover:bg-black text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg">Login</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.closeAdminLoginModal = function() {
+      document.getElementById('admin-login-modal')?.classList.add('hidden');
+    };
+
+    window.handleAdminLoginSubmit = function(e) {
+      e.preventDefault();
+      const u = document.getElementById('admin-login-user').value.trim();
+      const p = document.getElementById('admin-login-pass').value.trim();
+
+      if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+        isAdminLoggedIn = true;
+        sessionStorage.setItem('withyou_admin_auth_token', 'true');
+        sessionStorage.setItem('withyou_active_role', 'admin');
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+        closeAdminLoginModal();
+        showToast('🔓 Admin Master Access ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+        navigateToSection('admin');
+      } else {
+        document.getElementById('admin-login-error')?.classList.remove('hidden');
+      }
+    };
+
+    window.logoutAdmin = function() {
+      isAdminLoggedIn = false;
+      sessionStorage.removeItem('withyou_admin_auth_token');
+      sessionStorage.removeItem('withyou_active_role');
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+      showToast('🔒 Admin ನಿಂದ Logout ಆಗಿದ್ದೀರಿ.', 'info');
+      navigateToSection('dashboard');
+    };
+
+    /* ==========================================================================
+       PROFILE AUTHENTICATION
+       ========================================================================== */
+    window.selectProfileRole = function(role) {
+      const box = document.getElementById('private-verification-box');
+      if (!box) return;
+
+      if (role === 'teacher') {
+        box.innerHTML = `
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ಲಾಗಿನ್ (Teacher Login)</h3>
+            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Private</span>
+          </div>
+
+          <form id="form-teacher-login" onsubmit="handleTeacherDualLogin(event)" class="space-y-3 pt-1">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+              <input type="tel" id="teacher-login-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-bold text-slate-700">ಶಿಕ್ಷಕರ Access Key *</label>
+                <button type="button" onclick="openForgotKeyModal('teacher')" class="text-[11px] text-emerald-700 font-bold underline">🔑 ಕೀ ಮರೆತಿರಾ?</button>
+              </div>
+              <input type="text" id="teacher-login-key" required placeholder="e.g. WY-TCH-7492" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold font-mono uppercase" />
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 rounded-xl text-xs shadow-lg">ಲಾಗಿನ್ ಮಾಡಿ</button>
+          </form>
+          <div id="teacher-verify-result"></div>
+        `;
+        box.classList.remove('hidden');
+      } else if (role === 'school') {
+        box.innerHTML = `
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ಮಾಸ್ಟರ್ ಲಾಗಿನ್ (School Login)</h3>
+            <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">School</span>
+          </div>
+
+          <form id="form-school-login" onsubmit="handleSchoolDualLogin(event)" class="space-y-3 pt-1">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ DISE ಕೋಡ್ *</label>
+              <input type="text" id="school-login-dise" required placeholder="e.g. DISE-29150304" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-bold text-slate-700">ಶಾಲಾ Master Key *</label>
+                <button type="button" onclick="openForgotKeyModal('school')" class="text-[11px] text-blue-700 font-bold underline">🔑 ಕೀ ಮರೆತಿರಾ?</button>
+              </div>
+              <input type="text" id="school-login-key" required placeholder="e.g. WY-SCH-2915" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold font-mono uppercase" />
+            </div>
+            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-extrabold py-3 rounded-xl text-xs shadow-lg">ಶಾಲಾ ಲಾಗಿನ್</button>
+          </form>
+          <div id="school-verify-result"></div>
+        `;
+        box.classList.remove('hidden');
+      } else if (role === 'demo') {
+        appState.currentUserType = 'demo';
+        appState.currentUserId = 'guest';
+        sessionStorage.removeItem('withyou_active_role');
+        showToast('⭐ ಡೆಮೋ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ (Watermark Enabled).', 'info');
+        navigateToSection('generator');
+      }
+    };
+
+    window.handleTeacherDualLogin = function(e) {
+      e.preventDefault();
+      const phone = (document.getElementById('teacher-login-phone')?.value || '').trim().replace(/[^0-9]/g, '');
+      const key = (document.getElementById('teacher-login-key')?.value || '').trim().toLowerCase();
+      const resEl = document.getElementById('teacher-verify-result');
+
+      const teacher = (appState.teachers || []).find(t => (t.phone || '').replace(/[^0-9]/g, '') === phone && (t.accessKey || '').toLowerCase() === key);
+      if (teacher) {
+        appState.currentUserType = 'teacher';
+        appState.currentUserId = teacher.id;
+        sessionStorage.removeItem('withyou_active_role');
+        showToast(`ಸ್ವಾಗತ ${teacher.name} ಸರ್/ಮೇಡಂ!`, 'success');
+        navigateToSection('generator');
+      } else {
+        resEl.innerHTML = `<div class="p-3 bg-red-50 text-red-700 rounded-xl text-xs mt-3">❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!</div>`;
+      }
+    };
+
+    window.handleSchoolDualLogin = function(e) {
+      e.preventDefault();
+      const dise = (document.getElementById('school-login-dise')?.value || '').trim().toLowerCase();
+      const key = (document.getElementById('school-login-key')?.value || '').trim().toLowerCase();
+      const resEl = document.getElementById('school-verify-result');
+
+      const school = (appState.schools || []).find(s => (s.dise || '').toLowerCase() === dise && (s.accessKey || '').toLowerCase() === key);
+      if (school) {
+        appState.currentUserType = 'school';
+        appState.currentUserId = school.id;
+        sessionStorage.removeItem('withyou_active_role');
+        showToast(`ಶಾಲೆ ${school.name} ಲಾಗಿನ್ ಆಗಿದೆ!`, 'success');
+        navigateToSection('generator');
+      } else {
+        resEl.innerHTML = `<div class="p-3 bg-red-50 text-red-700 rounded-xl text-xs mt-3">❌ DISE ಕೋಡ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!</div>`;
+      }
+    };
+
+    /* ==========================================================================
+       FORGOT KEY & WHATSAPP TO 9902090911
+       ========================================================================== */
+    window.openForgotKeyModal = function(roleType) {
+      let modal = document.getElementById('forgot-key-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'forgot-key-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-sm text-slate-900">Access Key ಮರುಪಡೆಯುವಿಕೆ (Forgot Key)</h3>
+            <button onclick="closeForgotKeyModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+          </div>
+          <form id="form-forgot-key" onsubmit="submitForgotKeyToWhatsApp(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಹೆಸರು *</label>
+              <input type="text" id="forgot-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+              <input type="text" id="forgot-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+              <input type="tel" id="forgot-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" />
+            </div>
+            <button type="submit" class="w-full py-3 bg-emerald-600 text-white font-extrabold rounded-xl shadow">Send to Admin WhatsApp</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.closeForgotKeyModal = function() {
+      document.getElementById('forgot-key-modal')?.classList.add('hidden');
+    };
+
+    window.submitForgotKeyToWhatsApp = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('forgot-name').value.trim();
+      const school = document.getElementById('forgot-school').value.trim();
+      const phone = document.getElementById('forgot-phone').value.trim();
+
+      const msg = `*With You QP Generator - ಕೀ ಮರುಪಡೆಯುವ ಕೋರಿಕೆ*\n\n👤 *ಹೆಸರು:* ${name}\n🏫 *ಶಾಲೆ:* ${school}\n📱 *ಮೊಬೈಲ್:* ${phone}\n\nನಮಸ್ಕಾರ ಸರ್, ನಾನು ಲಾಗಿನ್ Key ಮರೆತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ನನ್ನ *Access Key* ಅನ್ನು WhatsApp ಗೆ ಕಳುಹಿಸಿ.`;
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      closeForgotKeyModal();
+      showToast('✅ ಕೋರಿಕೆಯನ್ನು WhatsApp ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ!', 'success');
+    };
+
+    /* ==========================================================================
+       SELF REGISTRATION (WHATSAPP TO 9902090911)
+       ========================================================================== */
+    window.openSelfRegistrationModal = function() {
+      let modal = document.getElementById('self-reg-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'self-reg-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-base text-slate-900">ಪೂರ್ಣ ಆವೃತ್ತಿಗೆ ನೋಂದಣಿ (Registration)</h3>
+            <button onclick="closeSelfRegModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+          </div>
+          <form id="form-self-register" onsubmit="submitSelfRegistrationToWhatsApp(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+              <input type="text" id="self-reg-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+              <input type="text" id="self-reg-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+              <input type="tel" id="self-reg-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" />
+            </div>
+            <button type="submit" class="w-full py-3 bg-emerald-600 text-white font-extrabold rounded-xl shadow">Send Details to Admin WhatsApp</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.closeSelfRegModal = function() {
+      document.getElementById('self-reg-modal')?.classList.add('hidden');
+    };
+
+    window.submitSelfRegistrationToWhatsApp = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('self-reg-name').value.trim();
+      const school = document.getElementById('self-reg-school').value.trim();
+      const phone = document.getElementById('self-reg-phone').value.trim();
+
+      const msg = `*With You QP Generator - ಹೊಸ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n👤 *ಹೆಸರು:* ${name}\n🏫 *ಶಾಲೆ:* ${school}\n📱 *ಮೊಬೈಲ್:* ${phone}\n\nನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನ್ನ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      closeSelfRegModal();
+      showToast('✅ ವಿವರಗಳನ್ನು WhatsApp ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ!', 'success');
+    };
+
+    /* ==========================================================================
+       GENERATOR & CHAPTERS SYNC
+       ========================================================================== */
+    window.syncSubjectAndChapters = function() {
+      const mediumSelect = document.getElementById('cfg-medium');
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      const schoolNameInput = document.getElementById('cfg-school-name');
+      const genNameEl = document.getElementById('gen-active-user-name');
+      const genSchoolEl = document.getElementById('gen-active-user-school');
+      const genBadge = document.getElementById('gen-active-badge');
+
+      if (!mediumSelect || !classSelect || !subjectSelect) return;
+
+      const prevMed = mediumSelect.value || 'ಕನ್ನಡ (Kannada)';
+      const prevClass = classSelect.value || '6';
+      const prevSubj = subjectSelect.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+
+      const allMediums = ["ಕನ್ನಡ (Kannada)", "English", "ಉರ್ದು (Urdu)", "ಮರಾಠಿ (Marathi)", "ಹಿಂದಿ (Hindi)"];
+      const allSubjects = ["ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)", "English", "ವಿಜ್ಞಾನ (Science)", "ಗಣಿತ (Mathematics)", "ಕನ್ನಡ (Kannada)"];
+
+      if (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin') {
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+
+        mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m===prevMed?'selected':''}>${m}</option>`).join('');
+        mediumSelect.disabled = false;
+        classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val===prevClass?'selected':''}>${c.label}</option>`).join('');
+        classSelect.disabled = false;
+        subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s===prevSubj?'selected':''}>${s}</option>`).join('');
+        subjectSelect.disabled = false;
+
+        if (genNameEl) genNameEl.innerText = "👑 Admin Master User";
+        if (genSchoolEl) genSchoolEl.innerText = "ಸಂಪೂರ್ಣ ಅಧಿಕಾರ (Full Access - No Watermark)";
+        if (genBadge) {
+          genBadge.innerText = "Admin Master";
+          genBadge.className = "text-[10px] bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full font-black border border-purple-300";
+        }
+      } else if (appState.currentUserType === 'school') {
+        const school = appState.schools.find(s => s.id === appState.currentUserId) || appState.schools[0];
+        mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m===prevMed?'selected':''}>${m}</option>`).join('');
+        classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val===prevClass?'selected':''}>${c.label}</option>`).join('');
+        subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s===prevSubj?'selected':''}>${s}</option>`).join('');
+        if (school) {
+          if (schoolNameInput) schoolNameInput.value = school.name;
+          if (genNameEl) genNameEl.innerText = school.name;
+          if (genSchoolEl) genSchoolEl.innerText = `DISE: ${school.dise} &bull; HM: ${school.hm}`;
+        }
+      } else if (appState.currentUserType === 'teacher') {
+        const teacher = appState.teachers.find(t => t.id === appState.currentUserId) || appState.teachers[0];
+        if (teacher) {
+          if (schoolNameInput) schoolNameInput.value = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+          if (genNameEl) genNameEl.innerText = `${teacher.name} (ವಿಷಯ ಶಿಕ್ಷಕರು)`;
+          if (genSchoolEl) genSchoolEl.innerText = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+          const allowedClasses = teacher.grades || ["6", "7", "8", "9", "10"];
+          classSelect.innerHTML = allowedClasses.map(g => `<option value="${g}" ${g===prevClass?'selected':''}>${g} ನೇ ತರಗತಿ</option>`).join('');
+          const allowedSubjs = teacher.subjects || [teacher.subject];
+          subjectSelect.innerHTML = allowedSubjs.map(s => `<option value="${s}" ${s===prevSubj?'selected':''}>${s}</option>`).join('');
+        }
+      } else {
+        mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}" ${m===prevMed?'selected':''}>${m}</option>`).join('');
+        classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val===prevClass?'selected':''}>${c.label}</option>`).join('');
+        subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}" ${s===prevSubj?'selected':''}>${s}</option>`).join('');
+      }
+
+      renderChapterCheckboxes();
+    };
+
+    window.renderChapterCheckboxes = function() {
+      const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+      const grade = document.getElementById('cfg-class')?.value || '6';
+      const container = document.getElementById('chapter-list-box');
+      if (!container) return;
+
+      const chapters = getSyllabusChapters(grade, subject);
+      container.innerHTML = chapters.map(chap => `
+        <label class="flex items-center space-x-2.5 p-2 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition cursor-pointer text-xs">
+          <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+          <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+        </label>
+      `).join('');
+    };
+
+    window.toggleChapters = function(select) {
+      document.querySelectorAll('input[name="selected_chapter"]').forEach(cb => cb.checked = select);
+    };
+
+    window.addCustomChapter = function() {
+      const input = document.getElementById('custom-chapter-input');
+      const val = input.value.trim();
+      if (!val) return;
+      const container = document.getElementById('chapter-list-box');
+      const label = document.createElement('label');
+      label.className = 'flex items-center space-x-2.5 p-2 bg-emerald-50 border border-emerald-300 rounded-lg text-xs cursor-pointer';
+      label.innerHTML = `
+        <input type="checkbox" name="selected_chapter" value="${escapeHtml(val)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+        <span class="font-bold text-slate-900">${escapeHtml(val)}</span>
+      `;
+      container.appendChild(label);
+      input.value = '';
+    };
+
+    /* ==========================================================================
+       ZERO-API-KEY QUESTION PAPER & BLUEPRINT GENERATOR (INSTANT 0.01s)
+       ========================================================================== */
+    window.generateExamPackage = function() {
+      const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ';
+      const grade = document.getElementById('cfg-class')?.value || '6';
+      const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+      const examType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+      const totalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+      const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+      const isOralExam = examType.includes('ಮೌಖಿಕ');
+
+      const isEnglishSubject = subject.toLowerCase().includes('english');
+      const bankKey = isEnglishSubject ? "english_10" : "social_6";
+      const qBank = DSERT_QUESTION_BANK[bankKey] || DSERT_QUESTION_BANK["social_6"];
+
+      let teacherHeaderSpan = '';
+      let teacherKeySpan = '';
+      if (appState.currentUserType === 'teacher') {
+        const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
+        if (teacher) {
+          teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+          teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+        }
+      }
+
+      let qNum = 1, kNum = 1;
+      let paperSections = [], keySections = [];
+
+      // 1. MCQs (1x4=4)
+      const mcqs = qBank.mcqs.slice(0, 4);
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>I. ${isEnglishSubject ? 'Choose the correct answer for each of the following:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:'}</span>
+            <span>1x4=4</span>
+          </div>
+          <div>${mcqs.map(m => `
+            <div style="margin-bottom: 8px;">
+              <div style="font-weight: 600;">${qNum++}. ${m.q}</div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+                <div>(A) ${m.a}</div><div>(B) ${m.b}</div><div>(C) ${m.c}</div><div>(D) ${m.d}</div>
+              </div>
+            </div>
+          `).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">I. ${isEnglishSubject ? 'MCQ Key:' : 'ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:'}</div>
+          <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${m.ans}</div>`).join('')}</div>
+        </div>
+      `);
+
+      // 2. Blanks (1x4=4)
+      const blanks = qBank.blanks.slice(0, 4);
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>II. ${isEnglishSubject ? 'Fill in the blanks with suitable words:' : 'ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:'}</span>
+            <span>1x4=4</span>
+          </div>
+          <div>${blanks.map(b => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${b.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">II. ${isEnglishSubject ? 'Blanks Key:' : 'ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:'}</div>
+          <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${b.ans}</div>`).join('')}</div>
+        </div>
+      `);
+
+      // 3. Match (1x4=4)
+      const match = qBank.match.slice(0, 4);
+      const mQNum = qNum++;
+      const mKNum = kNum++;
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>III. ${isEnglishSubject ? 'Match the following:' : 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:'}</span>
+            <span>1x4=4</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 6px;">${mQNum}. ${isEnglishSubject ? 'Match Column A with Column B:' : "'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:"}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+              <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column A' : "'ಅ' ಗುಂಪು"}</div>${match.map((m, i) => `<div>(${String.fromCharCode(97+i)}) ${m.a}</div>`).join('')}</div>
+              <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column B' : "'ಬ' ಗುಂಪು"}</div>${match.map((m, i) => `<div>(${String.fromCharCode(65+i)}) ${m.b}</div>`).join('')}</div>
+            </div>
+          </div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">III. ${isEnglishSubject ? 'Match Key:' : 'ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:'}</div>
+          <div style="padding-left: 10px; font-size: 13.5px;">
+            <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
+            <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
+              <tbody>${match.map((m, i) => `
+                <tr style="border: none;">
+                  <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
+                  <td style="padding: 2px 15px 2px 0; border: none;">${m.a}</td>
+                  <td style="padding: 2px 15px 2px 0; border: none; color: #16a34a; font-weight: bold;">➔</td>
+                  <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${m.b}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `);
+
+      // 4. VSA (1x2=2)
+      const vsa = qBank.vsa.slice(0, 2);
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>IV. ${isEnglishSubject ? 'Answer in a sentence each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+            <span>1x2=2</span>
+          </div>
+          <div>${vsa.map(v => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${v.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">IV. ${isEnglishSubject ? 'VSA Key:' : 'ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:'}</div>
+          <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${v.ans}</div>`).join('')}</div>
+        </div>
+      `);
+
+      // 5. SA (2x3=6)
+      const sa = qBank.sa.slice(0, 3);
+      paperSections.push(`
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>V. ${isEnglishSubject ? 'Answer in 2-3 sentences each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+            <span>2x3=6</span>
+          </div>
+          <div>${sa.map(s => `<div style="font-weight: 600; margin-bottom: 6px;">${qNum++}. ${s.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">V. ${isEnglishSubject ? 'Short Answer Key:' : 'ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:'}</div>
+          <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 6px; font-size: 13.5px;"><b>${kNum++}.</b> ${s.ans}</div>`).join('')}</div>
+        </div>
+      `);
+
+      // Render Paper
+      document.getElementById('rendered-paper').innerHTML = `
+        <div class="a4-sheet-container" style="min-height: 265mm;">
+          <div style="text-align: center; margin-bottom: 14px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+              <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+              <span>Max Marks: ${totalMarks}</span>${teacherHeaderSpan}<span>Date: ${examDate}</span>
+            </div>
+            <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+          </div>
+          <div>${paperSections.join('')}</div>
+        </div>
+      `;
+
+      // Render Key
+      document.getElementById('rendered-key').innerHTML = `
+        <div class="a4-sheet-container" style="min-height: 265mm;">
+          <div style="text-align: center; margin-bottom: 14px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+              <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+              <span>Marks: ${totalMarks}</span>${teacherKeySpan}<span>Date: ${examDate}</span>
+            </div>
+            <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+            <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">Scheme of Valuation / ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+          </div>
+          <div>${keySections.join('')}</div>
+        </div>
+      `;
+
+      // Render Blueprints
+      document.getElementById('rendered-blueprint').innerHTML = `
+        <div class="a4-sheet-container">
+          <h2 style="text-align: center; font-size: 19px; font-weight: 800; margin-bottom: 18px;">ನೀಲನಕ್ಷೆಗಳು (Blueprints)</h2>
+          <h4 style="font-weight: bold; margin-bottom: 8px;">1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (Question Formats)</h4>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+            <thead>
+              <tr style="background: #f1f5f9;">
+                <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+                <th style="border: 1.5px solid #000; padding: 7px;">ಸಂಖ್ಯೆ</th>
+                <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+                <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</td><td style="border: 1.5px solid #000;">1</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು</td><td style="border: 1.5px solid #000;">2</td><td style="border: 1.5px solid #000;">2</td><td style="border: 1.5px solid #000;">10%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು</td><td style="border: 1.5px solid #000;">3</td><td style="border: 1.5px solid #000;">6</td><td style="border: 1.5px solid #000;">30%</td></tr>
+              <tr style="font-weight: bold; background: #fafafa;"><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000;">14</td><td style="border: 1.5px solid #000;">20</td><td style="border: 1.5px solid #000;">100%</td></tr>
+            </tbody>
+          </table>
+
+          <h4 style="font-weight: bold; margin-bottom: 8px;">2. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (Objectives)</h4>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+            <thead>
+              <tr style="background: #f1f5f9;">
+                <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಕಲಿಕೋದ್ದೇಶಗಳು</th>
+                <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+                <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಜ್ಞಾನ (Knowledge)</td><td style="border: 1.5px solid #000;">8</td><td style="border: 1.5px solid #000;">40%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ತಿಳುವಳಿಕೆ (Understanding)</td><td style="border: 1.5px solid #000;">8</td><td style="border: 1.5px solid #000;">40%</td></tr>
+              <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಅನ್ವಯ (Application)</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+              <tr style="font-weight: bold; background: #fafafa;"><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000;">20</td><td style="border: 1.5px solid #000;">100%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Watermark for Demo only
+      document.querySelectorAll('.demo-watermark-text').forEach(el => el.remove());
+      if (appState.currentUserType === 'demo') {
+        const wHtml = `<div class="demo-watermark-text">With You QP Generator &bull; DEMO</div>`;
+        document.querySelectorAll('#print-area .a4-sheet-container').forEach(box => {
+          box.classList.add('watermark-wrapper');
+          box.insertAdjacentHTML('beforeend', wHtml);
+        });
+      }
+
+      document.getElementById('output-section')?.classList.remove('hidden');
+      switchOutputTab('paper');
+      document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
+      showToast('ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಕ್ಷಣಾರ್ಧದಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ!', 'success');
+    };
+
+    /* ==========================================================================
+       TAB SWITCHING, PRINT & EDIT
+       ========================================================================== */
+    window.switchOutputTab = function(tab) {
+      ['paper', 'key', 'blueprint'].forEach(t => {
+        document.getElementById(`tab-content-${t}`)?.classList.add('hidden');
+        const b = document.getElementById(`tab-btn-${t}`);
+        if (b) b.className = 'px-4 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-emerald-700 hover:bg-slate-100 flex items-center gap-1.5';
+      });
+      document.getElementById(`tab-content-${tab}`)?.classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tab}`);
+      if (activeBtn) activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-extrabold transition bg-white text-emerald-800 shadow border border-slate-200 flex items-center gap-1.5';
+    };
+
+    window.printCurrentTab = function() { window.print(); };
+
+    window.toggleLiveEditMode = function() {
+      const p = document.getElementById('rendered-paper');
+      const k = document.getElementById('rendered-key');
+      const btn = document.getElementById('btn-edit-paper');
+      isEditModeActive = !isEditModeActive;
+
+      if (isEditModeActive) {
+        if (p) { p.contentEditable = "true"; p.style.outline = "2px dashed #f59e0b"; }
+        if (k) { k.contentEditable = "true"; k.style.outline = "2px dashed #f59e0b"; }
+        if (btn) { btn.className = 'bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Done / ಸೇವ್ ಮಾಡಿ</span>'; }
+        showToast('📝 ತಿದ್ದುಪಡಿ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
+      } else {
+        if (p) { p.contentEditable = "false"; p.style.outline = "none"; }
+        if (k) { k.contentEditable = "false"; k.style.outline = "none"; }
+        if (btn) { btn.className = 'bg-amber-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span>Edit / ತಿದ್ದುಪಡಿ ಮಾಡಿ</span>'; }
+        showToast('✅ ಬದಲಾವಣೆಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
+      }
+    };
+
+    /* ==========================================================================
+       ADMIN PANEL BUILDER
+       ========================================================================== */
+    function buildAdminView() {
+      const adminView = document.getElementById('view-admin');
+      if (!adminView) return;
+
+      adminView.innerHTML = `
+        <div class="flex items-center justify-between bg-slate-900 text-white p-4 px-6 rounded-3xl shadow-md text-xs">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="font-extrabold text-sm">👑 Admin Master Control: <span class="text-emerald-400">WithYou2026</span></span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="activateAdminMasterGenerator()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow">
+              <i class="fa-solid fa-bolt text-amber-300"></i>
+              <span>Admin Master Generator (Full Access)</span>
+            </button>
+            <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1">
+              <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Teacher Reg -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-emerald-600"></i> <span>ಶಿಕ್ಷಕರ ನೋಂದಣಿ (Teacher Registration)</span>
+            </h3>
+            <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+                <input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+                  <input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">ಮೊಬೈಲ್ ನಂಬರ್ (WhatsApp) *</label>
+                  <input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+                </div>
+              </div>
+              <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-key"></i> <span>ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ಪಡೆಯಿರಿ</span>
+              </button>
+            </form>
+            <div class="mt-4 pt-3 border-t space-y-2">
+              <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">0</span>)</h4>
+              <div id="list-registered-teachers" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+            </div>
+          </div>
+
+          <!-- School Reg -->
+          <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-building-columns text-emerald-600"></i> <span>ಶಾಲೆ ನೋಂದಣಿ (School Registration)</span>
+            </h3>
+            <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು</label>
+                <input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">DISE ಕೋಡ್</label>
+                  <input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 mb-1">HM ಹೆಸರು</label>
+                  <input type="text" id="reg-school-hm" required placeholder="e.g. ಮಂಜುನಾಥ ಸ್ವಾಮಿ" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್</label>
+                <input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs" />
+              </div>
+              <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-shield-halved"></i> <span>ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ಪಡೆಯಿರಿ</span>
+              </button>
+            </form>
+            <div class="mt-4 pt-3 border-t space-y-2">
+              <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">0</span>)</h4>
+              <div id="list-registered-schools" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      renderRegisteredTeachers();
+      renderRegisteredSchools();
+      updateAdminStats();
+    }
+
+    function activateAdminMasterGenerator() {
+      appState.currentUserType = 'admin';
+      appState.currentUserId = 'master_admin';
+      sessionStorage.setItem('withyou_active_role', 'admin');
+      navigateToSection('generator');
+      showToast('👑 Admin Master Generator ಸಕ್ರಿಯವಾಗಿದೆ (No Watermark)!', 'success');
+    }
+
+    function generateUniqueAccessKey(prefix) {
+      return `WY-${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    window.handleTeacherRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-teacher-name').value.trim();
+      const school = document.getElementById('reg-teacher-school').value.trim();
+      const phone = document.getElementById('reg-teacher-phone').value.trim();
+
+      const accessKey = generateUniqueAccessKey('TCH');
+      const newTeacher = { id: 'T' + Date.now().toString().slice(-4), name, school, phone, mediums: ['ಕನ್ನಡ (Kannada)'], grades: ['6', '7', '8', '9', '10'], subjects: ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)', 'English', 'ವಿಜ್ಞಾನ (Science)', 'ಗಣಿತ (Mathematics)'], accessKey };
+      appState.teachers.push(newTeacher);
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+
+      renderRegisteredTeachers();
+      updateAdminStats();
+      document.getElementById('form-register-teacher').reset();
+      showToast(`ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ! Key: ${accessKey}`, 'success');
+    };
+
+    window.handleSchoolRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-school-name').value.trim();
+      const dise = document.getElementById('reg-school-dise').value.trim();
+      const hm = document.getElementById('reg-school-hm').value.trim();
+      const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+
+      const accessKey = generateUniqueAccessKey('SCH');
+      const newSchool = { id: 'SCH' + Date.now().toString().slice(-4), name, dise, hm, hmPhone, accessKey };
+      appState.schools.push(newSchool);
+      localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+
+      renderRegisteredSchools();
+      updateAdminStats();
+      document.getElementById('form-register-school').reset();
+      showToast(`ಶಾಲೆ ನೋಂದಣಿಯಾಗಿದೆ! Key: ${accessKey}`, 'success');
+    };
+
+    window.renderRegisteredTeachers = function() {
+      const container = document.getElementById('list-registered-teachers');
+      const countEl = document.getElementById('count-teachers');
+      if (countEl) countEl.innerText = appState.teachers.length;
+      if (!container) return;
+
+      container.innerHTML = appState.teachers.map(t => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900">${escapeHtml(t.name)} <span class="bg-emerald-100 text-emerald-800 font-mono px-1.5 py-0.2 rounded font-bold">${t.accessKey}</span></span>
+            <button onclick="deleteTeacher('${t.id}')" class="text-slate-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+          <div class="text-[11px] text-slate-500">${t.school} &bull; 📱 ${t.phone}</div>
+        </div>
+      `).join('');
+    };
+
+    window.renderRegisteredSchools = function() {
+      const container = document.getElementById('list-registered-schools');
+      const countEl = document.getElementById('count-schools');
+      if (countEl) countEl.innerText = appState.schools.length;
+      if (!container) return;
+
+      container.innerHTML = appState.schools.map(s => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900">${escapeHtml(s.name)} <span class="bg-blue-100 text-blue-800 font-mono px-1.5 py-0.2 rounded font-bold">${s.accessKey}</span></span>
+            <button onclick="deleteSchool('${s.id}')" class="text-slate-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+          <div class="text-[11px] text-slate-500">DISE: ${s.dise} &bull; HM: ${s.hm} (📱 ${s.hmPhone})</div>
+        </div>
+      `).join('');
+    };
+
+    window.deleteTeacher = function(id) {
+      if (confirm('ಶಿಕ್ಷಕರ ವಿವರ ಡಿಲೀಟ್ ಮಾಡಬೇಕೇ?')) {
+        appState.teachers = appState.teachers.filter(t => t.id !== id);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        renderRegisteredTeachers();
+        updateAdminStats();
+      }
+    };
+
+    window.deleteSchool = function(id) {
+      if (confirm('ಶಾಲಾ ವಿವರ ಡಿಲೀಟ್ ಮಾಡಬೇಕೇ?')) {
+        appState.schools = appState.schools.filter(s => s.id !== id);
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+        renderRegisteredSchools();
+        updateAdminStats();
+      }
+    };
+
+    function updateAdminStats() {
+      const t = document.getElementById('stat-total-teachers');
+      const s = document.getElementById('stat-total-schools');
+      if (t) t.innerText = appState.teachers.length;
+      if (s) s.innerText = appState.schools.length;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = `px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-2xl transition-all duration-300 pointer-events-auto ${type==='success'?'bg-emerald-700':(type==='error'?'bg-red-700':'bg-slate-900')}`;
+      toast.innerHTML = escapeHtml(message);
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
     
   </script>
 </body>
