@@ -2203,6 +2203,79 @@ RETURN RAW JSON ONLY:
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    /* ==========================================================================
+   PERMANENT ADMIN SESSION LINK TO GENERATOR (Zero Guest Mode on Admin Login)
+   ========================================================================== */
+
+// 1. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಬ್ಮಿಟ್ ಆದ ತಕ್ಷಣ ಜನರೇಟರ್‌ಗೂ Admin Master ರೋಲ್ ಲಾಕ್ ಮಾಡುವುದು
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    
+    // ಜನರೇಟರ್‌ಗೆ ಅಡ್ಮಿನ್ ಮಾಸ್ಟರ್ ಮೋಡ್ ಶಾಶ್ವತವಾಗಿ ಲಾಕ್
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+
+    closeAdminLoginModal();
+    showToast('🔓 Admin Master Access ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+    navigateToSection('admin');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
+
+// 2. ಜನರೇಟರ್ ಸಿಂಕ್‌ನಲ್ಲಿ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆಗಿದ್ದರೆ ಕಡ್ಡಾಯವಾಗಿ Admin Master ತೋರಿಸುವುದು
+const origSyncCheck = window.syncSubjectAndChapters;
+window.syncSubjectAndChapters = function() {
+  const isAuthAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+  
+  if (isAuthAdmin) {
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+  }
+
+  const mediumSelect = document.getElementById('cfg-medium');
+  const classSelect = document.getElementById('cfg-class');
+  const subjectSelect = document.getElementById('cfg-subject');
+  const genNameEl = document.getElementById('gen-active-user-name');
+  const genSchoolEl = document.getElementById('gen-active-user-school');
+  const genBadge = document.getElementById('gen-active-badge');
+
+  if (isAuthAdmin) {
+    const allMediums = getSystemMediums();
+    const allSubjects = getSystemSubjects();
+
+    if (mediumSelect) { mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join(''); mediumSelect.disabled = false; }
+    if (classSelect) { classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val==='10'?'selected':''}>${c.label}</option>`).join(''); classSelect.disabled = false; }
+    if (subjectSelect) { subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join(''); subjectSelect.disabled = false; }
+
+    if (genNameEl) genNameEl.innerText = "👑 Admin Master User";
+    if (genSchoolEl) genSchoolEl.innerText = "ಸಂಪೂರ್ಣ ಅಧಿಕಾರ (Full Unrestricted Access - No Watermark)";
+    if (genBadge) {
+      genBadge.innerText = "Admin Master";
+      genBadge.className = "text-[10px] bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full font-black border border-purple-300";
+    }
+
+    renderChapterCheckboxes();
+    return;
+  }
+
+  // ಅಡ್ಮಿನ್ ಅಲ್ಲದಿದ್ದರೆ ಮೂಲ ಸಿಂಕ್ ಕಾಲ್
+  if (typeof origSyncCheck === 'function') origSyncCheck();
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದಾಗಲೂ ತಕ್ಷಣ ಅಡ್ಮಿನ್ ಸ್ಟೇಟಸ್ ಚೆಕ್ ಮಾಡಿ
+if (sessionStorage.getItem('withyou_admin_auth_token') === 'true') {
+  appState.currentUserType = 'admin';
+  appState.currentUserId = 'master_admin';
+}
   </script>
 </body>
 </html>
