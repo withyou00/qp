@@ -2505,6 +2505,309 @@ window.renderRegisteredSchools = function(filterQuery = '') {
     </div>
   `).join('');
 };
+
+    /* ==========================================================================
+   MASTER FIX ENGINE (Groq Key Fix + Textbook Live Sync + Admin Mode Lock + Clean Login)
+   ========================================================================== */
+
+// 1. ಹೊಂದಾಣಿಕೆಯಾಗುವ ವಿಷಯ ಮತ್ತು ಪುಸ್ತಕವನ್ನು ಹುಡುಕುವ ಫ್ಲೆಕ್ಸಿಬಲ್ ಫಂಕ್ಷನ್
+function findMatchedUploadedBook(grade, subject, medium) {
+  const books = appState.textbooks || JSON.parse(localStorage.getItem('kar_qgen_textbooks') || '[]');
+  const cleanSubj = (subject || '').toLowerCase().replace(/[\(\)\s\-]/g, '');
+  
+  return books.find(b => {
+    const bGrade = String(b.grade);
+    const fGrade = String(grade);
+    const bSubj = (b.subject || '').toLowerCase().replace(/[\(\)\s\-]/g, '');
+    const isGradeMatch = (bGrade === fGrade);
+    const isSubjMatch = bSubj.includes(cleanSubj) || cleanSubj.includes(bSubj) || bSubj.slice(0, 4) === cleanSubj.slice(0, 4);
+    return isGradeMatch && isSubjMatch;
+  });
+}
+
+// 2. ಜನರೇಟರ್‌ನಲ್ಲಿ ಅಧ್ಯಾಯಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಆದ ಪುಸ್ತಕದಿಂದ ನೇರವಾಗಿ ತೋರಿಸುವುದು
+window.renderChapterCheckboxes = function() {
+  const subject = document.getElementById('cfg-subject')?.value || '';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const medium = document.getElementById('cfg-medium')?.value || 'Kannada';
+  const container = document.getElementById('chapter-list-box');
+  if (!container) return;
+
+  // ಅಪ್‌ಲೋಡ್ ಆದ ಪುಸ್ತಕ ಹುಡುಕುವುದು
+  const matchedBook = findMatchedUploadedBook(grade, subject, medium);
+  let chapters = [];
+  let isFromUploadedBook = false;
+
+  if (matchedBook && matchedBook.chapters && matchedBook.chapters.length > 0) {
+    chapters = matchedBook.chapters;
+    isFromUploadedBook = true;
+  } else {
+    chapters = [
+      `ಘಟಕ 1: ${subject.split('(')[0].trim()} ಪರಿಕಲ್ಪನೆಗಳು ಮತ್ತು ಸಿದ್ಧಾಂತಗಳು`,
+      `ಘಟಕ 2: ಪ್ರಮುಖ ನಿಯಮಗಳು ಮತ್ತು ವಿಶ್ಲೇಷಣೆ`,
+      `ಘಟಕ 3: ಪ್ರಾಯೋಗಿಕ ವಿವರಣೆ ಮತ್ತು ಅನ್ವಯಗಳು`,
+      `ಘಟಕ 4: ಸಾರಾಂಶ ಮತ್ತು ಮೌಲ್ಯಮಾಪನ ಪ್ರಶ್ನೋತ್ತರಗಳು`
+    ];
+  }
+
+  // ಹೆಡರ್ ಸ್ಟೇಟಸ್ ಇಂಡಿಕೇಟರ್
+  const chapterSectionHeader = document.querySelector('#view-generator .lg\\:col-span-8 h3');
+  if (chapterSectionHeader) {
+    if (isFromUploadedBook) {
+      chapterSectionHeader.innerHTML = `ಅಧ್ಯಾಯಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full border border-emerald-300 ml-1.5"><i class="fa-solid fa-book-open"></i> ಅಪ್‌ಲೋಡ್ ಆದ ಪುಸ್ತಕದಿಂದ (${matchedBook.chapters.length} ಘಟಕಗಳು)</span>`;
+    } else {
+      chapterSectionHeader.innerHTML = `ಅಧ್ಯಾಯಗಳ ಆಯ್ಕೆ (Select Chapters / Units)`;
+    }
+  }
+
+  container.innerHTML = chapters.map(chap => `
+    <label class="flex items-center space-x-2.5 p-2 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition cursor-pointer text-xs">
+      <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" />
+      <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+    </label>
+  `).join('');
+};
+
+// 3. ಅಡ್ಮಿನ್ ಮಾಸ್ಟರ್ ಜನರೇಟರ್ ಮೋಡ್ ಲಾಕಿಂಗ್ ಫಿಕ್ಸ್ (No Demo Mode in Admin)
+window.activateAdminMasterGenerator = function() {
+  appState.currentUserType = 'admin';
+  appState.currentUserId = 'master_admin';
+  sessionStorage.setItem('withyou_active_role', 'admin');
+
+  navigateToSection('generator');
+  syncSubjectAndChapters();
+  showToast('👑 Admin Master Generator ಸಕ್ರಿಯವಾಗಿದೆ (No Watermark)!', 'success');
+};
+
+// 4. ಜನರೇಟರ್ ಪೋರ್ಟಲ್ ಸಿಂಕ್ (Role & State Preservation)
+window.syncSubjectAndChapters = function() {
+  const mediumSelect = document.getElementById('cfg-medium');
+  const classSelect = document.getElementById('cfg-class');
+  const subjectSelect = document.getElementById('cfg-subject');
+  const schoolNameInput = document.getElementById('cfg-school-name');
+  const genNameEl = document.getElementById('gen-active-user-name');
+  const genSchoolEl = document.getElementById('gen-active-user-school');
+  const genBadge = document.getElementById('gen-active-badge');
+
+  if (!mediumSelect || !classSelect || !subjectSelect) return;
+
+  const allMediums = getSystemMediums();
+  const allSubjects = getSystemSubjects();
+
+  // Role ಚೆಕ್
+  const savedRole = sessionStorage.getItem('withyou_active_role');
+  if (savedRole === 'admin' || appState.currentUserType === 'admin') {
+    appState.currentUserType = 'admin';
+  }
+
+  if (appState.currentUserType === 'admin') {
+    // ADMIN MASTER MODE
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+    mediumSelect.disabled = false;
+
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+    classSelect.disabled = false;
+
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+    subjectSelect.disabled = false;
+
+    if (genNameEl) genNameEl.innerText = "👑 Admin Master User";
+    if (genSchoolEl) genSchoolEl.innerText = "ಸಂಪೂರ್ಣ ಅಧಿಕಾರ (Full Unrestricted Access - No Watermark)";
+    if (genBadge) {
+      genBadge.innerText = "Admin Master";
+      genBadge.className = "text-[10px] bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full font-black border border-purple-300";
+    }
+
+  } else if (appState.currentUserType === 'school') {
+    // SCHOOL MASTER MODE
+    const school = appState.schools.find(s => s.id === appState.currentUserId) || appState.schools[0];
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+    mediumSelect.disabled = false;
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+    classSelect.disabled = false;
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+    subjectSelect.disabled = false;
+
+    if (school) {
+      if (schoolNameInput) schoolNameInput.value = school.name;
+      if (genNameEl) genNameEl.innerText = school.name;
+      if (genSchoolEl) genSchoolEl.innerText = `DISE: ${school.dise} &bull; HM: ${school.hm}`;
+      if (genBadge) {
+        genBadge.innerText = "School Master";
+        genBadge.className = "text-[10px] bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full font-black";
+      }
+    }
+
+  } else if (appState.currentUserType === 'teacher') {
+    // TEACHER LOCKED MODE
+    const teacher = appState.teachers.find(t => t.id === appState.currentUserId) || appState.teachers[0];
+    if (teacher) {
+      if (schoolNameInput) schoolNameInput.value = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+      if (genNameEl) genNameEl.innerText = `${teacher.name} (ವಿಷಯ ಶಿಕ್ಷಕರು)`;
+      if (genSchoolEl) genSchoolEl.innerText = teacher.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+      if (genBadge) {
+        genBadge.innerText = "Verified Teacher";
+        genBadge.className = "text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full font-black";
+      }
+
+      const allowedMediums = teacher.mediums || ["ಕನ್ನಡ (Kannada)"];
+      mediumSelect.innerHTML = allowedMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+      mediumSelect.disabled = (allowedMediums.length === 1);
+
+      const allowedClasses = teacher.grades || ["6", "7", "8"];
+      classSelect.innerHTML = allowedClasses.map(g => {
+        const item = ALL_CLASSES_LIST.find(c => c.val === g);
+        return `<option value="${g}">${item ? item.label : g + ' ನೇ ತರಗತಿ'}</option>`;
+      }).join('');
+      classSelect.disabled = (allowedClasses.length === 1);
+
+      const allowedSubjs = teacher.subjects || [teacher.subject];
+      subjectSelect.innerHTML = allowedSubjs.map(s => `<option value="${s}">${s}</option>`).join('');
+      subjectSelect.disabled = (allowedSubjs.length === 1);
+    }
+
+  } else {
+    // DEMO GUEST MODE
+    mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+    mediumSelect.disabled = false;
+    classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+    classSelect.disabled = false;
+    subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+    subjectSelect.disabled = false;
+
+    if (genNameEl) genNameEl.innerText = "ಅತಿಥಿ ಬಳಕೆದಾರ (Demo Trial)";
+    if (genSchoolEl) genSchoolEl.innerText = "ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ ಡೆಮೋ ಆವೃತ್ತಿ";
+    if (genBadge) {
+      genBadge.innerText = "Demo Trial";
+      genBadge.className = "text-[10px] bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full font-black";
+    }
+  }
+
+  renderChapterCheckboxes();
+};
+
+// 5. ಸುಧಾರಿತ GROQ & GEMINI API KEY ಟೆಸ್ಟರ್ (Fixed Groq Error)
+window.testAdminApiKey = async function() {
+  const input = document.getElementById('admin-gemini-api-key');
+  let k = (input ? input.value.trim() : '') || localStorage.getItem('withyou_gemini_api_key') || localStorage.getItem('kar_qgen_gemini_api_key');
+
+  if (!k) return showToast('ದಯವಿಟ್ಟು API Key ನಮೂದಿಸಿ.', 'error');
+  k = k.trim(); // Remove leading/trailing spaces
+  showToast('API Key ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...', 'info');
+
+  try {
+    if (k.startsWith('gsk_')) {
+      // Groq Key Test (using llama-3.1-8b-instant or llama-3.3-70b-versatile)
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${k}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_tokens: 5
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.choices) {
+        localStorage.setItem('withyou_gemini_api_key', k);
+        alert('🎉 ಅಭಿನಂದನೆಗಳು!\n\nನಿಮ್ಮ Groq API Key ಯಶಸ್ವಿಯಾಗಿ ಕನೆಕ್ಟ್ ಆಗಿದೆ (Status: Active).');
+        showToast('✅ Groq Key Active!', 'success');
+      } else {
+        const errMsg = data.error?.message || `HTTP ${res.status}`;
+        alert(`Groq API ದೋಷ ವಿವರ:\n\n${errMsg}\n\nದಯವಿಟ್ಟು https://console.groq.com/keys ನಿಂದ ಸರಿಯಾದ gsk_... ಕೀ ಕಾಪಿ ಮಾಡಿ ಹಾಕಿ.`);
+      }
+    } else {
+      // Gemini Key Test
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: "Hi" }] }] })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.candidates) {
+        localStorage.setItem('withyou_gemini_api_key', k);
+        alert('🎉 ಅಭಿನಂದನೆಗಳು!\n\nನಿಮ್ಮ Google Gemini API Key ಯಶಸ್ವಿಯಾಗಿ ಕನೆಕ್ಟ್ ಆಗಿದೆ!');
+        showToast('✅ Gemini Key Active!', 'success');
+      } else {
+        alert('Google API ದೋಷ: ' + (data.error?.message || 'Invalid Key'));
+      }
+    }
+  } catch (e) {
+    alert('ನೆಟ್‌ವರ್ಕ್ ಅಥವಾ ಕೀ ದೋಷ: ' + e.message);
+  }
+};
+
+window.saveAdminApiKey = function() {
+  const input = document.getElementById('admin-gemini-api-key');
+  if (!input || !input.value.trim()) return showToast('ದಯವಿಟ್ಟು API Key ನಮೂದಿಸಿ.', 'error');
+  const k = input.value.trim();
+  localStorage.setItem('withyou_gemini_api_key', k);
+  localStorage.setItem('kar_qgen_gemini_api_key', k);
+  showToast('✅ API Key ಸೇವ್ ಆಗಿದೆ!', 'success');
+};
+
+// 6. ಕ್ಲೀನ್ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಬಾಕ್ಸ್ (No Auto-Fill / No Ghost Text)
+window.showAdminLoginModal = function() {
+  let modal = document.getElementById('admin-login-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'admin-login-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 space-y-5 text-center">
+      <div class="space-y-2">
+        <div class="h-14 w-14 bg-slate-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg border border-slate-700">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="font-extrabold text-lg text-slate-900">Admin Security Login</h3>
+        <p class="text-xs text-slate-500">ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಪ್ರವೇಶಿಸಲು ಲಾಗಿನ್ ವಿವರ ನಮೂದಿಸಿ</p>
+      </div>
+
+      <form id="form-admin-login" onsubmit="handleAdminLoginSubmit(event)" class="space-y-3.5 text-left" autocomplete="off">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+          <input type="text" id="admin-login-user" required autocomplete="off" value="" placeholder="Username ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <input type="password" id="admin-login-pass" required autocomplete="new-password" value="" placeholder="Password ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+        </div>
+
+        <div id="admin-login-error" class="hidden text-xs text-red-600 font-bold bg-red-50 p-2 rounded-xl text-center">
+          ❌ ತಪ್ಪಾದ Username ಅಥವಾ Password!
+        </div>
+
+        <div class="pt-1 flex items-center space-x-2">
+          <button type="button" onclick="closeAdminLoginModal()" class="w-1/3 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">ರದ್ದು</button>
+          <button type="submit" class="w-2/3 bg-slate-900 hover:bg-black text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg">Login</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  // Explicitly clear inputs
+  setTimeout(() => {
+    const u = document.getElementById('admin-login-user');
+    const p = document.getElementById('admin-login-pass');
+    if (u) u.value = '';
+    if (p) p.value = '';
+  }, 50);
+};
+
+// 7. ಇನಿಶಿಯಲೈಸೇಷನ್
+setTimeout(() => {
+  syncSubjectAndChapters();
+}, 300);
   </script>
 </body>
 </html>
