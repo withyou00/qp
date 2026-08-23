@@ -3426,6 +3426,421 @@ window.renderChapterCheckboxes = function() {
 setTimeout(() => {
   syncSubjectAndChapters();
 }, 250);
+
+    /* ==========================================================================
+   DIRECT DSERT KARNATAKA DIGITAL TEXTBOOK KNOWLEDGE SYNC (Zero PDF Upload)
+   Source: https://textbooks.karnataka.gov.in/
+   ========================================================================== */
+
+// 1. ಸರಕಾರಿ ಪಠ್ಯಪುಸ್ತಕ ಭಂಡಾರದ ಅಧಿಕೃತ ಲಿಂಕ್ ಗ್ರೌಂಡಿಂಗ್
+const DSERT_GOVT_PORTAL_URL = "https://textbooks.karnataka.gov.in/";
+
+window.generateExamPackage = async function() {
+  let apiKey = localStorage.getItem('withyou_gemini_api_key') || EMBEDDED_KEY;
+
+  const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+  const medium = document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const examType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const totalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+  const customNotes = document.getElementById('cfg-custom-instructions')?.value.trim() || '';
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+  if (selectedChapters.length === 0) {
+    selectedChapters = getSyllabusChapters(grade, subject);
+  }
+
+  const selectedTypes = Array.from(document.querySelectorAll('input[name="qtype_opt"]:checked')).map(cb => cb.value);
+  const isOralExam = examType.includes('ಮೌಖಿಕ');
+
+  let teacherHeaderSpan = '';
+  let teacherKeySpan = '';
+  if (appState.currentUserType === 'teacher') {
+    const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
+    if (teacher) {
+      teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+      teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+    }
+  }
+
+  const generateBtn = document.getElementById('btn-generate');
+  const loadingSpinner = document.getElementById('loading-spinner');
+  const outputSection = document.getElementById('output-section');
+  const blueprintTabBtn = document.getElementById('tab-btn-blueprint');
+
+  if (generateBtn) { generateBtn.disabled = true; generateBtn.classList.add('opacity-50'); }
+  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+  if (outputSection) outputSection.classList.add('hidden');
+
+  const budget = calculateExactMarkBudget(totalMarks, selectedTypes, isOralExam);
+
+  // ಭಾಷಾ ಲಿಪಿ ಆದೇಶ
+  let langDirective = "Write in authentic Kannada script.";
+  if (medium.includes('Urdu') || medium.includes('ಉರ್ದು')) langDirective = "CRITICAL: Write in pure URDU SCRIPT (اردو).";
+  else if (medium.includes('Marathi') || medium.includes('ಮರಾಠಿ')) langDirective = "CRITICAL: Write in pure MARATHI (मराठी).";
+  else if (medium.includes('Hindi') || medium.includes('ಹಿಂದಿ')) langDirective = "CRITICAL: Write in HINDI (हिन्दी).";
+  else if (medium.includes('English')) langDirective = "CRITICAL: Write in ENGLISH.";
+
+  // ಸರ್ಕಾರಿ ಪಠ್ಯಪುಸ್ತಕ ಪೋರ್ಟಲ್‌ನೊಂದಿಗೆ AI ಜೋಡಣೆ (DSERT Direct Grounding)
+  const jsonPrompt = `
+You are the official Karnataka State Board (KSEAB / DSERT) Examination Paper Setter.
+${langDirective}
+
+OFFICIAL SYLLABUS KNOWLEDGE SOURCE:
+- Government Portal Reference: ${DSERT_GOVT_PORTAL_URL}
+- State: Karnataka (DSERT / KSEAB Curriculum)
+- Standard / Class: Class ${grade}
+- Subject: ${subject} (${medium} Medium)
+- Target Total Marks: EXACTLY ${totalMarks} Marks
+- Selected Official Chapters:
+${selectedChapters.map(c => `  * ${c}`).join('\n')}
+${customNotes ? `Special Teacher Instructions: ${customNotes}` : ''}
+
+CRITICAL PEDAGOGICAL RULES:
+1. Formulate questions, MCQs, blanks and model answers STRICTLY adhering to the official Karnataka DSERT textbook concepts and terminology.
+2. Exact Question Counts Required:
+   - MCQs: ${budget.mcqs || 0}
+   - Blanks: ${budget.blanks || 0}
+   - Match: ${budget.match ? 4 : 0} items
+   - 1-Mark VSA: ${budget.vsa || 0} (Full sentence answers)
+   - 2-Mark SA: ${budget.sa || 0} (Point-by-point descriptive answers)
+   - 3-Mark LA: ${budget.la || 0}
+   - Diagram/Map: ${budget.map_diagram || 0}
+
+RETURN RAW JSON ONLY (NO INTRO / NO MARKDOWN OUTSIDE JSON):
+{
+  "mcqs": [ {"q": "ಪ್ರಶ್ನೆ", "a": "ಆಯ್ಕೆ 1", "b": "ಆಯ್ಕೆ 2", "c": "ಆಯ್ಕೆ 3", "d": "ಆಯ್ಕೆ 4", "ans": "(A) ಆಯ್ಕೆ 1"} ],
+  "blanks": [ {"q": "ವಾಕ್ಯ ________.", "ans": "ಉತ್ತರ"} ],
+  "match": [ {"a": "ಎಡಭಾಗ 1", "b": "ಬಲಭಾಗ 1"} ],
+  "vsa": [ {"q": "1 ಅಂಕದ ಪ್ರಶ್ನೆ?", "ans": "ಪೂರ್ಣ ವಾಕ್ಯದ ವಿವರವಾದ ಉತ್ತರ."} ],
+  "sa": [ {"q": "2 ಅಂಕದ ಪ್ರಶ್ನೆ?", "ans": "(1) ಅಂಶ 1, (2) ಅಂಶ 2 ವಿವರಣೆ."} ],
+  "la": [ {"q": "3 ಅಂಕದ ಪ್ರಶ್ನೆ?", "ans": "ದೀರ್ಘ ವಿವರಣೆ ಉತ್ತರ."} ],
+  "map_diagram": [ {"q": "ನಕ್ಷೆ/ಚಿತ್ರ ಪ್ರಶ್ನೆ", "items": "1) ಭಾಗ 1, 2) ಭಾಗ 2", "ans": "ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ."} ]
+}
+`;
+
+  let rawJsonObj = null;
+
+  try {
+    if (apiKey.startsWith('gsk_')) {
+      const candidateModels = ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768'];
+      for (const model of candidateModels) {
+        try {
+          const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: model,
+              messages: [
+                { role: 'system', content: 'You are an authentic Karnataka KSEAB exam data generator. Return valid JSON only.' },
+                { role: 'user', content: jsonPrompt }
+              ],
+              temperature: 0.1,
+              response_format: { type: "json_object" },
+              max_tokens: 3800
+            })
+          });
+
+          if (res.ok) {
+            rawJsonObj = JSON.parse((await res.json()).choices?.[0]?.message?.content);
+            if (rawJsonObj) break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    rawJsonObj = rawJsonObj || {};
+    let qNum = 1, kNum = 1, romanIndex = 1;
+    const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+    let paperSections = [], keySections = [], blueprintRows = [];
+
+    // 1. MCQs
+    if (budget.mcqs > 0 && rawJsonObj.mcqs) {
+      const mcqs = rawJsonObj.mcqs.slice(0, budget.mcqs);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span style="font-size: 14.5px;">1x${mcqs.length}=${mcqs.length}</span>
+          </div>
+          <div>${mcqs.map(m => `
+            <div style="margin-bottom: 8px;">
+              <div style="font-weight: 600;">${qNum++}. ${m.q}</div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+                <div>(ಎ) ${m.a}</div><div>(ಬಿ) ${m.b}</div><div>(ಸಿ) ${m.c}</div><div>(ಡಿ) ${m.d}</div>
+              </div>
+            </div>
+          `).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${m.ans}</div>`).join('')}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: mcqs.length, marks: mcqs.length });
+    }
+
+    // 2. Blanks
+    if (budget.blanks > 0 && rawJsonObj.blanks) {
+      const blanks = rawJsonObj.blanks.slice(0, budget.blanks);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
+            <span style="font-size: 14.5px;">1x${blanks.length}=${blanks.length}</span>
+          </div>
+          <div>${blanks.map(b => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${b.q.includes('____') ? b.q : b.q + ' ____________.'}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${b.ans}</div>`).join('')}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ", count: blanks.length, marks: blanks.length });
+    }
+
+    // 3. Match
+    if (budget.match > 0 && rawJsonObj.match) {
+      const match = rawJsonObj.match.slice(0, 4);
+      const r = romanNumerals[romanIndex++ - 1];
+      const mQNum = qNum++;
+      const mKNum = kNum++;
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span style="font-size: 14.5px;">1x4=4</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 6px;">${mQNum}. 'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+              <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಅ' ಗುಂಪು</div>${match.map((m, i) => `<div>(${String.fromCharCode(97+i)}) ${m.a.replace(/^[0-9a-zA-Z\.\)\s\-]+/, '')}</div>`).join('')}</div>
+              <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಬ' ಗುಂಪು</div>${match.map((m, i) => `<div>(${String.fromCharCode(65+i)}) ${m.b.replace(/^[0-9a-zA-Z\.\)\s\-]+/, '')}</div>`).join('')}</div>
+            </div>
+          </div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px; font-size: 13.5px;">
+            <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
+            <div style="display: inline-block; padding-left: 12px;">
+              <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
+                <tbody>${match.map((m, i) => `
+                  <tr style="border: none;">
+                    <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
+                    <td style="padding: 2px 15px 2px 0; border: none; min-width: 170px;">${m.a.replace(/^[0-9a-zA-Z\.\)\s\-]+/, '')}</td>
+                    <td style="padding: 2px 15px 2px 0; border: none; font-weight: bold; color: #16a34a;">➔</td>
+                    <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${m.b.replace(/^[0-9a-zA-Z\.\)\s\-]+/, '')}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: 1, marks: 4 });
+    }
+
+    // 4. VSA
+    if (budget.vsa > 0 && rawJsonObj.vsa) {
+      const vsa = rawJsonObj.vsa.slice(0, budget.vsa);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span style="font-size: 14.5px;">1x${vsa.length}=${vsa.length}</span>
+          </div>
+          <div>${vsa.map(v => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${v.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 5px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${v.ans}</div>`).join('')}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: vsa.length, marks: vsa.length });
+    }
+
+    // 5. SA
+    if (budget.sa > 0 && rawJsonObj.sa) {
+      const sa = rawJsonObj.sa.slice(0, budget.sa);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span style="font-size: 14.5px;">2x${sa.length}=${sa.length*2}</span>
+          </div>
+          <div>${sa.map(s => `<div style="font-weight: 600; margin-bottom: 6px;">${qNum++}. ${s.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 6px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${s.ans}</div>`).join('')}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: sa.length, marks: sa.length * 2 });
+    }
+
+    // 6. LA
+    if (budget.la > 0 && rawJsonObj.la) {
+      const la = rawJsonObj.la.slice(0, budget.la);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನಾಲ್ಕು ಅಥವಾ ಐದು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span style="font-size: 14.5px;">3x${la.length}=${la.length*3}</span>
+          </div>
+          <div>${la.map(l => `<div style="font-weight: 600; margin-bottom: 6px;">${qNum++}. ${l.q}</div>`).join('')}</div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ದೀರ್ಘ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${la.map(l => `<div style="margin-bottom: 6px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${l.ans}</div>`).join('')}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ದೀರ್ಘ ಉತ್ತರದ ಪ್ರಶ್ನೆಗಳು (3M)", count: la.length, marks: la.length * 3 });
+    }
+
+    // 7. MAP / DIAGRAM
+    if (budget.map_diagram > 0 && rawJsonObj.map_diagram) {
+      const d = rawJsonObj.map_diagram[0] || { q: "ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ:", items: "1) ಸ್ಥಳ ಎ, 2) ಸ್ಥಳ ಬಿ", ans: "ಸ್ಥಳ ಗುರುತಿಸುವಿಕೆಗೆ ಅಂಕಗಳು." };
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSections.push(`
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+            <span>${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಬಿಡಿಸುವ ಪ್ರಶ್ನೆ:</span>
+            <span style="font-size: 14.5px;">1x4=4</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">${qNum++}. ${d.q}</div>
+            <div style="padding-left: 15px; font-size: 13.5px;">${d.items || ''}</div>
+          </div>
+        </div>
+      `);
+      keySections.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ:</div>
+          <div style="padding-left: 10px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${d.ans}</div>
+        </div>
+      `);
+      blueprintRows.push({ name: "ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ", count: 1, marks: 4 });
+    }
+
+    // Render HTML
+    document.getElementById('rendered-paper').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm;">
+        <div style="text-align: center; margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>ಅಂಕ : ${totalMarks}</span>${teacherHeaderSpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+        </div>
+        <div>${paperSections.join('')}</div>
+      </div>
+    `;
+
+    document.getElementById('rendered-key').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm;">
+        <div style="text-align: center; margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>ಅಂಕ : ${totalMarks}</span>${teacherKeySpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+          <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+        </div>
+        <div>${keySections.join('')}</div>
+      </div>
+    `;
+
+    const totalQ = blueprintRows.reduce((a, b) => a + b.count, 0);
+    document.getElementById('rendered-blueprint').innerHTML = `
+      <div class="a4-sheet-container">
+        <h2 style="text-align: center; font-size: 19px; font-weight: 800; margin-bottom: 18px;">ನೀಲನಕ್ಷೆಗಳು (Blueprints)</h2>
+        <h4 style="font-weight: bold; margin-bottom: 8px;">1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಸಂಖ್ಯೆ</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${blueprintRows.map(row => `
+              <tr>
+                <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">${row.name}</td>
+                <td style="border: 1.5px solid #000;">${row.count}</td>
+                <td style="border: 1.5px solid #000;">${row.marks}</td>
+                <td style="border: 1.5px solid #000;">${Math.round((row.marks/totalMarks)*100)}%</td>
+              </tr>`).join('')}
+            <tr style="font-weight: bold; background: #fafafa;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000;">${totalQ}</td>
+              <td style="border: 1.5px solid #000;">${totalMarks}</td>
+              <td style="border: 1.5px solid #000;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    if (isOralExam) {
+      if (blueprintTabBtn) blueprintTabBtn.classList.add('hidden');
+      document.getElementById('rendered-blueprint').innerHTML = '';
+    } else {
+      if (blueprintTabBtn) blueprintTabBtn.classList.remove('hidden');
+    }
+
+    // Watermark check
+    document.querySelectorAll('.demo-watermark-text').forEach(el => el.remove());
+    if (appState.currentUserType === 'demo') {
+      const wHtml = `<div class="demo-watermark-text">With You QP Generator &bull; DEMO</div>`;
+      document.querySelectorAll('#print-area .a4-sheet-container').forEach(box => {
+        box.classList.add('watermark-wrapper');
+        box.insertAdjacentHTML('beforeend', wHtml);
+      });
+    }
+
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    if (outputSection) outputSection.classList.remove('hidden');
+    switchOutputTab('paper');
+    outputSection.scrollIntoView({ behavior: 'smooth' });
+    showToast(`DSERT ಅಧಿಕೃತ ಪಠ್ಯಕ್ರಮದ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+
+  } catch (err) {
+    console.error(err);
+    if (loadingSpinner) loadingSpinner.classList.add('hidden');
+    alert('ದೋಷ: ' + err.message);
+  } finally {
+    if (generateBtn) { generateBtn.disabled = false; generateBtn.classList.remove('opacity-50'); }
+  }
+};
     
   </script>
 </body>
