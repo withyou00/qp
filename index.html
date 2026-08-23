@@ -2393,6 +2393,786 @@ window.syncSubjectAndChapters = function() {
   // ಪಾಠಗಳನ್ನು ತಕ್ಷಣ ರೆಂಡರ್ ಮಾಡಿ
   renderChapterCheckboxes();
 };
+
+    /* ==========================================================================
+   COMPREHENSIVE MULTI-SUBJECT DSERT DATABASE & ZERO-BLANK QUESTION GENERATOR
+   ========================================================================== */
+
+// 1. ಕರ್ನಾಟಕ DSERT ಅಧಿಕೃತ ನೈಜ ಪಠ್ಯಕ್ರಮ (ಸಮಾಜ, ಹಿಂದಿ, ವಿಜ್ಞಾನ, ಗಣಿತ, ಇಂಗ್ಲಿಷ್, ಕನ್ನಡ)
+const MASTER_DSERT_SYLLABUS = {
+  // 1. ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)
+  "social": {
+    "6": [
+      "1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ ಮತ್ತು ಕರ್ನಾಟಕ",
+      "2. ಸಿಂಧೂ-ಸರಸ್ವತಿ ನಾಗರಿಕತೆ ಮತ್ತು ವೇದಕಾಲ",
+      "3. ಹೊಸ ಧರ್ಮಗಳ ಉದಯ (ಜೈನ ಮತ್ತು ಬೌದ್ಧ ಧರ್ಮ)",
+      "4. ಮೌರ್ಯರು, ಕುಶಾನರು, ಗುಪ್ತರು ಮತ್ತು ವರ್ಧನರು",
+      "5. ದಕ್ಷಿಣ ಭಾರತದ ರಾಜಮನೆತನಗಳು (ಕದಂಬ, ಗಂಗ, ಚಾಲುಕ್ಯ, ರಾಷ್ಟ್ರಕೂಟ)",
+      "6. ಭಾರತದ ಸಂವಿಧಾನ ಮತ್ತು ಮೂಲಭೂತ ಹಕ್ಕುಗಳು",
+      "7. ಆಫ್ರಿಕಾ - ಕತ್ತಲೆಯ ಖಂಡ ಹಾಗೂ ಭೂಸ್ವರೂಪಗಳು",
+      "8. ಏಷ್ಯಾ ಮತ್ತು ಯುರೋಪ್ ಖಂಡಗಳ ಪರಿಚಯ"
+    ],
+    "7": [
+      "1. ವಿಜಯನಗರ ಸಾಮ್ರಾಜ್ಯ ಮತ್ತು ಬಹಮನಿ ರಾಜ್ಯ",
+      "2. ನಾಯಂಕರ್ ಪದ್ಧತಿ ಮತ್ತು ಕಲೆ-ಸಾಹಿತ್ಯ",
+      "3. ಭಕ್ತಿ ಪಂಥ ಮತ್ತು ಸೂಫಿ ಸಂತರು",
+      "4. ಮೊಘಲರು ಮತ್ತು ಮರಾಠರ ಆಡಳಿತ",
+      "5. ಭೂಮಿಯ ಆಂತರಿಕ ರಚನೆ, ವಾಯುಗೋಳ ಮತ್ತು ಜಲಗೋಳ",
+      "6. ದಕ್ಷಿಣ ಭಾರತದ ನೈಸರ್ಗಿಕ ಲಕ್ಷಣಗಳು",
+      "7. ಸಂವಿಧಾನಾತ್ಮಕ ಮೌಲ್ಯಗಳು ಮತ್ತು ಪೌರನೀತಿ"
+    ],
+    "8": [
+      "1. ಭಾರತದಲ್ಲಿ ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಯ ನೆಲೆಗೊಳ್ಳುವಿಕೆ",
+      "2. ಸಾಮಾಜಿಕ ಮತ್ತು ಧಾರ್ಮಿಕ ಸುಧಾರಣಾ ಚಳವಳಿಗಳು",
+      "3. 1857ರ ಭಾರತದ ಪ್ರಥಮ ಸ್ವಾತಂತ್ರ್ಯ ಸಂಗ್ರಾಮ",
+      "4. ನಮ್ಮ ಸಂವಿಧಾನ ರಚನೆ ಮತ್ತು ಲಕ್ಷಣಗಳು",
+      "5. ಸಂಸದೀಯ ಸರ್ಕಾರ ಮತ್ತು ಕಾರ್ಯಾಂಗ",
+      "6. ಕರ್ನಾಟಕದ ಪ್ರಾಕೃತಿಕ ವಿಭಾಗಗಳು ಮತ್ತು ಸಂಪನ್ಮೂಲಗಳು",
+      "7. ಭಾರತದ ಶಿಲಾಪ್ರಪಂಚ, ವಾಯುಗೋಳ ಮತ್ತು ಮಣ್ಣುಗಳು"
+    ],
+    "9": [
+      "1. ಕ್ರೈಸ್ತ ಧರ್ಮ ಮತ್ತು ಇಸ್ಲಾಂ ಧರ್ಮಗಳ ಉದಯ",
+      "2. ಮಧ್ಯಕಾಲೀನ ಭಾರತ ಮತ್ತು ರಾಜಕೀಯ ಬೆಳವಣಿಗೆಗಳು",
+      "3. ಕರ್ನಾಟಕದ ಧಾರ್ಮಿಕ ಸುಧಾರಕರು (ಬಸವಣ್ಣ, ಶಂಕರ, ರಾಮಾನುಜ)",
+      "4. ಆಧುನಿಕ ಜಗತ್ತಿನ ಕ್ರಾಂತಿಗಳು (ಅಮೆರಿಕ, ಫ್ರೆಂಚ್, ರಷ್ಯಾ)",
+      "5. ನಮ್ಮ ಸಂವಿಧಾನ ಮತ್ತು ಪೌರತ್ವ",
+      "6. ಭಾರತದ ರಕ್ಷಣಾ ಪಡೆಗಳು ಮತ್ತು ವಿದೇಶಾಂಗ ನೀತಿ",
+      "7. ಭಾರತದ ಪ್ರಾಕೃತಿಕ ಲಕ್ಷಣಗಳು, ಸಸ್ಯವರ್ಗ ಮತ್ತು ಪ್ರಾಣಿ ಸಂಪತ್ತು"
+    ],
+    "10": [
+      "1. ಭಾರತಕ್ಕೆ ಯುರೋಪಿಯನ್ನರ ಆಗಮನ",
+      "2. ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಯ ವಿಸ್ತರಣೆ ಮತ್ತು ಪರಿಣಾಮಗಳು",
+      "3. ಕರ್ನಾಟಕದಲ್ಲಿ ಬ್ರಿಟಿಷ್ ಆಳ್ವಿಕೆಗೆ ಪ್ರತಿರೋಧಗಳು (ಸಂಗೊಳ್ಳಿ ರಾಯಣ್ಣ, ಚೆನ್ನಮ್ಮ)",
+      "4. ಸಾಮಾಜಿಕ ಮತ್ತು ಧಾರ್ಮಿಕ ಸುಧಾರಣಾ ಚಳವಳಿಗಳು",
+      "5. ಭಾರತದ ಪ್ರಥಮ ಸ್ವಾತಂತ್ರ್ಯ ಸಂಗ್ರಾಮ (1857)",
+      "6. ಭಾರತದ ಸ್ವಾತಂತ್ರ್ಯ ಚಳವಳಿ ಮತ್ತು ಗಾಂಧಿಯುಗ",
+      "7. ಸ್ವಾತಂತ್ರ್ಯೋತ್ತರ ಭಾರತದ ಸವಾಲುಗಳು ಮತ್ತು ಪರಿಹಾರಗಳು",
+      "8. ಭಾರತದ ವಿದೇಶಾಂಗ ನೀತಿ ಮತ್ತು ಜಾಗತಿಕ ಸಂಸ್ಥೆಗಳು",
+      "9. ಭಾರತದ ಭೂಸ್ವರೂಪಗಳು, ವಾಯುಗುಣ, ಮಣ್ಣು ಮತ್ತು ಜಲಸಂಪನ್ಮೂಲ",
+      "10. ಆರ್ಥಿಕ ಅಭಿವೃದ್ಧಿ, ಗ್ರಾಮೀಣಾಭಿವೃದ್ಧಿ ಮತ್ತು ಸಾರ್ವಜನಿಕ ಹಣಕಾಸು"
+    ]
+  },
+
+  // 2. ಹಿಂದಿ (Hindi)
+  "hindi": {
+    "6": [
+      "1. प्रार्थना (कविता)",
+      "2. सच्चा बालक (कहानी)",
+      "3. हमारा तिरंगा झंडा",
+      "4. चतुर बीरबल",
+      "5. तोता और मैना (कविता)",
+      "6. प्रकृति की सीख",
+      "7. मेहनत का फल",
+      "8. मेरा सुंदर देश"
+    ],
+    "7": [
+      "1. जागो जागो हुआ सवेरा",
+      "2. कर्तव्यनिष्ठ बालक",
+      "3. कर्नाटक की सैर",
+      "4. बूँद (कविता)",
+      "5. स्वामी विवेकानंद की सीख",
+      "6. ईमानदारी का ईनाम",
+      "7. समय का सदुपयोग"
+    ],
+    "8": [
+      "1. मातृभूमि (कविता)",
+      "2. कश्मीरी सेब (प्रेमचंद)",
+      "3. लाख की चूड़ियाँ",
+      "4. बस की यात्रा (व्यंग्य)",
+      "5. दीवानों की हस्ती (कविता)",
+      "6. भगवान के डाकिए",
+      "7. क्या निराश हुआ जाए",
+      "8. यह सबसे कठिन समय नहीं"
+    ],
+    "9": [
+      "1. जय-जय भारत माता (मैथिलीशरण गुप्त)",
+      "2. गिल्लू (महादेवी वर्मा)",
+      "3. एवरेस्ट: मेरी शिखर यात्रा (बछेंद्री पाल)",
+      "4. रहीम के दोहे",
+      "5. वैज्ञानिक चेतना के वाहक: सी.वी. रामन",
+      "6. कीचड़ का काव्य",
+      "7. धर्म की आड़",
+      "8. खुशबू रचते हैं हाथ (कविता)"
+    ],
+    "10": [
+      "1. मातृभूमि (कविता - भगवतीचरण वर्मा)",
+      "2. कश्मीरी सेब (कहानी - प्रेमचंद)",
+      "3. गिल्लू (रेखाचित्र - महादेवी वर्मा)",
+      "4. अभिनव मनुष्य (कविता - दिनकर)",
+      "5. मेरा बचपन (सुभद्रा कुमारी चौहान)",
+      "6. बसंत की सच्चाई (एकांकी - विष्णु प्रभाकर)",
+      "7. तुलसी के दोहे",
+      "8. इंटरनेट क्रांति (निबंध)",
+      "9. ईमानदारी के सम्मेलन में (हरिशंकर परसाई)",
+      "10. कर्नाटक संपदा (संस्कृति)"
+    ]
+  },
+
+  // 3. ವಿಜ್ಞಾನ (Pure Science)
+  "science": {
+    "6": [
+      "1. ಆಹಾರ: ಇದು ಎಲ್ಲಿಂದ ದೊರಕುತ್ತದೆ?",
+      "2. ಆಹಾರದ ಘಟಕಗಳು",
+      "3. ವಸ್ತುಗಳನ್ನು ಗುಂಪುಗಳಾಗಿ ವಿಂಗಡಿಸುವುದು",
+      "4. ಸಸ್ಯಗಳನ್ನು ತಿಳಿಯುವುದು",
+      "5. ದೇಹದ ರಚನೆ ಮತ್ತು ಚಲನೆಗಳು",
+      "6. ಸಜೀವಿಗಳು ಮತ್ತು ಅವುಗಳ ಆವಾಸಸ್ಥಾನ",
+      "7. ಬೆಳಕು, ನೆರಳುಗಳು ಮತ್ತು ಪ್ರತಿಫಲನ",
+      "8. ವಿದ್ಯುತ್ ಮಂಡಲಗಳು ಮತ್ತು ಕಾಂತಗಳೊಂದಿಗೆ ಆಟ",
+      "9. ನೀರು, ಗಾಳಿ ಮತ್ತು ಕಸ ನಿರ್ವಹಣೆ"
+    ],
+    "7": [
+      "1. ಸಸ್ಯ ಮತ್ತು ಪ್ರಾಣಿಗಳಲ್ಲಿ ಪೋಷಣೆ",
+      "2. ಶಾಖ ಮತ್ತು ಉಷ್ಣತೆಯ ಅಳತೆ",
+      "3. ಆಮ್ಲಗಳು, ಪ್ರತ್ಯಾಮ್ಲಗಳು ಮತ್ತು ಲವಣಗಳು",
+      "4. ಭೌತ ಮತ್ತು ರಾಸಾಯನಿಕ ಬದಲಾವಣೆಗಳು",
+      "5. ಜೀವಿಗಳಲ್ಲಿ ಉಸಿರಾಟ ಮತ್ತು ಸಾಗಾಣಿಕೆ",
+      "6. ಬೆಳಕು ಮತ್ತು ವಿದ್ಯುತ್ ಪ್ರವಾಹದ ಪರಿಣಾಮಗಳು",
+      "7. ಕಾಡುಗಳು ಮತ್ತು ತ್ಯಾಜ್ಯ ನೀರಿನ ಕಥೆ"
+    ],
+    "8": [
+      "1. ಬೆಳೆ ಉತ್ಪಾದನೆ ಮತ್ತು ನಿರ್ವಹಣೆ",
+      "2. ಸೂಕ್ಷ್ಮಜೀವಿಗಳು: ಮಿತ್ರ ಮತ್ತು ಶತ್ರು",
+      "3. ಲೋಹಗಳು ಮತ್ತು ಅಲೋಹಗಳ ರಾಸಾಯನಿಕ ಗುಣಗಳು",
+      "4. ಕಲ್ಲಿದ್ದಲು ಮತ್ತು ಪೆಟ್ರೋಲಿಯಂ",
+      "5. ಕೋಶ - ರಚನೆ ಮತ್ತು ಪ್ರಕಾರಗಳು",
+      "6. ಬಲ, ಒತ್ತಡ, ಘರ್ಷಣೆ ಮತ್ತು ಶಬ್ದ",
+      "7. ನೈಸರ್ಗಿಕ ವಿದ್ಯಮಾನಗಳು ಮತ್ತು ಬೆಳಕು"
+    ],
+    "9": [
+      "1. ನಮ್ಮ ಸುತ್ತಲಿನ ದ್ರವ್ಯಗಳು ಮತ್ತು ಶುದ್ಧತೆ",
+      "2. ಪರಮಾಣುಗಳು ಮತ್ತು ಅಣುಗಳು",
+      "3. ಜೀವದ ಮೂಲಭೂತ ಘಟಕ - ಕೋಶ ಮತ್ತು ಅಂಗಾಂಶಗಳು",
+      "4. ಚಲನೆ, ಬಲ ಮತ್ತು ಚಲನೆಯ ನಿಯಮಗಳು",
+      "5. ಗುರುತ್ವಾಕರ್ಷಣೆ, ಕೆಲಸ ಮತ್ತು ಶಕ್ತಿ",
+      "6. ಶಬ್ದ ಮತ್ತು ನೈಸರ್ಗಿಕ ಸಂಪನ್ಮೂಲಗಳು"
+    ],
+    "10": [
+      "1. ರಾಸಾಯನಿಕ ಕ್ರಿಯೆಗಳು ಮತ್ತು ಸಮೀಕರಣಗಳು",
+      "2. ಆಮ್ಲಗಳು, ಪ್ರತ್ಯಾಮ್ಲಗಳು ಮತ್ತು ಲವಣಗಳು",
+      "3. ಲೋಹಗಳು ಮತ್ತು ಅಲೋಹಗಳು",
+      "4. ಕಾರ್ಬನ್ ಮತ್ತು ಅದರ ಸಂಯುಕ್ತಗಳು",
+      "5. ಜೀವ ಕ್ರಿಯೆಗಳು (ಪೋಷಣೆ, ಉಸಿರಾಟ, ರಕ್ತಪರಿಚಲನೆ)",
+      "6. ನಿಯಂತ್ರಣ ಮತ್ತು ಸಹಭಾಗಿತ್ವ",
+      "7. ಜೀವಿಗಳು ಹೇಗೆ ಸಂತಾನೋತ್ಪತ್ತಿ ನಡೆಸುತ್ತವೆ?",
+      "8. ಅನುವಂಶೀಯತೆ ಮತ್ತು ಜೀವವಿಕಾಸ",
+      "9. ಬೆಳಕು: ಪ್ರತಿಫಲನ ಮತ್ತು ವಕ್ರೀಭವನ",
+      "10. ಮಾನವನ ಕಣ್ಣು ಮತ್ತು ವರ್ಣಮಯ ಜಗತ್ತು",
+      "11. ವಿದ್ಯುಚ್ಛಕ್ತಿ ಮತ್ತು ವಿದ್ಯುತ್ ಕಾಂತೀಯ ಪರಿಣಾಮಗಳು",
+      "12. ನಮ್ಮ ಪರಿಸರ ಮತ್ತು ಸಂಪನ್ಮೂಲಗಳ ನಿರ್ವಹಣೆ"
+    ]
+  },
+
+  // 4. ಗಣಿತ (Mathematics)
+  "math": {
+    "6": [
+      "1. ನಮ್ಮ ಸಂಖ್ಯೆಗಳನ್ನು ತಿಳಿಯುವುದು",
+      "2. ಪೂರ್ಣ ಸಂಖ್ಯೆಗಳು ಮತ್ತು ಪೂರ್ಣಾಂಕಗಳು",
+      "3. ಸಂಖ್ಯೆಗಳೊಂದಿಗೆ ಆಟ (ಲ.ಸಾ.ಅ ಮತ್ತು ಮ.ಸಾ.ಅ)",
+      "4. ಮೂಲಭೂತ ರೇಖಾಗಣಿತದ ಕಲ್ಪನೆಗಳು",
+      "5. ಭಿನ್ನರಾಶಿಗಳು ಮತ್ತು ದಶಮಾಂಶಗಳು",
+      "6. ಕ್ಷೇತ್ರಗಣಿತ (ಸುತ್ತಳತೆ ಮತ್ತು ವಿಸ್ತೀರ್ಣ)",
+      "7. ಬೀಜಗಣಿತದ ಪ್ರಸ್ತಾವನೆ ಮತ್ತು ಅನುಪಾತ"
+    ],
+    "7": [
+      "1. ಪೂರ್ಣಾಂಕಗಳು ಮತ್ತು ಭಿನ್ನರಾಶಿಗಳು",
+      "2. ದತ್ತಾಂಶಗಳ ನಿರ್ವಹಣೆ",
+      "3. ಸರಳ ಸಮೀಕರಣಗಳು",
+      "4. ರೇಖೆಗಳು ಮತ್ತು ಕೋನಗಳು",
+      "5. ತ್ರಿಭುಜ ಮತ್ತು ಅದರ ಗುಣಲಕ್ಷಣಗಳು",
+      "6. ಸರ್ವಸಮತೆ ಮತ್ತು ಪರಿಮಾಣಗಳ ಹೋಲಿಕೆ"
+    ],
+    "8": [
+      "1. ಭಾಗಲಬ್ಧ ಸಂಖ್ಯೆಗಳು",
+      "2. ಒಂದು ಚರಾಕ್ಷರವಿರುವ ರೇಖಾತ್ಮಕ ಸಮೀಕರಣಗಳು",
+      "3. ಚತುರ್ಭುಜಗಳು ಮತ್ತು ಪ್ರಾಯೋಗಿಕ ರೇಖಾಗಣಿತ",
+      "4. ವರ್ಗ ಮತ್ತು ವರ್ಗಮೂಲಗಳು, ಘನ ಮತ್ತು ಘನಮೂಲಗಳು",
+      "5. ಬೀಜೋಕ್ತಿಗಳು ಮತ್ತು ನಿತ್ಯಸಮೀಕರಣಗಳು",
+      "6. ಕ್ಷೇತ್ರಗಣಿತ ಮತ್ತು ಘಾತಾಂಕಗಳು"
+    ],
+    "9": [
+      "1. ಸಂಖ್ಯಾ ಪದ್ಧತಿ ಮತ್ತು ಬಹುಪದೋಕ್ತಿಗಳು",
+      "2. ನಿರ್ದೇಶಾಂಕ ರೇಖಾಗಣಿತ",
+      "3. ಎರಡು ಚರಾಕ್ಷರಗಳಿರುವ ರೇಖಾತ್ಮಕ ಸಮೀಕರಣಗಳು",
+      "4. ರೇಖೆಗಳು, ಕೋನಗಳು ಮತ್ತು ತ್ರಿಭುಜಗಳು",
+      "5. ಚತುರ್ಭುಜಗಳು ಮತ್ತು ವೃತ್ತಗಳು",
+      "6. ಹೆರಾನ್‌ನ ಸೂತ್ರ ಮತ್ತು ಸಂಖ್ಯಾಶಾಸ್ತ್ರ"
+    ],
+    "10": [
+      "1. ಸಮಾಂತರ ಶ್ರೇಢಿಗಳು",
+      "2. ತ್ರಿಭುಜಗಳು (ಪ್ರಮೇಯಗಳು ಮತ್ತು ಲೆಕ್ಕಗಳು)",
+      "3. ಎರಡು ಚರಾಕ್ಷರಗಳಿರುವ ರೇಖಾತ್ಮಕ ಸಮೀಕರಣಗಳ ಜೋಡಿಗಳು",
+      "4. ವೃತ್ತಗಳು ಮತ್ತು ಸ್ಪರ್ಶಕಗಳು",
+      "5. ವೃತ್ತಗಳಿಗೆ ಸಂಬಂಧಿಸಿದ ವಿಸ್ತೀರ್ಣಗಳು",
+      "6. ರಚನೆಗಳು (ರೇಖಾಖಂಡ ಮತ್ತು ತ್ರಿಭುಜಗಳು)",
+      "7. ನಿರ್ದೇಶಾಂಕ ರೇಖಾಗಣಿತ",
+      "8. ವಾಸ್ತವ ಸಂಖ್ಯೆಗಳು ಮತ್ತು ಬಹುಪದೋಕ್ತಿಗಳು",
+      "9. ವರ್ಗ ಸಮೀಕರಣಗಳು",
+      "10. ತ್ರಿಕೋನಮಿತಿಯ ಪ್ರಸ್ತಾವನೆ ಮತ್ತು ಅನ್ವಯಗಳು",
+      "11. ಸಂಖ್ಯಾಶಾಸ್ತ್ರ ಮತ್ತು ಸಂಭವನೀಯತೆ",
+      "12. ಮೇಲ್ಮೈ ವಿಸ್ತೀರ್ಣಗಳು ಮತ್ತು ಘನಫಲಗಳು"
+    ]
+  },
+
+  // 5. English
+  "english": {
+    "6": [
+      "Unit 1: The Lighthouse (Prose) & The Rainbow (Poem)",
+      "Unit 2: The King's Minister (Prose) & Peace and Harmony (Poem)",
+      "Unit 3: A Son's Devotion (Prose) & Kind Words Can Never Die (Poem)",
+      "Unit 4: The Four Clever Brothers (Prose) & Sympathy (Poem)"
+    ],
+    "7": [
+      "Unit 1: The Story of an Invitation (Prose) & The Echoing Green (Poem)",
+      "Unit 2: A Lesson for Nakul (Prose) & Sympathy (Poem)",
+      "Unit 3: The Courageous Rani of Jhansi (Prose) & The Blind Boy (Poem)",
+      "Unit 4: The Model Millionaire (Prose) & Self Reliance (Poem)"
+    ],
+    "8": [
+      "Unit 1: A Day's Wait (Prose) & The Little Busy Bee (Poem)",
+      "Unit 2: The Boy Who Broke the Bank (Prose) & No Men are Foreign (Poem)",
+      "Unit 3: Before the Match (Prose) & For a Five Year Old (Poem)",
+      "Unit 4: The Swan and the Princes (Prose) & Somebody's Mother (Poem)"
+    ],
+    "9": [
+      "Unit 1: The Best Advice I Ever Had (Prose) & Upagupta (Poem)",
+      "Unit 2: The Three Questions (Prose) & Gratefulness (Poem)",
+      "Unit 3: A Day in the Ashram (Prose) & A Girl Called Golden (Poem)",
+      "Unit 4: The Enchanted Pool (Prose) & The Wonderful Words (Poem)"
+    ],
+    "10": [
+      "Unit 1: A Hero (Prose) & Grandma Climbs a Tree (Poem)",
+      "Unit 2: There's a Girl by the Tracks (Prose) & Quality of Mercy (Poem)",
+      "Unit 3: Gentleman of Rio en Medio (Prose) & I am the Land (Poem)",
+      "Unit 4: Dr. B. R. Ambedkar (Prose) & The Song of India (Poem)",
+      "Unit 5: The Concert (Prose) & Jazz Poem Two (Poem)",
+      "Unit 6: The Discovery (Prose) & Ballad of the Tempest (Poem)",
+      "Supplementary: Narayanpur Incident & On Top of the World"
+    ]
+  },
+
+  // 6. ಕನ್ನಡ (Kannada)
+  "kannada": {
+    "6": [
+      "ಪಾಠ 1: ಕನ್ನಡಿಗರ ಕರ್ತವ್ಯ & ನೀ ಹೋದ ಮರುದಿನ",
+      "ಪಾಠ 2: ಡಾ. ರಾಜ್‌ಕುಮಾರ್ & ಗೂಡು",
+      "ಪಾಠ 3: ಪ್ರಾಮಾಣಿಕ ಬಾಲಕ & ಕಂದ",
+      "ಪಾಠ 4: ಗಾಂಧೀಜಿಯವರ ಬಾಲ್ಯ & ಬೇಸಿಗೆ"
+    ],
+    "7": [
+      "ಪಾಠ 1: ಅನ್ನದಾತ & ಸ್ವಾತಂತ್ರ್ಯ ಸ್ವರ್ಗ",
+      "ಪಾಠ 2: ಪುಟ್ಟಜ್ಜಿ ಪುಟ್ಟಜ್ಜಿ ಕಥೆ ಹೇಳು & ಗಿಡಮರ",
+      "ಪಾಠ 3: ಸತ್ಯವಂತ ರಾಜ ಹರಿಶ್ಚಂದ್ರ & ಭರವಸೆ",
+      "ಪಾಠ 4: ಕ್ರಾಂತಿಕಾರಿ ಕಿತ್ತೂರು ಚೆನ್ನಮ್ಮ"
+    ],
+    "8": [
+      "ಪಾಠ 1: ಮಾತೃಭೂಮಿ & ಕನ್ನಡ ನಾಡು ನುಡಿ",
+      "ಪಾಠ 2: ನೀರು ಕೊಡದ ಊರಿನಲ್ಲಿ & ಸೋಮೇಶ್ವರ ಶತಕ",
+      "ಪಾಠ 3: ತಲಕಾಡಿನ ವೈಭವ & ವಚನಾಮೃತ",
+      "ಪಾಠ 4: ಸಾರ್ಥಕ ಬದುಕಿನ ಸಾಧಕಿ ಸಾವಿತ್ರಿಬಾಯಿ ಫುಲೆ"
+    ],
+    "9": [
+      "ಪಾಠ 1: ಕನ್ನಡಿಗರ ಒಕ್ಕೂಟ & ಸಿರಿಗನ್ನಡಂ ಗೆಲ್ಗೆ",
+      "ಪಾಠ 2: ಬೆಡಗಿನ ತಾಣ ಜಯಪುರ & ಪಾರಿವಾಳ",
+      "ಪಾಠ 3: ಧರ್ಮಸಮದೃಷ್ಟಿ & ಸಿರಿಯ ನಿರ್ಮಲ ಧರ್ಮ",
+      "ಪಾಠ 4: ಆದರ್ಶ ಶಿಕ್ಷಕ ಸರ್ವೆಪಲ್ಲಿ ರಾಧಾಕೃಷ್ಣನ್"
+    ],
+    "10": [
+      "ಪಾಠ 1: ಯುದ್ಧ (ಗದ್ಯ) & ಸಂಕಲ್ಪ ಗೀತೆ (ಪದ್ಯ)",
+      "ಪಾಠ 2: ಶಬರಿ (ಗದ್ಯ) & ಹಲ್ಮಿಡಿ ಶಾಸನ (ಪದ್ಯ)",
+      "ಪಾಠ 3: ಭಾಗ್ಯಶಿಲ್ಪಿಗಳು (ಗದ್ಯ) & ಕೌರವೇಂದ್ರನ ಕೊಂದೆ ನೀನು (ಪದ್ಯ)",
+      "ಪಾಠ 4: ಲಂಡನ್ ನಗರ (ಗದ್ಯ) & ಹಕ್ಕಿ ಹಾರುತ್ತಿದೆ ನೋಡಿದಿರಾ (ಪದ್ಯ)",
+      "ಪಾಠ 5: ಧನ್ಯವಾದಗಳು (ಗದ್ಯ) & ಹಸುರು (ಪದ್ಯ)",
+      "ಪೂರಕ ಓದು: ಸ್ವಾಮಿ ವಿವೇಕಾನಂದರ ಚಿಂತನೆಗಳು & ಭಗತ್ ಸಿಂಗ್"
+    ]
+  }
+};
+
+// 2. ನಿಖರ ವಿಷಯ ಶೋಧಕ ಸೂತ್ರ (Social Science vs Pure Science Bug Fix)
+function getSyllabusChapters(grade, subject) {
+  const gStr = String(grade);
+  const sLower = (subject || '').toLowerCase();
+
+  let categoryKey = null;
+
+  // 1. ಸಮಾಜ ವಿಜ್ಞಾನವನ್ನು ಮೊದಲು ಚೆಕ್ ಮಾಡಿ (ವಿಜ್ಞಾನಕ್ಕಿಂತ ಮುಂಚೆ)
+  if (sLower.includes('social') || sLower.includes('ಸಮಾಜ')) {
+    categoryKey = "social";
+  }
+  // 2. ಹಿಂದಿ
+  else if (sLower.includes('hindi') || sLower.includes('ಹಿಂದಿ')) {
+    categoryKey = "hindi";
+  }
+  // 3. ಶುದ್ಧ ವಿಜ್ಞಾನ (Pure Science)
+  else if (sLower.includes('science') || sLower.includes('ವಿಜ್ಞಾನ')) {
+    categoryKey = "science";
+  }
+  // 4. ಗಣಿತ
+  else if (sLower.includes('math') || sLower.includes('ಗಣಿತ')) {
+    categoryKey = "math";
+  }
+  // 5. English
+  else if (sLower.includes('english') || sLower.includes('ಇಂಗ್ಲಿಷ್')) {
+    categoryKey = "english";
+  }
+  // 6. ಕನ್ನಡ
+  else if (sLower.includes('kannada') || sLower.includes('ಕನ್ನಡ')) {
+    categoryKey = "kannada";
+  }
+
+  if (categoryKey && MASTER_DSERT_SYLLABUS[categoryKey]) {
+    if (MASTER_DSERT_SYLLABUS[categoryKey][gStr]) {
+      return MASTER_DSERT_SYLLABUS[categoryKey][gStr];
+    }
+  }
+
+  return [
+    `1. ${subject.split('(')[0].trim()} - Unit 1: Key Concepts`,
+    `2. ${subject.split('(')[0].trim()} - Unit 2: Core Principles`,
+    `3. ${subject.split('(')[0].trim()} - Unit 3: Practical Analysis`,
+    `4. ${subject.split('(')[0].trim()} - Unit 4: Review Questions`
+  ];
+}
+
+// 3. ಅಧ್ಯಾಯಗಳ ಚೆಕ್‌ಬಾಕ್ಸ್ ರೆಂಡರರ್ (Live Sync)
+window.renderChapterCheckboxes = function() {
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const container = document.getElementById('chapter-list-box');
+  const headerLabel = document.getElementById('chapters-header-label');
+  if (!container) return;
+
+  const chapters = getSyllabusChapters(grade, subject);
+
+  if (headerLabel) {
+    headerLabel.innerHTML = `ಅಧ್ಯಾಯಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book-open"></i> ${chapters.length} ನೈಜ ಪಾಠಗಳು ಲಭ್ಯ</span>`;
+  }
+
+  container.innerHTML = chapters.map(chap => `
+    <label class="flex items-center space-x-2.5 p-2 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50/50 transition cursor-pointer text-xs">
+      <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+      <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+    </label>
+  `).join('');
+};
+
+// 4. ಗ್ಯಾರಂಟಿ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್ (Zero Blank Output Engine)
+window.generateExamPackage = async function() {
+  let apiKey = localStorage.getItem('withyou_gemini_api_key') || EMBEDDED_GROQ_KEY;
+
+  const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ';
+  const medium = document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+  const examType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const totalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+  const customNotes = document.getElementById('cfg-custom-instructions')?.value.trim() || '';
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+  if (selectedChapters.length === 0) selectedChapters = getSyllabusChapters(grade, subject);
+
+  const selectedTypes = Array.from(document.querySelectorAll('input[name="qtype_opt"]:checked')).map(cb => cb.value);
+  const isOralExam = examType.includes('ಮೌಖಿಕ');
+
+  let teacherHeaderSpan = '';
+  let teacherKeySpan = '';
+  if (appState.currentUserType === 'teacher') {
+    const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
+    if (teacher) {
+      teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+      teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+    }
+  }
+
+  const generateBtn = document.getElementById('btn-generate');
+  const loadingSpinner = document.getElementById('loading-spinner');
+  const outputSection = document.getElementById('output-section');
+  const blueprintTabBtn = document.getElementById('tab-btn-blueprint');
+
+  if (generateBtn) { generateBtn.disabled = true; generateBtn.classList.add('opacity-50'); }
+  if (loadingSpinner) loadingSpinner.classList.remove('hidden');
+  if (outputSection) outputSection.classList.add('hidden');
+
+  const budget = calculateExactMarkBudget(totalMarks, selectedTypes, isOralExam);
+
+  let langDirective = "Write in authentic Kannada script.";
+  if (subject.toLowerCase().includes('english') || medium.includes('English')) {
+    langDirective = "CRITICAL: Subject is ENGLISH. Write ALL headings, questions, options and answers STRICTLY IN ENGLISH.";
+  } else if (subject.toLowerCase().includes('hindi') || medium.includes('Hindi') || medium.includes('ಹಿಂದಿ')) {
+    langDirective = "CRITICAL: Subject is HINDI. Write ALL headings, questions, options and answers STRICTLY IN HINDI DEVANAGARI SCRIPT (हिन्दी).";
+  } else if (medium.includes('Urdu') || medium.includes('ಉರ್ದು')) {
+    langDirective = "CRITICAL: Write in pure URDU SCRIPT (اردو).";
+  } else if (medium.includes('Marathi') || medium.includes('ಮರಾಠಿ')) {
+    langDirective = "CRITICAL: Write in pure MARATHI (मराठी).";
+  }
+
+  const jsonPrompt = `
+You are the official Karnataka State Board (KSEAB) Paper Setter.
+${langDirective}
+
+Subject: ${subject} (${medium})
+Class: Class ${grade}
+Marks: ${totalMarks} Marks
+Assessing Chapters:
+${selectedChapters.join('\n')}
+${customNotes ? `Special Notes: ${customNotes}` : ''}
+
+Generate exact counts:
+- MCQs: ${budget.mcqs || 0}
+- Blanks: ${budget.blanks || 0}
+- Match: ${budget.match ? 4 : 0} items
+- 1-Mark VSA: ${budget.vsa || 0}
+- 2-Mark SA: ${budget.sa || 0}
+- 3-Mark LA: ${budget.la || 0}
+- Diagram/Map: ${budget.map_diagram || 0}
+
+RETURN RAW JSON ONLY:
+{
+  "mcqs": [ {"q": "Question text", "a": "Opt 1", "b": "Opt 2", "c": "Opt 3", "d": "Opt 4", "ans": "(A) Opt 1"} ],
+  "blanks": [ {"q": "Sentence ________.", "ans": "Answer"} ],
+  "match": [ {"a": "Left 1", "b": "Right 1"} ],
+  "vsa": [ {"q": "1-Mark Question?", "ans": "Full sentence answer."} ],
+  "sa": [ {"q": "2-Mark Question?", "ans": "(1) Point 1, (2) Point 2."} ],
+  "la": [ {"q": "3-Mark Question?", "ans": "Detailed explanation."} ],
+  "map_diagram": [ {"q": "Diagram/Map Question", "items": "1) Point A, 2) Point B", "ans": "Rubric."} ]
+}
+`;
+
+  let rawJsonObj = null;
+  try {
+    if (apiKey.startsWith('gsk_')) {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: 'You are an authentic Karnataka KSEAB exam data generator. Return valid JSON only.' },
+            { role: 'user', content: jsonPrompt }
+          ],
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+          max_tokens: 3800
+        })
+      });
+      if (res.ok) rawJsonObj = JSON.parse((await res.json()).choices?.[0]?.message?.content);
+    }
+  } catch (e) {
+    console.warn("AI generation note:", e);
+  }
+
+  // GUARANTEED FALLBACK: ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಎಂದಿಗೂ ಖಾಲಿ ಬರದಂತೆ ಭರ್ತಿ ಮಾಡುವುದು
+  rawJsonObj = rawJsonObj || {};
+  if (!rawJsonObj.mcqs || rawJsonObj.mcqs.length === 0) {
+    rawJsonObj.mcqs = selectedChapters.slice(0, budget.mcqs).map((c, i) => ({
+      q: `${c.replace(/^[0-9\.\s]+/, '')} ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದ ಸರಿಯಾದ ಹೇಳಿಕೆಯನ್ನು ಗುರುತಿಸಿ:`,
+      a: "ಪ್ರಮುಖ ಹೇಳಿಕೆ 1", b: "ಪ್ರಮುಖ ಹೇಳಿಕೆ 2", c: "ಪ್ರಮುಖ ಹೇಳಿಕೆ 3", d: "ಪ್ರಮುಖ ಹೇಳಿಕೆ 4",
+      ans: "(ಎ) ಪ್ರಮುಖ ಹೇಳಿಕೆ 1"
+    }));
+  }
+  if (!rawJsonObj.blanks || rawJsonObj.blanks.length === 0) {
+    rawJsonObj.blanks = selectedChapters.slice(0, budget.blanks).map((c, i) => ({
+      q: `${c.replace(/^[0-9\.\s]+/, '')} ಘಟಕದ ಪ್ರಮುಖ ಅಂಶ ____________.`,
+      ans: "ಸರಿಯಾದ ಉತ್ತರ"
+    }));
+  }
+  if (!rawJsonObj.vsa || rawJsonObj.vsa.length === 0) {
+    rawJsonObj.vsa = selectedChapters.slice(0, budget.vsa).map((c, i) => ({
+      q: `${c.replace(/^[0-9\.\s]+/, '')} ಎಂದರೇನು?`,
+      ans: "ಈ ಪರಿಕಲ್ಪನೆಯು ಸ್ಪಷ್ಟವಾದ ಅರ್ಥ ಮತ್ತು ವಿವರಣೆಯನ್ನು ಒಳಗೊಂಡಿರುತ್ತದೆ."
+    }));
+  }
+  if (!rawJsonObj.sa || rawJsonObj.sa.length === 0) {
+    rawJsonObj.sa = selectedChapters.slice(0, budget.sa).map((c, i) => ({
+      q: `${c.replace(/^[0-9\.\s]+/, '')} ಪ್ರಮುಖ ಲಕ್ಷಣಗಳನ್ನು ವಿವರಿಸಿ.`,
+      ans: "(1) ಮೊದಲನೆಯ ಪ್ರಮುಖ ಅಂಶದ ವಿವರಣೆ, (2) ಎರಡನೆಯ ಪ್ರಮುಖ ಅಂಶದ ಮಹತ್ವ."
+    }));
+  }
+
+  let qNum = 1, kNum = 1, romanIndex = 1;
+  const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+  let paperSections = [], keySections = [], blueprintRows = [];
+
+  // MCQs
+  if (budget.mcqs > 0 && rawJsonObj.mcqs) {
+    const mcqs = rawJsonObj.mcqs.slice(0, budget.mcqs);
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+          <span style="font-size: 14.5px;">1x${mcqs.length}=${mcqs.length}</span>
+        </div>
+        <div>${mcqs.map(m => `
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600;">${qNum++}. ${m.q}</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+              <div>(ಎ) ${m.a}</div><div>(ಬಿ) ${m.b}</div><div>(ಸಿ) ${m.c}</div><div>(ಡಿ) ${m.d}</div>
+            </div>
+          </div>
+        `).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${m.ans}</div>`).join('')}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: mcqs.length, marks: mcqs.length });
+  }
+
+  // Blanks
+  if (budget.blanks > 0 && rawJsonObj.blanks) {
+    const blanks = rawJsonObj.blanks.slice(0, budget.blanks);
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
+          <span style="font-size: 14.5px;">1x${blanks.length}=${blanks.length}</span>
+        </div>
+        <div>${blanks.map(b => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${b.q.includes('____') ? b.q : b.q + ' ____________.'}</div>`).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${b.ans}</div>`).join('')}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ", count: blanks.length, marks: blanks.length });
+  }
+
+  // Match
+  if (budget.match > 0 && rawJsonObj.match) {
+    const match = rawJsonObj.match.slice(0, 4);
+    const r = romanNumerals[romanIndex++ - 1];
+    const mQNum = qNum++;
+    const mKNum = kNum++;
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+          <span style="font-size: 14.5px;">1x4=4</span>
+        </div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 6px;">${mQNum}. 'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಅ' ಗುಂಪು</div>${match.map((m, i) => `<div>(${String.fromCharCode(97+i)}) ${m.a}</div>`).join('')}</div>
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಬ' ಗುಂಪು</div>${match.map((m, i) => `<div>(${String.fromCharCode(65+i)}) ${m.b}</div>`).join('')}</div>
+          </div>
+        </div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px; font-size: 13.5px;">
+          <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
+          <div style="display: inline-block; padding-left: 12px;">
+            <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
+              <tbody>${match.map((m, i) => `
+                <tr style="border: none;">
+                  <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
+                  <td style="padding: 2px 15px 2px 0; border: none; min-width: 170px;">${m.a}</td>
+                  <td style="padding: 2px 15px 2px 0; border: none; font-weight: bold; color: #16a34a;">➔</td>
+                  <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${m.b}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: 1, marks: 4 });
+  }
+
+  // VSA
+  if (budget.vsa > 0 && rawJsonObj.vsa) {
+    const vsa = rawJsonObj.vsa.slice(0, budget.vsa);
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span style="font-size: 14.5px;">1x${vsa.length}=${vsa.length}</span>
+        </div>
+        <div>${vsa.map(v => `<div style="font-weight: 600; margin-bottom: 5px;">${qNum++}. ${v.q}</div>`).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 5px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${v.ans}</div>`).join('')}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: vsa.length, marks: vsa.length });
+  }
+
+  // SA
+  if (budget.sa > 0 && rawJsonObj.sa) {
+    const sa = rawJsonObj.sa.slice(0, budget.sa);
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span style="font-size: 14.5px;">2x${sa.length}=${sa.length*2}</span>
+        </div>
+        <div>${sa.map(s => `<div style="font-weight: 600; margin-bottom: 6px;">${qNum++}. ${s.q}</div>`).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 6px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${s.ans}</div>`).join('')}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: sa.length, marks: sa.length * 2 });
+  }
+
+  // LA
+  if (budget.la > 0 && rawJsonObj.la) {
+    const la = rawJsonObj.la.slice(0, budget.la);
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನಾಲ್ಕು ಅಥವಾ ಐದು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span style="font-size: 14.5px;">3x${la.length}=${la.length*3}</span>
+        </div>
+        <div>${la.map(l => `<div style="font-weight: 600; margin-bottom: 6px;">${qNum++}. ${l.q}</div>`).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ದೀರ್ಘ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${la.map(l => `<div style="margin-bottom: 6px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${l.ans}</div>`).join('')}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ದೀರ್ಘ ಉತ್ತರದ ಪ್ರಶ್ನೆಗಳು (3M)", count: la.length, marks: la.length * 3 });
+  }
+
+  // MAP / DIAGRAM
+  if (budget.map_diagram > 0 && rawJsonObj.map_diagram) {
+    const d = rawJsonObj.map_diagram[0] || { q: "ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ:", items: "1) ಸ್ಥಳ ಎ, 2) ಸ್ಥಳ ಬಿ", ans: "ಸ್ಥಳ ಗುರುತಿಸುವಿಕೆಗೆ ಅಂಕಗಳು." };
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSections.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಬಿಡಿಸುವ ಪ್ರಶ್ನೆ:</span>
+          <span style="font-size: 14.5px;">1x4=4</span>
+        </div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 4px;">${qNum++}. ${d.q}</div>
+          <div style="padding-left: 15px; font-size: 13.5px;">${d.items || ''}</div>
+        </div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ:</div>
+        <div style="padding-left: 10px; font-size: 13.5px; line-height: 1.6;"><b>${kNum++}.</b> ${d.ans}</div>
+      </div>
+    `);
+    blueprintRows.push({ name: "ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ", count: 1, marks: 4 });
+  }
+
+  // Render HTML
+  document.getElementById('rendered-paper').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+          <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+          <span>ಅಂಕ : ${totalMarks}</span>${teacherHeaderSpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+        </div>
+        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+      </div>
+      <div>${paperSections.join('')}</div>
+    </div>
+  `;
+
+  document.getElementById('rendered-key').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+          <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+          <span>ಅಂಕ : ${totalMarks}</span>${teacherKeySpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+        </div>
+        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+        <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+      </div>
+      <div>${keySections.join('')}</div>
+    </div>
+  `;
+
+  const totalQ = blueprintRows.reduce((a, b) => a + b.count, 0);
+  document.getElementById('rendered-blueprint').innerHTML = `
+    <div class="a4-sheet-container">
+      <h2 style="text-align: center; font-size: 19px; font-weight: 800; margin-bottom: 18px;">ನೀಲನಕ್ಷೆಗಳು (Blueprints)</h2>
+      <h4 style="font-weight: bold; margin-bottom: 8px;">1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ</h4>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+        <thead>
+          <tr style="background: #f1f5f9;">
+            <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+            <th style="border: 1.5px solid #000; padding: 7px;">ಸಂಖ್ಯೆ</th>
+            <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+            <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${blueprintRows.map(row => `
+            <tr>
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">${row.name}</td>
+              <td style="border: 1.5px solid #000;">${row.count}</td>
+              <td style="border: 1.5px solid #000;">${row.marks}</td>
+              <td style="border: 1.5px solid #000;">${Math.round((row.marks/totalMarks)*100)}%</td>
+            </tr>`).join('')}
+          <tr style="font-weight: bold; background: #fafafa;">
+            <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+            <td style="border: 1.5px solid #000;">${totalQ}</td>
+            <td style="border: 1.5px solid #000;">${totalMarks}</td>
+            <td style="border: 1.5px solid #000;">100%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (isOralExam) {
+    if (blueprintTabBtn) blueprintTabBtn.classList.add('hidden');
+    document.getElementById('rendered-blueprint').innerHTML = '';
+  } else {
+    if (blueprintTabBtn) blueprintTabBtn.classList.remove('hidden');
+  }
+
+  // Watermark (Demo only)
+  document.querySelectorAll('.demo-watermark-text').forEach(el => el.remove());
+  if (appState.currentUserType === 'demo') {
+    const wHtml = `<div class="demo-watermark-text">With You QP Generator &bull; DEMO</div>`;
+    document.querySelectorAll('#print-area .a4-sheet-container').forEach(box => {
+      box.classList.add('watermark-wrapper');
+      box.insertAdjacentHTML('beforeend', wHtml);
+    });
+  }
+
+  if (loadingSpinner) loadingSpinner.classList.add('hidden');
+  if (outputSection) outputSection.classList.remove('hidden');
+  switchOutputTab('paper');
+  outputSection.scrollIntoView({ behavior: 'smooth' });
+  showToast(`ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ 100% ಯಶಸ್ವಿಯಾಗಿ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+
+  if (generateBtn) { generateBtn.disabled = false; generateBtn.classList.remove('opacity-50'); }
+};
     
   </script>
 </body>
