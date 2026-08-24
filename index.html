@@ -4789,6 +4789,531 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   showToast(`ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (${actualCalculatedTotalMarks} ಅಂಕಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
+    /* ==========================================================================
+   ADVANCED ADMIN QUESTION EDITOR, PART 1 & 2 SELECTOR & BULK DELETE SUITE
+   ========================================================================== */
+
+let currentQFilterPart = 'all';
+
+// 1. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಮರುರಚನೆ (Part 1 & 2 Selector + Interactive Builder)
+window.buildAdminView = function() {
+  const adminView = document.getElementById('view-admin');
+  if (!adminView) return;
+
+  const mediums = getSystemMediums();
+  const subjects = getSystemSubjects();
+
+  adminView.innerHTML = `
+    <!-- Top Admin Bar -->
+    <div class="flex items-center justify-between bg-slate-900 text-white p-4 px-6 rounded-3xl shadow-md text-xs">
+      <div class="flex items-center space-x-2.5">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-extrabold text-sm">👑 Admin Master Control: <span class="text-emerald-400">WithYou2026</span></span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="activateAdminMasterGenerator()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-bolt text-amber-300"></i>
+          <span>Admin Master Generator (Full Access)</span>
+        </button>
+        <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1">
+          <i class="fa-solid fa-right-from-bracket"></i> <span>Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 📚 INTERACTIVE QUESTION BUILDER (WITH PART 1 & PART 2) -->
+    <div class="card-modern p-6 space-y-4">
+      <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 bg-emerald-50 text-emerald-700 rounded-2xl text-xl font-bold shadow-sm"><i class="fa-solid fa-circle-plus"></i></div>
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900">ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಸೇರಿಸಿ (Interactive Question Builder)</h3>
+            <p class="text-xs text-slate-500">ಮಾಧ್ಯಮ, ತರಗತಿ, ವಿಷಯ, ಭಾಗ (1 & 2) ಹಾಗೂ ಪಾಠವನ್ನು ಆರಿಸಿ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ</p>
+          </div>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">Google Firebase Synced</span>
+      </div>
+
+      <form id="form-add-custom-question" onsubmit="handleSaveCustomQuestion(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಮಾಧ್ಯಮ</label>
+              <button type="button" onclick="addNewMediumToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add</button>
+            </div>
+            <select id="qadd-medium" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">${mediums.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+            <select id="qadd-class" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}</select>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ವಿಷಯ</label>
+              <button type="button" onclick="addNewSubjectToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add</button>
+            </div>
+            <select id="qadd-subject" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-950">${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+          </div>
+
+          <!-- ಭಾಗ 1 & 2 SELECTOR -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಭಾಗ (Part)</label>
+            <select id="qadd-part" class="w-full px-3 py-2.5 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950">
+              <option value="ಭಾಗ 1" selected>ಭಾಗ 1 (Part 1)</option>
+              <option value="ಭಾಗ 2">ಭಾಗ 2 (Part 2)</option>
+              <option value="ಸಂಪೂರ್ಣ">ಸಂಪೂರ್ಣ ಪುಸ್ತಕ (Full)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು (Chapter Name) *</label>
+            <input type="text" id="qadd-chapter" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type) *</label>
+            <select id="qadd-type" onchange="handleQuestionTypeChangeInAdmin(this.value)" class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+              <option value="mcq" selected>೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
+              <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
+              <option value="match">೩. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match)</option>
+              <option value="vsa">೪. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA - 1 Mark)</option>
+              <option value="sa">೫. ೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA/LA)</option>
+              <option value="map_diagram">೬. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+            <select id="qadd-obj" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ">ಜ್ಞಾನ (Knowledge)</option><option value="ತಿಳುವಳಿಕೆ" selected>ತಿಳುವಳಿಕೆ (Understanding)</option><option value="ಅನ್ವಯ">ಅನ್ವಯ (Application)</option><option value="ಕೌಶಲ">ಕೌಶಲ (Skill)</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+            <select id="qadd-diff" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಸುಲಭ">ಸುಲಭ (Easy)</option><option value="ಸಾಧಾರಣ" selected>ಸಾಧಾರಣ (Average)</option><option value="ಕಠಿಣ">ಕಠಿಣ (Difficult)</option></select>
+          </div>
+        </div>
+
+        <div id="admin-q-dynamic-fields" class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3"></div>
+
+        <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3.5 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i> <span>ಈ ಪ್ರಶ್ನೋತ್ತರವನ್ನು ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಮಾಡಿ</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 📋 QUESTION REPOSITORY (WITH LIVE EDIT BUTTONS & BULK DELETE BY SUBJECT) -->
+    <div class="card-modern p-6 space-y-3">
+      <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
+        <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-emerald-600"></i>
+          <span>ಭಂಡಾರದಲ್ಲಿರುವ ಒಟ್ಟು ಪ್ರಶ್ನೆಗಳು (<span id="admin-qbank-total-count">0</span>)</span>
+        </h3>
+        <button onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1">
+          <i class="fa-solid fa-arrows-rotate"></i> <span>Sync Cloud</span>
+        </button>
+      </div>
+      <div id="admin-qbank-display-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- Teacher & School Registrations -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="card-modern p-6 space-y-4">
+        <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-emerald-600"></i> <span>ಶಿಕ್ಷಕರ ನೋಂದಣಿ (Teacher Registration)</span>
+        </h3>
+        <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3">
+          <div><label class="block text-xs font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label><input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div><label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label><input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+            <div><label class="block text-xs font-bold text-slate-700 mb-1">ಮೊಬೈಲ್ ನಂಬರ್ *</label><input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+          </div>
+          <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl text-xs shadow">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ಪಡೆಯಿರಿ</button>
+        </form>
+        <div class="mt-4 pt-3 border-t space-y-2">
+          <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">0</span>)</h4>
+          <div id="list-registered-teachers" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <div class="card-modern p-6 space-y-4">
+        <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-building-columns text-emerald-600"></i> <span>ಶಾಲೆ ನೋಂದಣಿ (School Registration)</span>
+        </h3>
+        <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3">
+          <div><label class="block text-xs font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು</label><input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div><label class="block text-xs font-bold text-slate-700 mb-1">DISE ಕೋಡ್</label><input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+            <div><label class="block text-xs font-bold text-slate-700 mb-1">HM ಹೆಸರು</label><input type="text" id="reg-school-hm" required placeholder="e.g. ಮಂಜುನಾಥ ಸ್ವಾಮಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+          </div>
+          <div><label class="block text-xs font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್</label><input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-xs" /></div>
+          <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl text-xs shadow">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ಪಡೆಯಿರಿ</button>
+        </form>
+        <div class="mt-4 pt-3 border-t space-y-2">
+          <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">0</span>)</h4>
+          <div id="list-registered-schools" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    handleQuestionTypeChangeInAdmin('mcq');
+    renderCustomQuestionList();
+    renderRegisteredTeachers();
+    renderRegisteredSchools();
+    updateAdminStats();
+  }, 50);
+};
+
+// 2. ಪ್ರಶ್ನೆಗಳ ಪಟ್ಟಿಯಲ್ಲಿ ಸ್ಪಷ್ಟವಾದ [ ✏️ Edit ] ಮತ್ತು [ 🗑️ ಈ ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಅಳಿಸಿ ] ಬಟನ್‌ಗಳು
+window.renderCustomQuestionList = function() {
+  const container = document.getElementById('admin-qbank-display-list');
+  const countEl = document.getElementById('admin-qbank-total-count');
+  if (countEl) countEl.innerText = appState.qbank.length;
+  if (!container) return;
+
+  const allSubjects = getSystemSubjects();
+
+  // ಫಿಲ್ಟರ್ ಅನ್ವಯ
+  let filteredList = appState.qbank.filter(q => {
+    const matchClass = (currentQFilterClass === 'all' || q.grade === currentQFilterClass);
+    const matchSubj = (currentQFilterSubject === 'all' || q.subject === currentQFilterSubject);
+    const matchPart = (currentQFilterPart === 'all' || q.part === currentQFilterPart || !q.part);
+    const matchType = (currentQFilterType === 'all' || q.type === currentQFilterType);
+    const matchQuery = (!currentQSearchQuery || q.q.toLowerCase().includes(currentQSearchQuery.toLowerCase()) || q.chapter.toLowerCase().includes(currentQSearchQuery.toLowerCase()));
+    return matchClass && matchSubj && matchPart && matchType && matchQuery;
+  });
+
+  container.innerHTML = `
+    <!-- SMART FILTERS & BULK DELETE BY SUBJECT BAR -->
+    <div class="p-3.5 bg-slate-100 border border-slate-200 rounded-2xl space-y-2.5 text-xs mb-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="font-extrabold text-slate-800 flex items-center gap-1.5">
+          <i class="fa-solid fa-filter text-emerald-600"></i> <span>ವಿಷಯ & ಭಾಗ ಫಿಲ್ಟರ್:</span>
+        </span>
+
+        <!-- ಈ ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಒಟ್ಟಿಗೆ ಅಳಿಸುವ ಬಟನ್ -->
+        ${currentQFilterSubject !== 'all' ? `
+          <button type="button" onclick="deleteEntireSubjectQuestions('${currentQFilterSubject}')" class="bg-red-600 hover:bg-red-700 text-white font-extrabold px-3 py-1.5 rounded-xl shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i> <span>'${currentQFilterSubject.split('(')[0].trim()}' ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಒಟ್ಟಿಗೆ ಅಳಿಸಿ (Delete All)</span>
+          </button>
+        ` : ''}
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div>
+          <select onchange="setQBankFilter('class', this.value)" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none">
+            <option value="all" ${currentQFilterClass==='all'?'selected':''}>ಎಲ್ಲಾ ತರಗತಿಗಳು (All)</option>
+            ${ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${currentQFilterClass===c.val?'selected':''}>${c.label}</option>`).join('')}
+          </select>
+        </div>
+
+        <div>
+          <select onchange="setQBankFilter('subject', this.value)" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-emerald-950 focus:outline-none">
+            <option value="all" ${currentQFilterSubject==='all'?'selected':''}>ಎಲ್ಲಾ ವಿಷಯಗಳು (All)</option>
+            ${allSubjects.map(s => `<option value="${s}" ${currentQFilterSubject===s?'selected':''}>${s.split('(')[0]}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- ಭಾಗ 1 / ಭಾಗ 2 ಫಿಲ್ಟರ್ -->
+        <div>
+          <select onchange="setQBankFilter('part', this.value)" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-indigo-950 focus:outline-none">
+            <option value="all" ${currentQFilterPart==='all'?'selected':''}>ಎಲ್ಲಾ ಭಾಗಗಳು (All Parts)</option>
+            <option value="ಭಾಗ 1" ${currentQFilterPart==='ಭಾಗ 1'?'selected':''}>ಭಾಗ 1 (Part 1)</option>
+            <option value="ಭಾಗ 2" ${currentQFilterPart==='ಭಾಗ 2'?'selected':''}>ಭಾಗ 2 (Part 2)</option>
+            <option value="ಸಂಪೂರ್ಣ" ${currentQFilterPart==='ಸಂಪೂರ್ಣ'?'selected':''}>ಸಂಪೂರ್ಣ ಪುಸ್ತಕ</option>
+          </select>
+        </div>
+
+        <div>
+          <select onchange="setQBankFilter('type', this.value)" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-semibold focus:outline-none">
+            <option value="all" ${currentQFilterType==='all'?'selected':''}>ಎಲ್ಲಾ ಪ್ರಕಾರಗಳು</option>
+            <option value="mcq" ${currentQFilterType==='mcq'?'selected':''}>MCQ</option>
+            <option value="blanks" ${currentQFilterType==='blanks'?'selected':''}>ಬಿಟ್ಟ ಸ್ಥಳ</option>
+            <option value="match" ${currentQFilterType==='match'?'selected':''}>ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</option>
+            <option value="vsa" ${currentQFilterType==='vsa'?'selected':''}>೧ ಅಂಕ</option>
+            <option value="sa" ${currentQFilterType==='sa'?'selected':''}>೨ ಮತ್ತು ೩ ಅಂಕ</option>
+            <option value="map_diagram" ${currentQFilterType==='map_diagram'?'selected':''}>ಚಿತ್ರ / ನಕ್ಷೆ</option>
+          </select>
+        </div>
+
+        <div>
+          <input type="text" onkeyup="setQBankFilter('search', this.value)" value="${escapeHtml(currentQSearchQuery)}" placeholder="ಹುಡುಕಿ..." class="w-full p-2 bg-white border border-slate-300 rounded-xl focus:outline-none" />
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTIONS LIST WITH EXPLICIT EDIT BUTTONS -->
+    <div class="space-y-2.5">
+      ${filteredList.length === 0 ? `
+        <div class="p-6 bg-slate-50 border rounded-2xl text-center"><p class="text-xs font-bold text-slate-700">ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ. ಮೇಲಿನ ಫಾರ್ಮ್ ಬಳಸಿ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ.</p></div>
+      ` : filteredList.map((q, idx) => `
+        <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1.5 hover:border-emerald-400 transition">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[10px] uppercase">${q.type} (${q.marks}M)</span>
+              <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded font-bold text-[10px]">${q.part || 'ಭಾಗ 1'}</span>
+              <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+              <span class="text-slate-500 font-semibold">&bull; ${q.chapter}</span>
+            </div>
+            
+            <!-- ✏️ EDIT BUTTON & 🗑️ DELETE BUTTON -->
+            <div class="flex items-center space-x-1.5">
+              <button type="button" onclick="openAdminQuestionEditModal('${q.id}')" title="ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ ಮಾಡಿ" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow transition">
+                <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+              </button>
+              <button type="button" onclick="deleteQuestionFromBank('${q.id}')" title="ಪ್ರಶ್ನೆ ಅಳಿಸಿ" class="bg-slate-200 hover:bg-red-600 hover:text-white text-slate-600 px-2 py-1 rounded-lg text-xs transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="font-bold text-slate-800 text-[13px] pt-0.5">
+            ${idx+1}. ${escapeHtml(q.q)}
+          </div>
+
+          ${q.image ? `<div class="py-1"><img src="${q.image}" class="h-20 rounded border shadow" /></div>` : ''}
+
+          ${q.type === 'mcq' ? `
+            <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-600 pl-3">
+              <div>(A) ${q.a}</div><div>(B) ${q.b}</div><div>(C) ${q.c}</div><div>(D) ${q.d}</div>
+            </div>
+          ` : ''}
+
+          ${q.type === 'match' && q.matchPairs ? `
+            <div class="text-[11px] text-slate-600 pl-3 space-y-0.5">
+              ${q.matchPairs.map(m => `<div>• ${m.a} ➔ <b>${m.b}</b></div>`).join('')}
+            </div>
+          ` : ''}
+
+          <div class="text-emerald-800 text-[11px] pt-0.5">
+            <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || 'ಹೊಂದಿಕೆ ಉತ್ತರ')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+};
+
+window.setQBankFilter = function(filterType, value) {
+  if (filterType === 'class') currentQFilterClass = value;
+  if (filterType === 'subject') currentQFilterSubject = value;
+  if (filterType === 'part') currentQFilterPart = value;
+  if (filterType === 'type') currentQFilterType = value;
+  if (filterType === 'search') currentQSearchQuery = value;
+  renderCustomQuestionList();
+};
+
+// 3. ಒಂದು ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಒಟ್ಟಿಗೆ ಅಳಿಸುವ ಫಂಕ್ಷನ್ (Bulk Delete by Subject)
+window.deleteEntireSubjectQuestions = function(subjectName) {
+  const toDelete = appState.qbank.filter(q => q.subject === subjectName);
+  if (toDelete.length === 0) return;
+
+  if (confirm(`⚠️ ಎಚ್ಚರಿಕೆ!\n\n'${subjectName.split('(')[0].trim()}' ವಿಷಯದ ಎಲ್ಲಾ ${toDelete.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ಅಳಿಸಬೇಕೇ?`)) {
+    appState.qbank = appState.qbank.filter(q => q.subject !== subjectName);
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    pushToFirebaseCloud();
+    showToast(`✅ '${subjectName.split('(')[0]}' ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಅಳಿಸಲಾಗಿದೆ!`, 'info');
+  }
+};
+
+// 4. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ ಪಾಪ್‌ಅಪ್ (Edit Question Modal in Admin)
+window.openAdminQuestionEditModal = function(qId) {
+  const q = appState.qbank.find(item => item.id === qId);
+  if (!q) return;
+
+  uploadedImageBase64 = q.image || '';
+
+  let modal = document.getElementById('admin-edit-q-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'admin-edit-q-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-amber-50 text-amber-700 rounded-xl font-bold"><i class="fa-solid fa-pen-to-square"></i></div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ (Edit Question)</h3>
+            <p class="text-[11px] text-slate-500">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]} &bull; ${q.type.toUpperCase()}</p>
+          </div>
+        </div>
+        <button onclick="closeAdminQuestionEditModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="form-admin-edit-modal" onsubmit="saveAdminQuestionEditSubmit(event, '${q.id}')" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಭಾಗ (Part)</label>
+            <select id="edit-q-part" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950">
+              <option value="ಭಾಗ 1" ${q.part==='ಭಾಗ 1'?'selected':''}>ಭಾಗ 1 (Part 1)</option>
+              <option value="ಭಾಗ 2" ${q.part==='ಭಾಗ 2'?'selected':''}>ಭಾಗ 2 (Part 2)</option>
+              <option value="ಸಂಪೂರ್ಣ" ${q.part==='ಸಂಪೂರ್ಣ'?'selected':''}>ಸಂಪೂರ್ಣ ಪುಸ್ತಕ</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು *</label>
+            <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+          <input type="text" id="edit-q-text" value="${escapeHtml(q.q)}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold" />
+        </div>
+
+        ${q.type === 'mcq' ? `
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (A)</label><input type="text" id="edit-opt-a" value="${escapeHtml(q.a || '')}" required class="w-full p-2 border rounded-lg" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (B)</label><input type="text" id="edit-opt-b" value="${escapeHtml(q.b || '')}" required class="w-full p-2 border rounded-lg" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (C)</label><input type="text" id="edit-opt-c" value="${escapeHtml(q.c || '')}" required class="w-full p-2 border rounded-lg" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (D)</label><input type="text" id="edit-opt-d" value="${escapeHtml(q.d || '')}" required class="w-full p-2 border rounded-lg" /></div>
+          </div>
+        ` : ''}
+
+        ${q.type === 'match' && q.matchPairs ? `
+          <div class="space-y-1">
+            <label class="font-bold text-slate-700">'ಅ' ಮತ್ತು 'ಬ' ಗುಂಪು:</label>
+            <div class="grid grid-cols-2 gap-2">
+              ${q.matchPairs.map((m, i) => `
+                <input type="text" id="edit-match-a-${i}" value="${escapeHtml(m.a)}" required class="p-2 border rounded-lg bg-slate-50" />
+                <input type="text" id="edit-match-b-${i}" value="${escapeHtml(m.b)}" required class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${q.type === 'map_diagram' ? `
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ ಬದಲಿಸಿ:</label>
+            <input type="file" accept="image/*" onchange="previewQuestionImageUpload(this)" class="w-full p-2 border rounded-xl bg-slate-50 text-xs" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು:</label>
+            <input type="text" id="edit-q-items" value="${escapeHtml(q.items || '')}" class="w-full p-2 border rounded-xl" />
+          </div>
+        ` : ''}
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಉತ್ತರ / ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ *</label>
+          <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50/50 border border-emerald-300 rounded-xl font-semibold">${escapeHtml(q.ans || '')}</textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="closeAdminQuestionEditModal()" class="px-4 py-2 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-5 py-2 rounded-xl font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow">ಸೇವ್ ಮಾಡಿ</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+window.closeAdminQuestionEditModal = function() {
+  document.getElementById('admin-edit-q-modal')?.classList.add('hidden');
+};
+
+window.saveAdminQuestionEditSubmit = function(e, qId) {
+  e.preventDefault();
+  const q = appState.qbank.find(item => item.id === qId);
+  if (!q) return;
+
+  q.part = document.getElementById('edit-q-part').value;
+  q.chapter = document.getElementById('edit-q-chapter').value.trim();
+  q.q = document.getElementById('edit-q-text').value.trim();
+  q.ans = document.getElementById('edit-q-ans').value.trim();
+
+  if (q.type === 'mcq') {
+    q.a = document.getElementById('edit-opt-a').value.trim();
+    q.b = document.getElementById('edit-opt-b').value.trim();
+    q.c = document.getElementById('edit-opt-c').value.trim();
+    q.d = document.getElementById('edit-opt-d').value.trim();
+  } else if (q.type === 'match' && q.matchPairs) {
+    q.matchPairs.forEach((m, i) => {
+      m.a = document.getElementById(`edit-match-a-${i}`).value.trim();
+      m.b = document.getElementById(`edit-match-b-${i}`).value.trim();
+    });
+  } else if (q.type === 'map_diagram') {
+    q.items = document.getElementById('edit-q-items').value.trim();
+    if (uploadedImageBase64) q.image = uploadedImageBase64;
+  }
+
+  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+  renderCustomQuestionList();
+  renderChapterCheckboxes();
+  pushToFirebaseCloud();
+  closeAdminQuestionEditModal();
+  showToast('✅ ಪ್ರಶ್ನೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ತಿದ್ದುಪಡಿ ಮಾಡಲಾಗಿದೆ!', 'success');
+};
+
+// 5. ಪ್ರಶ್ನೆ ಸೇವ್ ಮಾಡುವಾಗ 'ಭಾಗ' (Part 1 / Part 2) ಸೇರ್ಪಡೆ
+window.handleSaveCustomQuestion = function(e) {
+  e.preventDefault();
+  const medium = document.getElementById('qadd-medium').value;
+  const grade = document.getElementById('qadd-class').value;
+  const subject = document.getElementById('qadd-subject').value;
+  const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('qadd-chapter').value.trim();
+  const type = document.getElementById('qadd-type').value;
+  const obj = document.getElementById('qadd-obj').value;
+  const diff = document.getElementById('qadd-diff').value;
+
+  if (!chapter) return showToast('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.', 'error');
+
+  let newQ = { id: 'q_' + Date.now(), medium, grade, subject, part, chapter, type, obj, diff };
+
+  if (type === 'mcq') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.a = document.getElementById('qadd-opt-a').value.trim();
+    newQ.b = document.getElementById('qadd-opt-b').value.trim();
+    newQ.c = document.getElementById('qadd-opt-c').value.trim();
+    newQ.d = document.getElementById('qadd-opt-d').value.trim();
+    const correctOpt = document.getElementById('qadd-correct-opt').value;
+    newQ.ans = `(${correctOpt}) ${newQ[correctOpt.toLowerCase()]}`;
+    newQ.marks = 1;
+  } else if (type === 'blanks') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.marks = 1;
+  } else if (type === 'match') {
+    newQ.q = "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ";
+    newQ.marks = 4;
+    newQ.matchPairs = [
+      { a: document.getElementById('match-a-1').value.trim(), b: document.getElementById('match-b-1').value.trim() },
+      { a: document.getElementById('match-a-2').value.trim(), b: document.getElementById('match-b-2').value.trim() },
+      { a: document.getElementById('match-a-3').value.trim(), b: document.getElementById('match-b-3').value.trim() },
+      { a: document.getElementById('match-a-4').value.trim(), b: document.getElementById('match-b-4').value.trim() }
+    ];
+  } else if (type === 'vsa' || type === 'sa') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.marks = parseInt(document.getElementById('qadd-marks').value) || (type === 'sa' ? 2 : 1);
+  } else if (type === 'map_diagram') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.items = document.getElementById('qadd-items').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.image = uploadedImageBase64;
+    newQ.marks = 4;
+  }
+
+  appState.qbank.unshift(newQ);
+  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+  showToast('🎉 ಪ್ರಶ್ನೆ ಸೇವ್ ಆಗಿದೆ!', 'success');
+  renderCustomQuestionList();
+  renderChapterCheckboxes();
+  pushToFirebaseCloud();
+  handleQuestionTypeChangeInAdmin(type);
+};
   </script>
 </body>
 </html>
