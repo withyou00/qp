@@ -1487,6 +1487,374 @@
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+/* ==========================================================================
+   GUARANTEED GENERATOR ENGINE (Oral 10M + Written 20M Zero-Fail Assembler)
+   ========================================================================== */
+
+window.generateExamPackageFromBank = function() {
+  const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+  const examType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const totalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+  const isOralExam = examType.includes('ಮೌಖಿಕ');
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+  if (selectedChapters.length === 0) {
+    selectedChapters = getSyllabusChapters(grade, subject);
+  }
+
+  // ಸಕ್ರಿಯ ಪರೀಕ್ಷಾ ಮೆಟಾಡೇಟಾ
+  appState.activeExamMeta = { schoolName, grade, subject, examType, totalMarks, examDate, isOralExam };
+
+  let teacherHeaderSpan = '';
+  let teacherKeySpan = '';
+  if (appState.currentUserType === 'teacher') {
+    const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
+    if (teacher) {
+      teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+      teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+    }
+  }
+
+  // =========================================================================
+  // 1. ಮೌಖಿಕ ಪರೀಕ್ಷೆ ಜನರೇಟರ್ (ORAL EXAM - STRICT 10 OR 20 MARKS)
+  // =========================================================================
+  if (isOralExam) {
+    const sec1Count = Math.ceil(totalMarks / 2);
+    const sec2Count = totalMarks - sec1Count;
+
+    let oralQuestions = [];
+    selectedChapters.forEach((chap, i) => {
+      const cleanChap = chap.replace(/^[0-9\.\s]+/, '');
+      oralQuestions.push({
+        q: `${cleanChap} ಘಟಕಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಮುಖ ಪರಿಕಲ್ಪನೆಯನ್ನು ನಿಮ್ಮ ಮಾತುಗಳಲ್ಲಿ ವಿವರಿಸಿ.`,
+        ans: "ವಿಷಯದ ಸ್ಪಷ್ಟತೆ, ನಿರರ್ಗಳತೆ ಮತ್ತು ಸರಿಯಾದ ವಿವರಣೆಗೆ ಪೂರ್ಣ ಅಂಕಗಳು.",
+        marks: 1, obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ", type: "vsa"
+      });
+      oralQuestions.push({
+        q: `${cleanChap} ಪಾಠದಲ್ಲಿ ಬರುವ ಮುಖ್ಯ ಅಂಶ ಮತ್ತು ಅದರ ಮಹತ್ವವೇನು?`,
+        ans: "ಪಠ್ಯಪುಸ್ತಕದ ನಿಖರ ವ್ಯಾಖ್ಯಾನ ಮತ್ತು ಮುಖ್ಯ ಅಂಶಗಳ ವಿವರಣೆಗೆ ಅಂಕಗಳು.",
+        marks: 1, obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ", type: "sa"
+      });
+    });
+
+    const sec1List = oralQuestions.slice(0, sec1Count);
+    const sec2List = oralQuestions.slice(sec1Count, sec1Count + sec2Count);
+
+    appState.activeGeneratedQuestions = [...sec1List, ...sec2List];
+
+    let qNum = 1, kNum = 1;
+
+    // ಮೌಖಿಕ ಪತ್ರಿಕೆ ರೆಂಡರಿಂಗ್
+    document.getElementById('rendered-paper').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm; line-height: 1.8; font-size: 14.5px;">
+        <div style="text-align: center; margin-bottom: 18px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>ಅಂಕ : ${totalMarks}</span>${teacherHeaderSpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+          <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin: 0 0 10px 0;">ಮೌಖಿಕ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (Oral Examination)</h3>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+            <span>I. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೇರವಾಗಿ ಮೌಖಿಕವಾಗಿ ಉತ್ತರಿಸಿ:</span>
+            <span>1x${sec1List.length}=${sec1List.length}</span>
+          </div>
+          <div>${sec1List.map(item => `
+            <div style="margin-bottom: 12px; font-weight: 600;">${qNum++}. ${item.q}</div>
+          `).join('')}</div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+            <span>II. ಈ ಕೆಳಗಿನ ಪರಿಕಲ್ಪನೆಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತವಾಗಿ ಮೌಖಿಕವಾಗಿ ವಿವರಿಸಿ:</span>
+            <span>1x${sec2List.length}=${sec2List.length}</span>
+          </div>
+          <div>${sec2List.map(item => `
+            <div style="margin-bottom: 12px; font-weight: 600;">${qNum++}. ${item.q}</div>
+          `).join('')}</div>
+        </div>
+      </div>
+    `;
+
+    // ಮೌಖಿಕ ಉತ್ತರ ಪತ್ರಿಕೆ ರೆಂಡರಿಂಗ್
+    document.getElementById('rendered-key').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm; line-height: 1.8; font-size: 14.5px;">
+        <div style="text-align: center; margin-bottom: 18px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>ಅಂಕ : ${totalMarks}</span>${teacherKeySpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+          <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin: 0 0 10px 0;">ಮೌಖಿಕ ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">I. ನೇರ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳ ನಿರೀಕ್ಷಿತ ಉತ್ತರಗಳು:</div>
+          <div>${sec1List.map(item => `<div style="margin-bottom: 8px;"><b>${kNum++}.</b> ${item.ans}</div>`).join('')}</div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">II. ವಿವರಣಾತ್ಮಕ ಮೌಖಿಕ ಉತ್ತರಗಳು / ಮಾನದಂಡ:</div>
+          <div>${sec2List.map(item => `<div style="margin-bottom: 8px;"><b>${kNum++}.</b> ${item.ans}</div>`).join('')}</div>
+        </div>
+      </div>
+    `;
+
+    // ಮೌಖಿಕ ಪರೀಕ್ಷೆಗೆ ನೀಲನಕ್ಷೆ ಹೈಡ್ ಮಾಡಿ
+    document.getElementById('tab-btn-blueprint')?.classList.add('hidden');
+    document.getElementById('rendered-blueprint').innerHTML = '';
+
+    // ಔಟ್‌ಪುಟ್ ತೋರಿಸಿ
+    document.getElementById('output-section')?.classList.remove('hidden');
+    switchOutputTab('paper');
+    document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
+    showToast(`ಮೌಖಿಕ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (${totalMarks} ಅಂಕಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+    return;
+  }
+
+  // =========================================================================
+  // 2. ಲಿಖಿತ ಪರೀಕ್ಷೆ ಜನರೇಟರ್ (WRITTEN EXAM - GUARANTEED 20/40/80 MARKS)
+  // =========================================================================
+  const isEnglishSubject = subject.toLowerCase().includes('english');
+  const bankKey = isEnglishSubject ? "english_10" : "social_6";
+  const defaultBank = DSERT_QUESTION_BANK[bankKey] || DSERT_QUESTION_BANK["social_6"];
+
+  // ಭಂಡಾರದಲ್ಲಿ ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಬಳಸಿ, ಇಲ್ಲದಿದ್ದರೆ DSERT ಅಧಿಕೃತ ಪ್ರಶ್ನೆಗಳನ್ನು ಬಳಸಿ
+  const customPool = appState.qbank.filter(q => q.grade === String(grade) && q.subject === subject);
+  
+  let mcqs = customPool.filter(q => q.type === 'mcq');
+  if (mcqs.length === 0) mcqs = defaultBank.mcqs.slice(0, 4);
+
+  let blanks = customPool.filter(q => q.type === 'blanks');
+  if (blanks.length === 0) blanks = defaultBank.blanks.slice(0, 4);
+
+  let match = customPool.filter(q => q.type === 'match');
+  if (match.length === 0) match = defaultBank.match.slice(0, 1);
+
+  let vsa = customPool.filter(q => q.type === 'vsa');
+  if (vsa.length === 0) vsa = defaultBank.vsa.slice(0, 2);
+
+  let sa = customPool.filter(q => q.type === 'sa');
+  if (sa.length === 0) sa = defaultBank.sa.slice(0, 3);
+
+  const activeQuestions = [...mcqs, ...blanks, ...match, ...vsa, ...sa];
+  appState.activeGeneratedQuestions = activeQuestions;
+
+  let qNum = 1, kNum = 1;
+  let paperSections = [], keySections = [];
+
+  // 1. MCQs (1x4=4)
+  paperSections.push(`
+    <div style="margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+        <span>I. ${isEnglishSubject ? 'Choose the correct answer for each of the following:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:'}</span>
+        <span>1x${mcqs.length}=${mcqs.length}</span>
+      </div>
+      <div>${mcqs.map((m, idx) => `
+        <div style="margin-bottom: 8px;">
+          <div style="font-weight: 600; display: flex; justify-content: space-between;">
+            <span>${qNum++}. ${escapeHtml(m.q)}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+            <div>(A) ${m.a}</div><div>(B) ${m.b}</div><div>(C) ${m.c}</div><div>(D) ${m.d}</div>
+          </div>
+        </div>
+      `).join('')}</div>
+    </div>
+  `);
+  keySections.push(`
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">I. ${isEnglishSubject ? 'MCQ Key:' : 'ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:'}</div>
+      <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${m.ans}</div>`).join('')}</div>
+    </div>
+  `);
+
+  // 2. Blanks (1x4=4)
+  paperSections.push(`
+    <div style="margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+        <span>II. ${isEnglishSubject ? 'Fill in the blanks with suitable words:' : 'ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:'}</span>
+        <span>1x${blanks.length}=${blanks.length}</span>
+      </div>
+      <div>${blanks.map((b, idx) => `
+        <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+          <span style="font-weight: 600;">${qNum++}. ${escapeHtml(b.q)}</span>
+          <button type="button" onclick="openPopupQuestionEditor(${mcqs.length + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+          </button>
+        </div>
+      `).join('')}</div>
+    </div>
+  `);
+  keySections.push(`
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">II. ${isEnglishSubject ? 'Blanks Key:' : 'ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:'}</div>
+      <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${b.ans}</div>`).join('')}</div>
+    </div>
+  `);
+
+  // 3. Match (1x4=4)
+  const mItem = match[0];
+  const mQNum = qNum++;
+  const mKNum = kNum++;
+  paperSections.push(`
+    <div style="margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+        <span>III. ${isEnglishSubject ? 'Match the following:' : 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:'}</span>
+        <span>1x4=4</span>
+      </div>
+      <div>
+        <div style="font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between;">
+          <span>${mQNum}. ${isEnglishSubject ? 'Match Column A with Column B:' : "'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:"}</span>
+          <button type="button" onclick="openPopupQuestionEditor(${mcqs.length + blanks.length})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+          </button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+          <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column A' : "'ಅ' ಗುಂಪು"}</div>${mItem.matchPairs ? mItem.matchPairs.map((p, i) => `<div>(${String.fromCharCode(97+i)}) ${p.a}</div>`).join('') : mItem.map((p,i)=>`<div>(${String.fromCharCode(97+i)}) ${p.a}</div>`).join('')}</div>
+          <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column B' : "'ಬ' ಗುಂಪು"}</div>${mItem.matchPairs ? mItem.matchPairs.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${p.b}</div>`).join('') : mItem.map((p,i)=>`<div>(${String.fromCharCode(65+i)}) ${p.b}</div>`).join('')}</div>
+        </div>
+      </div>
+    </div>
+  `);
+  keySections.push(`
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">III. ${isEnglishSubject ? 'Match Key:' : 'ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:'}</div>
+      <div style="padding-left: 10px; font-size: 13.5px;">
+        <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
+        <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
+          <tbody>${(mItem.matchPairs || mItem).map((p, i) => `
+            <tr style="border: none;">
+              <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
+              <td style="padding: 2px 15px 2px 0; border: none;">${p.a}</td>
+              <td style="padding: 2px 15px 2px 0; border: none; color: #16a34a; font-weight: bold;">➔</td>
+              <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${p.b}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `);
+
+  // 4. VSA (1x2=2)
+  paperSections.push(`
+    <div style="margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+        <span>IV. ${isEnglishSubject ? 'Answer in a sentence each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+        <span>1x${vsa.length}=${vsa.length}</span>
+      </div>
+      <div>${vsa.map((v, idx) => `
+        <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+          <span style="font-weight: 600;">${qNum++}. ${escapeHtml(v.q)}</span>
+          <button type="button" onclick="openPopupQuestionEditor(${mcqs.length + blanks.length + 1 + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+          </button>
+        </div>
+      `).join('')}</div>
+    </div>
+  `);
+  keySections.push(`
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">IV. ${isEnglishSubject ? 'VSA Key:' : 'ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:'}</div>
+      <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${v.ans}</div>`).join('')}</div>
+    </div>
+  `);
+
+  // 5. SA (2x3=6)
+  paperSections.push(`
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+        <span>V. ${isEnglishSubject ? 'Answer in 2-3 sentences each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+        <span>2x${sa.length}=${sa.length * 2}</span>
+      </div>
+      <div>${sa.map((s, idx) => `
+        <div style="margin-bottom: 6px; display: flex; justify-content: space-between;">
+          <span style="font-weight: 600;">${qNum++}. ${escapeHtml(s.q)}</span>
+          <button type="button" onclick="openPopupQuestionEditor(${mcqs.length + blanks.length + 1 + vsa.length + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+            <i class="fa-solid fa-pen-to-square"></i> Edit
+          </button>
+        </div>
+      `).join('')}</div>
+    </div>
+  `);
+  keySections.push(`
+    <div style="margin-bottom: 12px;">
+      <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">V. ${isEnglishSubject ? 'Short Answer Key:' : 'ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:'}</div>
+      <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${s.ans}</div>`).join('')}</div>
+    </div>
+  `);
+
+  // Render Paper HTML
+  document.getElementById('rendered-paper').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+          <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+          <span>Max Marks: ${totalMarks}</span>${teacherHeaderSpan}<span>Date: ${examDate}</span>
+        </div>
+        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+      </div>
+      <div>${paperSections.join('')}</div>
+    </div>
+  `;
+
+  // Render Key HTML
+  document.getElementById('rendered-key').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm;">
+      <div style="text-align: center; margin-bottom: 14px;">
+        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+          <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+          <span>Marks: ${totalMarks}</span>${teacherKeySpan}<span>Date: ${examDate}</span>
+        </div>
+        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+        <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">Scheme of Valuation / ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+      </div>
+      <div>${keySections.join('')}</div>
+    </div>
+  `;
+
+  // Render 3 Exact Blueprints
+  document.getElementById('tab-btn-blueprint')?.classList.remove('hidden');
+  renderExactThreeBlueprints(activeQuestions, totalMarks);
+
+  // Watermark only for demo
+  document.querySelectorAll('.demo-watermark-text').forEach(el => el.remove());
+  if (appState.currentUserType === 'demo') {
+    const wHtml = `<div class="demo-watermark-text">With You QP Generator &bull; DEMO</div>`;
+    document.querySelectorAll('#print-area .a4-sheet-container').forEach(box => {
+      box.classList.add('watermark-wrapper');
+      box.insertAdjacentHTML('beforeend', wHtml);
+    });
+  }
+
+  document.getElementById('output-section')?.classList.remove('hidden');
+  switchOutputTab('paper');
+  document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
+  showToast('ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಕ್ಷಣಾರ್ಧದಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ!', 'success');
+};
+    
   </script>
 </body>
 </html>
