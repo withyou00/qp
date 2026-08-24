@@ -5021,6 +5021,40 @@ setTimeout(() => {
 </body>
 </html>
 
+/* ==========================================================================
+   AUTOMATIC DOM DEDUPLICATOR (Removes All Duplicate Headers & Sections)
+   ========================================================================== */
+
+(function autoCleanDuplicateDOM() {
+  function pruneDuplicates(selector) {
+    const els = document.querySelectorAll(selector);
+    for (let i = 1; i < els.length; i++) {
+      els[i].remove();
+    }
+  }
+
+  function cleanAllDuplicates() {
+    // ಹೆಚ್ಚುವರಿ ಎಲ್ಲಾ ಡೂಪ್ಲಿಕೇಟ್ ಹೆಡರ್ ಮತ್ತು ಮೇನ್ ಟ್ಯಾಗ್‌ಗಳನ್ನು ಡಿಲೀಟ್ ಮಾಡಿ
+    pruneDuplicates('header');
+    pruneDuplicates('main');
+    pruneDuplicates('#view-dashboard');
+    pruneDuplicates('#view-profile');
+    pruneDuplicates('#view-generator');
+    pruneDuplicates('#view-admin');
+    pruneDuplicates('#toast-container');
+    pruneDuplicates('#self-reg-modal');
+    pruneDuplicates('#admin-login-modal');
+    pruneDuplicates('#forgot-key-modal');
+  }
+
+  // ತಕ್ಷಣ ರನ್ ಮಾಡಿ
+  cleanAllDuplicates();
+
+  // ಪೇಜ್ ಲೋಡ್ ಆದ ಮೇಲೂ ಸ್ವಚ್ಛಗೊಳಿಸಿ
+  window.addEventListener('DOMContentLoaded', cleanAllDuplicates);
+  setTimeout(cleanAllDuplicates, 50);
+  setTimeout(cleanAllDuplicates, 300);
+})();
     
   </script>
 </body>
