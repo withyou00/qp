@@ -2211,6 +2211,13 @@ window.deleteQuestionFromBank = function(qId) {
 setTimeout(() => {
   fetchQuestionsFromFirebase();
 }, 150);
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
     
   </script>
 </body>
