@@ -2757,136 +2757,88 @@ window.handleSaveCustomQuestion = function(e) {
   handleQuestionTypeChangeInAdmin(type);
 };
 /* ==========================================================================
-   ADVANCED KANNADA LANGUAGE SUITE (Opposite, Synonym, Own Sentence, 5-Line Poem)
+   5-LINE POEM QUESTION & 5-LINE ANSWER BOX ENGINE FOR QUESTION BUILDER
    ========================================================================== */
 
-// 1. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡ್ರಾಪ್‌ಡೌನ್ ಅಪ್‌ಡೇಟ್
-(function injectKannadaLanguageQuestionTypes() {
-  setTimeout(() => {
-    const qTypeSelect = document.getElementById('qadd-type');
-    if (qTypeSelect) {
-      qTypeSelect.innerHTML = `
-        <option value="mcq" selected>೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
-        <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
-        <option value="match">೩. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match the following)</option>
-        <option value="opposite">೪. ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Opposites)</option>
-        <option value="synonym">೫. ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Synonyms)</option>
-        <option value="own_sentence">೬. ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ (Own Sentence)</option>
-        <option value="vsa">೭. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA - 1 Mark)</option>
-        <option value="sa">೮. ೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA/LA)</option>
-        <option value="poem_completion">೯. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (೫ ಸಾಲುಗಳ ಪದ್ಯ)</option>
-        <option value="map_diagram">೧೦. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
-      `;
-    }
+// 1. ಸ್ಕ್ರೀನ್‌ಶಾಟ್‌ನಲ್ಲಿರುವ 'ಪ್ರಶ್ನೆ ಪ್ರಕಾರ' ಡ್ರಾಪ್‌ಡೌನ್‌ಗೆ 'ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ' ಕಡ್ಡಾಯ ಸೇರ್ಪಡೆ
+function forceUpdateAdminQuestionTypeDropdown() {
+  const qTypeSelect = document.getElementById('qadd-type');
+  if (qTypeSelect) {
+    qTypeSelect.innerHTML = `
+      <option value="mcq">೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
+      <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
+      <option value="match">೩. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match the following)</option>
+      <option value="poem_completion" selected>೪. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (೪-೫ ಸಾಲುಗಳ ಪದ್ಯ & ಉತ್ತರ)</option>
+      <option value="opposite">೫. ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Opposites)</option>
+      <option value="synonym">೬. ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Synonyms)</option>
+      <option value="own_sentence">೭. ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ (Own Sentence)</option>
+      <option value="vsa">೮. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA - 1 Mark)</option>
+      <option value="sa">೯. ೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA/LA)</option>
+      <option value="map_diagram">೧೦. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
+    `;
+    handleQuestionTypeChangeInAdmin('poem_completion');
+  }
+}
 
-    // ಜನರೇಟರ್ ಚೆಕ್‌ಬಾಕ್ಸ್ ಅಪ್‌ಡೇಟ್
-    const formatContainer = document.querySelector('#view-generator .grid.grid-cols-2');
-    if (formatContainer && !document.querySelector('input[value="opposite"]')) {
-      formatContainer.className = "grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800";
-      formatContainer.innerHTML += `
-        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
-          <input type="checkbox" name="qtype_opt" value="opposite" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ವಿರುದ್ಧಾರ್ಥಕ ಪದ</span>
-        </label>
-        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
-          <input type="checkbox" name="qtype_opt" value="synonym" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಸಮಾನಾರ್ಥಕ ಪದ</span>
-        </label>
-        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
-          <input type="checkbox" name="qtype_opt" value="own_sentence" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಸ್ವಂತ ವಾಕ್ಯ</span>
-        </label>
-        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
-          <input type="checkbox" name="qtype_opt" value="poem_completion" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ</span>
-        </label>
-      `;
-    }
-  }, 100);
-})();
-
-// 2. ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳಿಗೆ ತಕ್ಕಂತೆ ಇನ್‌ಪುಟ್ ಫಾರ್ಮ್ ಡೈನಾಮಿಕ್ ಮಾರ್ಫಿಂಗ್
+// 2. 'ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ' ಆರಿಸಿದಾಗ ಪ್ರಶ್ನೆಗೆ ೫ ಸಾಲು & ಉತ್ತರಕ್ಕೆ ೫ ಸಾಲುಗಳ ದೊಡ್ಡ ಬಾಕ್ಸ್ ತರುವುದು
 window.handleQuestionTypeChangeInAdmin = function(type) {
   const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
   if (!formFieldsBox) return;
 
   uploadedImageBase64 = '';
 
-  // 1. ವಿರುದ್ಧಾರ್ಥಕ ಪದ
-  if (type === 'opposite') {
+  // ೪. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (ಪ್ರಶ್ನೆಗೆ ೫ ಸಾಲುಗಳು + ಉತ್ತರಕ್ಕೆ ೫ ಸಾಲುಗಳು)
+  if (type === 'poem_completion') {
     formFieldsBox.innerHTML = `
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">ವಿರುದ್ಧಾರ್ಥಕ ಪದದ ಪ್ರಶ್ನೆ *</label>
-        <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದಗಳಿಗೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ೧) ಹಗಲು x ________" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold text-slate-900" />
-      </div>
-      <div class="grid grid-cols-2 gap-2.5">
-        <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full p-2 bg-slate-50 border rounded-xl font-bold"><option value="1" selected>೧ ಅಂಕ</option><option value="2">೨ ಅಂಕಗಳು</option></select></div>
-        <div><label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><input type="text" id="qadd-ans" required placeholder="e.g. ರಾತ್ರಿ" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
-      </div>
-    `;
-
-  // 2. ಸಮಾನಾರ್ಥಕ ಪದ
-  } else if (type === 'synonym') {
-    formFieldsBox.innerHTML = `
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">ಸಮಾನಾರ್ಥಕ ಪದದ ಪ್ರಶ್ನೆ *</label>
-        <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದಗಳಿಗೆ ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ೧) ಗಗನ = ________" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold text-slate-900" />
-      </div>
-      <div class="grid grid-cols-2 gap-2.5">
-        <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full p-2 bg-slate-50 border rounded-xl font-bold"><option value="1" selected>೧ ಅಂಕ</option><option value="2">೨ ಅಂಕಗಳು</option></select></div>
-        <div><label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><input type="text" id="qadd-ans" required placeholder="e.g. ಆಕಾಶ, ಬಾನು" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
-      </div>
-    `;
-
-  // 3. ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ
-  } else if (type === 'own_sentence') {
-    formFieldsBox.innerHTML = `
-      <div>
-        <label class="block font-bold text-slate-700 mb-1">ಸ್ವಂತ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ *</label>
-        <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದವನ್ನು ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ: 'ಪರಿಶ್ರಮ'" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold text-slate-900" />
-      </div>
-      <div class="grid grid-cols-2 gap-2.5">
-        <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full p-2 bg-slate-50 border rounded-xl font-bold"><option value="1" selected>೧ ಅಂಕ</option><option value="2">೨ ಅಂಕಗಳು</option></select></div>
-        <div><label class="block font-bold text-slate-700 mb-1">ಮಾದರಿ ವಾಕ್ಯ (Answer Key) *</label><input type="text" id="qadd-ans" required placeholder="e.g. ಪರಿಶ್ರಮದಿಂದ ಓದಿದರೆ ಉತ್ತಮ ಅಂಕಗಳನ್ನು ಗಳಿಸಬಹುದು." class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
-      </div>
-    `;
-
-  // 4. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (ಖಚಿತ ೫ ಸಾಲುಗಳ ಪ್ರಶ್ನೆ ಮತ್ತು ಉತ್ತರ ಬಾಕ್ಸ್)
-  } else if (type === 'poem_completion') {
-    formFieldsBox.innerHTML = `
-      <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="font-bold text-slate-800 text-xs">ಪದ್ಯದ ಶೀರ್ಷಿಕೆ & ೫ ಸಾಲುಗಳು (Enter ಒತ್ತಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಬರೆಯಿರಿ) *</label>
-          <span class="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">೫ ಸಾಲುಗಳ ಬಾಕ್ಸ್</span>
+      <!-- 1. ಪ್ರಶ್ನೆಗೆ ೫ ಸಾಲುಗಳ ದೊಡ್ಡ ಬಾಕ್ಸ್ -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between">
+          <label class="font-extrabold text-slate-800 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-feather-pointed text-emerald-600"></i>
+            <span>ಪದ್ಯದ ಪ್ರಶ್ನೆ (೪-೫ ಸಾಲುಗಳು - Enter ಒತ್ತಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಬರೆಯಿರಿ) *</span>
+          </label>
+          <span class="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">ಪ್ರಶ್ನೆ: ೫ ಸಾಲುಗಳ ಬಾಕ್ಸ್</span>
         </div>
         <textarea id="qadd-text" rows="5" required 
           placeholder="ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:&#10;೧ ನೇ ಸಾಲು: ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ&#10;೨ ನೇ ಸಾಲು: ___________________________&#10;೩ ನೇ ಸಾಲು: ___________________________&#10;೪ ನೇ ಸಾಲು: ___________________________&#10;೫ ನೇ ಸಾಲು: ...ಕಾಪಾಡು ಜಗದಂಬೆ." 
-          class="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
+          class="w-full p-3 bg-white border-2 border-emerald-400 rounded-2xl font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
       </div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
-          <select id="qadd-marks" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+          <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು (Marks)</label>
+          <select id="qadd-marks" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold">
             <option value="4" selected>೪ ಅಂಕಗಳು (4 Marks)</option>
-            <option value="3">೩ ಅಂಕಗಳು (3 Marks)</option>
             <option value="5">೫ ಅಂಕಗಳು (5 Marks)</option>
+            <option value="3">೩ ಅಂಕಗಳು (3 Marks)</option>
+            <option value="2">೨ ಅಂಕಗಳು (2 Marks)</option>
           </select>
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
-          <select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold">
+          <select id="qadd-obj" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-semibold">
             <option value="ಜ್ಞಾನ" selected>ಜ್ಞಾನ (ಕಂಠಪಾಠ / Knowledge)</option>
-            <option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ</option>
+            <option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ (Understanding)</option>
           </select>
         </div>
       </div>
 
-      <div>
-        <label class="block font-bold text-slate-800 mb-1.5 text-xs">ಸಂಪೂರ್ಣ ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಸಾಲುಗಳು (Answer Key - ೫ ಸಾಲುಗಳು) *</label>
+      <!-- 2. ಉತ್ತರಕ್ಕೆ ೫ ಸಾಲುಗಳ ದೊಡ್ಡ ಬಾಕ್ಸ್ -->
+      <div class="space-y-1 pt-1">
+        <div class="flex items-center justify-between">
+          <label class="font-extrabold text-emerald-950 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-check-double text-emerald-600"></i>
+            <span>ಸಂಪೂರ್ಣ ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಉತ್ತರ (Answer Key - ೪-೫ ಸಾಲುಗಳು) *</span>
+          </label>
+          <span class="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">ಉತ್ತರ: ೫ ಸಾಲುಗಳ ಬಾಕ್ಸ್</span>
+        </div>
         <textarea id="qadd-ans" rows="5" required 
-          placeholder="ಪದ್ಯದ ಎಲ್ಲಾ ಸಾಲುಗಳನ್ನು ಇಲ್ಲಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಟೈಪ್ ಮಾಡಿ..." 
-          class="w-full p-3.5 bg-emerald-50/60 border border-emerald-300 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
+          placeholder="ಪದ್ಯದ ಎಲ್ಲಾ ಸಾಲುಗಳನ್ನು ಇಲ್ಲಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಟೈಪ್ ಮಾಡಿ:&#10;೧ ನೇ ಸಾಲು: ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ&#10;೨ ನೇ ಸಾಲು: ಕನ್ನಡಿಗರ ಬಾಳನು ಬೆಳಗಿಸು ತಾಯೆ&#10;೩ ನೇ ಸಾಲು: ಶಾಂತಿಯ ನೆಲೆಯನು ಕಟ್ಟುತ ನಾವೂ&#10;೪ ನೇ ಸಾಲು: ಮುನ್ನಡೆ ಸಾಧಿಸಿ ಬಾಳುವೆವಮ್ಮಾ&#10;೫ ನೇ ಸಾಲು: ಕಾಪಾಡು ಜಗದಂಬೆ." 
+          class="w-full p-3 bg-emerald-50/70 border-2 border-emerald-400 rounded-2xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
       </div>
     `;
 
-  // ಇತರ ಪ್ರಮುಖ ಪ್ರಕಾರಗಳು (MCQ, Blanks, Match, VSA, SA, Diagram)
+  // ಇತರ ಪ್ರಕಾರಗಳು
   } else if (type === 'mcq') {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2 bg-slate-50 border rounded-xl" /></div>
@@ -2914,11 +2866,20 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
         <label class="block font-bold text-slate-700">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ - ೪ ಅಂಶಗಳು *</label>
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div class="font-bold underline text-center">'ಅ' ಗುಂಪು</div><div class="font-bold underline text-center">'ಬ' ಗುಂಪು</div>
-          <input type="text" id="match-a-1" required placeholder="1. ಅಂಶ" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-1" required placeholder="A. ಹೊಂದುವ ಅಂಶ" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
-          <input type="text" id="match-a-2" required placeholder="2. ಅಂಶ" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-2" required placeholder="B. ಹೊಂದುವ ಅಂಶ" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
-          <input type="text" id="match-a-3" required placeholder="3. ಅಂಶ" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-3" required placeholder="C. ಹೊಂದುವ ಅಂಶ" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
-          <input type="text" id="match-a-4" required placeholder="4. ಅಂಶ" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-4" required placeholder="D. ಹೊಂದುವ ಅಂಶ" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-1" required placeholder="1. ಅಂಶ 1" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-1" required placeholder="A. ಉತ್ತರ 1" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-2" required placeholder="2. ಅಂಶ 2" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-2" required placeholder="B. ಉತ್ತರ 2" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-3" required placeholder="3. ಅಂಶ 3" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-3" required placeholder="C. ಉತ್ತರ 3" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-4" required placeholder="4. ಅಂಶ 4" class="p-2 border rounded-lg bg-slate-50" /><input type="text" id="match-b-4" required placeholder="D. ಉತ್ತರ 4" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
         </div>
+      </div>
+    `;
+  } else if (type === 'opposite' || type === 'synonym' || type === 'own_sentence') {
+    const labelTitle = type === 'opposite' ? 'ವಿರುದ್ಧಾರ್ಥಕ ಪದ' : (type === 'synonym' ? 'ಸಮಾನಾರ್ಥಕ ಪದ' : 'ಸ್ವಂತ ವಾಕ್ಯ');
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">${labelTitle}ದ ಪ್ರಶ್ನೆ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
+      <div class="grid grid-cols-2 gap-2.5">
+        <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full p-2 bg-slate-50 border rounded-xl font-bold"><option value="1" selected>೧ ಅಂಕ</option><option value="2">೨ ಅಂಕಗಳು</option></select></div>
+        <div><label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><input type="text" id="qadd-ans" required placeholder="ಉತ್ತರ" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
       </div>
     `;
   } else if (type === 'vsa' || type === 'sa') {
@@ -2941,447 +2902,53 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
   }
 };
 
-// 3. ಪ್ರಶ್ನೆ ಸೇವ್ ಮಾಡುವಾಗ ವಿರುದ್ಧಾರ್ಥಕ, ಸಮಾನಾರ್ಥಕ, ಸ್ವಂತ ವಾಕ್ಯ & ಪದ್ಯ ಸಂಗ್ರಹ
-const origSaveCustomQWithLang = window.handleSaveCustomQuestion;
+// 3. ಪ್ರಶ್ನೆ ಸೇವ್ ಆದಾಗ ಪದ್ಯದ ೫ ಸಾಲುಗಳನ್ನು ಸರಿಯಾಗಿ ಉಳಿಸಿಕೊಳ್ಳುವುದು
+const origSavePoemQ = window.handleSaveCustomQuestion;
 window.handleSaveCustomQuestion = function(e) {
   e.preventDefault();
-  const medium = document.getElementById('qadd-medium').value;
-  const grade = document.getElementById('qadd-class').value;
-  const subject = document.getElementById('qadd-subject').value;
-  const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
-  const chapter = document.getElementById('qadd-chapter').value.trim();
-  const type = document.getElementById('qadd-type').value;
-  const obj = document.getElementById('qadd-obj').value;
-  const diff = document.getElementById('qadd-diff').value;
+  const type = document.getElementById('qadd-type')?.value;
 
-  if (!chapter) return showToast('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.', 'error');
+  if (type === 'poem_completion') {
+    const medium = document.getElementById('qadd-medium').value;
+    const grade = document.getElementById('qadd-class').value;
+    const subject = document.getElementById('qadd-subject').value;
+    const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+    const chapter = document.getElementById('qadd-chapter').value.trim();
+    const obj = document.getElementById('qadd-obj').value;
+    const diff = document.getElementById('qadd-diff').value;
+    const marks = parseInt(document.getElementById('qadd-marks')?.value) || 4;
 
-  let newQ = { id: 'q_' + Date.now(), medium, grade, subject, part, chapter, type, obj, diff };
+    const qText = document.getElementById('qadd-text')?.value.trim();
+    const ansText = document.getElementById('qadd-ans')?.value.trim();
 
-  if (['opposite', 'synonym', 'own_sentence', 'blanks', 'vsa'].includes(type)) {
-    newQ.q = document.getElementById('qadd-text').value.trim();
-    newQ.ans = document.getElementById('qadd-ans').value.trim();
-    newQ.marks = parseInt(document.getElementById('qadd-marks')?.value) || 1;
+    if (!chapter) return showToast('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.', 'error');
+    if (!qText) return showToast('ದಯವಿಟ್ಟು ಪದ್ಯದ ಪ್ರಶ್ನೆ ಬರೆಯಿರಿ.', 'error');
 
-  } else if (type === 'poem_completion') {
-    newQ.q = document.getElementById('qadd-text').value.trim();
-    newQ.ans = document.getElementById('qadd-ans').value.trim();
-    newQ.marks = parseInt(document.getElementById('qadd-marks')?.value) || 4;
+    let newQ = {
+      id: 'q_' + Date.now(),
+      medium, grade, subject, part, chapter,
+      type: 'poem_completion',
+      q: qText,
+      ans: ansText || qText,
+      marks, obj, diff
+    };
 
-  } else if (type === 'mcq') {
-    newQ.q = document.getElementById('qadd-text').value.trim();
-    newQ.a = document.getElementById('qadd-opt-a').value.trim();
-    newQ.b = document.getElementById('qadd-opt-b').value.trim();
-    newQ.c = document.getElementById('qadd-opt-c').value.trim();
-    newQ.d = document.getElementById('qadd-opt-d').value.trim();
-    const correctOpt = document.getElementById('qadd-correct-opt').value;
-    newQ.ans = `(${correctOpt}) ${newQ[correctOpt.toLowerCase()]}`;
-    newQ.marks = 1;
+    appState.qbank.unshift(newQ);
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
 
-  } else if (type === 'match') {
-    newQ.q = "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ";
-    newQ.marks = 4;
-    newQ.matchPairs = [
-      { a: document.getElementById('match-a-1').value.trim(), b: document.getElementById('match-b-1').value.trim() },
-      { a: document.getElementById('match-a-2').value.trim(), b: document.getElementById('match-b-2').value.trim() },
-      { a: document.getElementById('match-a-3').value.trim(), b: document.getElementById('match-b-3').value.trim() },
-      { a: document.getElementById('match-a-4').value.trim(), b: document.getElementById('match-b-4').value.trim() }
-    ];
-
-  } else if (type === 'sa') {
-    newQ.q = document.getElementById('qadd-text').value.trim();
-    newQ.ans = document.getElementById('qadd-ans').value.trim();
-    newQ.marks = parseInt(document.getElementById('qadd-marks').value) || 2;
-
-  } else if (type === 'map_diagram') {
-    newQ.q = document.getElementById('qadd-text').value.trim();
-    newQ.items = document.getElementById('qadd-items').value.trim();
-    newQ.ans = document.getElementById('qadd-ans').value.trim();
-    newQ.image = uploadedImageBase64;
-    newQ.marks = 4;
+    showToast('🎉 ೫ ಸಾಲುಗಳ ಪದ್ಯದ ಪ್ರಶ್ನೋತ್ತರ ಸೇವ್ ಆಗಿದೆ!', 'success');
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    pushToFirebaseCloud();
+    handleQuestionTypeChangeInAdmin('poem_completion');
+    return;
   }
 
-  appState.qbank.unshift(newQ);
-  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
-
-  showToast('🎉 ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಆಗಿದೆ!', 'success');
-  renderCustomQuestionList();
-  renderChapterCheckboxes();
-  pushToFirebaseCloud();
-  handleQuestionTypeChangeInAdmin(type);
+  origSavePoemQ(e);
 };
 
-// 4. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ ಭಾಷಾ ವಿಭಾಗಗಳನ್ನು ಸುಂದರವಾಗಿ ರೆಂಡರ್ ಮಾಡುವುದು
-const origRenderActiveExamSuite = renderActiveExamWorkspace;
-window.renderActiveExamWorkspace = function() {
-  const questions = appState.activeGeneratedQuestions || [];
-  const meta = appState.activeExamMeta || {};
-  const { schoolName, grade, subject, examType, totalMarks, examDate, isOralExam } = meta;
-
-  let teacherHeaderSpan = '';
-  let teacherKeySpan = '';
-  if (appState.currentUserType === 'teacher') {
-    const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
-    if (teacher) {
-      teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
-      teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
-    }
-  }
-
-  let qNum = 1, kNum = 1, romanIndex = 1;
-  const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-  let paperSectionsHtml = [];
-  let keySectionsHtml = [];
-  let blueprintRows = [];
-
-  const mcqs = questions.filter(q => q.type === 'mcq');
-  const blanks = questions.filter(q => q.type === 'blanks');
-  const match = questions.filter(q => q.type === 'match');
-  const opposite = questions.filter(q => q.type === 'opposite');
-  const synonym = questions.filter(q => q.type === 'synonym');
-  const own_sentence = questions.filter(q => q.type === 'own_sentence');
-  const vsa = questions.filter(q => q.type === 'vsa');
-  const sa = questions.filter(q => q.type === 'sa');
-  const poem_completion = questions.filter(q => q.type === 'poem_completion');
-  const map_diagram = questions.filter(q => q.type === 'map_diagram');
-
-  // MCQs
-  if (mcqs.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
-          <span>1x${mcqs.length}=${mcqs.length}</span>
-        </div>
-        <div>${mcqs.map((m) => `
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; display: flex; justify-content: space-between;">
-              <span>${qNum++}. ${escapeHtml(m.q)}</span>
-              <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(m)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
-              <div>(A) ${escapeHtml(m.a||'')}</div><div>(B) ${escapeHtml(m.b||'')}</div><div>(C) ${escapeHtml(m.c||'')}</div><div>(D) ${escapeHtml(m.d||'')}</div>
-            </div>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(m.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: mcqs.length, marks: mcqs.length });
-  }
-
-  // Blanks
-  if (blanks.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
-          <span>1x${blanks.length}=${blanks.length}</span>
-        </div>
-        <div>${blanks.map((b) => `
-          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(b.q)}</span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(b)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(b.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ", count: blanks.length, marks: blanks.length });
-  }
-
-  // Match
-  if (match.length > 0) {
-    match.forEach(mItem => {
-      const pairs = mItem.matchPairs || [{ a: 'ಅಂಶ 1', b: 'ಹೊಂದುವ ಅಂಶ 1' }, { a: 'ಅಂಶ 2', b: 'ಹೊಂದುವ ಅಂಶ 2' }, { a: 'ಅಂಶ 3', b: 'ಹೊಂದುವ ಅಂಶ 3' }, { a: 'ಅಂಶ 4', b: 'ಹೊಂದುವ ಅಂಶ 4' }];
-      const r = romanNumerals[romanIndex++ - 1];
-      const mQNum = qNum++;
-      const mKNum = kNum++;
-
-      paperSectionsHtml.push(`
-        <div style="margin-bottom: 15px;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-            <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
-            <span>1x4=4</span>
-          </div>
-          <div>
-            <div style="font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between;">
-              <span>${mQNum}. 'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
-              <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(mItem)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
-              <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಅ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(97+i)}) ${escapeHtml(p.a||'')}</div>`).join('')}</div>
-              <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಬ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${escapeHtml(p.b||'')}</div>`).join('')}</div>
-            </div>
-          </div>
-        </div>
-      `);
-      keySectionsHtml.push(`
-        <div style="margin-bottom: 12px;">
-          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
-          <div style="padding-left: 10px; font-size: 13.5px;">
-            <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
-            <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
-              <tbody>${pairs.map((p, i) => `
-                <tr style="border: none;">
-                  <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
-                  <td style="padding: 2px 15px 2px 0; border: none;">${escapeHtml(p.a||'')}</td>
-                  <td style="padding: 2px 15px 2px 0; border: none; color: #16a34a; font-weight: bold;">➔</td>
-                  <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${escapeHtml(p.b||'')}</td>
-                </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `);
-      blueprintRows.push({ name: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: 1, marks: 4 });
-    });
-  }
-
-  // ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳು
-  if (opposite.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    const opMarks = opposite.reduce((a, b) => a + (b.marks || 1), 0);
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಕೆಳಗಿನ ಪದಗಳಿಗೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ:</span>
-          <span>ಒಟ್ಟು = ${opMarks}</span>
-        </div>
-        <div>${opposite.map(op => `
-          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(op.q)}</span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(op)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${opposite.map(op => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(op.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳು", count: opposite.length, marks: opMarks });
-  }
-
-  // ಸಮಾನಾರ್ಥಕ ಪದಗಳು
-  if (synonym.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    const syMarks = synonym.reduce((a, b) => a + (b.marks || 1), 0);
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಕೆಳಗಿನ ಪದಗಳಿಗೆ ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ:</span>
-          <span>ಒಟ್ಟು = ${syMarks}</span>
-        </div>
-        <div>${synonym.map(sy => `
-          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(sy.q)}</span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(sy)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಸಮಾನಾರ್ಥಕ ಪದಗಳ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${synonym.map(sy => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(sy.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಸಮಾನಾರ್ಥಕ ಪದಗಳು", count: synonym.length, marks: syMarks });
-  }
-
-  // ಸ್ವಂತ ವಾಕ್ಯ
-  if (own_sentence.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    const owMarks = own_sentence.reduce((a, b) => a + (b.marks || 1), 0);
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಕೆಳಗಿನ ಪದಗಳನ್ನು ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ:</span>
-          <span>ಒಟ್ಟು = ${owMarks}</span>
-        </div>
-        <div>${own_sentence.map(ow => `
-          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(ow.q)}</span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(ow)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಸ್ವಂತ ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${own_sentence.map(ow => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(ow.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಸ್ವಂತ ವಾಕ್ಯ", count: own_sentence.length, marks: owMarks });
-  }
-
-  // VSA (1 MARK)
-  if (vsa.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
-          <span>1x${vsa.length}=${vsa.length}</span>
-        </div>
-        <div>${vsa.map((v) => `
-          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(v.q)}</span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(v)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(v.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: vsa.length, marks: vsa.length });
-  }
-
-  // SA (2/3 MARKS)
-  if (sa.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    const saMarksSum = sa.reduce((sum, item) => sum + (item.marks || 2), 0);
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
-          <span>ಒಟ್ಟು = ${saMarksSum}</span>
-        </div>
-        <div>${sa.map((s) => `
-          <div style="margin-bottom: 6px; display: flex; justify-content: space-between;">
-            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(s.q)} <span class="text-xs text-slate-500 font-normal">(${s.marks||2}M)</span></span>
-            <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(s)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
-        <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(s.ans||'')}</div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: sa.length, marks: saMarksSum });
-  }
-
-  // ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (೪-೫ ಸಾಲುಗಳ ಅಚ್ಚುಕಟ್ಟಾದ ಮುದ್ರಣ)
-  if (poem_completion.length > 0) {
-    const r = romanNumerals[romanIndex++ - 1];
-    const pMarks = poem_completion.reduce((a, b) => a + (b.marks || 4), 0);
-    paperSectionsHtml.push(`
-      <div style="margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-          <span>${r}. ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ (ಕಂಠಪಾಠ):</span>
-          <span>ಒಟ್ಟು = ${pMarks}</span>
-        </div>
-        <div>${poem_completion.map(p => `
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; display: flex; justify-content: space-between;">
-              <span>${qNum++}.</span>
-              <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(p)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-            </div>
-            <div style="white-space: pre-wrap; font-family: inherit; font-weight: 600; line-height: 1.8; padding-left: 18px; margin-top: 2px;">${escapeHtml(p.q)}</div>
-          </div>
-        `).join('')}</div>
-      </div>
-    `);
-    keySectionsHtml.push(`
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ಪದ್ಯದ ಕಂಠಪಾಠ ಮಾದರಿ ಸಾಲುಗಳು:</div>
-        <div style="padding-left: 10px;">${poem_completion.map(p => `<div style="margin-bottom: 5px; font-size: 13.5px; line-height: 1.8;"><b>${kNum++}.</b> <div style="white-space: pre-wrap; font-family: inherit; padding-left: 15px;">${escapeHtml(p.ans||'')}</div></div>`).join('')}</div>
-      </div>
-    `);
-    blueprintRows.push({ name: "ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ", count: poem_completion.length, marks: pMarks });
-  }
-
-  // ಚಿತ್ರ / ನಕ್ಷೆ
-  if (map_diagram.length > 0) {
-    map_diagram.forEach(d => {
-      const r = romanNumerals[romanIndex++ - 1];
-      paperSectionsHtml.push(`
-        <div style="margin-bottom: 14px;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
-            <span>${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಬಿಡಿಸುವ ಪ್ರಶ್ನೆ:</span>
-            <span>1x4=4</span>
-          </div>
-          <div>
-            <div style="font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between;">
-              <span>${qNum++}. ${escapeHtml(d.q)}</span>
-              <button type="button" onclick="openPopupQuestionEditor(${questions.indexOf(d)})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-            </div>
-            ${d.image ? `<div class="my-2"><img src="${d.image}" class="max-h-48 mx-auto rounded border shadow" /></div>` : ''}
-            <div style="padding-left: 15px; font-size: 13.5px;">${escapeHtml(d.items || '')}</div>
-          </div>
-        </div>
-      `);
-      keySectionsHtml.push(`
-        <div style="margin-bottom: 12px;">
-          <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ:</div>
-          <div style="padding-left: 10px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(d.ans||'')}</div>
-        </div>
-      `);
-      blueprintRows.push({ name: "ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ", count: 1, marks: 4 });
-    });
-  }
-
-  // Render Paper
-  document.getElementById('rendered-paper').innerHTML = `
-    <div class="a4-sheet-container" style="min-height: 265mm;">
-      <div style="text-align: center; margin-bottom: 14px;">
-        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${escapeHtml(schoolName)}</h2>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
-          <span>ವಿಷಯ : ${escapeHtml(subject)}</span><span>${escapeHtml(examType)}</span><span>ತರಗತಿ : ${escapeHtml(grade)}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
-          <span>ಅಂಕ : ${totalMarks}</span>${teacherHeaderSpan}<span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
-        </div>
-        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
-      </div>
-      <div>${paperSectionsHtml.join('')}</div>
-    </div>
-  `;
-
-  // Render Key
-  document.getElementById('rendered-key').innerHTML = `
-    <div class="a4-sheet-container" style="min-height: 265mm;">
-      <div style="text-align: center; margin-bottom: 14px;">
-        <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${escapeHtml(schoolName)}</h2>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
-          <span>ವಿಷಯ : ${escapeHtml(subject)}</span><span>${escapeHtml(examType)}</span><span>ತರಗತಿ : ${escapeHtml(grade)}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
-          <span>ಅಂಕ : ${totalMarks}</span>${teacherKeySpan}<span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
-        </div>
-        <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
-        <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">${isOralExam ? 'ಮೌಖಿಕ ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಮಾನದಂಡ' : 'ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ'}</h3>
-      </div>
-      <div>${keySectionsHtml.join('')}</div>
-    </div>
-  `;
-
-  renderExactThreeBlueprints(questions, totalMarks);
-};
-    
+// ಇನಿಶಿಯಲೈಸೇಷನ್
+setTimeout(forceUpdateAdminQuestionTypeDropdown, 100);
   </script>
 </body>
 </html>
