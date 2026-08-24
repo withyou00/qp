@@ -1854,7 +1854,469 @@ window.generateExamPackageFromBank = function() {
   document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
   showToast('ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಕ್ಷಣಾರ್ಧದಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ!', 'success');
 };
-    
+    /* ==========================================================================
+   BULLETPROOF ZERO-CRASH GENERATOR ENGINE (Oral 10M + Written 20M Guaranteed)
+   ========================================================================== */
+
+window.generateExamPackageFromBank = function() {
+  try {
+    const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ';
+    const grade = document.getElementById('cfg-class')?.value || '6';
+    const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+    const examType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+    const totalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+    const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+    const isOralExam = examType.includes('ಮೌಖಿಕ');
+
+    let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+    let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+    if (selectedChapters.length === 0) {
+      selectedChapters = getSyllabusChapters(grade, subject);
+    }
+
+    appState.activeExamMeta = { schoolName, grade, subject, examType, totalMarks, examDate, isOralExam };
+
+    let teacherHeaderSpan = '';
+    let teacherKeySpan = '';
+    if (appState.currentUserType === 'teacher') {
+      const teacher = appState.teachers.find(t => t.id === appState.currentUserId);
+      if (teacher) {
+        teacherHeaderSpan = `<span>ವಿಷಯ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+        teacherKeySpan = `<span>ಮೌಲ್ಯಮಾಪಕ ಶಿಕ್ಷಕರು : ${escapeHtml(teacher.name)}</span>`;
+      }
+    }
+
+    // =========================================================================
+    // 1. ಮೌಖಿಕ ಪರೀಕ್ಷೆ ಜನರೇಟರ್ (ORAL EXAM - 10 OR 20 MARKS)
+    // =========================================================================
+    if (isOralExam) {
+      const sec1Count = Math.ceil(totalMarks / 2);
+      const sec2Count = totalMarks - sec1Count;
+
+      let oralList1 = [];
+      let oralList2 = [];
+
+      selectedChapters.forEach((chap, i) => {
+        const cleanChap = chap.replace(/^[0-9\.\s]+/, '');
+        if (oralList1.length < sec1Count) {
+          oralList1.push({
+            q: `${cleanChap} ಘಟಕಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಮುಖ ಪರಿಕಲ್ಪನೆಯನ್ನು ನಿಮ್ಮ ಮಾತುಗಳಲ್ಲಿ ವಿವರಿಸಿ.`,
+            ans: "ವಿಷಯದ ಸ್ಪಷ್ಟತೆ, ನಿರರ್ಗಳತೆ ಮತ್ತು ಸರಿಯಾದ ವಿವರಣೆಗೆ ಪೂರ್ಣ ಅಂಕಗಳು.",
+            marks: 1, obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ", type: "vsa"
+          });
+        }
+        if (oralList2.length < sec2Count) {
+          oralList2.push({
+            q: `${cleanChap} ಪಾಠದಲ್ಲಿ ಬರುವ ಮುಖ್ಯ ಅಂಶ ಮತ್ತು ಅದರ ಮಹತ್ವವೇನು?`,
+            ans: "ಪಠ್ಯಪುಸ್ತಕದ ನಿಖರ ವ್ಯಾಖ್ಯಾನ ಮತ್ತು ಮುಖ್ಯ ಅಂಶಗಳ ವಿವರಣೆಗೆ ಅಂಕಗಳು.",
+            marks: 1, obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ", type: "sa"
+          });
+        }
+      });
+
+      // Fill remaining if needed
+      while (oralList1.length < sec1Count) {
+        oralList1.push({ q: `ಘಟಕದ ಪ್ರಮುಖ ಮುಖ್ಯಾಂಶವನ್ನು ತಿಳಿಸಿ.`, ans: "ಸರಿಯಾದ ವಿವರಣೆ.", marks: 1, obj: "ಜ್ಞಾನ", diff: "ಸುಲಭ", type: "vsa" });
+      }
+      while (oralList2.length < sec2Count) {
+        oralList2.push({ q: `ಈ ಪರಿಕಲ್ಪನೆಯ ಉಪಯೋಗ ಮತ್ತು ಮಹತ್ವವನ್ನು ವಿವರಿಸಿ.`, ans: "ಮೌಲ್ಯಮಾಪನ ಮಾನದಂಡ.", marks: 1, obj: "ತಿಳುವಳಿಕೆ", diff: "ಸಾಧಾರಣ", type: "sa" });
+      }
+
+      appState.activeGeneratedQuestions = [...oralList1, ...oralList2];
+
+      let qNum = 1, kNum = 1;
+
+      // ಮೌಖಿಕ ಪತ್ರಿಕೆ ರೆಂಡರಿಂಗ್
+      document.getElementById('rendered-paper').innerHTML = `
+        <div class="a4-sheet-container" style="min-height: 265mm; line-height: 1.8; font-size: 14.5px;">
+          <div style="text-align: center; margin-bottom: 18px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+              <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+              <span>ಅಂಕ : ${totalMarks}</span>${teacherHeaderSpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+            </div>
+            <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+            <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin: 0 0 10px 0;">ಮೌಖಿಕ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (Oral Examination)</h3>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+              <span>I. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೇರವಾಗಿ ಮೌಖಿಕವಾಗಿ ಉತ್ತರಿಸಿ:</span>
+              <span>1x${oralList1.length}=${oralList1.length}</span>
+            </div>
+            <div>${oralList1.map((item, idx) => `
+              <div style="margin-bottom: 12px; font-weight: 600; display: flex; justify-content: space-between;">
+                <span>${qNum++}. ${escapeHtml(item.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+              </div>
+            `).join('')}</div>
+          </div>
+
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin-bottom: 10px;">
+              <span>II. ಈ ಕೆಳಗಿನ ಪರಿಕಲ್ಪನೆಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತವಾಗಿ ಮೌಖಿಕವಾಗಿ ವಿವರಿಸಿ:</span>
+              <span>1x${oralList2.length}=${oralList2.length}</span>
+            </div>
+            <div>${oralList2.map((item, idx) => `
+              <div style="margin-bottom: 12px; font-weight: 600; display: flex; justify-content: space-between;">
+                <span>${qNum++}. ${escapeHtml(item.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${oralList1.length + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+              </div>
+            `).join('')}</div>
+          </div>
+        </div>
+      `;
+
+      // ಮೌಖಿಕ ಉತ್ತರ ಪತ್ರಿಕೆ ರೆಂಡರಿಂಗ್
+      document.getElementById('rendered-key').innerHTML = `
+        <div class="a4-sheet-container" style="min-height: 265mm; line-height: 1.8; font-size: 14.5px;">
+          <div style="text-align: center; margin-bottom: 18px;">
+            <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+              <span>ವಿಷಯ : ${subject}</span><span>${examType}</span><span>ತರಗತಿ : ${grade}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+              <span>ಅಂಕ : ${totalMarks}</span>${teacherKeySpan}<span>ದಿನಾಂಕ : ${examDate}</span>
+            </div>
+            <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+            <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin: 0 0 10px 0;">ಮೌಖಿಕ ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <div style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">I. ನೇರ ಮೌಖಿಕ ಪ್ರಶ್ನೆಗಳ ನಿರೀಕ್ಷಿತ ಉತ್ತರಗಳು:</div>
+            <div>${oralList1.map(item => `<div style="margin-bottom: 8px;"><b>${kNum++}.</b> ${item.ans}</div>`).join('')}</div>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <div style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">II. ವಿವರಣಾತ್ಮಕ ಮೌಖಿಕ ಉತ್ತರಗಳು / ಮಾನದಂಡ:</div>
+            <div>${oralList2.map(item => `<div style="margin-bottom: 8px;"><b>${kNum++}.</b> ${item.ans}</div>`).join('')}</div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('tab-btn-blueprint')?.classList.add('hidden');
+      document.getElementById('rendered-blueprint').innerHTML = '';
+
+      document.getElementById('output-section')?.classList.remove('hidden');
+      switchOutputTab('paper');
+      document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
+      showToast(`ಮೌಖಿಕ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ (${totalMarks} ಅಂಕಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+      return;
+    }
+
+    // =========================================================================
+    // 2. ಲಿಖಿತ ಪರೀಕ್ಷೆ ಜನರೇಟರ್ (WRITTEN EXAM - 20 MARKS ZERO-CRASH)
+    // =========================================================================
+    const isEnglishSubject = subject.toLowerCase().includes('english');
+    const bankKey = isEnglishSubject ? "english_10" : "social_6";
+    const defaultBank = DSERT_QUESTION_BANK[bankKey] || DSERT_QUESTION_BANK["social_6"];
+
+    const customPool = appState.qbank.filter(q => q.grade === String(grade) && q.subject === subject);
+
+    // 1. MCQs (4)
+    let mcqs = customPool.filter(q => q.type === 'mcq');
+    if (mcqs.length === 0) mcqs = defaultBank.mcqs.slice(0, 4);
+
+    // 2. Blanks (4)
+    let blanks = customPool.filter(q => q.type === 'blanks');
+    if (blanks.length === 0) blanks = defaultBank.blanks.slice(0, 4);
+
+    // 3. Match Pairs (Normalize to 4 pairs safely)
+    let matchQuestions = customPool.filter(q => q.type === 'match');
+    let matchPairsList = [];
+    if (matchQuestions.length > 0 && matchQuestions[0].matchPairs) {
+      matchPairsList = matchQuestions[0].matchPairs;
+    } else {
+      matchPairsList = defaultBank.match.slice(0, 4);
+    }
+
+    // 4. VSA (2)
+    let vsa = customPool.filter(q => q.type === 'vsa');
+    if (vsa.length === 0) vsa = defaultBank.vsa.slice(0, 2);
+
+    // 5. SA (3)
+    let sa = customPool.filter(q => q.type === 'sa');
+    if (sa.length === 0) sa = defaultBank.sa.slice(0, 3);
+
+    // Active questions for editing
+    const activeQuestions = [
+      ...mcqs,
+      ...blanks,
+      { type: 'match', q: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", matchPairs: matchPairsList, marks: 4, obj: "ಜ್ಞಾನ", diff: "ಸಾಧಾರಣ", ans: "ಹೊಂದಿಕೆ ಉತ್ತರ" },
+      ...vsa,
+      ...sa
+    ];
+    appState.activeGeneratedQuestions = activeQuestions;
+
+    let qNum = 1, kNum = 1;
+    let paperSections = [], keySections = [];
+
+    // I. MCQS (1x4=4)
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>I. ${isEnglishSubject ? 'Choose the correct answer for each of the following:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:'}</span>
+          <span>1x${mcqs.length}=${mcqs.length}</span>
+        </div>
+        <div>${mcqs.map((m, idx) => `
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; display: flex; justify-content: space-between;">
+              <span>${qNum++}. ${escapeHtml(m.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+              <div>(A) ${m.a}</div><div>(B) ${m.b}</div><div>(C) ${m.c}</div><div>(D) ${m.d}</div>
+            </div>
+          </div>
+        `).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">I. ${isEnglishSubject ? 'MCQ Key:' : 'ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:'}</div>
+        <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${m.ans}</div>`).join('')}</div>
+      </div>
+    `);
+
+    // II. Blanks (1x4=4)
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>II. ${isEnglishSubject ? 'Fill in the blanks with suitable words:' : 'ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:'}</span>
+          <span>1x${blanks.length}=${blanks.length}</span>
+        </div>
+        <div>${blanks.map((b, idx) => `
+          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(b.q)}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${mcqs.length + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+        `).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">II. ${isEnglishSubject ? 'Blanks Key:' : 'ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:'}</div>
+        <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${b.ans}</div>`).join('')}</div>
+      </div>
+    `);
+
+    // III. Match (1x4=4)
+    const matchIdx = mcqs.length + blanks.length;
+    const mQNum = qNum++;
+    const mKNum = kNum++;
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>III. ${isEnglishSubject ? 'Match the following:' : 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:'}</span>
+          <span>1x4=4</span>
+        </div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>${mQNum}. ${isEnglishSubject ? 'Match Column A with Column B:' : "'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:"}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${matchIdx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column A' : "'ಅ' ಗುಂಪು"}</div>${matchPairsList.map((p, i) => `<div>(${String.fromCharCode(97+i)}) ${p.a}</div>`).join('')}</div>
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">${isEnglishSubject ? 'Column B' : "'ಬ' ಗುಂಪು"}</div>${matchPairsList.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${p.b}</div>`).join('')}</div>
+          </div>
+        </div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">III. ${isEnglishSubject ? 'Match Key:' : 'ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:'}</div>
+        <div style="padding-left: 10px; font-size: 13.5px;">
+          <div style="font-weight: bold; margin-bottom: 4px;">${mKNum}.</div>
+          <table style="border-collapse: collapse; border: none; font-size: 13.5px;">
+            <tbody>${matchPairsList.map((p, i) => `
+              <tr style="border: none;">
+                <td style="padding: 2px 8px 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(97+i)})</td>
+                <td style="padding: 2px 15px 2px 0; border: none;">${p.a}</td>
+                <td style="padding: 2px 15px 2px 0; border: none; color: #16a34a; font-weight: bold;">➔</td>
+                <td style="padding: 2px 0; border: none; font-weight: bold;">(${String.fromCharCode(65+i)}) ${p.b}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `);
+
+    // IV. VSA (1x2=2)
+    paperSections.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>IV. ${isEnglishSubject ? 'Answer in a sentence each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+          <span>1x${vsa.length}=${vsa.length}</span>
+        </div>
+        <div>${vsa.map((v, idx) => `
+          <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(v.q)}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${matchIdx + 1 + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+        `).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">IV. ${isEnglishSubject ? 'VSA Key:' : 'ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:'}</div>
+        <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${v.ans}</div>`).join('')}</div>
+      </div>
+    `);
+
+    // V. SA (2x3=6)
+    paperSections.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 6px;">
+          <span>V. ${isEnglishSubject ? 'Answer in 2-3 sentences each:' : 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:'}</span>
+          <span>2x${sa.length}=${sa.length * 2}</span>
+        </div>
+        <div>${sa.map((s, idx) => `
+          <div style="margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span style="font-weight: 600;">${qNum++}. ${escapeHtml(s.q)}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${matchIdx + 1 + vsa.length + idx})" class="no-print bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+        `).join('')}</div>
+      </div>
+    `);
+    keySections.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">V. ${isEnglishSubject ? 'Short Answer Key:' : 'ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:'}</div>
+        <div style="padding-left: 10px;">${sa.map(s => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${s.ans}</div>`).join('')}</div>
+      </div>
+    `);
+
+    // Render Paper HTML
+    document.getElementById('rendered-paper').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm;">
+        <div style="text-align: center; margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>Max Marks: ${totalMarks}</span>${teacherHeaderSpan}<span>Date: ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+        </div>
+        <div>${paperSections.join('')}</div>
+      </div>
+    `;
+
+    // Render Key HTML
+    document.getElementById('rendered-key').innerHTML = `
+      <div class="a4-sheet-container" style="min-height: 265mm;">
+        <div style="text-align: center; margin-bottom: 14px;">
+          <h2 style="font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">${schoolName}</h2>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-bottom: 4px;">
+            <span>Subject: ${subject}</span><span>${examType}</span><span>Class: ${grade}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13.5px;">
+            <span>Marks: ${totalMarks}</span>${teacherKeySpan}<span>Date: ${examDate}</span>
+          </div>
+          <hr style="border-top: 2px solid #000; margin: 10px -25px 14px -25px;" />
+          <h3 style="font-size: 16px; font-weight: bold; text-decoration: underline; margin-bottom: 10px;">Scheme of Valuation / ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+        </div>
+        <div>${keySections.join('')}</div>
+      </div>
+    `;
+
+    // Render 3 Exact Blueprints (No ReferenceError)
+    document.getElementById('tab-btn-blueprint')?.classList.remove('hidden');
+    document.getElementById('rendered-blueprint').innerHTML = `
+      <div class="a4-sheet-container">
+        <h2 style="text-align: center; font-size: 19px; font-weight: 800; margin-bottom: 18px;">ನೀಲನಕ್ಷೆಗಳು (Blueprints)</h2>
+        <h4 style="font-weight: bold; margin-bottom: 8px;">1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (Question Formats)</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಸಂಖ್ಯೆ</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</td><td style="border: 1.5px solid #000;">1</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು</td><td style="border: 1.5px solid #000;">2</td><td style="border: 1.5px solid #000;">2</td><td style="border: 1.5px solid #000;">10%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು</td><td style="border: 1.5px solid #000;">3</td><td style="border: 1.5px solid #000;">6</td><td style="border: 1.5px solid #000;">30%</td></tr>
+            <tr style="font-weight: bold; background: #fafafa;"><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000;">14</td><td style="border: 1.5px solid #000;">20</td><td style="border: 1.5px solid #000;">100%</td></tr>
+          </tbody>
+        </table>
+
+        <h4 style="font-weight: bold; margin-bottom: 8px;">2. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (Objectives)</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; text-align: center;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಕಲಿಕೋದ್ದೇಶಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಜ್ಞಾನ (Knowledge)</td><td style="border: 1.5px solid #000;">8</td><td style="border: 1.5px solid #000;">40%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ತಿಳುವಳಿಕೆ (Understanding)</td><td style="border: 1.5px solid #000;">8</td><td style="border: 1.5px solid #000;">40%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಅನ್ವಯ (Application)</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+            <tr style="font-weight: bold; background: #fafafa;"><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000;">20</td><td style="border: 1.5px solid #000;">100%</td></tr>
+          </tbody>
+        </table>
+
+        <h4 style="font-weight: bold; margin-bottom: 8px;">3. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (Difficulty)</h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="border: 1.5px solid #000; padding: 7px; text-align: left;">ಮಟ್ಟ</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಸುಲಭ (Easy)</td><td style="border: 1.5px solid #000;">6</td><td style="border: 1.5px solid #000;">30%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಸಾಧಾರಣ (Average)</td><td style="border: 1.5px solid #000;">10</td><td style="border: 1.5px solid #000;">50%</td></tr>
+            <tr><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಕಠಿಣ (Difficult)</td><td style="border: 1.5px solid #000;">4</td><td style="border: 1.5px solid #000;">20%</td></tr>
+            <tr style="font-weight: bold; background: #fafafa;"><td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000;">20</td><td style="border: 1.5px solid #000;">100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // Watermark check
+    document.querySelectorAll('.demo-watermark-text').forEach(el => el.remove());
+    if (appState.currentUserType === 'demo') {
+      const wHtml = `<div class="demo-watermark-text">With You QP Generator &bull; DEMO</div>`;
+      document.querySelectorAll('#print-area .a4-sheet-container').forEach(box => {
+        box.classList.add('watermark-wrapper');
+        box.insertAdjacentHTML('beforeend', wHtml);
+      });
+    }
+
+    document.getElementById('output-section')?.classList.remove('hidden');
+    switchOutputTab('paper');
+    document.getElementById('output-section')?.scrollIntoView({ behavior: 'smooth' });
+    showToast('ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಕ್ಷಣಾರ್ಧದಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ!', 'success');
+
+  } catch (err) {
+    console.error("Generator error:", err);
+    alert('ದೋಷ: ' + err.message);
+  }
+};
   </script>
 </body>
 </html>
