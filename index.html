@@ -1230,6 +1230,143 @@ window.navigateToSection = function(section) {
   if (section === 'admin') buildAdminRegistrationView();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+    /* ==========================================================================
+   FIX FOR QUESTION BANK & ADMIN BUTTON CLICKS (Guaranteed Top-Layer Modal)
+   ========================================================================== */
+
+let pendingAdminDestination = 'qbank';
+
+// 1. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಪಾಪ್‌ಅಪ್ ಅನ್ನು ಕಡ್ಡಾಯವಾಗಿ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಪ್ರದರ್ಶಿಸುವುದು (Z-Index 99999)
+window.showAdminLoginModal = function(targetSection = 'qbank') {
+  pendingAdminDestination = targetSection;
+
+  let modal = document.getElementById('admin-login-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'admin-login-modal';
+    document.body.appendChild(modal);
+  }
+
+  modal.className = 'fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4';
+  modal.style.cssText = 'display: flex !important; z-index: 99999 !important; position: fixed !important; inset: 0 !important;';
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 space-y-5 text-center text-xs">
+      <div class="space-y-2">
+        <div class="h-14 w-14 bg-slate-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 class="font-extrabold text-lg text-slate-900">Admin Security Login</h3>
+        <p class="text-xs text-slate-500">ಪ್ರವೇಶಿಸಲು ಅಡ್ಮಿನ್ ವಿವರ ನಮೂದಿಸಿ</p>
+      </div>
+
+      <form id="form-admin-login-direct" onsubmit="handleAdminLoginSubmitDirect(event)" class="space-y-3.5 text-left" autocomplete="off">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Username</label>
+          <input type="text" id="admin-login-user-direct" required autocomplete="off" placeholder="WithYou2026" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Password</label>
+          <input type="password" id="admin-login-pass-direct" required autocomplete="new-password" placeholder="••••••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none" />
+        </div>
+
+        <div id="admin-login-direct-error" class="hidden text-xs text-red-600 font-bold bg-red-50 p-2 rounded-xl text-center">
+          ❌ ತಪ್ಪಾದ Username ಅಥವಾ Password!
+        </div>
+
+        <div class="pt-1 flex items-center space-x-2">
+          <button type="button" onclick="closeAdminLoginModalDirect()" class="w-1/3 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="w-2/3 btn-primary-gradient text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg">Login</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+  setTimeout(() => document.getElementById('admin-login-user-direct')?.focus(), 50);
+};
+
+window.closeAdminLoginModalDirect = function() {
+  const modal = document.getElementById('admin-login-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.add('hidden');
+  }
+};
+
+window.handleAdminLoginSubmitDirect = function(e) {
+  e.preventDefault();
+  const u = (document.getElementById('admin-login-user-direct')?.value || '').trim();
+  const p = (document.getElementById('admin-login-pass-direct')?.value || '').trim();
+  const errBox = document.getElementById('admin-login-direct-error');
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+
+    closeAdminLoginModalDirect();
+    showToast('🔓 Admin Login ಯಶಸ್ವಿಯಾಗಿದೆ!', 'success');
+
+    // ಲಾಗಿನ್ ಆದ ತಕ್ಷಣ ಕ್ಲಿಕ್ ಮಾಡಿದ ಮಾಡ್ಯೂಲ್‌ಗೆ ಕರೆದೊಯ್ಯುವುದು
+    navigateToSection(pendingAdminDestination || 'qbank');
+  } else {
+    if (errBox) errBox.classList.remove('hidden');
+  }
+};
+
+// 2. ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ (Direct Click Responder)
+window.navigateToSection = function(section) {
+  // ಲಾಗಿನ್ ಆಗಿಲ್ಲದಿದ್ದರೆ ಪಾಪ್‌ಅಪ್ ತೋರಿಸಿ
+  if ((section === 'admin' || section === 'qbank') && !isAdminLoggedIn) {
+    showAdminLoginModal(section);
+    return;
+  }
+
+  // ಎಲ್ಲಾ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡಿ
+  const sections = ['dashboard', 'profile', 'generator', 'qbank', 'admin'];
+  sections.forEach(v => {
+    const el = document.getElementById(`view-${v}`);
+    const btn = document.getElementById(`nav-btn-${v}`);
+    if (el) el.classList.add('hidden');
+    if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5';
+  });
+
+  // ಆಕ್ಟಿವ್ ಸೆಕ್ಷನ್ ತೋರಿಸಿ
+  const activeEl = document.getElementById(`view-${section}`);
+  const activeBtn = document.getElementById(`nav-btn-${section}`);
+
+  if (activeEl) activeEl.classList.remove('hidden');
+  if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5';
+
+  if (section === 'generator') syncSubjectAndChapters();
+  if (section === 'qbank') { buildQuestionBankModuleView(); renderCustomQuestionList(); }
+  if (section === 'admin') { buildAdminRegistrationView(); updateAdminStats(); }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// 3. ಮಾಡ್ಯೂಲ್ ಸೆಕ್ಷನ್‌ಗಳು DOM ನಲ್ಲಿದೆ ಎಂದು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುವುದು
+(function ensureModuleContainersExist() {
+  const main = document.querySelector('main');
+  if (!main) return;
+
+  if (!document.getElementById('view-qbank')) {
+    const qb = document.createElement('section');
+    qb.id = 'view-qbank';
+    qb.className = 'hidden space-y-6';
+    main.appendChild(qb);
+  }
+  if (!document.getElementById('view-admin')) {
+    const ad = document.createElement('section');
+    ad.id = 'view-admin';
+    ad.className = 'hidden space-y-6';
+    main.appendChild(ad);
+  }
+})();
   </script>
 </body>
 </html>
