@@ -3795,6 +3795,55 @@ window.renderActiveExamWorkspace = function() {
     }
   });
 };
+
+/* ==========================================================================
+   5-LINE EXPANDED POEM TEXTAREA ENGINE (Rows: 5 & Multi-Line Support)
+   ========================================================================== */
+
+const origQTypeChangeTo5Lines = window.handleQuestionTypeChangeInAdmin;
+window.handleQuestionTypeChangeInAdmin = function(type) {
+  const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+  if (!formFieldsBox) return;
+
+  // ೮. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (ಖಚಿತ ೫ ಸಾಲುಗಳ ವಿಸ್ತೃತ ಬಾಕ್ಸ್)
+  if (type === 'poem_completion') {
+    formFieldsBox.innerHTML = `
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="font-bold text-slate-800 text-xs">ಪದ್ಯದ ಶೀರ್ಷಿಕೆ & ಕಂಠಪಾಠದ ಸಾಲುಗಳು (Enter ಒತ್ತಿ ೫ ಸಾಲುಗಳಲ್ಲಿ ಬರೆಯಿರಿ) *</label>
+          <span class="text-[10px] text-emerald-800 font-extrabold bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">೫ ಸಾಲುಗಳ ಬಾಕ್ಸ್</span>
+        </div>
+        <textarea id="qadd-text" rows="5" required placeholder="೧ ನೇ ಸಾಲು: ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ&#10;೨ ನೇ ಸಾಲು: ___________________________&#10;೩ ನೇ ಸಾಲು: ___________________________&#10;೪ ನೇ ಸಾಲು: ___________________________&#10;೫ ನೇ ಸಾಲು: ...ಕಾಪಾಡು ಜಗದಂಬೆ." class="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+          <select id="qadd-marks" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+            <option value="2">೨ ಅಂಕಗಳು (2 Marks)</option>
+            <option value="3">೩ ಅಂಕಗಳು (3 Marks)</option>
+            <option value="4" selected>೪ ಅಂಕಗಳು (4 Marks)</option>
+            <option value="5">೫ ಅಂಕಗಳು (5 Marks)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+          <select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold">
+            <option value="ಜ್ಞಾನ" selected>ಜ್ಞಾನ (ಕಂಠಪಾಠ / Knowledge)</option>
+            <option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-800 mb-1.5 text-xs">ಸಂಪೂರ್ಣ ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಸಾಲುಗಳು (Answer Key - ೫ ಸಾಲುಗಳ ಬಾಕ್ಸ್) *</label>
+        <textarea id="qadd-ans" rows="5" required placeholder="ಪದ್ಯದ ಎಲ್ಲಾ ಸಾಲುಗಳನ್ನು ಇಲ್ಲಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಟೈಪ್ ಮಾಡಿ..." class="w-full p-3.5 bg-emerald-50/60 border border-emerald-300 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed text-xs"></textarea>
+      </div>
+    `;
+  } else {
+    origQTypeChangeTo5Lines(type);
+  }
+};
     
   </script>
 </body>
