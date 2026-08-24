@@ -3118,7 +3118,62 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     alert("ಜನರೇಟ್ ದೋಷ: " + error.message);
   }
 };
-    
+    /* ==========================================================================
+   FIX FOR 'switchOutputTab is not defined' & TAB CONTROLLER
+   ========================================================================== */
+
+// 1. ಔಟ್‌ಪುಟ್ ಟ್ಯಾಬ್ ಸ್ವಿಚರ್ ಫಂಕ್ಷನ್ (Question Paper, Key & Blueprint Tabs)
+window.switchOutputTab = function(tab) {
+  const tabs = ['paper', 'key', 'blueprint'];
+  
+  tabs.forEach(t => {
+    const content = document.getElementById(`tab-content-${t}`);
+    const btn = document.getElementById(`tab-btn-${t}`);
+    if (content) content.classList.add('hidden');
+    if (btn) {
+      btn.className = 'px-4 py-2 rounded-xl text-xs font-extrabold transition text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5';
+    }
+  });
+
+  const activeContent = document.getElementById(`tab-content-${tab}`);
+  const activeBtn = document.getElementById(`tab-btn-${tab}`);
+  
+  if (activeContent) activeContent.classList.remove('hidden');
+  if (activeBtn) {
+    activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-extrabold transition bg-white text-slate-900 shadow-sm border border-slate-200 flex items-center gap-1.5';
+  }
+};
+
+// 2. ಪ್ರಿಂಟ್ ಫಂಕ್ಷನ್
+window.printCurrentTab = function() {
+  window.print();
+};
+
+// 3. ಲೈವ್ ಎಡಿಟಿಂಗ್ ಮೋಡ್ ಟಾಗಲ್
+window.toggleLiveEditMode = function() {
+  const p = document.getElementById('rendered-paper');
+  const k = document.getElementById('rendered-key');
+  const btn = document.getElementById('btn-edit-paper');
+  isEditModeActive = !isEditModeActive;
+
+  if (isEditModeActive) {
+    if (p) { p.contentEditable = "true"; p.style.outline = "2px dashed #f59e0b"; }
+    if (k) { k.contentEditable = "true"; k.style.outline = "2px dashed #f59e0b"; }
+    if (btn) { 
+      btn.className = 'bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; 
+      btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Done / ಸೇವ್ ಮಾಡಿ</span>'; 
+    }
+    showToast('📝 ತಿದ್ದುಪಡಿ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
+  } else {
+    if (p) { p.contentEditable = "false"; p.style.outline = "none"; }
+    if (k) { k.contentEditable = "false"; k.style.outline = "none"; }
+    if (btn) { 
+      btn.className = 'bg-amber-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; 
+      btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span>Edit / ತಿದ್ದುಪಡಿ ಮಾಡಿ</span>'; 
+    }
+    showToast('✅ ಬದಲಾವಣೆಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
+  }
+};
   </script>
 </body>
 </html>
