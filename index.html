@@ -1863,6 +1863,171 @@
       if (!str) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    /* ==========================================================================
+   REALTIME CENTRAL CLOUD DATABASE ENGINE (Live Cross-Device Auto-Sync)
+   All Karnataka Teachers Connect to this Live Cloud Repository Automatically
+   ========================================================================== */
+
+// ಉಚಿತ ಕೇಂದ್ರೀಕೃತ ಕ್ಲೌಡ್ ಡೇಟಾಬೇಸ್ ಎಂಡ್‌ಪಾಯಿಂಟ್
+const CLOUD_SYNC_ENDPOINT = "https://api.npoint.io/46d9a9b0c2e3954625b5";
+
+let isCloudSyncing = false;
+
+// 1. ಕ್ಲೌಡ್‌ನಿಂದ ಎಲ್ಲಾ ಲೈವ್ ಪ್ರಶ್ನೆಗಳನ್ನು ಆಟೋ-ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್ (Auto Fetch for All Teachers)
+window.fetchQuestionsFromCentralCloud = async function(showFeedback = false) {
+  if (isCloudSyncing) return;
+  isCloudSyncing = true;
+
+  try {
+    const res = await fetch(CLOUD_SYNC_ENDPOINT, { cache: 'no-store' });
+    if (res.ok) {
+      const cloudData = await res.json();
+      const cloudQList = cloudData.questions || (Array.isArray(cloudData) ? cloudData : []);
+
+      if (cloudQList && Array.isArray(cloudQList) && cloudQList.length > 0) {
+        // ಕ್ಲೌಡ್ ಪ್ರಶ್ನೆಗಳನ್ನು ಲೋಕಲ್ ಮೆಮೊರಿಗೆ ಸಿಂಕ್ ಮಾಡಿ
+        appState.qbank = cloudQList;
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+        // UI ನವೀಕರಣ
+        renderCustomQuestionList();
+        syncSubjectAndChapters();
+        updateAdminStats();
+
+        updateCloudStatusBadge(true, cloudQList.length);
+        if (showFeedback) showToast(`☁️ ಕ್ಲೌಡ್‌ನಿಂದ ${cloudQList.length} ಲೈವ್ ಪ್ರಶ್ನೆಗಳು ಸಿಂಕ್ ಆಗಿವೆ!`, 'success');
+      } else {
+        updateCloudStatusBadge(true, appState.qbank.length);
+      }
+    }
+  } catch (err) {
+    console.warn("Cloud sync note (Offline fallback):", err);
+    updateCloudStatusBadge(false, appState.qbank.length);
+  } finally {
+    isCloudSyncing = false;
+  }
+};
+
+// 2. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಸೇರಿಸಿದಾಗ ನೇರವಾಗಿ ಕ್ಲೌಡ್‌ಗೆ ಆಟೋ-ಪುಶ್ ಮಾಡುವ ಫಂಕ್ಷನ್ (Auto Push to Cloud)
+window.pushQuestionsToCentralCloud = async function() {
+  updateCloudStatusBadge('syncing', appState.qbank.length);
+
+  try {
+    const payload = {
+      appName: "WithYou-QP-Generator",
+      updatedAt: new Date().toISOString(),
+      totalQuestions: appState.qbank.length,
+      questions: appState.qbank
+    };
+
+    const res = await fetch(CLOUD_SYNC_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      updateCloudStatusBadge(true, appState.qbank.length);
+      showToast('☁️ ಲೈವ್ ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಸೇವ್ ಆಗಿದೆ (ಎಲ್ಲಾ ಶಿಕ್ಷಕರಿಗೆ ಲಭ್ಯ)!', 'success');
+    } else {
+      updateCloudStatusBadge(false, appState.qbank.length);
+    }
+  } catch (err) {
+    console.warn("Cloud push error:", err);
+    updateCloudStatusBadge(false, appState.qbank.length);
+  }
+};
+
+// 3. ಕ್ಲೌಡ್ ಸ್ಟೇಟಸ್ ಬ್ಯಾಡ್ಜ್ ಅಪ್‌ಡೇಟ್
+function updateCloudStatusBadge(status, count) {
+  const badgeContainer = document.getElementById('cloud-sync-status-indicator');
+  if (!badgeContainer) return;
+
+  if (status === 'syncing') {
+    badgeContainer.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-bold text-xs">
+        <i class="fa-solid fa-spinner fa-spin"></i> <span>ಕ್ಲೌಡ್ ಸಿಂಕ್ ಆಗುತ್ತಿದೆ...</span>
+      </span>
+    `;
+  } else if (status === true) {
+    badgeContainer.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-bold text-xs shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>☁️ Live Cloud Active: <b>${count}</b> ಪ್ರಶ್ನೆಗಳು ಲೈವ್ ಆಗಿವೆ</span>
+      </span>
+    `;
+  } else {
+    badgeContainer.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full font-bold text-xs">
+        <i class="fa-solid fa-hard-drive text-slate-500"></i> <span>ಸ್ಥಳೀಯ ಸಂಗ್ರಹ: <b>${count}</b> ಪ್ರಶ್ನೆಗಳು</span>
+      </span>
+    `;
+  }
+}
+
+// 4. ಪ್ರಶ್ನೆ ಸೇವ್ ಮಾಡಿದಾಗ ಆಟೋ-ಕ್ಲೌಡ್ ಸಿಂಕ್ ಲಿಂಕ್
+const originalSaveCustomQ = window.handleSaveCustomQuestion;
+window.handleSaveCustomQuestion = function(e) {
+  originalSaveCustomQ(e);
+  // ತಕ್ಷಣ ಕ್ಲೌಡ್‌ಗೆ ಕಳುಹಿಸಿ
+  setTimeout(pushQuestionsToCentralCloud, 100);
+};
+
+const originalDeleteCustomQ = window.deleteQuestionFromBank;
+window.deleteQuestionFromBank = function(qId) {
+  originalDeleteCustomQ(qId);
+  // ತಕ್ಷಣ ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಅಪ್‌ಡೇಟ್ ಮಾಡಿ
+  setTimeout(pushQuestionsToCentralCloud, 100);
+};
+
+// 5. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಕ್ಲೌಡ್ ಸಿಂಕ್ ಕಂಟ್ರೋಲರ್ ಬಾರ್ ಅಳವಡಿಕೆ
+(function injectLiveCloudBarInAdmin() {
+  setTimeout(() => {
+    const adminView = document.getElementById('view-admin');
+    if (!adminView || document.getElementById('admin-cloud-sync-banner')) return;
+
+    const cloudBanner = document.createElement('div');
+    cloudBanner.id = 'admin-cloud-sync-banner';
+    cloudBanner.className = 'bg-gradient-to-r from-emerald-900 via-slate-900 to-teal-950 text-white rounded-3xl p-5 shadow-lg border border-emerald-500/30 flex flex-wrap items-center justify-between gap-4 text-xs';
+    cloudBanner.innerHTML = `
+      <div class="flex items-center space-x-3.5">
+        <div class="h-12 w-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-2xl shadow-sm shrink-0">
+          <i class="fa-solid fa-cloud"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h4 class="font-extrabold text-sm text-white">Universal Live Cloud Database</h4>
+            <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-bold">Auto-Sync</span>
+          </div>
+          <p class="text-slate-300 text-[11px] mt-0.5">
+            ನೀವು ಮೊಬೈಲ್‌ನಲ್ಲಿ ಸೇರಿಸುವ ಯಾವುದೇ ಪ್ರಶ್ನೆ ತಕ್ಷಣವೇ ಇಂಟರ್ನೆಟ್ ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಸೇವ್ ಆಗಿ ಕರ್ನಾಟಕದ ಎಲ್ಲಾ ಶಿಕ್ಷಕರಿಗೂ ಲೈವ್ ಆಗಿ ಸಿಗುತ್ತದೆ.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <div id="cloud-sync-status-indicator"></div>
+        <button type="button" onclick="fetchQuestionsFromCentralCloud(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl transition shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Live Sync Now</span>
+        </button>
+      </div>
+    `;
+
+    const firstCard = adminView.querySelector('.bg-white.rounded-3xl');
+    if (firstCard) adminView.insertBefore(cloudBanner, firstCard);
+
+    // ತಕ್ಷಣ ಸಿಂಕ್ ಮಾಡಿ
+    fetchQuestionsFromCentralCloud();
+  }, 300);
+})();
+
+// ವೆಬ್‌ಸೈಟ್ ಓಪನ್ ಆದ ತಕ್ಷಣವೇ ಕ್ಲೌಡ್‌ನಿಂದ ಪ್ರಶ್ನೆಗಳನ್ನು ಆಟೋ-ಡೌನ್‌ಲೋಡ್ ಮಾಡುವುದು
+setTimeout(() => {
+  fetchQuestionsFromCentralCloud();
+}, 200);
+    
   </script>
 </body>
 </html>
