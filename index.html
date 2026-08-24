@@ -2027,6 +2027,190 @@ window.deleteQuestionFromBank = function(qId) {
 setTimeout(() => {
   fetchQuestionsFromCentralCloud();
 }, 200);
+
+/* ==========================================================================
+   OFFICIAL GOOGLE FIREBASE REALTIME CLOUD DATABASE ENGINE
+   100% Permanent Free Cloud Storage for all Karnataka Teachers
+   ========================================================================== */
+
+// 1. ಡಿಫಾಲ್ಟ್ Firebase Database URL ಪಡೆಯುವುದು
+window.getFirebaseDbUrl = function() {
+  return localStorage.getItem('withyou_firebase_db_url') || "https://withyou-qp-bank-default-rtdb.firebaseio.com";
+};
+
+// 2. Firebase ಕ್ಲೌಡ್‌ನಿಂದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಲೈವ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.fetchQuestionsFromFirebase = async function(showToastMsg = false) {
+  const dbUrl = getFirebaseDbUrl().replace(/\/+$/, '');
+  const endpoint = `${dbUrl}/qbank.json`;
+
+  try {
+    const res = await fetch(endpoint, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        // Firebase Object ಅನ್ನು Array ಆಗಿ ಪರಿವರ್ತಿಸುವುದು
+        let qList = [];
+        if (Array.isArray(data)) {
+          qList = data.filter(Boolean);
+        } else if (typeof data === 'object') {
+          qList = Object.values(data);
+        }
+
+        if (qList.length > 0) {
+          appState.qbank = qList;
+          localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+          renderCustomQuestionList();
+          syncSubjectAndChapters();
+          updateAdminStats();
+
+          updateFirebaseStatusUI(true, qList.length);
+          if (showToastMsg) showToast(`🔥 Firebase ನಿಂದ ${qList.length} ಲೈವ್ ಪ್ರಶ್ನೆಗಳು ಸಿಂಕ್ ಆಗಿವೆ!`, 'success');
+          return;
+        }
+      }
+    }
+    updateFirebaseStatusUI(true, appState.qbank.length);
+  } catch (err) {
+    console.warn("Firebase fetch note (Offline cache active):", err);
+    updateFirebaseStatusUI(false, appState.qbank.length);
+  }
+};
+
+// 3. ಹೊಸ ಪ್ರಶ್ನೆ ಸೇರಿಸಿದಾಗ Firebase ಕ್ಲೌಡ್‌ಗೆ ಆಟೋ-ಪುಶ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.pushQuestionsToFirebase = async function() {
+  const dbUrl = getFirebaseDbUrl().replace(/\/+$/, '');
+  const endpoint = `${dbUrl}/qbank.json`;
+  updateFirebaseStatusUI('syncing', appState.qbank.length);
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(appState.qbank)
+    });
+
+    if (res.ok) {
+      updateFirebaseStatusUI(true, appState.qbank.length);
+      showToast('🔥 Google Firebase ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಸೇವ್ ಆಗಿದೆ (ಎಲ್ಲಾ ಶಿಕ್ಷಕರಿಗೆ ಲೈವ್ ಲಭ್ಯ)!', 'success');
+    } else {
+      updateFirebaseStatusUI(false, appState.qbank.length);
+    }
+  } catch (err) {
+    console.warn("Firebase save error:", err);
+    updateFirebaseStatusUI(false, appState.qbank.length);
+  }
+};
+
+// 4. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ Firebase URL ಕಾನ್ಫಿಗರೇಶನ್ & ಸ್ಟೇಟಸ್ UI
+function updateFirebaseStatusUI(status, count) {
+  const container = document.getElementById('firebase-sync-status-box');
+  if (!container) return;
+
+  if (status === 'syncing') {
+    container.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-bold text-xs">
+        <i class="fa-solid fa-spinner fa-spin"></i> <span>Firebase ಸಿಂಕ್ ಆಗುತ್ತಿದೆ...</span>
+      </span>
+    `;
+  } else if (status === true) {
+    container.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-100 text-emerald-950 border border-emerald-300 rounded-full font-black text-xs shadow-sm">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span>🔥 Google Firebase Live: <b>${count}</b> ಪ್ರಶ್ನೆಗಳು ಆನ್‌ಲೈನ್‌ನಲ್ಲಿವೆ</span>
+      </span>
+    `;
+  } else {
+    container.innerHTML = `
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full font-bold text-xs">
+        <i class="fa-solid fa-hard-drive text-slate-500"></i> <span>ಸ್ಥಳೀಯ ಸಂಗ್ರಹ: <b>${count}</b> ಪ್ರಶ್ನೆಗಳು</span>
+      </span>
+    `;
+  }
+}
+
+// 5. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ Firebase ಕಂಟ್ರೋಲರ್ ಕಾರ್ಡ್ ಅಳವಡಿಕೆ
+(function injectFirebaseConfigCardInAdmin() {
+  setTimeout(() => {
+    const adminView = document.getElementById('view-admin');
+    if (!adminView || document.getElementById('admin-firebase-config-card')) return;
+
+    const currentUrl = getFirebaseDbUrl();
+    const fbCard = document.createElement('div');
+    fbCard.id = 'admin-firebase-config-card';
+    fbCard.className = 'bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950 text-white rounded-3xl p-6 shadow-xl border border-amber-500/30 space-y-4';
+    fbCard.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="h-12 w-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl shadow-sm">
+            <i class="fa-solid fa-fire"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-base text-white">Google Firebase Realtime Database</h3>
+              <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full text-[10px] font-bold">100% Free Cloud</span>
+            </div>
+            <p class="text-xs text-slate-300">ಕರ್ನಾಟಕದ ಎಲ್ಲಾ ಶಿಕ್ಷಕರು ಈ ಕ್ಲೌಡ್‌ಗೆ ಕನೆಕ್ಟ್ ಆಗಿ ಲೈವ್ ಪ್ರಶ್ನೆಗಳನ್ನು ಪಡೆಯುತ್ತಾರೆ</p>
+          </div>
+        </div>
+        <div id="firebase-sync-status-box"></div>
+      </div>
+
+      <div class="space-y-2 text-xs">
+        <label class="block font-bold text-slate-200">ನಿಮ್ಮ Firebase Realtime Database URL (ಅಥವಾ ಡಿಫಾಲ್ಟ್ ಕ್ಲೌಡ್ ಬಳಸಿ):</label>
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+          <input type="url" id="admin-firebase-url-input" value="${currentUrl}" placeholder="https://your-project-default-rtdb.firebaseio.com" class="flex-1 px-4 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl font-mono text-xs text-emerald-400 focus:ring-2 focus:ring-amber-500 focus:outline-none" />
+          <button type="button" onclick="saveCustomFirebaseUrl()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-xl font-bold transition shadow flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-floppy-disk"></i> <span>Save URL</span>
+          </button>
+          <button type="button" onclick="fetchQuestionsFromFirebase(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold transition shadow flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Sync Now</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400">
+          💡 <b>ಸಲಹೆ:</b> ನೀವು Firebase ನಲ್ಲಿ ಉಚಿತವಾಗಿ ರಚಿಸಿದ URL ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ 'Save URL' ಕ್ಲಿಕ್ ಮಾಡಿದರೆ, ನಿಮ್ಮ ಸ್ವಂತ ಖಾಸಗಿ ಕ್ಲೌಡ್ ಡೇಟಾಬೇಸ್ ಸಕ್ರಿಯವಾಗುತ್ತದೆ!
+        </p>
+      </div>
+    `;
+
+    const firstCard = adminView.querySelector('.bg-white.rounded-3xl');
+    if (firstCard) adminView.insertBefore(fbCard, firstCard);
+
+    fetchQuestionsFromFirebase();
+  }, 250);
+})();
+
+window.saveCustomFirebaseUrl = function() {
+  const input = document.getElementById('admin-firebase-url-input');
+  if (!input || !input.value.trim()) {
+    showToast('ದಯವಿಟ್ಟು ಸರಿಯಾದ Firebase URL ನಮೂದಿಸಿ.', 'error');
+    return;
+  }
+  const cleanUrl = input.value.trim().replace(/\/+$/, '');
+  localStorage.setItem('withyou_firebase_db_url', cleanUrl);
+  showToast('✅ Firebase Database URL ಸೇವ್ ಆಗಿದೆ!', 'success');
+  
+  // ಪ್ರಸ್ತುತ ಪ್ರಶ್ನೆಗಳನ್ನು ಹೊಸ Firebase ಗೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ
+  pushQuestionsToFirebase();
+};
+
+// 6. ಪ್ರಶ್ನೆ ಸೇರಿಸಿದಾಗ ಅಥವಾ ಡಿಲೀಟ್ ಮಾಡಿದಾಗ Firebase ಆಟೋ-ಸಿಂಕ್
+const origSaveQHandler = window.handleSaveCustomQuestion;
+window.handleSaveCustomQuestion = function(e) {
+  origSaveQHandler(e);
+  setTimeout(pushQuestionsToFirebase, 100);
+};
+
+const origDeleteQHandler = window.deleteQuestionFromBank;
+window.deleteQuestionFromBank = function(qId) {
+  origDeleteQHandler(qId);
+  setTimeout(pushQuestionsToFirebase, 100);
+};
+
+// ಪೇಜ್ ಓಪನ್ ಆದ ತಕ್ಷಣವೇ Firebase ನಿಂದ ಆಟೋ-ಲೋಡ್
+setTimeout(() => {
+  fetchQuestionsFromFirebase();
+}, 150);
     
   </script>
 </body>
