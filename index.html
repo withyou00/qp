@@ -3731,6 +3731,70 @@ window.renderActiveExamWorkspace = function() {
 
   renderExactThreeBlueprints(questions, totalMarks);
 };
+
+    /* ==========================================================================
+   MULTI-LINE POEM COMPLETION ENGINE (Enter Key Line-Break & Clean Stanza Formatting)
+   ========================================================================== */
+
+// 1. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ ವಿಭಾಗಕ್ಕೆ ಮಲ್ಟಿ-ಲೈನ್ ಟೆಕ್ಸ್ಟ್‌ಏರಿಯಾ ಬಾಕ್ಸ್ ಅಳವಡಿಕೆ
+const origQTypeChangeWithPoem = window.handleQuestionTypeChangeInAdmin;
+window.handleQuestionTypeChangeInAdmin = function(type) {
+  const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+  if (!formFieldsBox) return;
+
+  // ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (Complete the Poem)
+  if (type === 'poem_completion') {
+    formFieldsBox.innerHTML = `
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-bold text-slate-700">ಪದ್ಯದ ಶೀರ್ಷಿಕೆ & ಸಾಲುಗಳು (Enter ಒತ್ತಿ ಮುಂದಿನ ಸಾಲು ಬರೆಯಿರಿ) *</label>
+          <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">ಮಲ್ಟಿ-ಲೈನ್ ಬಾಕ್ಸ್</span>
+        </div>
+        <textarea id="qadd-text" rows="4" required placeholder="e.g. ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:&#10;ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ&#10;___________________________&#10;___________________________&#10;ಕಾಪಾಡು ಜಗದಂಬೆ." class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+          <select id="qadd-marks" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+            <option value="2">೨ ಅಂಕಗಳು (2 Marks)</option>
+            <option value="3">೩ ಅಂಕಗಳು (3 Marks)</option>
+            <option value="4" selected>೪ ಅಂಕಗಳು (4 Marks)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+          <select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold">
+            <option value="ಜ್ಞಾನ" selected>ಜ್ಞಾನ (ಕಂಠಪಾಠ / Knowledge)</option>
+            <option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">ಸಂಪೂರ್ಣ ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಸಾಲುಗಳು (Answer Key - ಸಾಲಿಗೆ ಒಂದರಂತೆ) *</label>
+        <textarea id="qadd-ans" rows="4" required placeholder="ಪದ್ಯದ ಎಲ್ಲಾ ಸಾಲುಗಳನ್ನು ಇಲ್ಲಿ ಸಾಲಿಗೆ ಒಂದರಂತೆ ಟೈಪ್ ಮಾಡಿ..." class="w-full p-3 bg-emerald-50/50 border border-emerald-300 rounded-xl font-semibold leading-relaxed"></textarea>
+      </div>
+    `;
+  } else {
+    origQTypeChangeWithPoem(type);
+  }
+};
+
+// 2. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಮತ್ತು ಕೀ ಉತ್ತರದಲ್ಲಿ ಪದ್ಯದ ಸಾಲುಗಳನ್ನು ಒಂದರ ಕೆಳಗೆ ಒಂದು ಅಚ್ಚುಕಟ್ಟಾಗಿ ಪ್ರದರ್ಶಿಸುವುದು
+const origRenderActiveExam = renderActiveExamWorkspace;
+window.renderActiveExamWorkspace = function() {
+  origRenderActiveExam();
+
+  // ಪದ್ಯದ ಸಾಲುಗಳಿಗೆ ಲೈನ್-ಬ್ರೇಕ್ (white-space: pre-wrap) ಅನ್ವಯಿಸುವುದು
+  const poemQuestionDivs = document.querySelectorAll('#rendered-paper .a4-sheet-container div');
+  poemQuestionDivs.forEach(div => {
+    if (div.innerText.includes('ಪದ್ಯ') || div.innerText.includes('ಕಂಠಪಾಠ')) {
+      div.style.whiteSpace = 'pre-wrap';
+      div.style.lineHeight = '1.8';
+    }
+  });
+};
     
   </script>
 </body>
