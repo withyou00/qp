@@ -3105,6 +3105,101 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     alert("ಜನರೇಟ್ ದೋಷ: " + err.message);
   }
 };
+
+/* ==========================================================================
+   FIX FOR CHAPTER CHECKBOXES VISIBILITY & INSTANT LESSON SELECTOR
+   ========================================================================== */
+
+// 1. ಪಾಠಗಳ ಆಯ್ಕೆ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಸದಾ ಲೈವ್ ಆಗಿ ತೋರಿಸುವ ಫಂಕ್ಷನ್
+window.renderChapterCheckboxes = function() {
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const container = document.getElementById('chapter-list-box');
+  const headerLabel = document.getElementById('chapters-header-label');
+  if (!container) return;
+
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+  const cleanFormSubj = cleanMatchText(subject);
+
+  // ಆಯ್ಕೆಮಾಡಿದ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಹೊಂದಾಣಿಕೆಯಾಗುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಪಡೆಯುವುದು
+  const matchedQ = qbank.filter(q => {
+    const isGradeOk = (parseInt(q.grade) === parseInt(grade) || String(q.grade) === String(grade));
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanFormSubj.slice(0,4);
+    return isGradeOk && isSubjOk;
+  });
+
+  // ಭಂಡಾರದಿಂದ ನೈಜ ಪಾಠಗಳ ಪಟ್ಟಿ ಹೊರತೆಗೆಯುವುದು
+  let chaptersList = Array.from(new Set(matchedQ.map(q => q.chapter).filter(Boolean)));
+
+  // ಒಂದು ವೇಳೆ ಈ ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಪ್ರಶ್ನೆ ಸೇರಿಸದಿದ್ದರೆ ಆರಂಭಿಕ ಪಾಠಗಳನ್ನು ತೋರಿಸಿ
+  if (chaptersList.length === 0) {
+    chaptersList = [
+      `1. ${subject.split('(')[0].trim()} - ಪಾಠ 1`,
+      `2. ${subject.split('(')[0].trim()} - ಪಾಠ 2`,
+      `3. ${subject.split('(')[0].trim()} - ಪಾಠ 3`
+    ];
+  }
+
+  if (headerLabel) {
+    headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ${chaptersList.length} ಪಾಠಗಳು ಲಭ್ಯ</span>`;
+  }
+
+  // ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಸುಂದರವಾಗಿ ರೆಂಡರ್ ಮಾಡಿ
+  container.innerHTML = chaptersList.map(chap => {
+    const qCount = matchedQ.filter(q => q.chapter === chap).length;
+    const badge = qCount > 0 
+      ? `<span class="text-[10px] bg-emerald-100 text-emerald-900 border border-emerald-300 px-2 py-0.5 rounded-full font-bold">${qCount} ಪ್ರಶ್ನೆಗಳು</span>` 
+      : `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">ಹೊಸ ಪಾಠ</span>`;
+
+    return `
+      <label class="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/40 transition cursor-pointer text-xs">
+        <div class="flex items-center space-x-2.5">
+          <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" />
+          <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+        </div>
+        ${badge}
+      </label>
+    `;
+  }).join('');
+};
+
+// 2. ಹೊಸ ಪಾಠವನ್ನು ಜನರೇಟರ್‌ನಲ್ಲೇ ನೇರವಾಗಿ ಸೇರಿಸುವ ಬಟನ್
+window.addCustomChapter = function() {
+  const input = document.getElementById('custom-chapter-input');
+  const val = input ? input.value.trim() : '';
+  if (!val) {
+    showToast('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರು ಬರೆಯಿರಿ.', 'error');
+    return;
+  }
+
+  const container = document.getElementById('chapter-list-box');
+  if (container) {
+    const newTile = document.createElement('label');
+    newTile.className = 'flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-300 rounded-2xl text-xs cursor-pointer animate-in fade-in';
+    newTile.innerHTML = `
+      <div class="flex items-center space-x-2.5">
+        <input type="checkbox" name="selected_chapter" value="${escapeHtml(val)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+        <span class="font-bold text-emerald-950">${escapeHtml(val)}</span>
+      </div>
+      <span class="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full font-bold">ಸೇರ್ಪಡೆಯಾಗಿದೆ</span>
+    `;
+    container.insertBefore(newTile, container.firstChild);
+    input.value = '';
+    showToast(`'${val}' ಪಾಠವನ್ನು ಸೇರಿಸಲಾಗಿದೆ!`, 'success');
+  }
+};
+
+// 3. ತರಗತಿ, ವಿಷಯ ಬದಲಾದಾಗ ತಕ್ಷಣ ಪಾಠಗಳನ್ನು ರೀ-ರೆಂಡರ್ ಮಾಡಿ
+const origClassSubjHandler = window.handleClassOrSubjectChange;
+window.handleClassOrSubjectChange = function() {
+  renderChapterCheckboxes();
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಪಾಠಗಳು ಕಾಣಿಸುವಂತೆ ಸಿಂಕ್ ಮಾಡಿ
+setTimeout(() => {
+  renderChapterCheckboxes();
+}, 100);
     
   </script>
 </body>
