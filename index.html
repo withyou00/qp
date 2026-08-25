@@ -4408,10 +4408,37 @@ window.saveAdminQuestionEdit = function(e, qId) {
 renderCustomQuestionList();
 
 /* ==========================================================================
-   100% ACCURATE NOTEBOOK-LM BULK IMPORTER (JSON & SMART SECTION PARSER)
+   PERMANENT MASTER FIX: INSTANT VISIBLE AI BULK IMPORTER & GRAMMAR SUITE
    ========================================================================== */
 
-// ೧. AI ಇಂಪೋರ್ಟ್ ಮಾಡಲ್ ತೆರೆಯುವ ಫಂಕ್ಷನ್
+// ೧. ಹೆಡರ್‌ನಲ್ಲಿ ಹಾಗೂ ಪೇಜ್‌ನಲ್ಲಿ ತಕ್ಷಣ 'AI ಇಂಪೋರ್ಟ್' ಬಟನ್ ಕೂರಿಸುವ ಫಂಕ್ಷನ್
+function ensureVisibleAIImportButtons() {
+  // A. ಮೇಲ್ಭಾಗದ ಹೆಡರ್ ನ್ಯಾವಿಗೇಶನ್ ಬಾರ್‌ಗೆ ಬಟನ್ ಸೇರ್ಪಡೆ
+  const navBar = document.querySelector('header .flex.items-center.space-x-1');
+  if (navBar && !document.getElementById('header-ai-import-btn')) {
+    const aiBtn = document.createElement('button');
+    aiBtn.id = 'header-ai-import-btn';
+    aiBtn.type = 'button';
+    aiBtn.className = 'px-3 py-1.5 rounded-xl font-black transition bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md flex items-center gap-1.5 text-xs';
+    aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>🚀 AI ಇಂಪೋರ್ಟ್</span>';
+    aiBtn.onclick = () => window.openBulkAIImportModal();
+    navBar.insertBefore(aiBtn, navBar.firstChild);
+  }
+
+  // B. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಬಾಕ್ಸ್‌ನಲ್ಲೂ ಬಟನ್ ಸೇರ್ಪಡೆ
+  const chapHeader = document.querySelector('#view-generator .card-modern .flex.items-center.space-x-2');
+  if (chapHeader && !document.getElementById('step2-ai-import-btn')) {
+    const btn2 = document.createElement('button');
+    btn2.id = 'step2-ai-import-btn';
+    btn2.type = 'button';
+    btn2.className = 'text-xs bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold px-3 py-1 rounded-xl border border-purple-300 flex items-center gap-1 ml-2';
+    btn2.innerHTML = '<i class="fa-solid fa-robot text-purple-700"></i> <span>NotebookLM ಇಂಪೋರ್ಟ್</span>';
+    btn2.onclick = () => window.openBulkAIImportModal();
+    chapHeader.parentElement.appendChild(btn2);
+  }
+}
+
+// ೨. AI ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್ ಪಾಪ್‌ಅಪ್ ವಿಂಡೋ
 window.openBulkAIImportModal = function() {
   let modal = document.getElementById('ai-bulk-import-modal');
   if (!modal) {
@@ -4424,24 +4451,24 @@ window.openBulkAIImportModal = function() {
   const subjects = getSystemSubjects();
 
   modal.innerHTML = `
-    <div class="bg-white rounded-3xl p-6 max-w-3xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs">
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-3xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
       
-      <!-- Header -->
+      <!-- Modal Header -->
       <div class="border-b pb-3 flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <div class="p-3 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-md">
-            <i class="fa-solid fa-robot text-lg text-amber-300"></i>
+            <i class="fa-solid fa-robot text-xl text-amber-300"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-base text-slate-900">NotebookLM / AI ನಿಖರ ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್</h3>
-            <p class="text-[11px] text-slate-500">೧ ಅಂಕ, ೨ ಅಂಕ, MCQ, ಹೊಂದಿಸಿ ಬರೆಯಿರಿ, ವ್ಯಾಕರಣ, ಕಲಿಕೋದ್ದೇಶಗಳನ್ನು ನಿಖರವಾಗಿ ಆಟೋ-ಡಿವೈಡ್ ಮಾಡುತ್ತದೆ</p>
+            <h3 class="font-black text-base text-slate-900">NotebookLM / AI ನಿಖರ ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್</h3>
+            <p class="text-[11px] text-slate-500">೧ ಅಂಕ, ೨ ಅಂಕ, MCQ, ಹೊಂದಿಸಿ ಬರೆಯಿರಿ, ವ್ಯಾಕರಣ ಎಲ್ಲವನ್ನೂ ನಿಖರವಾಗಿ ಆಟೋ-ಡಿವೈಡ್ ಮಾಡುತ್ತದೆ</p>
           </div>
         </div>
         <button onclick="closeBulkAIImportModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
       </div>
 
-      <!-- Basic Setup -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 bg-slate-50 border rounded-2xl">
+      <!-- Metadata Selection -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-slate-50 border rounded-2xl">
         <div>
           <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
           <select id="bulk-import-class" class="w-full p-2 bg-white border rounded-xl font-bold">
@@ -4468,29 +4495,26 @@ window.openBulkAIImportModal = function() {
         </div>
       </div>
 
-      <!-- NotebookLM Prompt Helper -->
+      <!-- Prompt Helper Box -->
       <div class="p-3.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-indigo-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-indigo-950">
         <div>
           <b class="font-bold flex items-center gap-1.5 text-indigo-900">
             <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> NotebookLM ಗೆ ೧-ಕ್ಲಿಕ್ Prompt:
           </b>
-          <p class="text-[11px] text-indigo-800 mt-0.5">ಈ ಕೆಳಗಿನ Prompt ಅನ್ನು Copy ಮಾಡಿ NotebookLM ನಲ್ಲಿ ಕೇಳಿ, ಅದು ನೀಡಿದ ಸಂಪೂರ್ಣ ಪಠ್ಯವನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ.</p>
+          <p class="text-[11px] text-indigo-800 mt-0.5">ಈ Prompt ಕಾಪಿ ಮಾಡಿ NotebookLM ನಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ, ಅದು ನೀಡಿದ ಸಂಪೂರ್ಣ ಪಠ್ಯವನ್ನು ಕೆಳಗೆ ಪೇಸ್ಟ್ ಮಾಡಿ.</p>
         </div>
         <button type="button" onclick="copyNotebookLMPrompt()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs shrink-0 shadow flex items-center gap-1.5">
           <i class="fa-solid fa-copy"></i> Copy Prompt
         </button>
       </div>
 
-      <!-- Input Text Area -->
+      <!-- Textarea -->
       <div>
-        <label class="block font-bold text-slate-800 mb-1">NotebookLM ನೀಡಿದ ಉತ್ತರವನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ (Paste Here) *</label>
-        <textarea id="bulk-import-text" rows="8" placeholder="NotebookLM ನೀಡಿದ JSON ಅಥವಾ ಪ್ರಶ್ನೋತ್ತರಗಳ ಪಠ್ಯವನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ..." class="w-full p-3.5 bg-slate-50 border-2 border-indigo-300 rounded-2xl font-mono text-xs text-slate-800 focus:outline-none focus:border-indigo-600 leading-relaxed"></textarea>
+        <label class="block font-bold text-slate-800 mb-1">NotebookLM ನೀಡಿದ ಉತ್ತರವನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ *</label>
+        <textarea id="bulk-import-text" rows="8" placeholder="NotebookLM ನೀಡಿದ ಪಠ್ಯ ಅಥವಾ JSON ಅನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ..." class="w-full p-3.5 bg-slate-50 border-2 border-indigo-300 rounded-2xl font-mono text-xs text-slate-800 focus:outline-none focus:border-indigo-600 leading-relaxed"></textarea>
       </div>
 
-      <!-- Preview Summary Box (Dynamic) -->
-      <div id="bulk-preview-summary" class="hidden p-3 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-2"></div>
-
-      <!-- Footer Buttons -->
+      <!-- Footer Actions -->
       <div class="flex items-center justify-end space-x-2 pt-2 border-t">
         <button type="button" onclick="closeBulkAIImportModal()" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
         <button type="button" onclick="processSmartBulkImport()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2">
@@ -4507,7 +4531,7 @@ window.closeBulkAIImportModal = function() {
   document.getElementById('ai-bulk-import-modal')?.classList.add('hidden');
 };
 
-// ೨. NotebookLM ಗೆ ನೀಡಲು ೧೦೦% ನಿಖರವಾದ Prompt
+// ೩. Prompt Copy ಸೌಲಭ್ಯ
 window.copyNotebookLMPrompt = function() {
   const promptText = `ದಯವಿಟ್ಟು ಈ ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು (MCQ, ಬಿಟ್ಟ ಸ್ಥಳ, ಹೊಂದಿಸಿ ಬರೆಯಿರಿ, ವ್ಯಾಕರಣ, 1 ಅಂಕ, 2 ಅಂಕ, 3 ಅಂಕ) ಕಲಿಕೋದ್ದೇಶ ಮತ್ತು ಕ್ಲಿಷ್ಟತೆ ಸಹಿತ ಕೆಳಗಿನ JSON Format ನಲ್ಲಿ ಮಾತ್ರ ರಚಿಸಿಕೊಡು:
 
@@ -4574,7 +4598,7 @@ window.copyNotebookLMPrompt = function() {
   });
 };
 
-// ೩. Smart Multi-Engine Parser (JSON + Section Text Auto-Divide)
+// ೪. ಸ್ಮಾರ್ಟ್ ಪಾರ್ಸರ್ (JSON ಮತ್ತು ಟೆಕ್ಸ್ಟ್ ಎರಡನ್ನೂ ಆಟೋ-ಡಿವೈಡ್ ಮಾಡುತ್ತದೆ)
 window.processSmartBulkImport = function() {
   let rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
   const grade = document.getElementById('bulk-import-class')?.value || '6';
@@ -4583,35 +4607,20 @@ window.processSmartBulkImport = function() {
   const chapter = document.getElementById('bulk-import-chapter')?.value.trim();
   const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
 
-  if (!chapter) {
-    return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (Chapter Name is required).');
-  }
-  if (!rawText) {
-    return alert('ದಯವಿಟ್ಟು NotebookLM ನ ಪಠ್ಯವನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
-  }
+  if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (!rawText) return alert('ದಯವಿಟ್ಟು NotebookLM ನ ಪಠ್ಯವನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
 
   let finalQuestions = [];
 
-  // ವಿಧಾನ ೧: JSON ಗುರುತಿಸುವಿಕೆ (100% Perfect Extraction)
-  let jsonString = '';
+  // JSON ಹುಡುಕಾಟ
   const jsonMatch = rawText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-  if (jsonMatch) {
-    jsonString = jsonMatch[0];
-  } else if (rawText.startsWith('[') && rawText.endsWith(']')) {
-    jsonString = rawText;
-  }
-
-  if (jsonString) {
+  if (jsonMatch || (rawText.startsWith('[') && rawText.endsWith(']'))) {
     try {
-      const parsedArray = JSON.parse(jsonString);
+      const parsedArray = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
       if (Array.isArray(parsedArray) && parsedArray.length > 0) {
         finalQuestions = parsedArray.map(item => ({
           id: 'q_' + Date.now() + Math.floor(Math.random() * 10000),
-          grade: grade,
-          subject: subject,
-          part: part,
-          chapter: chapter,
-          medium: medium,
+          grade: grade, subject: subject, part: part, chapter: chapter, medium: medium,
           type: item.type || 'vsa',
           subType: item.subType || 'opposite',
           q: item.q || '',
@@ -4624,114 +4633,208 @@ window.processSmartBulkImport = function() {
         }));
       }
     } catch (e) {
-      console.warn("JSON parse fallback to text parser:", e);
+      console.warn("JSON fallback:", e);
     }
   }
 
-  // ವಿಧಾನ ೨: ಸಾಮಾನ್ಯ ಪಠ್ಯವಾಗಿದ್ದರೆ ಸೆಕ್ಷನ್‌ವಾರು ಆಟೋ-ಡಿವೈಡ್ ಮಾಡುವುದು
+  // ಟೆಕ್ಸ್ಟ್ ಪಾರ್ಸಿಂಗ್ (ಫಾಲ್‌ಬ್ಯಾಕ್)
   if (finalQuestions.length === 0) {
-    finalQuestions = parseRawTextSections(rawText, { grade, subject, part, chapter, medium });
+    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+    let currentType = 'vsa';
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.includes('MCQ') || l.includes('ಬಹು ಆಯ್ಕೆ')) { currentType = 'mcq'; continue; }
+      if (l.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) { currentType = 'blanks'; continue; }
+      if (l.includes('ಹೊಂದಿಸಿ')) { currentType = 'match'; continue; }
+      if (l.includes('ವಿರುದ್ಧ') || l.includes('ವ್ಯಾಕರಣ')) { currentType = 'grammar'; continue; }
+      if (l.includes('೧ ಅಂಕ')) { currentType = 'vsa'; continue; }
+      if (l.includes('೨ ಅಂಕ') || l.includes('೩ ಅಂಕ')) { currentType = 'sa'; continue; }
+
+      if (/^(\d+[\.\)]|ಪ್ರಶ್ನೆ[:\.]?)/i.test(l)) {
+        let qText = l.replace(/^(\d+[\.\)]|ಪ್ರಶ್ನೆ[:\.]?)\s*/i, '').trim();
+        let ans = '';
+        if (i + 1 < lines.length && /^(ಉತ್ತರ|Ans)[:\.\-]/i.test(lines[i+1])) {
+          ans = lines[i+1].replace(/^(ಉತ್ತರ|Ans)[:\.\-]\s*/i, '').trim();
+          i++;
+        }
+        finalQuestions.push({
+          id: 'q_' + Date.now() + Math.floor(Math.random() * 10000),
+          grade, subject, part, chapter, medium,
+          type: currentType, subType: 'opposite',
+          q: qText, a: '', b: '', c: '', d: '',
+          ans: ans || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+          marks: currentType === 'sa' ? 2 : (currentType === 'match' ? 4 : 1),
+          obj: currentType === 'sa' ? 'ತಿಳುವಳಿಕೆ' : 'ಜ್ಞಾನ',
+          diff: 'ಸಾಧಾರಣ'
+        });
+      }
+    }
   }
 
   if (finalQuestions.length === 0) {
-    return alert('ಕ್ಷಮಿಸಿ, ಪ್ರಶ್ನೆಗಳನ್ನು ವಿಂಗಡಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು "Copy Prompt" ಬಟನ್ ಬಳಸಿ NotebookLM ನಲ್ಲಿ JSON ಪಡೆದು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+    return alert('ಕ್ಷಮಿಸಿ, ಪ್ರಶ್ನೆಗಳನ್ನು ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು "Copy Prompt" ಬಟನ್ ಬಳಸಿ NotebookLM ನಲ್ಲಿ JSON ಪಡೆದು ಪೇಸ್ಟ್ ಮಾಡಿ.');
   }
 
-  // ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ನೇರ ಸೇರ್ಪಡೆ
+  // ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆ
   appState.qbank.unshift(...finalQuestions);
   localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
 
-  // ಅಂಕಿಅಂಶಗಳ ವಿವರಣೆ
-  const mcqCount = finalQuestions.filter(q => q.type === 'mcq').length;
-  const blanksCount = finalQuestions.filter(q => q.type === 'blanks').length;
-  const matchCount = finalQuestions.filter(q => q.type === 'match').length;
-  const vsaCount = finalQuestions.filter(q => q.type === 'vsa').length;
-  const saCount = finalQuestions.filter(q => q.type === 'sa').length;
-  const grammarCount = finalQuestions.filter(q => q.type === 'grammar').length;
-
   closeBulkAIImportModal();
-  renderCustomQuestionList();
-  renderChapterCheckboxes();
-  pushToFirebaseCloud();
+  if (typeof renderCustomQuestionList === 'function') renderCustomQuestionList();
+  if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+  if (typeof pushToFirebaseCloud === 'function') pushToFirebaseCloud();
 
-  alert(`🎉 ಅಭಿನಂದನೆಗಳು! ಒಟ್ಟು ${finalQuestions.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಟೋ-ಡಿವೈಡ್ ಮಾಡಿ ಸೇರಿಸಲಾಗಿದೆ:\n\n` +
-        `• ಬಹು ಆಯ್ಕೆ (MCQ): ${mcqCount}\n` +
-        `• ಬಿಟ್ಟ ಸ್ಥಳ: ${blanksCount}\n` +
-        `• ಹೊಂದಿಸಿ ಬರೆಯಿರಿ: ${matchCount}\n` +
-        `• ವ್ಯಾಕರಣ: ${grammarCount}\n` +
-        `• ೧ ಅಂಕದ ಪ್ರಶ್ನೆಗಳು: ${vsaCount}\n` +
-        `• ೨/೩ ಅಂಕದ ಪ್ರಶ್ನೆಗಳು: ${saCount}`);
+  alert(`🎉 ಅಭಿನಂದನೆಗಳು! ಒಟ್ಟು ${finalQuestions.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಟೋ-ಡಿವೈಡ್ ಮಾಡಿ ಸೇರಿಸಲಾಗಿದೆ!`);
 };
 
-// ೪. ಸಾಮಾನ್ಯ ಪಠ್ಯಕ್ಕಾಗಿ ಸ್ಮಾರ್ಟ್ ಸೆಕ್ಷನ್ ಪಾರ್ಸರ್
-function parseRawTextSections(text, meta) {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  let questions = [];
-  let currentType = 'vsa';
-  let currentObj = 'ಜ್ಞಾನ';
-  let currentDiff = 'ಸಾಧಾರಣ';
+// ೫. ವ್ಯಾಕರಣ ಸಬ್-ಟೈಪ್ ಬದಲಾವಣೆ ಹ್ಯಾಂಡ್ಲರ್
+window.updateGrammarSubtypeFields = function(subType) {
+  const qInput = document.getElementById('qadd-text');
+  const ansInput = document.getElementById('qadd-ans');
+  if (!qInput) return;
 
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
-
-    // ಹೆಡರ್ ವಿಭಾಗಗಳನ್ನು ಗುರುತಿಸುವುದು
-    if (l.includes('ಬಹು ಆಯ್ಕೆ') || l.includes('MCQ')) { currentType = 'mcq'; continue; }
-    if (l.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) { currentType = 'blanks'; continue; }
-    if (l.includes('ಹೊಂದಿಸಿ ಬರೆಯಿರಿ') || l.includes('Match')) { currentType = 'match'; continue; }
-    if (l.includes('ವಿರುದ್ಧಾರ್ಥಕ') || l.includes('ಸಮಾನಾರ್ಥಕ') || l.includes('ವ್ಯಾಕರಣ')) { currentType = 'grammar'; continue; }
-    if (l.includes('೧ ಅಂಕ') || l.includes('ಒಂದು ವಾಕ್ಯ')) { currentType = 'vsa'; continue; }
-    if (l.includes('೨ ಅಂಕ') || l.includes('೩ ಅಂಕ') || l.includes('ವಿವರಿಸಿ')) { currentType = 'sa'; continue; }
-
-    // ಪ್ರಶ್ನೆ ಗುರುತಿಸುವಿಕೆ
-    if (/^(\d+[\.\)]|ಪ್ರಶ್ನೆ[:\.]?)/i.test(l)) {
-      let qText = l.replace(/^(\d+[\.\)]|ಪ್ರಶ್ನೆ[:\.]?)\s*/i, '').trim();
-      let ans = '';
-      let optA = '', optB = '', optC = '', optD = '';
-
-      // ಮುಂದಿನ ಸಾಲಿನಲ್ಲಿ ಉತ್ತರವಿದೆಯೇ ಪರಿಶೀಲನೆ
-      if (i + 1 < lines.length && /^(ಉತ್ತರ|Ans)[:\.\-]/i.test(lines[i+1])) {
-        ans = lines[i+1].replace(/^(ಉತ್ತರ|Ans)[:\.\-]\s*/i, '').trim();
-        i++;
-      }
-
-      const is2M = (currentType === 'sa' || ans.length > 50);
-
-      questions.push({
-        id: 'q_' + Date.now() + Math.floor(Math.random() * 10000),
-        grade: meta.grade,
-        subject: meta.subject,
-        part: meta.part,
-        chapter: meta.chapter,
-        medium: meta.medium,
-        type: currentType,
-        subType: 'opposite',
-        q: qText,
-        a: optA, b: optB, c: optC, d: optD,
-        ans: ans || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
-        marks: is2M ? 2 : (currentType === 'match' ? 4 : 1),
-        obj: is2M ? 'ತಿಳುವಳಿಕೆ' : 'ಜ್ಞಾನ',
-        diff: is2M ? 'ಸಾಧಾರಣ' : 'ಸುಲಭ'
-      });
-    }
+  if (subType === 'opposite') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ಹಗಲು x ________";
+    if (ansInput) ansInput.placeholder = "e.g. ರಾತ್ರಿ";
+  } else if (subType === 'synonym') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ಧರೆ = ________";
+    if (ansInput) ansInput.placeholder = "e.g. ಭೂಮಿ, ಪೃಥ್ವಿ";
+  } else if (subType === 'own_sentence') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದವನ್ನು ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ: 'ಪ್ರಾಮಾಣಿಕತೆ'";
+    if (ansInput) ansInput.placeholder = "e.g. ನಾವು ನಮ್ಮ ಜೀವನದಲ್ಲಿ ಸದಾ ಪ್ರಾಮಾಣಿಕತೆಯನ್ನು ಕಾಪಾಡಿಕೊಳ್ಳಬೇಕು.";
+  } else if (subType === 'gender') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದದ ಲಿಂಗ ಬದಲಿಸಿ ಬರೆಯಿರಿ: ಕವಿ ➔ ________";
+    if (ansInput) ansInput.placeholder = "e.g. ಕವಯಿತ್ರಿ";
+  } else if (subType === 'number') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದದ ವಚನ ಬದಲಿಸಿ ಬರೆಯಿರಿ: ಮರ ➔ ________";
+    if (ansInput) ansInput.placeholder = "e.g. ಮರಗಳು";
+  } else if (subType === 'tatsama') {
+    qInput.placeholder = "e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ತದ್ಭವ ರೂಪ ಬರೆಯಿರಿ: ಕಾರ್ಯ ➔ ________";
+    if (ansInput) ansInput.placeholder = "e.g. ಕಜ್ಜ";
   }
-  return questions;
-}
+};
 
-// ೫. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಬಟನ್ ಸಕ್ರಿಯಗೊಳಿಸುವುದು
-(function injectBulkImportButton() {
-  setTimeout(() => {
-    const adminHeader = document.querySelector('#view-admin .card-modern .border-b');
-    if (adminHeader && !document.getElementById('btn-open-bulk-import')) {
-      const btn = document.createElement('button');
-      btn.id = 'btn-open-bulk-import';
-      btn.type = 'button';
-      btn.className = 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold px-3.5 py-1.5 rounded-xl text-xs shadow flex items-center gap-1.5';
-      btn.innerHTML = '<i class="fa-solid fa-robot text-amber-300"></i> <span>🚀 AI ಬಲ್ಕ್ ಇಂಪೋರ್ಟ್ (NotebookLM)</span>';
-      btn.onclick = openBulkAIImportModal;
-      adminHeader.appendChild(btn);
-    }
-  }, 300);
-})();
+// ೬. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡೈನಾಮಿಕ್ ಫೀಲ್ಡ್‌ಗಳು
+window.handleQuestionTypeChangeInAdmin = function(type) {
+  const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+  if (!formFieldsBox) return;
+
+  uploadedImageBase64 = '';
+
+  if (type === 'grammar') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3 p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-2xl">
+        <div>
+          <label class="block font-bold text-indigo-950 text-xs mb-1">ವ್ಯಾಕರಣ ಪ್ರಕಾರ ಆರಿಸಿ (Grammar Sub-Type) *</label>
+          <select id="qadd-grammar-subtype" onchange="updateGrammarSubtypeFields(this.value)" class="w-full p-2.5 bg-white border border-indigo-300 rounded-xl font-bold text-indigo-950 text-xs focus:outline-none">
+            <option value="opposite" selected>೧. ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Opposites)</option>
+            <option value="synonym">೨. ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Synonyms)</option>
+            <option value="own_sentence">೩. ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ (Own Sentence)</option>
+            <option value="gender">೪. ಲಿಂಗ ಬದಲಿಸಿ ಬರೆಯಿರಿ (Gender Change)</option>
+            <option value="number">೫. ವಚನ ಬದಲಿಸಿ ಬರೆಯಿರಿ (Singular/Plural)</option>
+            <option value="tatsama">೬. ತತ್ಸಮ - ತದ್ಭವ ರೂಪ ಬರೆಯಿರಿ</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 text-xs mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+          <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ಹಗಲು x ________" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1">ಅಂಕಗಳು</label>
+            <select id="qadd-marks" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-xs"><option value="1" selected>೧ ಅಂಕ</option><option value="2">೨ ಅಂಕಗಳು</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-emerald-950 text-xs mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label>
+            <input type="text" id="qadd-ans" required placeholder="e.g. ರಾತ್ರಿ" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs focus:outline-none" />
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (type === 'poem_4lines') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-800 text-xs mb-1">ಪದ್ಯದ ಶೀರ್ಷಿಕೆ / ಸೂಚನೆ *</label>
+          <input type="text" id="poem-title-instruction" required value="ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800" />
+        </div>
+        <div class="space-y-1.5 p-3 bg-slate-100/90 border border-slate-300 rounded-2xl">
+          <label class="font-bold text-slate-800 text-xs block mb-1">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ ಬರುವ ೪ ಸಾಲುಗಳು:</label>
+          <input type="text" id="poem-q-line-1" placeholder="೧ ನೇ ಸಾಲು: e.g. ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800" />
+          <input type="text" id="poem-q-line-2" value="____________________________________" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-400" />
+          <input type="text" id="poem-q-line-3" value="____________________________________" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-400" />
+          <input type="text" id="poem-q-line-4" placeholder="೪ ನೇ ಸಾಲು: e.g. ...ಕಾಪಾಡು ಜಗದಂಬೆ." class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold"><option value="4" selected>೪ ಅಂಕಗಳು</option><option value="3">೩ ಅಂಕಗಳು</option></select></div>
+          <div><label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label><select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ" selected>ಜ್ಞಾನ (ಕಂಠಪಾಠ)</option><option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ</option></select></div>
+        </div>
+        <div class="space-y-1.5 p-3 bg-emerald-50/80 border border-emerald-300 rounded-2xl">
+          <label class="block font-bold text-emerald-950 text-xs mb-1">ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಉತ್ತರ (೪ ಸಾಲುಗಳು) *</label>
+          <input type="text" id="poem-ans-line-1" placeholder="೧ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-2" placeholder="೨ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-3" placeholder="೩ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-4" placeholder="೪ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+        </div>
+      </div>
+    `;
+  } else if (type === 'mcq') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div class="grid grid-cols-2 gap-2.5">
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (A) *</label><input type="text" id="qadd-opt-a" required placeholder="ಆಯ್ಕೆ ಎ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (B) *</label><input type="text" id="qadd-opt-b" required placeholder="ಆಯ್ಕೆ ಬಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (C) *</label><input type="text" id="qadd-opt-c" required placeholder="ಆಯ್ಕೆ ಸಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (D) *</label><input type="text" id="qadd-opt-d" required placeholder="ಆಯ್ಕೆ ಡಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label>
+        <select id="qadd-correct-opt" class="w-full px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+          <option value="A">ಆಯ್ಕೆ (A)</option><option value="B">ಆಯ್ಕೆ (B)</option><option value="C" selected>ಆಯ್ಕೆ (C)</option><option value="D">ಆಯ್ಕೆ (D)</option>
+        </select>
+      </div>
+    `;
+  } else if (type === 'blanks') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಬಿಟ್ಟ ಸ್ಥಳದ ವಾಕ್ಯ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಭಾರತದ ರಾಷ್ಟ್ರೀಯ ಪ್ರಾಣಿ ____________." class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><input type="text" id="qadd-ans" required placeholder="e.g. ಹುಲಿ" class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
+    `;
+  } else if (type === 'match') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-2">
+        <label class="block font-bold text-slate-700">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ - ೪ ಅಂಶಗಳು *</label>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="font-bold underline text-center">'ಅ' ಗುಂಪು</div><div class="font-bold underline text-center">'ಬ' ಗುಂಪು</div>
+          <input type="text" id="match-a-1" required placeholder="1. ಅಂಶ 1" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-1" required placeholder="A. ಉತ್ತರ 1" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-2" required placeholder="2. ಅಂಶ 2" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-2" required placeholder="B. ಉತ್ತರ 2" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-3" required placeholder="3. ಅಂಶ 3" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-3" required placeholder="C. ಉತ್ತರ 3" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-4" required placeholder="4. ಅಂಶ 4" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-4" required placeholder="D. ಉತ್ತರ 4" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+        </div>
+      </div>
+    `;
+  } else if (type === 'vsa' || type === 'sa') {
+    const is2M = (type === 'sa');
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold">${is2M ? '<option value="2" selected>೨ ಅಂಕಗಳು</option><option value="3">೩ ಅಂಕಗಳು</option>' : '<option value="1" selected>೧ ಅಂಕ</option>'}</select></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಮಾದರಿ ಉತ್ತರ *</label><textarea id="qadd-ans" rows="3" required placeholder="ಉತ್ತರ ನಮೂದಿಸಿ" class="w-full p-3 bg-emerald-50/50 border border-emerald-300 rounded-xl font-semibold"></textarea></div>
+    `;
+  } else if (type === 'map_diagram') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ</label>
+        <input type="file" id="qadd-image-file" accept="image/*" class="w-full p-2 bg-slate-50 border rounded-xl" onchange="previewQuestionImageUpload(this)" />
+      </div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು</label><input type="text" id="qadd-items" placeholder="e.g. 1) ಭಾಗ ಎ, 2) ಭಾಗ ಬಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</label><input type="text" id="qadd-ans" value="ಚಿತ್ರಕ್ಕೆ 2 ಅಂಕಗಳು, ಭಾಗ ಗುರುತಿಸುವಿಕೆಗೆ 2 ಅಂಕಗಳು." class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-semibold" /></div>
+    `;
+  }
+};
+
+// ೭. ಪುಟ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಬಟನ್‌ಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+ensureVisibleAIImportButtons();
+setInterval(ensureVisibleAIImportButtons, 1000);
     
   </script>
 </body>
