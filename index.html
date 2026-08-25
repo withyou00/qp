@@ -6781,6 +6781,54 @@ window.analyzeAndPreviewBulkText = function() {
     `;
   }).join('');
 };
+
+    /* ==========================================================================
+   GLOBAL GOOGLE FONT INJECTION: ANEK KANNADA ACROSS ENTIRE APPLICATION
+   ========================================================================== */
+
+(function applyAnekKannadaFontEverywhere() {
+  // ೧. Google Fonts ನಿಂದ 'Anek Kannada' ಫಾಂಟ್ ಲಿಂಕ್ ಲೋಡ್ ಮಾಡುವುದು
+  const fontLinkId = 'google-font-anek-kannada';
+  if (!document.getElementById(fontLinkId)) {
+    const link = document.createElement('link');
+    link.id = fontLinkId;
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800&display=swap';
+    document.head.appendChild(link);
+  }
+
+  // ೨. ಇಡೀ ವೆಬ್‌ಸೈಟ್ ಹಾಗೂ ಪ್ರಿಂಟ್ ಪೇಜ್‌ಗಳಿಗೆ ಗ್ಲೋಬಲ್ CSS ಅನ್ವಯಿಸುವುದು
+  const styleId = 'global-style-anek-kannada';
+  let styleTag = document.getElementById(styleId);
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = styleId;
+    document.head.appendChild(styleTag);
+  }
+
+  styleTag.innerHTML = `
+    @import url('https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800&display=swap');
+
+    *, html, body, button, input, select, textarea, p, span, h1, h2, h3, h4, h5, h6, table, th, td, div {
+      font-family: 'Anek Kannada', 'Plus Jakarta Sans', sans-serif !important;
+      letter-spacing: 0.01em;
+    }
+
+    .a4-sheet-container, #print-area, #rendered-paper, #rendered-key, #rendered-blueprint {
+      font-family: 'Anek Kannada', sans-serif !important;
+      line-height: 1.6 !important;
+    }
+
+    @media print {
+      * {
+        font-family: 'Anek Kannada', sans-serif !important;
+      }
+      .a4-sheet-container {
+        font-family: 'Anek Kannada', sans-serif !important;
+      }
+    }
+  `;
+})();
     
   </script>
 </body>
