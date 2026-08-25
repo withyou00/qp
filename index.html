@@ -3314,6 +3314,424 @@ setTimeout(() => {
   applyKannadaGrammarAndPoemDropdown();
   handleQuestionTypeChangeInAdmin('opposite');
 }, 150);
+
+    /* ==========================================================================
+   PERMANENT FIX: KANNADA GRAMMAR & 4-LINE POEM QUESTION BUILDER
+   ========================================================================== */
+
+// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡ್ರಾಪ್‌ಡೌನ್ HTML (ಎಲ್ಲಾ ಕಡೆ ಇದೇ ಲೋಡ್ ಆಗುತ್ತದೆ)
+const KANNADA_QUESTION_TYPES_HTML = `
+  <option value="mcq">೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
+  <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
+  <option value="match">೩. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match the following)</option>
+  <option value="opposite" selected>೪. ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Opposites)</option>
+  <option value="synonym">೫. ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ (Synonyms)</option>
+  <option value="own_sentence">೬. ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ (Own Sentence)</option>
+  <option value="poem_4lines">೭. ಪದ್ಯ ಭಾಗ ಪೂರ್ಣಗೊಳಿಸಿ (೪ ಸಾಲುಗಳ ಪದ್ಯ)</option>
+  <option value="vsa">೮. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA - 1 Mark)</option>
+  <option value="sa">೯. ೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA/LA)</option>
+  <option value="map_diagram">೧೦. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
+`;
+
+// ೨. ಡ್ರಾಪ್‌ಡೌನ್ ಬದಲಾದಾಗ ಬರುವ ಇನ್‌ಪುಟ್ ಫೀಲ್ಡ್‌ಗಳು
+window.handleQuestionTypeChangeInAdmin = function(type) {
+  const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+  if (!formFieldsBox) return;
+
+  uploadedImageBase64 = '';
+
+  // ವಿರುದ್ಧಾರ್ಥಕ ಪದ
+  if (type === 'opposite') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ವಿರುದ್ಧಾರ್ಥಕ ಪದದ ಪ್ರಶ್ನೆ (Word) *</label>
+          <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ಹಗಲು x ________" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <input type="number" id="qadd-marks" value="1" min="1" max="5" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ವಿರುದ್ಧಾರ್ಥಕ ಉತ್ತರ (Opposite Word) *</label>
+            <input type="text" id="qadd-ans" required placeholder="e.g. ರಾತ್ರಿ" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 focus:outline-none" />
+          </div>
+        </div>
+      </div>
+    `;
+
+  // ಸಮಾನಾರ್ಥಕ ಪದ
+  } else if (type === 'synonym') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಸಮಾನಾರ್ಥಕ ಪದದ ಪ್ರಶ್ನೆ (Word) *</label>
+          <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದಕ್ಕೆ ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ: ಧರೆ = ________" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <input type="number" id="qadd-marks" value="1" min="1" max="5" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಸಮಾನಾರ್ಥಕ ಉತ್ತರ (Synonyms) *</label>
+            <input type="text" id="qadd-ans" required placeholder="e.g. ಭೂಮಿ, ಪೃಥ್ವಿ, ಅವನಿ" class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 focus:outline-none" />
+          </div>
+        </div>
+      </div>
+    `;
+
+  // ಸ್ವಂತ ವಾಕ್ಯ
+  } else if (type === 'own_sentence') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಬೇಕಾದ ಪದ (Word / Idiom) *</label>
+          <input type="text" id="qadd-text" required placeholder="e.g. ಕೆಳಗಿನ ಪದವನ್ನು ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ ಬರೆಯಿರಿ: 'ಪ್ರಾಮಾಣಿಕತೆ'" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <select id="qadd-marks" class="w-full p-2 bg-slate-50 border rounded-xl font-bold">
+              <option value="1" selected>೧ ಅಂಕ (1 Mark)</option>
+              <option value="2">೨ ಅಂಕಗಳು (2 Marks)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಮಾದರಿ ಸ್ವಂತ ವಾಕ್ಯ (Model Sentence) *</label>
+            <input type="text" id="qadd-ans" required placeholder="e.g. ನಾವು ನಮ್ಮ ಜೀವನದಲ್ಲಿ ಸದಾ ಪ್ರಾಮಾಣಿಕತೆಯನ್ನು ಕಾಪಾಡಿಕೊಳ್ಳಬೇಕು." class="w-full px-3.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-semibold text-slate-900 focus:outline-none" />
+          </div>
+        </div>
+      </div>
+    `;
+
+  // ೪ ಸಾಲುಗಳ ಪದ್ಯ
+  } else if (type === 'poem_4lines') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-800 text-xs mb-1">ಪದ್ಯದ ಶೀರ್ಷಿಕೆ / ಸೂಚನೆ *</label>
+          <input type="text" id="poem-title-instruction" required value="ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800" />
+        </div>
+
+        <div class="space-y-1.5 p-3 bg-slate-100/90 border border-slate-300 rounded-2xl">
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-800 text-xs">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ ಬರುವ ೪ ಸಾಲುಗಳು (೪ ಸಾಲುಗಳ ಜಾಗ):</label>
+            <span class="text-[10px] text-emerald-900 font-extrabold bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">೪ ಸಾಲುಗಳ ಜಾಗ</span>
+          </div>
+          <input type="text" id="poem-q-line-1" placeholder="೧ ನೇ ಸಾಲು: e.g. ಕನ್ನಡ ನಾಡನು ರಕ್ಷಿಸು ತಾಯೆ" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800" />
+          <input type="text" id="poem-q-line-2" value="____________________________________" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-400" />
+          <input type="text" id="poem-q-line-3" value="____________________________________" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-400" />
+          <input type="text" id="poem-q-line-4" placeholder="೪ ನೇ ಸಾಲು: e.g. ...ಕಾಪಾಡು ಜಗದಂಬೆ." class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <select id="qadd-marks" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+              <option value="4" selected>೪ ಅಂಕಗಳು (4 Marks)</option>
+              <option value="3">೩ ಅಂಕಗಳು (3 Marks)</option>
+              <option value="2">೨ ಅಂಕಗಳು (2 Marks)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+            <select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold">
+              <option value="ಜ್ಞಾನ" selected>ಜ್ಞಾನ (ಕಂಠಪಾಠ / Knowledge)</option>
+              <option value="ತಿಳುವಳಿಕೆ">ತಿಳುವಳಿಕೆ (Understanding)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 p-3 bg-emerald-50/80 border border-emerald-300 rounded-2xl">
+          <label class="block font-bold text-emerald-950 text-xs mb-1">ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಉತ್ತರ (Answer Key - ೪ ಸಾಲುಗಳು) *</label>
+          <input type="text" id="poem-ans-line-1" placeholder="೧ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-2" placeholder="೨ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-3" placeholder="೩ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+          <input type="text" id="poem-ans-line-4" placeholder="೪ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
+        </div>
+      </div>
+    `;
+
+  // MCQ
+  } else if (type === 'mcq') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div class="grid grid-cols-2 gap-2.5">
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (A) *</label><input type="text" id="qadd-opt-a" required placeholder="ಆಯ್ಕೆ ಎ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (B) *</label><input type="text" id="qadd-opt-b" required placeholder="ಆಯ್ಕೆ ಬಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (C) *</label><input type="text" id="qadd-opt-c" required placeholder="ಆಯ್ಕೆ ಸಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+        <div><label class="block font-bold text-slate-700">ಆಯ್ಕೆ (D) *</label><input type="text" id="qadd-opt-d" required placeholder="ಆಯ್ಕೆ ಡಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl" /></div>
+      </div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label>
+        <select id="qadd-correct-opt" class="w-full px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+          <option value="A">ಆಯ್ಕೆ (A)</option><option value="B">ಆಯ್ಕೆ (B)</option><option value="C" selected>ಆಯ್ಕೆ (C)</option><option value="D">ಆಯ್ಕೆ (D)</option>
+        </select>
+      </div>
+    `;
+
+  // Blanks
+  } else if (type === 'blanks') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಬಿಟ್ಟ ಸ್ಥಳದ ವಾಕ್ಯ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಭಾರತದ ರಾಷ್ಟ್ರೀಯ ಪ್ರಾಣಿ ____________." class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><input type="text" id="qadd-ans" required placeholder="e.g. ಹುಲಿ" class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold" /></div>
+    `;
+
+  // Match
+  } else if (type === 'match') {
+    formFieldsBox.innerHTML = `
+      <div class="space-y-2">
+        <label class="block font-bold text-slate-700">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ - ೪ ಅಂಶಗಳು *</label>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="font-bold underline text-center">'ಅ' ಗುಂಪು</div><div class="font-bold underline text-center">'ಬ' ಗುಂಪು</div>
+          <input type="text" id="match-a-1" required placeholder="1. ಅಂಶ 1" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-1" required placeholder="A. ಉತ್ತರ 1" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-2" required placeholder="2. ಅಂಶ 2" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-2" required placeholder="B. ಉತ್ತರ 2" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-3" required placeholder="3. ಅಂಶ 3" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-3" required placeholder="C. ಉತ್ತರ 3" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+          <input type="text" id="match-a-4" required placeholder="4. ಅಂಶ 4" class="p-2 border rounded-lg bg-slate-50 font-semibold" /><input type="text" id="match-b-4" required placeholder="D. ಉತ್ತರ 4" class="p-2 border rounded-lg bg-emerald-50 font-bold" />
+        </div>
+      </div>
+    `;
+
+  // VSA / SA
+  } else if (type === 'vsa' || type === 'sa') {
+    const is2M = (type === 'sa');
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label><select id="qadd-marks" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold">${is2M ? '<option value="2" selected>೨ ಅಂಕಗಳು</option><option value="3">೩ ಅಂಕಗಳು</option>' : '<option value="1" selected>೧ ಅಂಕ</option>'}</select></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಮಾದರಿ ಉತ್ತರ *</label><textarea id="qadd-ans" rows="3" required placeholder="ಉತ್ತರ ನಮೂದಿಸಿ" class="w-full p-3 bg-emerald-50/50 border border-emerald-300 rounded-xl font-semibold"></textarea></div>
+    `;
+
+  // Diagram / Map
+  } else if (type === 'map_diagram') {
+    formFieldsBox.innerHTML = `
+      <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 text-center cursor-pointer relative">
+          <input type="file" id="qadd-image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewQuestionImageUpload(this)" />
+          <div id="qadd-image-preview-container" class="space-y-1">
+            <i class="fa-solid fa-image text-2xl text-emerald-600"></i>
+            <p class="text-xs font-bold text-slate-700">ಚಿತ್ರ ಆಯ್ಕೆ ಮಾಡಲು ಕ್ಲಿಕ್ ಮಾಡಿ</p>
+          </div>
+        </div>
+      </div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು</label><input type="text" id="qadd-items" placeholder="e.g. 1) ಭಾಗ ಎ, 2) ಭಾಗ ಬಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
+      <div><label class="block font-bold text-slate-700 mb-1">ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</label><input type="text" id="qadd-ans" value="ಚಿತ್ರಕ್ಕೆ 2 ಅಂಕಗಳು, ಭಾಗ ಗುರುತಿಸುವಿಕೆಗೆ 2 ಅಂಕಗಳು." class="w-full px-3.5 py-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-semibold" /></div>
+    `;
+  }
+};
+
+// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ ಓವರ್‌ರೈಡ್ (ಸ್ಥಿರವಾಗಿ ಹೊಸ ಆಪ್ಶನ್‌ಗಳು ಬರುವಂತೆ)
+window.renderDedicatedQuestionBankModule = window.renderQuestionBankModuleHTML = function() {
+  let qbView = document.getElementById('view-qbank');
+  if (!qbView) {
+    qbView = document.createElement('section');
+    qbView.id = 'view-qbank';
+    qbView.className = 'space-y-6';
+    document.querySelector('main')?.appendChild(qbView);
+  }
+
+  const mediums = getSystemMediums();
+  const subjects = getSystemSubjects();
+
+  qbView.innerHTML = `
+    <div class="flex items-center justify-between bg-slate-900 text-white p-4 px-6 rounded-3xl shadow-md text-xs">
+      <div class="flex items-center space-x-2.5">
+        <span class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></span>
+        <span class="font-extrabold text-sm">📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ (Question Bank Master Hub)</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="navigateToSection('admin')" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-users"></i> <span>ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಪ್ಯಾನೆಲ್ ➔</span>
+        </button>
+        <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl font-bold transition">
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <div class="card-modern p-6 space-y-4">
+      <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 bg-amber-50 text-amber-700 rounded-2xl text-xl font-bold shadow-sm"><i class="fa-solid fa-circle-plus"></i></div>
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900">ಹೊಸ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಸೇರಿಸಿ (Add Questions)</h3>
+            <p class="text-xs text-slate-500">ಮಾಧ್ಯಮ, ತರಗತಿ, ವಿಷಯ, ಭಾಗ (1 & 2) ಹಾಗೂ ಪಾಠವನ್ನು ಆರಿಸಿ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ</p>
+          </div>
+        </div>
+        <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">Firebase Live Synced</span>
+      </div>
+
+      <form id="form-add-custom-question" onsubmit="handleSaveCustomQuestion(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಮಾಧ್ಯಮ</label>
+              <button type="button" onclick="addNewMediumToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add</button>
+            </div>
+            <select id="qadd-medium" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">${mediums.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+            <select id="qadd-class" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}</select>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ವಿಷಯ</label>
+              <button type="button" onclick="addNewSubjectToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add</button>
+            </div>
+            <select id="qadd-subject" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-950">${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಭಾಗ (Part)</label>
+            <select id="qadd-part" class="w-full px-3 py-2.5 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950">
+              <option value="ಭಾಗ 1" selected>ಭಾಗ 1 (Part 1)</option>
+              <option value="ಭಾಗ 2">ಭಾಗ 2 (Part 2)</option>
+              <option value="ಸಂಪೂರ್ಣ">ಸಂಪೂರ್ಣ ಪುಸ್ತಕ</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು (Chapter Name) *</label>
+            <input type="text" id="qadd-chapter" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type) *</label>
+            <select id="qadd-type" onchange="handleQuestionTypeChangeInAdmin(this.value)" class="w-full px-3.5 py-2.5 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-950 focus:outline-none">
+              ${KANNADA_QUESTION_TYPES_HTML}
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+            <select id="qadd-obj" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ">ಜ್ಞಾನ (Knowledge)</option><option value="ತಿಳುವಳಿಕೆ" selected>ತಿಳುವಳಿಕೆ (Understanding)</option><option value="ಅನ್ವಯ">ಅನ್ವಯ (Application)</option><option value="ಕೌಶಲ">ಕೌಶಲ (Skill)</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+            <select id="qadd-diff" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಸುಲಭ">ಸುಲಭ (Easy)</option><option value="ಸಾಧಾರಣ" selected>ಸಾಧಾರಣ (Average)</option><option value="ಕಠಿಣ">ಕಠಿಣ (Difficult)</option></select>
+          </div>
+        </div>
+
+        <div id="admin-q-dynamic-fields" class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3"></div>
+
+        <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3.5 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2">
+          <i class="fa-solid fa-floppy-disk"></i> <span>ಈ ಪ್ರಶ್ನೋತ್ತರವನ್ನು ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಮಾಡಿ</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="card-modern p-6 space-y-3">
+      <div class="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
+        <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-emerald-600"></i>
+          <span>ಭಂಡಾರದಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳ ಪಟ್ಟಿ (<span id="admin-qbank-total-count">0</span>)</span>
+        </h3>
+        <button onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1">
+          <i class="fa-solid fa-arrows-rotate"></i> <span>Sync Cloud</span>
+        </button>
+      </div>
+      <div id="admin-qbank-display-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1"></div>
+    </div>
+  `;
+
+  handleQuestionTypeChangeInAdmin('opposite');
+  renderCustomQuestionList();
+};
+
+// ೪. ಪ್ರಶ್ನೆ ಸೇವ್ ಮಾಡುವಾಗ ವ್ಯಾಕರಣ ಮತ್ತು ೪ ಸಾಲುಗಳ ಪದ್ಯವನ್ನು ಸ್ಟೋರ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.handleSaveCustomQuestion = function(e) {
+  e.preventDefault();
+  const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const grade = document.getElementById('qadd-class')?.value || '6';
+  const subject = document.getElementById('qadd-subject')?.value || 'ಕನ್ನಡ (Kannada)';
+  const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('qadd-chapter')?.value.trim() || '';
+  const type = document.getElementById('qadd-type')?.value || 'mcq';
+  const obj = document.getElementById('qadd-obj')?.value || 'ತಿಳುವಳಿಕೆ';
+  const diff = document.getElementById('qadd-diff')?.value || 'ಸಾಧಾರಣ';
+
+  if (!chapter) return showToast('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.', 'error');
+
+  let newQ = { id: 'q_' + Date.now(), medium, grade, subject, part, chapter, type, obj, diff };
+
+  if (type === 'mcq') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.a = document.getElementById('qadd-opt-a').value.trim();
+    newQ.b = document.getElementById('qadd-opt-b').value.trim();
+    newQ.c = document.getElementById('qadd-opt-c').value.trim();
+    newQ.d = document.getElementById('qadd-opt-d').value.trim();
+    const correctOpt = document.getElementById('qadd-correct-opt').value;
+    newQ.ans = `(${correctOpt}) ${newQ[correctOpt.toLowerCase()]}`;
+    newQ.marks = 1;
+
+  } else if (type === 'blanks' || type === 'opposite' || type === 'synonym') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.marks = parseInt(document.getElementById('qadd-marks')?.value) || 1;
+
+  } else if (type === 'own_sentence') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.marks = parseInt(document.getElementById('qadd-marks')?.value) || 1;
+
+  } else if (type === 'poem_4lines') {
+    const title = document.getElementById('poem-title-instruction')?.value.trim() || 'ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:';
+    const l1 = document.getElementById('poem-q-line-1')?.value.trim() || '';
+    const l2 = document.getElementById('poem-q-line-2')?.value.trim() || '';
+    const l3 = document.getElementById('poem-q-line-3')?.value.trim() || '';
+    const l4 = document.getElementById('poem-q-line-4')?.value.trim() || '';
+
+    const a1 = document.getElementById('poem-ans-line-1')?.value.trim() || '';
+    const a2 = document.getElementById('poem-ans-line-2')?.value.trim() || '';
+    const a3 = document.getElementById('poem-ans-line-3')?.value.trim() || '';
+    const a4 = document.getElementById('poem-ans-line-4')?.value.trim() || '';
+
+    newQ.q = `${title}\n${l1}\n${l2}\n${l3}\n${l4}`.trim();
+    newQ.ans = `${a1}\n${a2}\n${a3}\n${a4}`.trim() || newQ.q;
+    newQ.marks = parseInt(document.getElementById('qadd-marks')?.value) || 4;
+
+  } else if (type === 'match') {
+    newQ.q = "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ";
+    newQ.marks = 4;
+    newQ.matchPairs = [
+      { a: document.getElementById('match-a-1').value.trim(), b: document.getElementById('match-b-1').value.trim() },
+      { a: document.getElementById('match-a-2').value.trim(), b: document.getElementById('match-b-2').value.trim() },
+      { a: document.getElementById('match-a-3').value.trim(), b: document.getElementById('match-b-3').value.trim() },
+      { a: document.getElementById('match-a-4').value.trim(), b: document.getElementById('match-b-4').value.trim() }
+    ];
+
+  } else if (type === 'vsa' || type === 'sa') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.marks = parseInt(document.getElementById('qadd-marks').value) || (type === 'sa' ? 2 : 1);
+
+  } else if (type === 'map_diagram') {
+    newQ.q = document.getElementById('qadd-text').value.trim();
+    newQ.items = document.getElementById('qadd-items').value.trim();
+    newQ.ans = document.getElementById('qadd-ans').value.trim();
+    newQ.image = uploadedImageBase64;
+    newQ.marks = 4;
+  }
+
+  appState.qbank.unshift(newQ);
+  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+  showToast('🎉 ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿದೆ!', 'success');
+  renderCustomQuestionList();
+  renderChapterCheckboxes();
+  pushToFirebaseCloud();
+  handleQuestionTypeChangeInAdmin(type);
+};
+
+// ತಕ್ಷಣವೇ ಲೋಡ್ ಮಾಡಿ
+renderDedicatedQuestionBankModule();
     
   </script>
 </body>
