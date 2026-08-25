@@ -4136,6 +4136,277 @@ window.buildAdminView = function() {
 // ೫. ಸ್ವಯಂಚಾಲಿತ ಅಪ್‌ಡೇಟ್
 buildAdminView();
 
+    /* ==========================================================================
+   ADMIN QUESTION EDIT & BULK DELETE MASTER ENGINE
+   ========================================================================== */
+
+let adminSelectedQIds = new Set();
+let adminFilterSubject = 'all';
+let adminFilterGrade = 'all';
+
+// ೧. ಪ್ರಶ್ನೆ ಪಟ್ಟಿಯ ರೆಂಡರಿಂಗ್ (Filter, Select All, Edit & Bulk Delete ಸಹಿತ)
+window.renderCustomQuestionList = function() {
+  const container = document.getElementById('admin-qbank-display-list');
+  const countEl = document.getElementById('admin-qbank-total-count');
+  if (!container) return;
+
+  const allSubjects = getSystemSubjects();
+  let filteredList = appState.qbank || [];
+
+  // ಫಿಲ್ಟರ್ ಅನ್ವಯ
+  if (adminFilterGrade !== 'all') {
+    filteredList = filteredList.filter(q => String(q.grade) === String(adminFilterGrade));
+  }
+  if (adminFilterSubject !== 'all') {
+    filteredList = filteredList.filter(q => q.subject === adminFilterSubject);
+  }
+
+  if (countEl) countEl.innerText = `${filteredList.length} / ಒಟ್ಟು ${appState.qbank.length}`;
+
+  // ಫಿಲ್ಟರ್ ಮತ್ತು ಬಲ್ಕ್ ಡಿಲೀಟ್ ಕಂಟ್ರೋಲ್ ಬಾರ್
+  const controlBarHtml = `
+    <div class="p-3 bg-slate-100 rounded-2xl border border-slate-200 space-y-2.5 mb-3 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ ಫಿಲ್ಟರ್:</label>
+          <select onchange="adminFilterGrade=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-white border rounded-xl font-bold">
+            <option value="all" ${adminFilterGrade==='all'?'selected':''}>ಎಲ್ಲಾ ತರಗತಿಗಳು</option>
+            ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${adminFilterGrade===c.val?'selected':''}>${c.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ವಿಷಯ ಫಿಲ್ಟರ್:</label>
+          <select onchange="adminFilterSubject=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-white border rounded-xl font-bold">
+            <option value="all" ${adminFilterSubject==='all'?'selected':''}>ಎಲ್ಲಾ ವಿಷಯಗಳು</option>
+            ${allSubjects.map(s=>`<option value="${s}" ${adminFilterSubject===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="bulkDeleteSelectedQuestions()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl transition shadow flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>ಆಯ್ಕೆಮಾಡಿದ ಪ್ರಶ್ನೆಗಳನ್ನು ಅಳಿಸಿ (<span id="admin-selected-count">${adminSelectedQIds.size}</span>)</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex items-center justify-between pt-1 border-t border-slate-200">
+        <label class="flex items-center space-x-2 font-extrabold text-slate-800 cursor-pointer">
+          <input type="checkbox" id="admin-select-all-cb" onchange="toggleSelectAllAdminQuestions(this.checked)" class="w-4 h-4 text-emerald-600 rounded" />
+          <span>ಈ ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು Select All ಮಾಡಿ</span>
+        </label>
+        <span class="text-[11px] text-slate-500 font-bold">${filteredList.length} ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿವೆ</span>
+      </div>
+    </div>
+  `;
+
+  if (filteredList.length === 0) {
+    container.innerHTML = controlBarHtml + `
+      <div class="p-6 bg-slate-50 border rounded-2xl text-center">
+        <p class="text-xs font-bold text-slate-700">ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const listHtml = filteredList.map((q, idx) => {
+    const isChecked = adminSelectedQIds.has(q.id);
+    let typeBadge = q.type ? q.type.toUpperCase() : 'Q';
+    if (q.type === 'grammar') typeBadge = `ವ್ಯಾಕರಣ (${q.subType || 'Grammar'})`;
+    if (q.type === 'poem_4lines') typeBadge = '೪ ಸಾಲುಗಳ ಪದ್ಯ';
+
+    return `
+      <div class="p-3 bg-white border-2 ${isChecked?'border-red-400 bg-red-50/20':'border-slate-200'} rounded-2xl text-xs space-y-2 hover:border-emerald-400 transition">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+          <div class="flex items-center space-x-2">
+            <input type="checkbox" onchange="toggleSingleAdminQuestionSelection('${q.id}', this.checked)" ${isChecked?'checked':''} class="w-4 h-4 text-red-600 rounded cursor-pointer" />
+            <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-black text-[10px]">${typeBadge} (${q.marks||1}M)</span>
+            <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+            <span class="text-slate-500 font-semibold">&bull; ${q.chapter}</span>
+          </div>
+          
+          <div class="flex items-center space-x-1.5">
+            <!-- ✏️ EDIT BUTTON -->
+            <button type="button" onclick="openAdminQuestionEditModal('${q.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 shadow-sm">
+              <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+            </button>
+            <!-- 🗑️ DELETE BUTTON -->
+            <button type="button" onclick="deleteQuestionFromBank('${q.id}')" class="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] flex items-center gap-1">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="font-bold text-slate-800 text-[13px] whitespace-pre-line pl-6">${idx+1}. ${escapeHtml(q.q)}</div>
+        ${q.image ? `<div class="py-1 pl-6"><img src="${q.image}" class="h-20 rounded border shadow" /></div>` : ''}
+        ${q.type === 'mcq' ? `<div class="grid grid-cols-2 gap-1 text-[11px] text-slate-600 pl-6"><div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div><div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div></div>` : ''}
+        <div class="text-emerald-800 text-[11px] whitespace-pre-line pl-6 font-semibold"><b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}</div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = controlBarHtml + listHtml;
+};
+
+// ೨. ಸಿಂಗಲ್ & ಬಲ್ಕ್ ಸೆಲೆಕ್ಷನ್ ಲಾಜಿಕ್
+window.toggleSingleAdminQuestionSelection = function(qId, isChecked) {
+  if (isChecked) adminSelectedQIds.add(qId);
+  else adminSelectedQIds.delete(qId);
+  const countSpan = document.getElementById('admin-selected-count');
+  if (countSpan) countSpan.innerText = adminSelectedQIds.size;
+};
+
+window.toggleSelectAllAdminQuestions = function(selectAll) {
+  let filteredList = appState.qbank || [];
+  if (adminFilterGrade !== 'all') filteredList = filteredList.filter(q => String(q.grade) === String(adminFilterGrade));
+  if (adminFilterSubject !== 'all') filteredList = filteredList.filter(q => q.subject === adminFilterSubject);
+
+  if (selectAll) {
+    filteredList.forEach(q => adminSelectedQIds.add(q.id));
+  } else {
+    filteredList.forEach(q => adminSelectedQIds.delete(q.id));
+  }
+  renderCustomQuestionList();
+};
+
+// ೩. ಬಲ್ಕ್ ಡಿಲೀಟ್ ಫಂಕ್ಷನ್ (ವಿಷಯವಾರು ಒಟ್ಟಾಗಿ ಅಳಿಸುವುದು)
+window.bulkDeleteSelectedQuestions = function() {
+  if (adminSelectedQIds.size === 0) {
+    return alert('ದಯವಿಟ್ಟು ಅಳಿಸಲು ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ (Select ಮಾಡಿ).');
+  }
+
+  const count = adminSelectedQIds.size;
+  if (confirm(`ಆಯ್ಕೆಮಾಡಿದ ಒಟ್ಟು ${count} ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರಶ್ನೆ ಭಂಡಾರದಿಂದ ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?`)) {
+    appState.qbank = appState.qbank.filter(q => !adminSelectedQIds.has(q.id));
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    adminSelectedQIds.clear();
+    
+    showToast(`✅ ${count} ಪ್ರಶ್ನೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ!`, 'info');
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    pushToFirebaseCloud();
+  }
+};
+
+// ೪. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ EDIT ಮಾಡಲ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.openAdminQuestionEditModal = function(qId) {
+  const q = (appState.qbank || []).find(item => item.id === qId);
+  if (!q) return;
+
+  let modal = document.getElementById('admin-q-edit-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'admin-q-edit-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-amber-100 text-amber-900 rounded-xl font-bold"><i class="fa-solid fa-pen-to-square"></i></div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ (Edit Question)</h3>
+            <p class="text-[11px] text-slate-500">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject} &bull; <b>${q.chapter}</b></p>
+          </div>
+        </div>
+        <button onclick="closeAdminQuestionEditModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="form-admin-edit-q" onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು (Chapter)</label>
+          <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter || '')}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ (Question Text) *</label>
+          <textarea id="edit-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold leading-relaxed text-slate-900">${escapeHtml(q.q || '')}</textarea>
+        </div>
+
+        ${q.type === 'mcq' ? `
+          <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border rounded-xl">
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (A)</label><input type="text" id="edit-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-2 border rounded-lg bg-white" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (B)</label><input type="text" id="edit-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-2 border rounded-lg bg-white" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (C)</label><input type="text" id="edit-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-2 border rounded-lg bg-white" /></div>
+            <div><label class="font-bold text-slate-700">ಆಯ್ಕೆ (D)</label><input type="text" id="edit-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-2 border rounded-lg bg-white" /></div>
+          </div>
+        ` : ''}
+
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <input type="number" id="edit-q-marks" value="${q.marks || 1}" min="1" max="10" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+            <select id="edit-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-bold">
+              <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+              <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+              <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+              <option value="ಕೌಶಲ" ${q.obj==='ಕೌಶಲ'?'selected':''}>ಕೌಶಲ</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+            <select id="edit-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-bold">
+              <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+              <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+              <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
+          <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-slate-900">${escapeHtml(q.ans || '')}</textarea>
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="closeAdminQuestionEditModal()" class="px-4 py-2 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-5 py-2 rounded-xl font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow">ಸೇವ್ ಮಾಡಿ</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+window.closeAdminQuestionEditModal = function() {
+  document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+};
+
+// ೫. ಎಡಿಟ್ ಮಾಡಿದ ಪ್ರಶ್ನೆಯನ್ನು ಸೇವ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.saveAdminQuestionEdit = function(e, qId) {
+  e.preventDefault();
+  const q = (appState.qbank || []).find(item => item.id === qId);
+  if (!q) return;
+
+  q.chapter = document.getElementById('edit-q-chapter').value.trim();
+  q.q = document.getElementById('edit-q-text').value.trim();
+  q.marks = parseInt(document.getElementById('edit-q-marks').value) || 1;
+  q.obj = document.getElementById('edit-q-obj').value;
+  q.diff = document.getElementById('edit-q-diff').value;
+  q.ans = document.getElementById('edit-q-ans').value.trim();
+
+  if (q.type === 'mcq') {
+    q.a = document.getElementById('edit-opt-a')?.value.trim() || q.a;
+    q.b = document.getElementById('edit-opt-b')?.value.trim() || q.b;
+    q.c = document.getElementById('edit-opt-c')?.value.trim() || q.c;
+    q.d = document.getElementById('edit-opt-d')?.value.trim() || q.d;
+  }
+
+  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+  closeAdminQuestionEditModal();
+  renderCustomQuestionList();
+  renderChapterCheckboxes();
+  pushToFirebaseCloud();
+  showToast('✅ ಪ್ರಶ್ನೆ ಯಶಸ್ವಿಯಾಗಿ ತಿದ್ದುಪಡಿಯಾಗಿದೆ!', 'success');
+};
+
+// ಪಟ್ಟಿಯನ್ನು ಮರುಲೋಡ್ ಮಾಡಿ
+renderCustomQuestionList();
+    
   </script>
 </body>
 </html>
