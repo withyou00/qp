@@ -13233,6 +13233,349 @@ window.saveAdminQuestionEdit = function(e, qId) {
   pushToFirebaseCloud();
   showToast('✅ ಪ್ರಶ್ನೆ ಮತ್ತು ಪ್ರಕಾರ ಯಶಸ್ವಿಯಾಗಿ ತಿದ್ದುಪಡಿಯಾಗಿದೆ!', 'success');
 };
+
+    /* ==========================================================================
+   AI BULK IMPORTER WITH DEDICATED "ಪ್ರಶ್ನೆ ಪ್ರಕಾರ" (QUESTION TYPE) SELECTOR
+   ========================================================================== */
+
+// ೧. ಬಲ್ಕ್ ಇಂಪೋರ್ಟ್ ಮಾಡಲ್ UI (ಪ್ರಶ್ನೆ ಪ್ರಕಾರ + ಅಂಕಗಳು ಎರಡೂ ಕಾಲಂ ಸಹಿತ)
+window.openBulkAIImportModal = function() {
+  let modal = document.getElementById('ai-bulk-import-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ai-bulk-import-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const subjects = getSystemSubjects();
+  stagedParsedQuestions = [];
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-5xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow-md">
+            <i class="fa-solid fa-robot text-xl text-amber-300"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-base text-slate-900">NotebookLM / AI ನಿಖರ ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್</h3>
+            <p class="text-[11px] text-slate-500">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳನ್ನು ನೀವೇ ಆರಿಸಿ ೧೦೦% ನಿಖರವಾಗಿ ಇಂಪೋರ್ಟ್ ಮಾಡಿ</p>
+          </div>
+        </div>
+        <button onclick="closeBulkAIImportModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- ೬ ಕಾಲಂಗಳ ಪರ್ಫೆಕ್ಟ್ ಸೆಟಪ್ ಗ್ರಿಡ್ -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 p-3.5 bg-slate-50 border rounded-2xl">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+          <select id="bulk-import-class" class="w-full p-2 bg-white border rounded-xl font-bold">
+            ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+          <select id="bulk-import-subject" class="w-full p-2 bg-white border rounded-xl font-bold text-emerald-950">
+            ${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಭಾಗ (Part)</label>
+          <select id="bulk-import-part" class="w-full p-2 bg-white border rounded-xl font-bold text-indigo-950">
+            <option value="ಭಾಗ 1" selected>ಭಾಗ 1</option>
+            <option value="ಭಾಗ 2">ಭಾಗ 2</option>
+            <option value="ಸಂಪೂರ್ಣ">ಸಂಪೂರ್ಣ</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು *</label>
+          <input type="text" id="bulk-import-chapter" required placeholder="e.g. 5. ಹೊಸ ಧರ್ಮಗಳ ಉದಯ" class="w-full p-2 bg-white border rounded-xl font-bold text-slate-900" />
+        </div>
+
+        <!-- 🌟 ೧. ಹೊಸ 'ಪ್ರಶ್ನೆ ಪ್ರಕಾರ' ಕಾಲಂ -->
+        <div>
+          <label class="block font-extrabold text-indigo-950 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
+          <select id="bulk-import-qtype" onchange="syncBulkImportTypeAndMarks(this.value)" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-extrabold text-indigo-950">
+            <option value="auto" selected>✨ ಆಟೋ (Auto)</option>
+            <option value="mcq">ಬಹು ಆಯ್ಕೆ (MCQ)</option>
+            <option value="blanks">ಬಿಟ್ಟ ಸ್ಥಳ (Blanks)</option>
+            <option value="sa">೨/೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA)</option>
+            <option value="vsa">೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA)</option>
+            <option value="la">೪ ಅಂಕದ ಪ್ರಶ್ನೆ (LA)</option>
+            <option value="match">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</option>
+            <option value="grammar">ವ್ಯಾಕರಣ ಭಾಗ</option>
+            <option value="poem_4lines">೪ ಸಾಲುಗಳ ಪದ್ಯ</option>
+          </select>
+        </div>
+
+        <!-- 🌟 ೨. 'ಅಂಕಗಳು' ಕಾಲಂ -->
+        <div>
+          <label class="block font-extrabold text-emerald-950 mb-1">ಅಂಕಗಳು (Marks) *</label>
+          <select id="bulk-import-default-marks" class="w-full p-2 bg-emerald-50 border border-emerald-300 rounded-xl font-extrabold text-emerald-950">
+            <option value="auto" selected>ಆಟೋ (Auto)</option>
+            <option value="1">೧ ಅಂಕ (1M)</option>
+            <option value="2">೨ ಅಂಕಗಳು (2M)</option>
+            <option value="3">೩ ಅಂಕಗಳು (3M)</option>
+            <option value="4">೪ ಅಂಕಗಳು (4M)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Step 1: Textarea Input -->
+      <div id="bulk-import-step-input" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="font-bold text-slate-800 text-xs">NotebookLM ಪಠ್ಯವನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ:</label>
+          <button type="button" onclick="copyNotebookLMPrompt()" class="text-[11px] bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold px-3 py-1 rounded-xl border border-purple-300">
+            <i class="fa-solid fa-copy"></i> NotebookLM Prompt ಕಾಪಿ ಮಾಡಿ
+          </button>
+        </div>
+        <textarea id="bulk-import-text" rows="8" placeholder="NotebookLM ನಿಂದ ಕಾಪಿ ಮಾಡಿದ ಪಠ್ಯವನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ..." class="w-full p-3.5 bg-slate-50 border-2 border-indigo-300 rounded-2xl font-mono text-xs text-slate-800 focus:outline-none focus:border-indigo-600 leading-relaxed"></textarea>
+        
+        <button type="button" onclick="analyzeAndPreviewBulkText()" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 text-xs">
+          <i class="fa-solid fa-magnifying-glass-chart text-amber-300"></i>
+          <span>ಪ್ರಶ್ನೆಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಿ ಪರಿಶೀಲಿಸಿ (Analyze & Preview)</span>
+        </button>
+      </div>
+
+      <!-- Step 2: Live Preview Table -->
+      <div id="bulk-import-step-preview" class="hidden space-y-3">
+        <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between">
+          <div>
+            <b class="text-emerald-950 font-black text-xs">✅ ಒಟ್ಟು ಗುರುತಿಸಲಾದ ಪ್ರಶ್ನೆಗಳು: <span id="preview-total-count" class="text-sm font-black text-emerald-800">0</span></b>
+            <p class="text-[11px] text-emerald-800">ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳು ಸರಿಯಾಗಿವೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ "ಭಂಡಾರಕ್ಕೆ ಸೇರಿಸಿ" ಕ್ಲಿಕ್ ಮಾಡಿ.</p>
+          </div>
+          <button type="button" onclick="resetBulkImportInput()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold text-xs">
+            <i class="fa-solid fa-arrow-left"></i> ಮತ್ತೆ ಎಡಿಟ್ ಮಾಡಿ
+          </button>
+        </div>
+
+        <div id="bulk-preview-list-container" class="max-h-64 overflow-y-auto space-y-2 pr-1"></div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="closeBulkAIImportModal()" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="button" onclick="confirmAndSaveBulkQuestions()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk text-amber-300"></i> <span>ಖಚಿತವಾಗಿದೆ, ಭಂಡಾರಕ್ಕೆ ಸೇರಿಸಿ (Save to Bank)</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+// ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳ ಆಟೋ ಸಿಂಕ್
+window.syncBulkImportTypeAndMarks = function(type) {
+  const marksSelect = document.getElementById('bulk-import-default-marks');
+  if (!marksSelect) return;
+  if (type === 'sa') marksSelect.value = '2';
+  else if (type === 'la') marksSelect.value = '4';
+  else if (type === 'match' || type === 'poem_4lines') marksSelect.value = '4';
+  else if (type === 'mcq' || type === 'blanks' || type === 'vsa' || type === 'grammar') marksSelect.value = '1';
+  else marksSelect.value = 'auto';
+};
+
+// ೨. ನಿಖರ ಪಾರ್ಸರ್ (ಆಯ್ಕೆಮಾಡಿದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಕಟ್ಟುನಿಟ್ಟಾಗಿ ಅನ್ವಯಿಸುವುದು)
+function parseSingleBlock(blockText, meta) {
+  let text = blockText.trim();
+  const rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (rawLines.length === 0) return null;
+
+  let qTextLines = [];
+  let ansLines = [];
+  let optA = '', optB = '', optC = '', optD = '';
+  let obj = 'ಜ್ಞಾನ';
+  let diff = 'ಸಾಧಾರಣ';
+  let isAnsActive = false;
+
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+
+    if (/^ಕಲಿಕೋದ್ದೇಶ[\:\.\-\s]/i.test(line)) {
+      const objRaw = line.replace(/^ಕಲಿಕೋದ್ದೇಶ[\:\.\-\s]+/i, '').trim();
+      if (objRaw.includes('ತಿಳುವಳಿಕೆ')) obj = 'ತಿಳುವಳಿಕೆ';
+      else if (objRaw.includes('ಅನ್ವಯ')) obj = 'ಅನ್ವಯ';
+      else if (objRaw.includes('ಕೌಶಲ')) obj = 'ಕೌಶಲ';
+      else obj = 'ಜ್ಞಾನ';
+      isAnsActive = false;
+      continue;
+    }
+    if (/^ಕ್ಲಿಷ್ಟತೆ[\:\.\-\s]/i.test(line)) {
+      const diffRaw = line.replace(/^ಕ್ಲಿಷ್ಟತೆ[\:\.\-\s]+/i, '').trim();
+      if (diffRaw.includes('ಸರಳ') || diffRaw.includes('ಸುಲಭ')) diff = 'ಸುಲಭ';
+      else if (diffRaw.includes('ಕಠಿಣ')) diff = 'ಕಠಿಣ';
+      else diff = 'ಸಾಧಾರಣ';
+      isAnsActive = false;
+      continue;
+    }
+    if (/^ಅಂಕ[\:\.\-\s]/i.test(line) || /^ನೀಲನಕ್ಷೆಯ\s*ವರ್ಗ[\:\.\-\s]/i.test(line) || /^ಭಾಗ\s*\d+/i.test(line)) {
+      isAnsActive = false;
+      continue;
+    }
+
+    if (/^(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)[\:\.\-\s]/i.test(line)) {
+      isAnsActive = true;
+      const firstAns = line.replace(/^(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)[\:\.\-\s]+/i, '').trim();
+      if (firstAns) ansLines.push(firstAns);
+      continue;
+    }
+
+    const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptD = /^[\(\[]?\s*(?:D|d|ಈ|ಡಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+
+    if (isOptA) { optA = isOptA[1].trim(); isAnsActive = false; }
+    else if (isOptB) { optB = isOptB[1].trim(); isAnsActive = false; }
+    else if (isOptC) { optC = isOptC[1].trim(); isAnsActive = false; }
+    else if (isOptD) { optD = isOptD[1].trim(); isAnsActive = false; }
+    else {
+      if (isAnsActive) ansLines.push(line.replace(/^[\:\.\-\s]+/, '').trim());
+      else qTextLines.push(line);
+    }
+  }
+
+  let ans = ansLines.join(' ').trim();
+  let fullQ = qTextLines.join(' ').trim();
+  fullQ = fullQ.replace(/^(?:ಪ್ರಶ್ನೆ\s*[\d೧-೯]+[\:\.]?|[\d೧-೯]+[\.\)\:\-])\s*/i, '').trim();
+
+  let qText = fullQ;
+
+  // ಇನ್‌ಲೈನ್ ಆಪ್ಷನ್‌ಗಳ ಹುಡುಕಾಟ
+  if (fullQ.includes('A)') && fullQ.includes('B)')) {
+    const optIdx = fullQ.search(/(?:^|\s|\?)[A|a|ಅ|ಎ]\)\s*/);
+    if (optIdx !== -1) {
+      qText = fullQ.substring(0, optIdx + (fullQ[optIdx] === '?' ? 1 : 0)).trim();
+      const opts = fullQ.substring(optIdx + (fullQ[optIdx] === '?' ? 1 : 0)).trim();
+      const rA = /A\)\s*([^B\)]+)/i.exec(opts);
+      const rB = /B\)\s*([^C\)]+)/i.exec(opts);
+      const rC = /C\)\s*([^D\)]+)/i.exec(opts);
+      const rD = /D\)\s*([^?\n\r]+)/i.exec(opts);
+      if (rA) optA = rA[1].trim();
+      if (rB) optB = rB[1].trim();
+      if (rC) optC = rC[1].trim();
+      if (rD) optD = rD[1].trim();
+    }
+  }
+
+  // 🌟 ಬಳಕೆದಾರರು ಆಯ್ಕೆಮಾಡಿದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳ ಅನ್ವಯ (User Force Override)
+  let type = meta.selectedType || 'auto';
+  let marks = 1;
+
+  if (type === 'auto') {
+    // ಆಟೋ ಮೋಡ್
+    if (optA && optB) { type = 'mcq'; marks = 1; }
+    else if (qText.includes('______') || qText.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) { type = 'blanks'; marks = 1; }
+    else if (qText.includes('ವಿರುದ್ಧ') || qText.includes('ಸಮಾನಾರ್ಥಕ')) { type = 'grammar'; marks = 1; }
+    else if (ans.length > 40 || qText.includes('ವಿವರಿಸಿ') || qText.includes('೨ ಅಂಕ')) { type = 'sa'; marks = 2; }
+    else { type = 'vsa'; marks = 1; }
+  } else {
+    // ಯೂಸರ್ ಮೋಡ್ (೧೦೦% ನಿಖರ)
+    if (type === 'sa') marks = 2;
+    else if (type === 'la') marks = 4;
+    else if (type === 'match' || type === 'poem_4lines') marks = 4;
+    else marks = 1;
+  }
+
+  if (meta.selectedDefaultMarks && meta.selectedDefaultMarks !== 'auto') {
+    marks = parseInt(meta.selectedDefaultMarks);
+  }
+
+  return {
+    id: 'q_' + Date.now() + Math.floor(Math.random() * 1000000),
+    grade: meta.grade,
+    subject: meta.subject,
+    part: meta.part,
+    chapter: meta.chapter,
+    medium: meta.medium,
+    type: type,
+    subType: 'opposite',
+    q: qText || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ',
+    a: optA, b: optB, c: optC, d: optD,
+    ans: ans || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+    marks: marks,
+    obj: obj,
+    diff: diff
+  };
+}
+
+// ೩. ಪ್ರಿವ್ಯೂ ಅನಾಲಿಸಿಸ್
+window.analyzeAndPreviewBulkText = function() {
+  const rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
+  const grade = document.getElementById('bulk-import-class')?.value || '6';
+  const subject = document.getElementById('bulk-import-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('bulk-import-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('bulk-import-chapter')?.value.trim();
+  const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const selectedType = document.getElementById('bulk-import-qtype')?.value || 'auto';
+  const selectedDefaultMarks = document.getElementById('bulk-import-default-marks')?.value || 'auto';
+
+  if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (!rawText) return alert('ದಯವಿಟ್ಟು NotebookLM ನ ಪಠ್ಯವನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+
+  let parsedQuestions = [];
+
+  const rawBlocks = splitIntoExactQuestionBlocks(rawText);
+  rawBlocks.forEach(blockText => {
+    const qObj = parseSingleBlock(blockText, { grade, subject, part, chapter, medium, selectedType, selectedDefaultMarks });
+    if (qObj && qObj.q && qObj.q.length > 1) {
+      parsedQuestions.push(qObj);
+    }
+  });
+
+  if (parsedQuestions.length === 0) {
+    return alert('ಕ್ಷಮಿಸಿ, ಪ್ರಶ್ನೆಗಳನ್ನು ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.');
+  }
+
+  stagedParsedQuestions = parsedQuestions;
+
+  document.getElementById('bulk-import-step-input')?.classList.add('hidden');
+  document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
+  document.getElementById('preview-total-count').innerText = parsedQuestions.length;
+
+  const previewContainer = document.getElementById('bulk-preview-list-container');
+  previewContainer.innerHTML = parsedQuestions.map((q, idx) => `
+    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+        <div class="flex items-center space-x-2">
+          <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded-lg text-[10px] uppercase">
+            ${q.type === 'mcq' ? 'ಬಹು ಆಯ್ಕೆ (MCQ)' : (q.type === 'blanks' ? 'ಬಿಟ್ಟ ಸ್ಥಳ' : (q.marks >= 4 ? '೪ ಅಂಕ (LA)' : (q.marks >= 2 ? `${q.marks} ಅಂಕ (SA)` : '೧ ಅಂಕ (VSA)')))}
+          </span>
+          <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+        </div>
+        
+        <div class="flex items-center space-x-1">
+          <span class="text-[11px] font-bold text-slate-500">ಅಂಕ:</span>
+          <select onchange="updateStagedQuestionMarks(${idx}, this.value)" class="p-1 bg-white border border-slate-300 rounded font-black text-xs text-indigo-900">
+            <option value="1" ${q.marks===1?'selected':''}>1M</option>
+            <option value="2" ${q.marks===2?'selected':''}>2M</option>
+            <option value="3" ${q.marks===3?'selected':''}>3M</option>
+            <option value="4" ${q.marks===4?'selected':''}>4M</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="font-black text-slate-900 text-[13.5px] leading-snug">${idx + 1}. ${escapeHtml(q.q)}</div>
+      
+      ${q.type === 'mcq' ? `
+        <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-700 pl-3 bg-white p-2.5 rounded-xl border border-slate-200 font-medium">
+          <div><b>(A)</b> ${escapeHtml(q.a || '-')}</div><div><b>(B)</b> ${escapeHtml(q.b || '-')}</div>
+          <div><b>(C)</b> ${escapeHtml(q.c || '-')}</div><div><b>(D)</b> ${escapeHtml(q.d || '-')}</div>
+        </div>
+      ` : ''}
+
+      <div class="text-emerald-800 text-[11px] font-bold bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+        <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+      </div>
+    </div>
+  `).join('');
+};
     
   </script>
 </body>
