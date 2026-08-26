@@ -14427,6 +14427,128 @@ window.handleSchoolModalRegister = function(e) {
 // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಬಟನ್ ಬಾರ್ ಜೋಡಣೆ
 injectCompactDashboardButtons();
 setInterval(injectCompactDashboardButtons, 1200);
+
+    /* ==========================================================================
+   PERMANENT BLINKING FIX: CLEAN SINGLE-EVENT CONTROLLER (ZERO GLITCHES)
+   ========================================================================== */
+
+// ೧. ಬ್ರೌಸರ್‌ನಲ್ಲಿ ರನ್ ಆಗುತ್ತಿರುವ ಎಲ್ಲಾ ಹಳೆಯ ಬ್ಲಿಂಕಿಂಗ್ ಟೈಮರ್‌ಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ನಿಲ್ಲಿಸುವುದು
+(function killAllBlinkingIntervals() {
+  // ಎಲ್ಲಾ ಟೈಮರ್ ಐಡಿಗಳನ್ನು ಕ್ಲಿಯರ್ ಮಾಡುವುದು
+  let highestTimeoutId = setTimeout(";");
+  for (let i = 0; i < highestTimeoutId; i++) {
+    clearTimeout(i);
+    clearInterval(i);
+  }
+})();
+
+// ೨. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್‌ಗಳನ್ನು ಕೇವಲ ಒಂದೇ ಬಾರಿ ಸ್ಥಿರವಾಗಿ ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+function injectStableDashboardButtons() {
+  const dashView = document.getElementById('view-dashboard');
+  if (!dashView) return;
+
+  // ಹಳೆಯ ಬಾಕ್ಸ್‌ಗಳನ್ನು ತೆಗೆಯುವುದು
+  document.getElementById('dash-integrated-auth-box')?.remove();
+
+  if (document.getElementById('dash-compact-auth-bar')) return;
+
+  const authBar = document.createElement('div');
+  authBar.id = 'dash-compact-auth-bar';
+  authBar.className = 'flex flex-wrap items-center justify-center gap-3 pt-2 pb-1';
+
+  authBar.innerHTML = `
+    <button onclick="openTeacherAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition flex items-center gap-2">
+      <i class="fa-solid fa-chalkboard-user text-sm"></i>
+      <span>ಶಿಕ್ಷಕರ ಲಾಗಿನ್ / ನೋಂದಣಿ (Teacher Portal)</span>
+    </button>
+
+    <button onclick="openSchoolAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition flex items-center gap-2">
+      <i class="fa-solid fa-school text-sm"></i>
+      <span>ಶಾಲಾ ಲಾಗಿನ್ / ನೋಂದಣಿ (School Portal)</span>
+    </button>
+
+    <button onclick="launchDemoDirectly()" class="px-5 py-3 rounded-2xl font-black text-xs text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-400 hover:to-amber-500 shadow-md transition flex items-center gap-2 border border-amber-500/30">
+      <i class="fa-solid fa-wand-magic-sparkles text-amber-800"></i>
+      <span>⭐ ಉಚಿತ ಡೆಮೋ (Free Demo)</span>
+    </button>
+  `;
+
+  const quickCards = dashView.querySelector('.grid.grid-cols-1');
+  if (quickCards) {
+    dashView.insertBefore(authBar, quickCards);
+  } else {
+    dashView.appendChild(authBar);
+  }
+}
+
+// ೩. Step 3 ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಕೇವಲ ವಿಷಯ ಬದಲಾದಾಗ ಮಾತ್ರ ಲೋಡ್ ಮಾಡುವ ಸ್ಥಿರ ಫಂಕ್ಷನ್
+function updateStep3CheckboxesDynamically() {
+  const subjectSelect = document.getElementById('cfg-subject');
+  const subject = subjectSelect ? subjectSelect.value : '';
+  const isLanguage = isLanguageSubjectCheck(subject);
+
+  const step3Container = document.querySelector('input[name="qtype_opt"]')?.closest('.grid') ||
+                         document.querySelector('#view-generator .card-modern:nth-of-type(2) .grid');
+  
+  if (!step3Container) return;
+
+  step3Container.className = 'grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800';
+
+  let html = `
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಹು ಆಯ್ಕೆ (MCQ)</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಿಟ್ಟ ಸ್ಥಳ ಭರ್ತಿ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</span>
+    </label>
+  `;
+
+  if (isLanguage) {
+    html += `
+      <label class="flex items-center space-x-2 p-2.5 bg-indigo-50/90 border-2 border-indigo-300 rounded-2xl cursor-pointer hover:border-indigo-500">
+        <input type="checkbox" name="qtype_opt" value="grammar" checked class="rounded text-indigo-600 w-4 h-4"><span class="font-extrabold text-indigo-950">ವ್ಯಾಕರಣ ಭಾಗ</span>
+      </label>
+      <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+        <input type="checkbox" name="qtype_opt" value="poem_4lines" checked class="rounded text-purple-600 w-4 h-4"><span class="font-bold text-purple-950">೪ ಸಾಲುಗಳ ಪದ್ಯ</span>
+      </label>
+    `;
+  }
+
+  html += `
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="vsa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧ ಅಂಕದ ಪ್ರಶ್ನೆ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="sa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+      <input type="checkbox" name="qtype_opt" value="la" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೪ ಅಂಕದ ಪ್ರಶ್ನೆ (4M)</span>
+    </label>
+  `;
+
+  if (!isLanguage) {
+    html += `
+      <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+        <input type="checkbox" name="qtype_opt" value="map_diagram" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ</span>
+      </label>
+    `;
+  }
+
+  step3Container.innerHTML = html;
+}
+
+// ೪. ಈವೆಂಟ್ ಬೇಸ್ಡ್ ಎಕ್ಸಿಕ್ಯೂಶನ್ (No Timers, Zero Blinking!)
+document.addEventListener('DOMContentLoaded', () => {
+  injectStableDashboardButtons();
+  updateStep3CheckboxesDynamically();
+});
+
+// ತಕ್ಷಣವೇ ೧ ಬಾರಿ ಮಾತ್ರ ಸ್ಥಿರವಾಗಿ ರನ್ ಮಾಡುವುದು
+injectStableDashboardButtons();
+updateStep3CheckboxesDynamically();
     
   </script>
 </body>
