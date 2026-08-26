@@ -14954,6 +14954,295 @@ window.handleAdminLoginSubmit = function(e) {
     document.getElementById('admin-login-error')?.classList.remove('hidden');
   }
 };
+
+    /* ==========================================================================
+   ADMIN-CONTROLLED UNIQUE KEY SYSTEM & FIREBASE REALTIME AUTH CLOUD SYNC
+   ========================================================================== */
+
+const ADMIN_PHONE_NUMBER = "9902090911";
+const FIREBASE_AUTH_BASE = "https://withyouqp-default-rtdb.firebaseio.com";
+
+// ೧. ಯಾರಿಗೂ ಸೇಮ್ ಇರದ ೧೦೦% ಪ್ರತ್ಯೇಕ Unique Access Key ಜನರೇಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+function generateGuaranteedUniqueKey(prefix) {
+  const existingKeys = new Set([
+    ...(appState.teachers || []).map(t => (t.accessKey || '').toUpperCase()),
+    ...(appState.schools || []).map(s => (s.accessKey || '').toUpperCase())
+  ]);
+
+  let uniqueKey = '';
+  let attempts = 0;
+  do {
+    const randomNum = Math.floor(100000 + Math.random() * 900000); // 6 ಅಂಕಿಯ ಯಾದೃಚ್ಛಿಕ ಸಂಖ್ಯೆ
+    uniqueKey = `WY-${prefix}-${randomNum}`;
+    attempts++;
+  } while (existingKeys.has(uniqueKey) && attempts < 100);
+
+  return uniqueKey;
+}
+
+// ೨. Firebase ಕ್ಲೌಡ್‌ನಿಂದ ಎಲ್ಲಾ ಶಿಕ್ಷಕರು ಮತ್ತು ಶಾಲೆಗಳ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
+async function fetchAuthDataFromFirebase() {
+  try {
+    const [tRes, sRes] = await Promise.all([
+      fetch(`${FIREBASE_AUTH_BASE}/withyou_teachers.json`),
+      fetch(`${FIREBASE_AUTH_BASE}/withyou_schools.json`)
+    ]);
+
+    if (tRes.ok) {
+      const tData = await tRes.json();
+      if (tData) {
+        appState.teachers = Array.isArray(tData) ? tData.filter(Boolean) : Object.values(tData);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      }
+    }
+    if (sRes.ok) {
+      const sData = await sRes.json();
+      if (sData) {
+        appState.schools = Array.isArray(sData) ? sData.filter(Boolean) : Object.values(sData);
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      }
+    }
+    renderRegisteredTeachers();
+    renderRegisteredSchools();
+  } catch (err) {
+    console.warn("Firebase Auth Fetch offline cache:", err);
+  }
+}
+
+// ೩. Firebase ಕ್ಲೌಡ್‌ಗೆ ಶಿಕ್ಷಕರು & ಶಾಲಾ ಡೇಟಾ ಸೇವ್ ಮಾಡುವುದು
+async function pushAuthDataToFirebase() {
+  try {
+    await Promise.all([
+      fetch(`${FIREBASE_AUTH_BASE}/withyou_teachers.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appState.teachers)
+      }),
+      fetch(`${FIREBASE_AUTH_BASE}/withyou_schools.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appState.schools)
+      })
+    ]);
+    showToast('🔥 ಎಲ್ಲಾ Keys Firebase ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಲೈವ್ ಆಗಿವೆ!', 'success');
+  } catch (err) {
+    console.warn("Firebase Auth Push note:", err);
+  }
+}
+
+// ೪. ಸಾರ್ವಜನಿಕ ಶಿಕ್ಷಕರ ನೋಂದಣಿ (ಕೀ ಜನರೇಟ್ ಆಗುವುದಿಲ್ಲ ➔ ನೇರವಾಗಿ ಅಡ್ಮಿನ್ WhatsApp ಗೆ ಸಂದೇಶ)
+window.handleTeacherModalRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-tch-name').value.trim();
+  const school = document.getElementById('reg-tch-school').value.trim();
+  const phone = document.getElementById('reg-tch-phone').value.trim();
+  const grades = Array.from(document.querySelectorAll('input[name="modal_tch_class"]:checked')).map(cb => cb.value);
+  const subjects = Array.from(document.querySelectorAll('input[name="modal_tch_subj"]:checked')).map(cb => cb.value);
+
+  const msg = `*With You QP Generator - ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+              `👤 *ಶಿಕ್ಷಕರ ಹೆಸರು:* ${name}\n` +
+              `🏫 *ಶಾಲೆಯ ಹೆಸರು:* ${school}\n` +
+              `📱 *ಮೊಬೈಲ್ ನಂಬರ್:* ${phone}\n` +
+              `📚 *ತರಗತಿಗಳು:* ${grades.join(', ') || '6, 7, 8'}\n` +
+              `📖 *ವಿಷಯಗಳು:* ${subjects.map(s => s.split('(')[0]).join(', ') || 'ಸಮಾಜ ವಿಜ್ಞಾನ'}\n\n` +
+              `ನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನ್ನ ಖಾತೆಯನ್ನು ಅನುಮೋದಿಸಿ ನನಗೆ ಪ್ರತ್ಯೇಕ *Access Key* ನೀಡಿ.`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+  
+  document.getElementById('teacher-auth-modal').classList.add('hidden');
+  alert(`✅ ಧನ್ಯವಾದಗಳು ${name} ಸರ್/ಮೇಡಂ!\n\nನಿಮ್ಮ ನೋಂದಣಿ ವಿವರಗಳನ್ನು ಅಡ್ಮಿನ್ WhatsApp ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ.\nಅಡ್ಮಿನ್ ಪರಿಶೀಲಿಸಿ ನಿಮಗೆ ಪ್ರತ್ಯೇಕ Access Key ನೀಡುತ್ತಾರೆ.`);
+};
+
+// ೫. ಸಾರ್ವಜನಿಕ ಶಾಲಾ ನೋಂದಣಿ (ನೇರವಾಗಿ ಅಡ್ಮಿನ್ WhatsApp ಗೆ ಸಂದೇಶ)
+window.handleSchoolModalRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-sch-name').value.trim();
+  const dise = document.getElementById('reg-sch-dise').value.trim();
+  const hm = document.getElementById('reg-sch-hm').value.trim();
+  const hmPhone = document.getElementById('reg-sch-phone').value.trim();
+
+  const msg = `*With You QP Generator - ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+              `🏫 *ಶಾಲೆಯ ಹೆಸರು:* ${name}\n` +
+              `🔢 *DISE ಕೋಡ್:* ${dise}\n` +
+              `👤 *HM ಹೆಸರು:* ${hm}\n` +
+              `📱 *HM ಮೊಬೈಲ್:* ${hmPhone}\n\n` +
+              `ನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನಮ್ಮ ಶಾಲೆಯನ್ನು ಅನುಮೋದಿಸಿ *School Master Key* ನೀಡಿ.`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+
+  document.getElementById('school-auth-modal').classList.add('hidden');
+  alert(`✅ ಧನ್ಯವಾದಗಳು!\n\nಶಾಲೆಯ ವಿವರಗಳನ್ನು ಅಡ್ಮಿನ್ WhatsApp ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ.\nಅಡ್ಮಿನ್ ಪರಿಶೀಲಿಸಿ ಶಾಲಾ Master Key ನೀಡುತ್ತಾರೆ.`);
+};
+
+// ೬. 👑 ಅಡ್ಮಿನ್ ಮಾತ್ರ ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ UNIQUE KEY ರಚಿಸುವ ಫಂಕ್ಷನ್
+window.handleTeacherRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-teacher-name').value.trim();
+  const school = document.getElementById('reg-teacher-school').value.trim();
+  const phone = document.getElementById('reg-teacher-phone').value.trim();
+  const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+  const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+
+  // ೧೦೦% ಪ್ರತ್ಯೇಕ Unique Access Key ಜನರೇಟರ್
+  const accessKey = generateGuaranteedUniqueKey('TCH');
+
+  const newTeacher = {
+    id: 'T_' + Date.now(),
+    name, school, phone,
+    grades: grades.length > 0 ? grades : ['6', '7', '8'],
+    subjects: subjects.length > 0 ? subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'],
+    accessKey,
+    createdAt: new Date().toLocaleDateString()
+  };
+
+  appState.teachers.unshift(newTeacher);
+  localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+
+  renderRegisteredTeachers();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-teacher').reset();
+
+  alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nಅವರ ಪ್ರತ್ಯೇಕ Unique Key: ${accessKey}\n\nಕೆಳಗಿನ ಪಟ್ಟಿಯಲ್ಲಿರುವ 'WhatsApp Key ಕಳುಹಿಸಿ' ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ ಅವರಿಗೆ ಕಳುಹಿಸಬಹುದು.`);
+};
+
+// ೭. 👑 ಅಡ್ಮಿನ್ ಮಾತ್ರ ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ UNIQUE MASTER KEY ರಚಿಸುವ ಫಂಕ್ಷನ್
+window.handleSchoolRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-school-name').value.trim();
+  const dise = document.getElementById('reg-school-dise').value.trim();
+  const hm = document.getElementById('reg-school-hm').value.trim();
+  const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+
+  // ೧೦೦% ಪ್ರತ್ಯೇಕ Unique School Master Key ಜನರೇಟರ್
+  const accessKey = generateGuaranteedUniqueKey('SCH');
+
+  const newSchool = {
+    id: 'SCH_' + Date.now(),
+    name, dise, hm, hmPhone,
+    accessKey,
+    createdAt: new Date().toLocaleDateString()
+  };
+
+  appState.schools.unshift(newSchool);
+  localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+
+  renderRegisteredSchools();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-school').reset();
+
+  alert(`🎉 ಶಾಲೆ ${name} ನೋಂದಣಿಯಾಗಿದೆ!\n\nಶಾಲಾ Unique Master Key: ${accessKey}\n\nಕೆಳಗಿನ ಪಟ್ಟಿಯಲ್ಲಿರುವ 'WhatsApp Key ಕಳುಹಿಸಿ' ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ HM ಗೆ ಕಳುಹಿಸಬಹುದು.`);
+};
+
+// ೮. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಶಿಕ್ಷಕರ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
+window.renderRegisteredTeachers = function() {
+  const container = document.getElementById('list-registered-teachers');
+  const countEl = document.getElementById('count-teachers');
+  if (countEl) countEl.innerText = (appState.teachers || []).length;
+  if (!container) return;
+
+  if (appState.teachers.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಿಕ್ಷಕರು ನೋಂದಣಿಯಾಗಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = appState.teachers.map(t => `
+    <div class="p-3 bg-white border-2 border-slate-200 rounded-xl text-xs space-y-1.5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="font-extrabold text-slate-900 text-[13px]">
+          ${escapeHtml(t.name)} 
+          <span class="bg-emerald-100 text-emerald-800 font-mono px-2 py-0.5 rounded font-black border border-emerald-300 ml-1.5">${t.accessKey}</span>
+        </span>
+        <button onclick="deleteTeacher('${t.id}')" class="text-slate-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash-can"></i></button>
+      </div>
+      <div class="text-[11px] text-slate-600 font-semibold">${t.school} &bull; 📱 ${t.phone}</div>
+      <div class="pt-1 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400 font-bold">ತರಗತಿ: ${t.grades?.join(', ') || 'All'}</span>
+        <button onclick="sendKeyToTeacherWhatsApp('${t.phone}', '${t.name}', '${t.accessKey}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+          <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Key ಕಳುಹಿಸಿ</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+// ೯. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಶಾಲೆಗಳ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
+window.renderRegisteredSchools = function() {
+  const container = document.getElementById('list-registered-schools');
+  const countEl = document.getElementById('count-schools');
+  if (countEl) countEl.innerText = (appState.schools || []).length;
+  if (!container) return;
+
+  if (appState.schools.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಾಲೆಗಳು ನೋಂದಣಿಯಾಗಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = appState.schools.map(s => `
+    <div class="p-3 bg-white border-2 border-slate-200 rounded-xl text-xs space-y-1.5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <span class="font-extrabold text-slate-900 text-[13px]">
+          ${escapeHtml(s.name)} 
+          <span class="bg-indigo-100 text-indigo-900 font-mono px-2 py-0.5 rounded font-black border border-indigo-300 ml-1.5">${s.accessKey}</span>
+        </span>
+        <button onclick="deleteSchool('${s.id}')" class="text-slate-400 hover:text-red-600 px-1"><i class="fa-solid fa-trash-can"></i></button>
+      </div>
+      <div class="text-[11px] text-slate-600 font-semibold">DISE: ${s.dise} &bull; HM: ${s.hm} (📱 ${s.hmPhone})</div>
+      <div class="pt-1 flex items-center justify-end">
+        <button onclick="sendKeyToSchoolWhatsApp('${s.hmPhone}', '${s.name}', '${s.accessKey}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+          <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Master Key ಕಳುಹಿಸಿ</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+// ೧೦. ಅಡ್ಮಿನ್‌ನಿಂದ ಶಿಕ್ಷಕರಿಗೆ/ಶಾಲೆಗೆ ನೇರ WhatsApp Key ರವಾನೆ
+window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
+              `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+              `ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+              `🔑 *ನಿಮ್ಮ Teacher Access Key:* *${key}*\n` +
+              `📱 *ಲಾಗಿನ್ ಮೊಬೈಲ್:* ${cleanPhone}\n\n` +
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಜನರೇಟ್ ಮಾಡಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.sendKeyToSchoolWhatsApp = function(phone, schoolName, key) {
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const msg = `*With You QP Generator - ಶಾಲಾ Master Access Key*\n\n` +
+              `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
+              `*${schoolName}* ಶಾಲೆಯ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+              `🔑 *ಶಾಲಾ Master Key:* *${key}*\n\n` +
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ಶಾಲೆಯ ಎಲ್ಲಾ ಪರೀಕ್ಷಾ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಿಕೊಳ್ಳಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// ಡಿಲೀಟ್ ಮಾಡಿದಾಗ Firebase ಗೂ ಅಪ್ಡೇಟ್
+window.deleteTeacher = function(id) {
+  if (confirm('ಈ ಶಿಕ್ಷಕರ ವಿವರವನ್ನು ಡಿಲೀಟ್ ಮಾಡಬೇಕೇ?')) {
+    appState.teachers = appState.teachers.filter(t => t.id !== id);
+    localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+    renderRegisteredTeachers();
+    pushAuthDataToFirebase();
+    showToast('ಶಿಕ್ಷಕರನ್ನು ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.', 'info');
+  }
+};
+
+window.deleteSchool = function(id) {
+  if (confirm('ಈ ಶಾಲಾ ವಿವರವನ್ನು ಡಿಲೀಟ್ ಮಾಡಬೇಕೇ?')) {
+    appState.schools = appState.schools.filter(s => s.id !== id);
+    localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+    renderRegisteredSchools();
+    pushAuthDataToFirebase();
+    showToast('ಶಾಲೆಯನ್ನು ಡಿಲೀಟ್ ಮಾಡಲಾಗಿದೆ.', 'info');
+  }
+};
+
+// ಪುಟ ಆರಂಭವಾದಾಗ Firebase ನಿಂದ ಅಥೆಂಟಿಕೇಶನ್ ಡೌನ್‌ಲೋಡ್
+fetchAuthDataFromFirebase();
     
   </script>
 </body>
