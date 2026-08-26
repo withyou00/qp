@@ -16774,6 +16774,102 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   showToast("✅ " + chosenQuestions.reduce(function(a, b) { return a + (b.marks || 1); }, 0) + " ಅಂಕಗಳ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!", "success");
 };
+
+    /* ==========================================================================
+   MATHEMATICALLY FLAWLESS 50% DEAD-CENTER WATERMARK (ZERO PIXEL DRIFT)
+   ========================================================================== */
+
+(function injectTrueCenterWatermarkCSS() {
+  const styleId = 'true-50-percent-center-watermark-style';
+  let st = document.getElementById(styleId);
+  if (!st) {
+    st = document.createElement('style');
+    st.id = styleId;
+    document.head.appendChild(st);
+  }
+  st.innerHTML = `
+    .a4-sheet-container {
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್‌ಮಾರ್ಕ್ ಕಂಟೈನರ್ */
+    .demo-watermark-overlay {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      pointer-events: none !important;
+      z-index: 50 !important;
+      overflow: hidden !important;
+    }
+
+    /* 🎯 TRANSLATE(-50%, -50%) ಮೂಲಕ 100% ನಿಖರ ಕೇಂದ್ರ ಬಿಂದುವಿಗೆ ಲಾಕ್ */
+    .demo-watermark-text {
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) rotate(-32deg) !important;
+      transform-origin: center center !important;
+      font-size: 34px !important;
+      font-weight: 900 !important;
+      color: rgba(220, 38, 38, 0.16) !important;
+      text-align: center !important;
+      line-height: 1.45 !important;
+      letter-spacing: 2.5px !important;
+      border: 4px dashed rgba(220, 38, 38, 0.22) !important;
+      padding: 16px 36px !important;
+      border-radius: 25px !important;
+      text-transform: uppercase !important;
+      font-family: 'Anek Kannada', sans-serif !important;
+      white-space: nowrap !important;
+      user-select: none !important;
+      margin: 0 !important;
+    }
+
+    @media print {
+      .demo-watermark-overlay {
+        display: block !important;
+        visibility: visible !important;
+      }
+      .demo-watermark-text {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) rotate(-32deg) !important;
+        color: rgba(0, 0, 0, 0.16) !important;
+        border-color: rgba(0, 0, 0, 0.22) !important;
+        visibility: visible !important;
+      }
+    }
+  `;
+})();
+
+// ವಾಟರ್‌ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.applyDemoWatermarkToOutput = function() {
+  document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
+
+  if (appState.currentUserType === 'demo') {
+    const watermarkHtml = `
+      <div class="demo-watermark-overlay">
+        <div class="demo-watermark-text">
+          WITH YOU QP GENERATOR<br>
+          <span style="font-size: 19px; font-weight: 800; color: rgba(0,0,0,0.22);">DEMO VERSION • FOR KEY: 9902090911</span>
+        </div>
+      </div>
+    `;
+
+    document.querySelectorAll('#print-area .a4-sheet-container').forEach(sheet => {
+      sheet.insertAdjacentHTML('beforeend', watermarkHtml);
+    });
+  }
+};
+
+// ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಅಪ್ಲೈ ಮಾಡುವುದು
+applyDemoWatermarkToOutput();
     
   </script>
 </body>
