@@ -18608,6 +18608,144 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   showToast(`✅ ನಿಖರ ${finalMarks} ಅಂಕಗಳ (${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
+
+    /* ==========================================================================
+   STRICT CANONICAL QUESTION TYPE ENFORCER (ZERO LEAKAGE OF UNCHECKED TYPES)
+   ========================================================================== */
+
+// ೧. ಪ್ರಶ್ನೆಯ ನಿಖರವಾದ ಕ್ಯಾನಾನಿಕಲ್ ಪ್ರಕಾರವನ್ನು ಗುರುತಿಸುವ ಹೆಲ್ಪರ್ ಫಂಕ್ಷನ್
+function getCanonicalQuestionType(q) {
+  if (!q) return 'vsa';
+  if (q.type === 'mcq' || (q.a && q.b)) return 'mcq';
+  if (q.type === 'blanks') return 'blanks';
+  if (q.type === 'match' || q.matchPairs) return 'match';
+  if (q.type === 'grammar') return 'grammar';
+  if (q.type === 'poem_4lines') return 'poem_4lines';
+  if (q.type === 'map_diagram' || q.image) return 'map_diagram';
+  if (q.type === 'la' || (q.marks && q.marks >= 4)) return 'la';
+  if (q.type === 'sa' || q.marks === 2 || q.marks === 3) return 'sa';
+  return 'vsa'; // ೧ ಅಂಕದ ಪ್ರಶ್ನೆ
+}
+
+// ೨. ಮಾಸ್ಟರ್ ಜನರೇಟರ್ (ಅನ್‌ಟಿಕ್ ಮಾಡಿದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ೧೦೦% ಬ್ಲಾಕ್ ಮಾಡುವುದು)
+window.generateExamPackageFromBank = window.generateExamPackage = function() {
+  const isDemo = (appState.currentUserType === 'demo');
+
+  // ಡೆಮೋ ಪರಿಶೀಲನೆ
+  if (isDemo) {
+    let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+    if (dCount >= 1) {
+      showDemoLimitReachedModal();
+      return;
+    }
+  }
+
+  const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('cfg-part')?.value || 'all';
+  let rawExamType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || (targetTotalMarks <= 20 ? 15 : 24);
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+
+  const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+  const cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+
+  // 🌟 Step 3 ರಲ್ಲಿ ಟಿಕ್ ಆಗಿರುವ ಪ್ರಕಾರಗಳು ಮಾತ್ರ (Strict Checked Types)
+  const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+  const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+  if (selectedTypes.length === 0) {
+    alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು (MCQ, ೧ ಅಂಕ, ೨ ಅಂಕ...) ಟಿಕ್ ಮಾಡಿ.');
+    return;
+  }
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+
+  const cleanSelectedSubj = cleanMatchText(rawSubject);
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+  // 🌟 ಕಟ್ಟುನಿಟ್ಟಾದ ಫಿಲ್ಟರ್: ಅನ್‌ಟಿಕ್ ಆದ ಪ್ರಕಾರಗಳು ೧೦೦% ಹೊರಗುಳಿಯುತ್ತವೆ!
+  let pool = qbank.filter(q => {
+    const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    const isPartOk = (part === 'all' || q.part === part || !q.part);
+    const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+    
+    // ಕಟ್ಟುನಿಟ್ಟಾದ ಪ್ರಕಾರ ಮ್ಯಾಚಿಂಗ್
+    const canonicalType = getCanonicalQuestionType(q);
+    const isTypeOk = selectedTypes.includes(canonicalType);
+
+    return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+  });
+
+  if (pool.length === 0) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nನೀವು ಆಯ್ಕೆಮಾಡಿದ ಪ್ರಕಾರಗಳು ಮತ್ತು ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.\nದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಇನ್ನಷ್ಟು ಪ್ರಕಾರಗಳನ್ನು ಟಿಕ್ ಮಾಡಿ ಅಥವಾ ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ.`);
+    return;
+  }
+
+  function preparePool(arr) {
+    if (isDemo) return [...arr].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+    let a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ಕೇವಲ ಫಿಲ್ಟರ್ ಆದ ಪೂಲ್‌ನಿಂದ ಮಾತ್ರ ಅಂಕವಾರು ವಿಂಗಡಣೆ (Zero Leakage)
+  let pool1M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 1));
+  let pool2M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 2));
+  let pool3M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 3));
+  let pool4M = preparePool(pool.filter(q => getExactQuestionMarks(q) >= 4));
+
+  // ಗಣಿತೀಯ ಆಪ್ಟಿಮೈಸೇಶನ್
+  const bestCombo = findBestQuestionCombination(pool1M, pool2M, pool3M, pool4M, targetTotalMarks, targetTotalQuestions);
+
+  let chosenQuestions = [];
+
+  if (bestCombo) {
+    for (let i = 0; i < bestCombo.c4; i++) chosenQuestions.push(pool4M.pop());
+    for (let i = 0; i < bestCombo.c3; i++) chosenQuestions.push(pool3M.pop());
+    for (let i = 0; i < bestCombo.c2; i++) chosenQuestions.push(pool2M.pop());
+    for (let i = 0; i < bestCombo.c1; i++) chosenQuestions.push(pool1M.pop());
+  } else {
+    // ಫಾಲ್‌ಬ್ಯಾಕ್: ಕೇವಲ ಅನುಮತಿಸಿದ ಪ್ರಕಾರಗಳಿಂದಲೇ ಗುರಿ ಅಂಕ ತಲುಪುವುದು
+    let curM = 0;
+    while (curM < targetTotalMarks && pool2M.length > 0 && curM + 2 <= targetTotalMarks) { chosenQuestions.push(pool2M.pop()); curM += 2; }
+    while (curM < targetTotalMarks && pool1M.length > 0 && curM + 1 <= targetTotalMarks) { chosenQuestions.push(pool1M.pop()); curM += 1; }
+    while (curM < targetTotalMarks && pool3M.length > 0 && curM + 3 <= targetTotalMarks) { chosenQuestions.push(pool3M.pop()); curM += 3; }
+    while (curM < targetTotalMarks && pool4M.length > 0 && curM + 4 <= targetTotalMarks) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+  }
+
+  const finalMarks = chosenQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (finalMarks < targetTotalMarks && !isDemo) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪ್ರಕಾರಗಳಲ್ಲಿ ಒಟ್ಟು ${finalMarks} ಅಂಕಗಳ ಪ್ರಶ್ನೆಗಳು ಮಾತ್ರ ಲಭ್ಯವಿವೆ.\nದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಇನ್ನಷ್ಟು ಪ್ರಕಾರಗಳನ್ನು ಟಿಕ್ ಮಾಡಿ.`);
+  }
+
+  appState.activeGeneratedQuestions = chosenQuestions;
+
+  // ರೆಂಡರಿಂಗ್
+  renderFullExamPaperWithoutTrimming(targetTotalMarks, schoolName, cleanSubject, cleanExamType, grade, examDate);
+
+  const outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  if (isDemo) {
+    sessionStorage.setItem('wy_demo_gen_count', '1');
+  }
+
+  showToast(`✅ ನಿಖರ ${finalMarks} ಅಂಕಗಳ (${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+};
     
   </script>
 </body>
