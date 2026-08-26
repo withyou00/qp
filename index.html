@@ -13954,6 +13954,98 @@ function injectDirectLoginAndRegistrationIntoDashboard() {
 // ೨. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲಾಗಿನ್ & ರಿಜಿಸ್ಟ್ರೇಷನ್ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಆಗುವುದು
 injectDirectLoginAndRegistrationIntoDashboard();
 setInterval(injectDirectLoginAndRegistrationIntoDashboard, 1000);
+
+/* ==========================================================================
+   DYNAMIC SUBJECT-AWARE STEP 3 (GRAMMAR ONLY FOR LANGUAGES / HIDDEN FOR CORE)
+   ========================================================================== */
+
+// ೧. ಭಾಷಾ ವಿಷಯ ಹೌದೇ ಎಂದು ಪತ್ತೆಹಚ್ಚುವ ಫಂಕ್ಷನ್
+function isLanguageSubjectCheck(subj) {
+  const s = (subj || '').toLowerCase();
+  return s.includes('ಕನ್ನಡ') || s.includes('kannada') ||
+         s.includes('english') || s.includes('ಇಂಗ್ಲಿಷ್') ||
+         s.includes('ಹಿಂದಿ') || s.includes('hindi') ||
+         s.includes('ಉರ್ದು') || s.includes('urdu') ||
+         s.includes('ಸಂಸ್ಕೃತ') || s.includes('sanskrit') ||
+         s.includes('ಮರಾಠಿ') || s.includes('marathi') ||
+         s.includes('language') || s.includes('ಪ್ರಥಮ ಭಾಷೆ') ||
+         s.includes('ದ್ವಿತೀಯ ಭಾಷೆ') || s.includes('ತೃತೀಯ ಭಾಷೆ');
+}
+
+// ೨. ವಿಷಯ ಬದಲಾದಾಗ Step 3 ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಡೈನಾಮಿಕ್ ಆಗಿ ಅಪ್ಡೇಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+function updateStep3CheckboxesDynamically() {
+  const subjectSelect = document.getElementById('cfg-subject');
+  const subject = subjectSelect ? subjectSelect.value : '';
+  const isLanguage = isLanguageSubjectCheck(subject);
+
+  // Step 3 ಕಂಟೈನರ್ ಹುಡುಕುವುದು
+  const step3Container = document.querySelector('input[name="qtype_opt"]')?.closest('.grid') ||
+                         document.querySelector('#view-generator .card-modern:nth-of-type(2) .grid');
+  
+  if (!step3Container) return;
+
+  step3Container.className = 'grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800';
+
+  let html = `
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಹು ಆಯ್ಕೆ (MCQ)</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಬಿಟ್ಟ ಸ್ಥಳ ಭರ್ತಿ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಹೊಂದಿಸಿ ಬರೆಯಿರಿ</span>
+    </label>
+  `;
+
+  // 🌟 ಭಾಷಾ ವಿಷಯಗಳಿಗೆ ಮಾತ್ರ ವ್ಯಾಕರಣ ಮತ್ತು ಪದ್ಯ ಭಾಗ
+  if (isLanguage) {
+    html += `
+      <label class="flex items-center space-x-2 p-2.5 bg-indigo-50/90 border-2 border-indigo-300 rounded-2xl cursor-pointer hover:border-indigo-500">
+        <input type="checkbox" name="qtype_opt" value="grammar" checked class="rounded text-indigo-600 w-4 h-4"><span class="font-extrabold text-indigo-950">ವ್ಯಾಕರಣ ಭಾಗ</span>
+      </label>
+      <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+        <input type="checkbox" name="qtype_opt" value="poem_4lines" checked class="rounded text-purple-600 w-4 h-4"><span class="font-bold text-purple-950">೪ ಸಾಲುಗಳ ಪದ್ಯ</span>
+      </label>
+    `;
+  }
+
+  html += `
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="vsa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧ ಅಂಕದ ಪ್ರಶ್ನೆ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+      <input type="checkbox" name="qtype_opt" value="sa" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ</span>
+    </label>
+    <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+      <input type="checkbox" name="qtype_opt" value="la" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೪ ಅಂಕದ ಪ್ರಶ್ನೆ (4M)</span>
+    </label>
+  `;
+
+  // 🌟 ಕೋರ್ ವಿಷಯಗಳಿಗೆ ಮಾತ್ರ ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ
+  if (!isLanguage) {
+    html += `
+      <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+        <input type="checkbox" name="qtype_opt" value="map_diagram" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ</span>
+      </label>
+    `;
+  }
+
+  step3Container.innerHTML = html;
+}
+
+// ೩. ವಿಷಯ ಬದಲಾದಾಗ ಆಟೋ-ಕಾಲ್ ಆಗುವ ಹ್ಯಾಂಡ್ಲರ್
+const originalHandleClassOrSubjectChange = window.handleClassOrSubjectChange;
+window.handleClassOrSubjectChange = function() {
+  if (typeof originalHandleClassOrSubjectChange === 'function') {
+    originalHandleClassOrSubjectChange();
+  }
+  updateStep3CheckboxesDynamically();
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+updateStep3CheckboxesDynamically();
+setInterval(updateStep3CheckboxesDynamically, 1200);
     
   </script>
 </body>
