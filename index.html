@@ -18746,6 +18746,67 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   showToast(`✅ ನಿಖರ ${finalMarks} ಅಂಕಗಳ (${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
+
+    /* ==========================================================================
+   PERFECT GENERATOR VIEW CLEANUP: REMOVE NOTEBOOK-LM & OPEN ADMIN FROM USERS
+   ========================================================================== */
+
+// ೧. ಜನರೇಟರ್ ಪೇಜ್‌ನಲ್ಲಿರುವ ಅಡ್ಮಿನ್ ಅಂಶಗಳನ್ನು ಬಳಕೆದಾರರಿಗೆ ಹೈಡ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+function sanitizeGeneratorViewSecurity() {
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  // A. Step 1 ಮತ್ತು Step 2 ನಲ್ಲಿರುವ AI ಇಂಪೋರ್ಟ್ ಬಟನ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸುವುದು
+  const stepAiBtns = document.querySelectorAll('#step2-ai-import-btn, #step1-ai-import-btn, button[onclick*="openBulkAIImportModal"]:not(#header-ai-import-btn)');
+  stepAiBtns.forEach(btn => {
+    if (!isOwnerAdmin) {
+      btn.style.display = 'none';
+      btn.remove();
+    }
+  });
+
+  // B. Step 2 ರಲ್ಲಿರುವ ಹಳದಿ ಬಣ್ಣದ "Open Admin ➔" ಬಾಕ್ಸ್ ಅನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ತೆಗೆದುಹಾಕುವುದು
+  const yellowAdminBoxes = document.querySelectorAll('#view-generator .bg-amber-50');
+  yellowAdminBoxes.forEach(box => {
+    if (box.innerHTML.includes('Open Admin') || box.innerHTML.includes('ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಹೋಗಿ')) {
+      if (!isOwnerAdmin) {
+        box.style.display = 'none';
+        box.remove();
+      }
+    }
+  });
+}
+
+// ೨. ಜನರೇಟರ್ ಲೋಡ್ ಆದಾಗಲೆಲ್ಲಾ ಆಟೋ-ಕ್ಲೀನ್ ಮಾಡುವುದು
+const originalSyncSubjectAndChapters = window.syncSubjectAndChapters;
+window.syncSubjectAndChapters = function() {
+  if (typeof originalSyncSubjectAndChapters === 'function') {
+    originalSyncSubjectAndChapters();
+  }
+  sanitizeGeneratorViewSecurity();
+};
+
+// ೩. CSS ಮೂಲಕವೂ ಭದ್ರತೆ ನೀಡುವುದು
+(function injectGeneratorUserSecurityCSS() {
+  const styleId = 'user-clean-generator-security-css';
+  let st = document.getElementById(styleId);
+  if (!st) {
+    st = document.createElement('style');
+    st.id = styleId;
+    document.head.appendChild(st);
+  }
+  st.innerHTML = `
+    /* ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಜನರೇಟರ್ ಒಳಗೆ ಯಾವುದೇ ಅಡ್ಮಿನ್ ಲಿಂಕ್ ಕಾಣಿಸದಂತೆ ಲಾಕ್ */
+    body:not(.is-admin-session) #view-generator button[onclick*="openBulkAIImportModal"],
+    body:not(.is-admin-session) #view-generator #step2-ai-import-btn,
+    body:not(.is-admin-session) #view-generator .bg-amber-50:has(button[onclick*="admin"]) {
+      display: none !important;
+      visibility: hidden !important;
+    }
+  `;
+})();
+
+// ತಕ್ಷಣವೇ ಕ್ಲೀನ್ ಅಪ್ ರನ್ ಮಾಡುವುದು
+sanitizeGeneratorViewSecurity();
     
   </script>
 </body>
