@@ -11076,11 +11076,11 @@ function reRenderActiveExamFromQuestions() {
   renderExactThreeBlueprints(questions, actualCalculatedMarks);
 }
 
-    /* ==========================================================================
-   PERMANENT FIX: VISIBLE EDIT BUTTON ON EVERY QUESTION & INSTANT POPUP
+/* ==========================================================================
+   100% UNBREAKABLE EXAM PAPER GENERATOR (WITH VISIBLE EDIT BUTTONS & OUTPUT)
    ========================================================================== */
 
-// ೧. Edit ಬಟನ್ CSS ಸ್ಟೈಲ್ (ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣಿಸಲು & ಪ್ರಿಂಟ್‌ನಲ್ಲಿ ಹೈಡ್ ಆಗಲು)
+// ೧. Edit ಬಟನ್ CSS ಸ್ಟೈಲ್
 (function injectEditButtonStyles() {
   const styleId = 'visible-edit-button-style';
   let st = document.getElementById(styleId);
@@ -11097,19 +11097,15 @@ function reRenderActiveExamFromQuestions() {
       background-color: #fef3c7 !important;
       color: #92400e !important;
       border: 1.5px solid #f59e0b !important;
-      padding: 3px 10px !important;
-      border-radius: 8px !important;
+      padding: 2px 8px !important;
+      border-radius: 6px !important;
       font-size: 11px !important;
       font-weight: 800 !important;
       cursor: pointer !important;
-      transition: all 0.2s ease !important;
       margin-left: 8px !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
     }
     .btn-live-q-edit:hover {
       background-color: #fde68a !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.15) !important;
     }
     @media print {
       .btn-live-q-edit, .no-print {
@@ -11120,7 +11116,7 @@ function reRenderActiveExamFromQuestions() {
   `;
 })();
 
-// ೨. ಪ್ರಶ್ನೆ ಎಡಿಟ್ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್
+// ೨. ಪಾಪ್‌ಅಪ್ ಎಡಿಟರ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.openPopupQuestionEditor = function(qIndex) {
   const q = appState.activeGeneratedQuestions[qIndex];
   if (!q) return;
@@ -11134,74 +11130,70 @@ window.openPopupQuestionEditor = function(qIndex) {
   }
 
   modal.innerHTML = `
-    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+    <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
       <div class="border-b pb-3 flex items-center justify-between">
-        <div class="flex items-center space-x-2.5">
-          <div class="p-2.5 bg-amber-100 text-amber-900 rounded-2xl font-bold">
-            <i class="fa-solid fa-pen-to-square text-base"></i>
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-amber-100 text-amber-900 rounded-xl font-bold">
+            <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <div>
             <h3 class="font-black text-sm text-slate-900">ಪ್ರಶ್ನೆ & ಉತ್ತರ ತಿದ್ದುಪಡಿ</h3>
-            <p class="text-[11px] text-slate-500">ಪ್ರಶ್ನೆ ${qIndex + 1} &bull; <b>${(q.type||'VSA').toUpperCase()}</b> &bull; ${q.marks || 1} ಅಂಕ</p>
+            <p class="text-[11px] text-slate-500">ಪ್ರಶ್ನೆ ${qIndex + 1} &bull; ${(q.type||'VSA').toUpperCase()} &bull; ${q.marks || 1} ಅಂಕ</p>
           </div>
         </div>
         <button onclick="closePopupQuestionEditor()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
       </div>
 
-      <form id="form-popup-q-edit" onsubmit="savePopupQuestionEdit(event, ${qIndex})" class="space-y-3.5">
+      <form id="form-popup-q-edit" onsubmit="savePopupQuestionEdit(event, ${qIndex})" class="space-y-3">
         <div>
-          <label class="block font-bold text-slate-800 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ (Question Text) *</label>
-          <textarea id="pop-q-text" rows="3" required class="w-full p-3 bg-slate-50 border border-slate-300 rounded-2xl font-bold text-slate-900 text-xs leading-relaxed focus:outline-none">${escapeHtml(q.q)}</textarea>
+          <label class="block font-bold text-slate-800 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+          <textarea id="pop-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 text-xs">${escapeHtml(q.q)}</textarea>
         </div>
 
         ${q.type === 'mcq' ? `
-          <div class="p-3 bg-slate-50 border rounded-2xl space-y-2">
+          <div class="p-3 bg-slate-50 border rounded-xl space-y-2">
             <label class="font-bold text-slate-800 block">MCQ ನಾಲ್ಕು ಆಯ್ಕೆಗಳು:</label>
             <div class="grid grid-cols-2 gap-2">
-              <div><span class="font-bold text-slate-500">(A)</span> <input type="text" id="pop-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
-              <div><span class="font-bold text-slate-500">(B)</span> <input type="text" id="pop-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
-              <div><span class="font-bold text-slate-500">(C)</span> <input type="text" id="pop-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
-              <div><span class="font-bold text-slate-500">(D)</span> <input type="text" id="pop-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(A)</span> <input type="text" id="pop-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-2 border rounded-lg bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(B)</span> <input type="text" id="pop-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-2 border rounded-lg bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(C)</span> <input type="text" id="pop-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-2 border rounded-lg bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(D)</span> <input type="text" id="pop-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-2 border rounded-lg bg-white font-semibold" /></div>
             </div>
           </div>
         ` : ''}
 
-        <div class="grid grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ *</label>
-            <select id="pop-q-obj" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+            <select id="pop-q-obj" class="w-full p-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
               <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
               <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
               <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
               <option value="ಕೌಶಲ" ${q.obj==='ಕೌಶಲ'?'selected':''}>ಕೌಶಲ</option>
             </select>
           </div>
-
           <div>
             <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ *</label>
-            <select id="pop-q-diff" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800">
+            <select id="pop-q-diff" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800">
               <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
               <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
               <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
             </select>
           </div>
-
           <div>
             <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
-            <input type="number" id="pop-q-marks" value="${q.marks || 1}" min="1" max="10" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-indigo-900" />
+            <input type="number" id="pop-q-marks" value="${q.marks || 1}" min="1" max="10" class="w-full p-2 bg-slate-50 border border-slate-300 rounded-xl font-black" />
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
-          <textarea id="pop-q-ans" rows="3" required class="w-full p-3 bg-emerald-50/70 border border-emerald-300 rounded-2xl font-bold text-emerald-950 text-xs leading-relaxed">${escapeHtml(q.ans || '')}</textarea>
+          <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ *</label>
+          <textarea id="pop-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs">${escapeHtml(q.ans || '')}</textarea>
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t">
-          <button type="button" onclick="closePopupQuestionEditor()" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
-          <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2">
-            <i class="fa-solid fa-floppy-disk"></i> <span>ಸೇವ್ ಮಾಡಿ</span>
-          </button>
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="closePopupQuestionEditor()" class="px-4 py-2 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಸೇವ್ ಮಾಡಿ</button>
         </div>
       </form>
     </div>
@@ -11236,7 +11228,7 @@ window.savePopupQuestionEdit = function(e, qIndex) {
   showToast('✅ ಪ್ರಶ್ನೆ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್ಡೇಟ್ ಆಗಿದೆ!', 'success');
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರಿಂಗ್ ಎಂಜಿನ್ (ಪ್ರತಿ ಪ್ರಶ್ನೆಯ ಪಕ್ಕದಲ್ಲಿ 'Edit' ಬಟನ್ ಕಡ್ಡಾಯವಾಗಿ ಬರುವಂತೆ)
+// ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್ ಎಂಜಿನ್ (೧೦೦% ಗ್ಯಾರಂಟಿ ಔಟ್‌ಪುಟ್)
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ';
   const grade = document.getElementById('cfg-class')?.value || '6';
@@ -11293,14 +11285,14 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   let selMcq = [], selBlanks = [], selMatch = [], selGrammar = [], selPoem = [], selVsa = [], selSa2M = [], selSa3M = [], selMap = [];
   let currentMarks = 0;
 
-  // ಪ್ರಶ್ನೆಗಳ ಆಯ್ಕೆ (ಆಟೋ-ಕಾಂಪೆನ್ಸೇಶನ್)
+  // ೧. ಮೊದಲ ಹಂತ: ಆದರ್ಶ ಹಂಚಿಕೆ
   while (poolMcq.length > 0 && selMcq.length < 4 && currentMarks + 1 <= targetTotalMarks) { selMcq.push(poolMcq.pop()); currentMarks += 1; }
   while (poolBlanks.length > 0 && selBlanks.length < 4 && currentMarks + 1 <= targetTotalMarks) { selBlanks.push(poolBlanks.pop()); currentMarks += 1; }
   if (poolMatch.length > 0 && currentMarks + 4 <= targetTotalMarks) { selMatch.push(poolMatch.pop()); currentMarks += 4; }
   while (poolVsa.length > 0 && selVsa.length < 4 && currentMarks + 1 <= targetTotalMarks) { selVsa.push(poolVsa.pop()); currentMarks += 1; }
   while (poolSa2M.length > 0 && selSa2M.length < 2 && currentMarks + 2 <= targetTotalMarks) { selSa2M.push(poolSa2M.pop()); currentMarks += 2; }
 
-  // ಅಂಕ ಭರ್ತಿ
+  // ೨. ಎರಡನೇ ಹಂತ: ಅಂಕ ಭರ್ತಿ (ಅಂಕ ಕಡಿಮೆ ಆಗದಂತೆ)
   while (currentMarks < targetTotalMarks) {
     let added = false;
     const rem = targetTotalMarks - currentMarks;
@@ -11553,6 +11545,16 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   `;
 
   renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
+
+  // 🌟 ಔಟ್‌ಪುಟ್ ಸೆಕ್ಷನ್ ಅನ್ನು ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಕಡ್ಡಾಯವಾಗಿ ತೋರಿಸುವುದು
+  const outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  showToast(`✅ ${actualCalculatedMarks} ಅಂಕಗಳ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
     
   </script>
