@@ -16870,6 +16870,108 @@ window.applyDemoWatermarkToOutput = function() {
 
 // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಅಪ್ಲೈ ಮಾಡುವುದು
 applyDemoWatermarkToOutput();
+
+/* ==========================================================================
+   DIRECT 1-CLICK EXPORT TO PDF ENGINE (HTML2PDF HIGH-RES INTEGRATION)
+   ========================================================================== */
+
+// ೧. PDF ಜನರೇಟ್ ಮಾಡುವ ಉಚಿತ CDN ಲೈಬ್ರರಿ ಲೋಡ್ ಮಾಡುವುದು
+(function loadHTML2PDFLibrary() {
+  if (!window.html2pdf && !document.getElementById('html2pdf-cdn-script')) {
+    const s = document.createElement('script');
+    s.id = 'html2pdf-cdn-script';
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    document.head.appendChild(s);
+  }
+})();
+
+// ೨. ಪ್ರಿಂಟ್ ಬಟನ್ ಪಕ್ಕದಲ್ಲಿ "Export to PDF" ಬಟನ್ ಕೂರಿಸುವ ಫಂಕ್ಷನ್
+function injectExportToPDFButton() {
+  const btnContainer = document.querySelector('#output-section .border-b .flex.items-center.space-x-2:last-child');
+  if (btnContainer && !document.getElementById('btn-export-pdf-action')) {
+    const pdfBtn = document.createElement('button');
+    pdfBtn.id = 'btn-export-pdf-action';
+    pdfBtn.type = 'button';
+    pdfBtn.className = 'px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md transition flex items-center gap-1.5';
+    pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> <span>Export to PDF</span>';
+    pdfBtn.onclick = exportCurrentTabToPDF;
+
+    // ಪ್ರಿಂಟ್ ಬಟನ್‌ಗಿಂತ ಮುಂಚೆ ಕೂರಿಸುವುದು
+    const printBtn = btnContainer.querySelector('button[onclick*="printCurrentTab"]');
+    if (printBtn) {
+      btnContainer.insertBefore(pdfBtn, printBtn);
+    } else {
+      btnContainer.appendChild(pdfBtn);
+    }
+  }
+}
+
+// ೩. ಸಕ್ರಿಯವಾಗಿರುವ ಟ್ಯಾಬ್ ಅನ್ನು (ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ / ಕೀ ಉತ್ತರ / ನೀಲನಕ್ಷೆ) ನೇರವಾಗಿ PDF ಗೆ ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.exportCurrentTabToPDF = function() {
+  let activeTabId = 'tab-content-paper';
+  let fileTypeLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+
+  if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-key';
+    fileTypeLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ';
+  } else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-blueprint';
+    fileTypeLabel = 'ನೀಲನಕ್ಷೆ';
+  }
+
+  const elementToExport = document.querySelector(`#${activeTabId} .a4-sheet-container`);
+  if (!elementToExport) {
+    return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ಜನರೇಟ್ ಮಾಡಿ.');
+  }
+
+  const subject = (document.getElementById('cfg-subject')?.value || 'ವಿಷಯ').split('(')[0].trim().replace(/\s+/g, '_');
+  const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
+  const fileName = `${subject}_${grade}_${fileTypeLabel}.pdf`;
+
+  showToast('⏳ PDF ಸಿದ್ಧವಾಗುತ್ತಿದೆ, ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ...', 'info');
+
+  // html2pdf ಕಾನ್ಫಿಗರೇಶನ್ (A4 Portrait, High-Resolution 300 DPI)
+  const opt = {
+    margin: [6, 8, 6, 8],
+    filename: fileName,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2.5,
+      useCORS: true,
+      letterRendering: true,
+      scrollX: 0,
+      scrollY: 0,
+      logging: false
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    }
+  };
+
+  // ಎಡಿಟ್ ಬಟನ್‌ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಾತ್ಕಾಲಿಕವಾಗಿ ಹೈಡ್ ಮಾಡುವುದು
+  document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = 'none');
+
+  if (window.html2pdf) {
+    html2pdf().set(opt).from(elementToExport).save().then(() => {
+      document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
+      showToast('✅ PDF ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ!', 'success');
+    }).catch(err => {
+      document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
+      console.warn("PDF engine fallback to print:", err);
+      window.print();
+    });
+  } else {
+    // ಫಾಲ್‌ಬ್ಯಾಕ್
+    window.print();
+    document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
+  }
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಬಟನ್ ಅಳವಡಿಸುವುದು
+injectExportToPDFButton();
+setInterval(injectExportToPDFButton, 1200);
     
   </script>
 </body>
