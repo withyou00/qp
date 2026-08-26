@@ -13779,6 +13779,181 @@ function ensureGrammarInAdminDropdown() {
 
 ensureGrammarInAdminDropdown();
 setInterval(ensureGrammarInAdminDropdown, 1000);
+
+    /* ==========================================================================
+   DASHBOARD INTEGRATED LOGIN & REGISTRATION PORTAL ENGINE
+   ========================================================================== */
+
+// ೧. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ ಲಾಗಿನ್ ಮತ್ತು ನೋಂದಣಿ ವಿಭಾಗಗಳನ್ನು ಜೋಡಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+function injectDirectLoginAndRegistrationIntoDashboard() {
+  const dashView = document.getElementById('view-dashboard');
+  if (!dashView || document.getElementById('dash-integrated-auth-box')) return;
+
+  const authContainer = document.createElement('div');
+  authContainer.id = 'dash-integrated-auth-box';
+  authContainer.className = 'space-y-6 pt-2';
+
+  authContainer.innerHTML = `
+    <!-- ಸೆಕ್ಷನ್ ಹೆಡರ್ -->
+    <div class="text-center space-y-1">
+      <h2 class="text-2xl font-black text-slate-900 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-user-shield text-indigo-600"></i>
+        <span>ಶಿಕ್ಷಕರು ಮತ್ತು ಶಾಲಾ ಪ್ರವೇಶ ಪೋರ್ಟಲ್ (Login & Registration)</span>
+      </h2>
+      <p class="text-xs text-slate-500 font-semibold">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಲು ಲಾಗಿನ್ ಆಗಿ ಅಥವಾ ಹೊಸಬರಾಗಿದ್ದರೆ ಕೆಳಗೆ ಉಚಿತವಾಗಿ ನೋಂದಾಯಿಸಿ</p>
+    </div>
+
+    <!-- ೧ & ೨: ಶಿಕ್ಷಕರು & ಶಾಲಾ ಲಾಗಿನ್ ಕಾರ್ಡ್‌ಗಳು (Side-by-Side) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- CARD 1: 👨‍🏫 TEACHER LOGIN -->
+      <div class="card-modern p-6 sm:p-7 space-y-4 border-2 border-emerald-500/50 shadow-md relative bg-white">
+        <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+          <div class="p-3 bg-emerald-100 text-emerald-800 rounded-2xl text-xl font-bold shadow-sm">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-base text-slate-900">೧. ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರ ಲಾಗಿನ್</h3>
+              <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Teacher</span>
+            </div>
+            <p class="text-xs text-slate-500">ನಿಮ್ಮ ಮೊಬೈಲ್ ನಂಬರ್ ಮತ್ತು Access Key ಹಾಕಿ ಲಾಗಿನ್ ಆಗಿ</p>
+          </div>
+        </div>
+
+        <form onsubmit="handleTeacherDirectLoginSubmit(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ನಂಬರ್ (Mobile Number) *</label>
+            <input type="tel" id="direct-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಶಿಕ್ಷಕರ Access Key *</label>
+              <button type="button" onclick="openForgotKeyModal('teacher')" class="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold underline">
+                🔑 ಕೀ ಮರೆತಿರಾ?
+              </button>
+            </div>
+            <input type="text" id="direct-teacher-key" required placeholder="e.g. WY-TCH-7492" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div id="direct-teacher-error" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold text-center">
+            ❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Access Key ತಪ್ಪಾಗಿದೆ!
+          </div>
+
+          <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>ಶಿಕ್ಷಕರ ಲಾಗಿನ್ & ಜನರೇಟರ್ ತೆರೆಯಿರಿ</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- CARD 2: 🏫 SCHOOL MASTER LOGIN -->
+      <div class="card-modern p-6 sm:p-7 space-y-4 border-2 border-indigo-500/50 shadow-md relative bg-white">
+        <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+          <div class="p-3 bg-indigo-100 text-indigo-800 rounded-2xl text-xl font-bold shadow-sm">
+            <i class="fa-solid fa-school"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="font-extrabold text-base text-slate-900">೨. ನೋಂದಾಯಿತ ಶಾಲಾ ಲಾಗಿನ್</h3>
+              <span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-full">School</span>
+            </div>
+            <p class="text-xs text-slate-500">ಶಾಲೆಯ DISE ಕೋಡ್ ಮತ್ತು School Key ಹಾಕಿ ಲಾಗಿನ್ ಆಗಿ</p>
+          </div>
+        </div>
+
+        <form onsubmit="handleSchoolDirectLoginSubmit(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ DISE ಕೋಡ್ (DISE Code) *</label>
+            <input type="text" id="direct-school-dise" required placeholder="e.g. DISE-29150304" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಶಾಲಾ Master Key *</label>
+              <button type="button" onclick="openForgotKeyModal('school')" class="text-[11px] text-indigo-700 hover:text-indigo-900 font-bold underline">
+                🔑 ಕೀ ಮರೆತಿರಾ?
+              </button>
+            </div>
+            <input type="text" id="direct-school-key" required placeholder="e.g. WY-SCH-2915" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div id="direct-school-error" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-bold text-center">
+            ❌ DISE ಕೋಡ್ ಅಥವಾ School Key ತಪ್ಪಾಗಿದೆ!
+          </div>
+
+          <button type="submit" class="w-full btn-primary-gradient text-white font-extrabold py-3 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2">
+            <i class="fa-solid fa-building-circle-check"></i>
+            <span>ಶಾಲಾ ಲಾಗಿನ್ & ಜನರೇಟರ್ ತೆರೆಯಿರಿ</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- ೩. ⭐ 1-CLICK FREE GUEST DEMO ACCESS -->
+    <div class="p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div class="flex items-center space-x-3 text-xs">
+        <div class="p-3 bg-amber-200/70 text-amber-900 rounded-2xl font-bold text-xl shrink-0">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <b class="text-amber-950 block text-sm font-black">೩. ಉಚಿತ ಅತಿಥಿ ಡೆಮೋ ಪರೀಕ್ಷಿಸಿ (Free Guest Demo Trial)</b>
+          <span class="text-amber-800 text-xs font-medium">ಯಾವುದೇ ಲಾಗಿನ್ Key ಇಲ್ಲದೆಯೇ ಎಲ್ಲಾ ಪರೀಕ್ಷಾ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ತಕ್ಷಣವೇ ರಚಿಸಿ ನೋಡಿ.</span>
+        </div>
+      </div>
+      <button type="button" onclick="launchDemoDirectly()" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-2xl text-xs shadow-md transition flex items-center gap-2 shrink-0">
+        <span>🚀 ಡೆಮೋ ಪರೀಕ್ಷಿಸಿ (Try Demo)</span>
+        <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <!-- ೪. 📝 ಹೊಸ ಶಿಕ್ಷಕರು / ಶಾಲೆಗಳ ಸ್ವಯಂ ನೋಂದಣಿ ಪೋರ್ಟಲ್ (Self Registration) -->
+    <div class="card-modern p-6 sm:p-7 space-y-4 border-2 border-purple-300 shadow-md bg-gradient-to-br from-purple-50/50 via-white to-indigo-50/30">
+      <div class="flex items-center justify-between border-b border-purple-100 pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="p-3 bg-purple-100 text-purple-800 rounded-2xl font-bold text-xl">
+            <i class="fa-solid fa-user-plus"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900">೪. ಹೊಸ ಶಿಕ್ಷಕರ / ಶಾಲಾ ನೋಂದಣಿ (New User Registration)</h3>
+            <p class="text-xs text-slate-500">ನೀವು ಹೊಸಬರಾಗಿದ್ದರೆ ಇಲ್ಲಿ ವಿವರ ಭರ್ತಿ ಮಾಡಿ ಉಚಿತ Access Key ಪಡೆದುಕೊಳ್ಳಿ</p>
+          </div>
+        </div>
+        <span class="text-[10px] bg-purple-100 text-purple-900 font-extrabold px-3 py-1 rounded-full border border-purple-300">New Registration</span>
+      </div>
+
+      <form onsubmit="submitSelfRegistrationToWhatsApp(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+          <input type="text" id="self-reg-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+          <input type="text" id="self-reg-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+          <input type="tel" id="self-reg-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+        </div>
+
+        <div class="sm:col-span-3 pt-1">
+          <button type="submit" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2">
+            <i class="fa-brands fa-whatsapp text-base"></i>
+            <span>ಖಾತೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Access Key ಪಡೆದುಕೊಳ್ಳಿ (Register Now)</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  dashView.appendChild(authContainer);
+}
+
+// ೨. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲಾಗಿನ್ & ರಿಜಿಸ್ಟ್ರೇಷನ್ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಆಗುವುದು
+injectDirectLoginAndRegistrationIntoDashboard();
+setInterval(injectDirectLoginAndRegistrationIntoDashboard, 1000);
     
   </script>
 </body>
