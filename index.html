@@ -8933,6 +8933,229 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     }
   `;
 })();
+
+    /* ==========================================================================
+   PERFECT SINGLE-LINE INLINE MCQ EXTRACTOR (A) ... B) ... C) ... D) ...
+   ========================================================================== */
+
+function parseSingleBlock(blockText, meta) {
+  let cleanBlock = blockText
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ')
+    .replace(/\*\*/g, '')
+    .trim();
+
+  const lines = cleanBlock.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  let qTextLines = [];
+  let optA = '', optB = '', optC = '', optD = '';
+  let ans = '';
+  let obj = 'ಜ್ಞಾನ';
+  let diff = 'ಸಾಧಾರಣ';
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // ೧. ಉತ್ತರ ಹುಡುಕುವುದು
+    if (/^(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)[\:\.\-\s]/i.test(line)) {
+      ans = line.replace(/^(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)[\:\.\-\s]+/i, '').trim();
+      continue;
+    }
+
+    // ೨. ಕಲಿಕೋದ್ದೇಶ ಹುಡುಕುವುದು
+    if (/^ಕಲಿಕೋದ್ದೇಶ[\:\.\-\s]/i.test(line)) {
+      const objRaw = line.replace(/^ಕಲಿಕೋದ್ದೇಶ[\:\.\-\s]+/i, '').trim();
+      if (objRaw.includes('ತಿಳುವಳಿಕೆ')) obj = 'ತಿಳುವಳಿಕೆ';
+      else if (objRaw.includes('ಅನ್ವಯ')) obj = 'ಅನ್ವಯ';
+      else if (objRaw.includes('ಕೌಶಲ')) obj = 'ಕೌಶಲ';
+      else obj = 'ಜ್ಞಾನ';
+      continue;
+    }
+
+    // ೩. ಕ್ಲಿಷ್ಟತೆ ಹುಡುಕುವುದು
+    if (/^ಕ್ಲಿಷ್ಟತೆ[\:\.\-\s]/i.test(line)) {
+      const diffRaw = line.replace(/^ಕ್ಲಿಷ್ಟತೆ[\:\.\-\s]+/i, '').trim();
+      if (diffRaw.includes('ಸರಳ') || diffRaw.includes('ಸುಲಭ')) diff = 'ಸುಲಭ';
+      else if (diffRaw.includes('ಕಠಿಣ')) diff = 'ಕಠಿಣ';
+      else diff = 'ಸಾಧಾರಣ';
+      continue;
+    }
+
+    // ೪. ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್‌ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+    if (/(?:^|\s)[A|a|ಅ|ಎ][\)\.\:\-]\s+.*(?:^|\s)[B|b|ಆ|ಬಿ][\)\.\:\-]\s+/i.test(line)) {
+      const mA = line.match(/(?:^|\s)[A|a|ಅ|ಎ][\)\.\:\-]\s*([^BCDbcdಆ-ಡಿ\(\)]+)/i);
+      const mB = line.match(/(?:^|\s)[B|b|ಆ|ಬಿ][\)\.\:\-]\s*([^CDcdಇ-ಡಿ\(\)]+)/i);
+      const mC = line.match(/(?:^|\s)[C|c|ಇ|ಸಿ][\)\.\:\-]\s*([^Ddಈ\(\)]+)/i);
+      const mD = line.match(/(?:^|\s)[D|d|ಈ|ಡಿ][\)\.\:\-]\s*([^?\n\r]+)/i);
+
+      if (mA) optA = mA[1].trim();
+      if (mB) optB = mB[1].trim();
+      if (mC) optC = mC[1].trim();
+      if (mD) optD = mD[1].trim();
+      continue;
+    }
+
+    // ೫. ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಲ್ಲಿರುವ ಆಪ್ಷನ್‌ಗಳು
+    const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptD = /^[\(\[]?\s*(?:D|d|ಈ|ಡಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+
+    if (isOptA) { optA = isOptA[1].trim(); }
+    else if (isOptB) { optB = isOptB[1].trim(); }
+    else if (isOptC) { optC = isOptC[1].trim(); }
+    else if (isOptD) { optD = isOptD[1].trim(); }
+    else {
+      // ಪ್ರಶ್ನೆ ಪಠ್ಯದ ಸಾಲು
+      qTextLines.push(line);
+    }
+  }
+
+  // ಪ್ರಶ್ನೆ ಪಠ್ಯ ಜೋಡಣೆ ಮತ್ತು ಆರಂಭಿಕ ನಂಬರ್ ತೆಗೆಯುವುದು
+  let qText = qTextLines.join(' ').trim();
+  qText = qText.replace(/^(?:ಪ್ರಶ್ನೆ\s*|Q(?:uestion)?\s*)?(\d+|[೧-೯][೦-೯]*)[\:\.\-\]]\s*/i, '').trim();
+
+  // ಒಂದು ವೇಳೆ ಪ್ರಶ್ನೆಯ ಸಾಲಿನಲ್ಲೇ A) B) C) D) ಅಂಟಿಕೊಂಡಿದ್ದರೆ ಬೇರ್ಪಡಿಸುವುದು
+  if (!optA && qText.includes('A)') && qText.includes('B)')) {
+    const optSplitIdx = qText.search(/(?:\?|\b)\s*A\)/i);
+    if (optSplitIdx !== -1) {
+      const optsString = qText.substring(optSplitIdx).trim();
+      qText = qText.substring(0, optSplitIdx + 1).trim();
+
+      const mA = optsString.match(/A\)\s*([^B\)]+)/i);
+      const mB = optsString.match(/B\)\s*([^C\)]+)/i);
+      const mC = optsString.match(/C\)\s*([^D\)]+)/i);
+      const mD = optsString.match(/D\)\s*([^?\n\r]+)/i);
+
+      if (mA) optA = mA[1].trim();
+      if (mB) optB = mB[1].trim();
+      if (mC) optC = mC[1].trim();
+      if (mD) optD = mD[1].trim();
+    }
+  }
+
+  // ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳ ನಿರ್ಧಾರ
+  let type = 'vsa';
+  let marks = 1;
+
+  if (optA && optB) {
+    type = 'mcq';
+    marks = 1;
+  } else if (qText.includes('______') || qText.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) {
+    type = 'blanks';
+    marks = 1;
+  } else if (qText.includes('ವಿರುದ್ಧ') || qText.includes('ಸಮಾನಾರ್ಥಕ') || qText.includes('ಸ್ವಂತ ವಾಕ್ಯ')) {
+    type = 'grammar';
+    marks = 1;
+  } else if (ans.length > 40 || qText.includes('ವಿವರಿಸಿ') || qText.includes('ಕಾರಣ ಕೊಡಿ') || qText.includes('೨ ಅಂಕ')) {
+    type = 'sa';
+    marks = 2;
+  } else {
+    type = 'vsa';
+    marks = 1;
+  }
+
+  return {
+    id: 'q_' + Date.now() + Math.floor(Math.random() * 1000000),
+    grade: meta.grade,
+    subject: meta.subject,
+    part: meta.part,
+    chapter: meta.chapter,
+    medium: meta.medium,
+    type: type,
+    subType: 'opposite',
+    q: qText || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ',
+    a: optA, b: optB, c: optC, d: optD,
+    ans: ans || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+    marks: marks,
+    obj: obj,
+    diff: diff
+  };
+}
+
+window.analyzeAndPreviewBulkText = function() {
+  const rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
+  const grade = document.getElementById('bulk-import-class')?.value || '6';
+  const subject = document.getElementById('bulk-import-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('bulk-import-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('bulk-import-chapter')?.value.trim();
+  const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+
+  if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (!rawText) return alert('ದಯವಿಟ್ಟು NotebookLM ನ ಪಠ್ಯವನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+
+  let parsedQuestions = [];
+
+  // A. JSON ಚೆಕ್
+  const jsonMatch = rawText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  if (jsonMatch || (rawText.startsWith('[') && rawText.endsWith(']'))) {
+    try {
+      const parsedArray = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
+      if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+        parsedQuestions = parsedArray.map(item => ({
+          id: 'q_' + Date.now() + Math.floor(Math.random() * 100000),
+          grade, subject, part, chapter, medium,
+          type: item.type || 'vsa',
+          subType: item.subType || 'opposite',
+          q: item.q || '',
+          a: item.a || '', b: item.b || '', c: item.c || '', d: item.d || '',
+          matchPairs: item.matchPairs || null,
+          ans: item.ans || '',
+          marks: parseInt(item.marks) || (item.type === 'match' ? 4 : (item.type === 'sa' ? 2 : 1)),
+          obj: item.obj || (item.marks >= 2 ? 'ತಿಳುವಳಿಕೆ' : 'ಜ್ಞಾನ'),
+          diff: item.diff || 'ಸಾಧಾರಣ'
+        }));
+      }
+    } catch (e) {}
+  }
+
+  // B. ಸುಧಾರಿತ ಚಂಕ್ ಪಾರ್ಸರ್
+  if (parsedQuestions.length === 0) {
+    const rawBlocks = splitIntoExactQuestionBlocks(rawText);
+    rawBlocks.forEach(blockText => {
+      const qObj = parseSingleBlock(blockText, { grade, subject, part, chapter, medium });
+      if (qObj && qObj.q && qObj.q.length > 1) {
+        parsedQuestions.push(qObj);
+      }
+    });
+  }
+
+  if (parsedQuestions.length === 0) {
+    return alert('ಕ್ಷಮಿಸಿ, ಪ್ರಶ್ನೆಗಳನ್ನು ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.');
+  }
+
+  stagedParsedQuestions = parsedQuestions;
+
+  // UI ಅಪ್‌ಡೇಟ್
+  document.getElementById('bulk-import-step-input')?.classList.add('hidden');
+  document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
+  document.getElementById('preview-total-count').innerText = parsedQuestions.length;
+
+  const previewContainer = document.getElementById('bulk-preview-list-container');
+  previewContainer.innerHTML = parsedQuestions.map((q, idx) => `
+    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+        <div class="flex items-center space-x-2">
+          <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded text-[10px] uppercase">${q.type} (${q.marks}M)</span>
+          <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+        </div>
+        <span class="text-[11px] font-bold text-indigo-700">${q.obj} &bull; ${q.diff}</span>
+      </div>
+      <div class="font-black text-slate-900 text-[13.5px] leading-snug">${idx + 1}. ${escapeHtml(q.q)}</div>
+      
+      ${q.type === 'mcq' ? `
+        <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-700 pl-3 bg-white p-2.5 rounded-xl border border-slate-200 font-medium">
+          <div><b>(A)</b> ${escapeHtml(q.a || '-')}</div><div><b>(B)</b> ${escapeHtml(q.b || '-')}</div>
+          <div><b>(C)</b> ${escapeHtml(q.c || '-')}</div><div><b>(D)</b> ${escapeHtml(q.d || '-')}</div>
+        </div>
+      ` : ''}
+
+      <div class="text-emerald-800 text-[11px] font-bold bg-emerald-50/70 p-2 rounded-xl border border-emerald-200">
+        <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+      </div>
+    </div>
+  `).join('');
+};
     
   </script>
 </body>
