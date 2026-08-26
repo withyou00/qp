@@ -16627,6 +16627,153 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   updateStep3CheckboxesDynamically();
 
 })();
+
+    /* ==========================================================================
+   PERMANENT DEMO LOCK RESET & SEAMLESS 1ST GENERATION ENGINE
+   ========================================================================== */
+
+// ೧. ಹಳೆಯ ಸ್ಟೇಲ್ ಡೆಮೋ ಲಾಕ್ ಅನ್ನು ರೀಸೆಟ್ ಮಾಡುವುದು
+sessionStorage.removeItem('wy_demo_gen_count');
+sessionStorage.removeItem('wy_demo_count');
+
+// ೨. ಡೆಮೋ ಮೋಡ್ ಆರಂಭಿಸುವ ಫಂಕ್ಷನ್ (ಕ್ಲೀನ್ ೧-ಟೈಮ್ ಟ್ರಯಲ್)
+window.launchDemoDirectly = function() {
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+  sessionStorage.removeItem('withyou_active_role');
+  sessionStorage.removeItem('wy_demo_gen_count'); // ೧ ಬಾರಿ ಟ್ರಯಲ್‌ಗೆ ಫ್ರೆಶ್ ಆಗಿ ಓಪನ್
+  showToast('⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
+  navigateToSection('generator');
+};
+
+// ೩. ಮಾಸ್ಟರ್ ಜನರೇಟರ್: ೧ ನೇ ಬಾರಿ ಯಶಸ್ವಿಯಾಗಿ ಪೇಪರ್ ರಚನೆಯಾದ ನಂತರವೇ ಲಾಕ್ ಆಗುವುದು
+window.generateExamPackageFromBank = window.generateExamPackage = function() {
+  var isDemo = (appState.currentUserType === 'demo');
+
+  // ಡೆಮೋ ಪರಿಶೀಲನೆ: ಕೇವಲ ೨ ನೇ ಪ್ರಯತ್ನದಲ್ಲಿ ಮಾತ್ರ ಬ್ಲಾಕ್ ಆಗುತ್ತದೆ
+  if (isDemo) {
+    var dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+    if (dCount >= 1) {
+      showDemoLimitReachedModal();
+      return;
+    }
+  }
+
+  var schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+  var grade = document.getElementById('cfg-class')?.value || '6';
+  var rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  var part = document.getElementById('cfg-part')?.value || 'all';
+  var rawExamType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  var targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  var targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || (targetTotalMarks <= 20 ? 15 : 24);
+  var examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+
+  var cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+  var cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+
+  var selectedTypes = Array.from(document.querySelectorAll('input[name="qtype_opt"]:checked')).map(function(cb) { return cb.value; });
+  var selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  var selectedChapters = Array.from(selectedBoxes).map(function(b) { return b.value; });
+
+  var cleanSelectedSubj = cleanMatchText(rawSubject);
+  var qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+  var pool = qbank.filter(function(q) {
+    var isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+    var cleanQSubj = cleanMatchText(q.subject);
+    var isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    var isPartOk = (part === 'all' || q.part === part || !q.part);
+    var isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+    var isTypeOk = (selectedTypes.length === 0 || selectedTypes.includes(q.type));
+    return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+  });
+
+  if (pool.length === 0) {
+    alert("⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ " + grade + "ನೇ ತರಗತಿ '" + cleanSubject + "' ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.");
+    return;
+  }
+
+  function preparePool(arr) {
+    if (isDemo) return [...arr].sort(function(a, b) { return (a.id || '').localeCompare(b.id || ''); });
+    var a = [...arr];
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = a[i]; a[i] = a[j]; a[j] = temp;
+    }
+    return a;
+  }
+
+  var pool1M = preparePool(pool.filter(function(q) { return (q.marks === 1 || !q.marks) && q.type !== 'match' && q.type !== 'poem_4lines' && q.type !== 'map_diagram'; }));
+  var pool2M = preparePool(pool.filter(function(q) { return q.marks === 2 || (q.type === 'sa' && (q.marks === 2 || !q.marks)); }));
+  var pool3M = preparePool(pool.filter(function(q) { return q.marks === 3; }));
+  var pool4M = preparePool(pool.filter(function(q) { return q.marks === 4 || q.type === 'match' || q.type === 'poem_4lines' || q.type === 'map_diagram'; }));
+
+  var count1M = 0, count2M = 0, count3M = 0, count4M = 0;
+  var solutionFound = false;
+
+  var max4 = Math.min(pool4M.length, Math.floor(targetTotalMarks / 4), targetTotalQuestions);
+  var max3 = Math.min(pool3M.length, Math.floor(targetTotalMarks / 3), targetTotalQuestions);
+  var max2 = Math.min(pool2M.length, Math.floor(targetTotalMarks / 2), targetTotalQuestions);
+
+  for (var c4 = max4; c4 >= 0; c4--) {
+    for (var c3 = max3; c3 >= 0; c3--) {
+      for (var c2 = max2; c2 >= 0; c2--) {
+        var c1 = targetTotalQuestions - (c2 + c3 + c4);
+        if (c1 >= 0 && c1 <= pool1M.length) {
+          if ((1 * c1) + (2 * c2) + (3 * c3) + (4 * c4) === targetTotalMarks) {
+            count1M = c1; count2M = c2; count3M = c3; count4M = c4;
+            solutionFound = true;
+            break;
+          }
+        }
+      }
+      if (solutionFound) break;
+    }
+    if (solutionFound) break;
+  }
+
+  var chosenQuestions = [];
+  if (solutionFound) {
+    for (var i = 0; i < count4M; i++) chosenQuestions.push(pool4M.pop());
+    for (var i = 0; i < count3M; i++) chosenQuestions.push(pool3M.pop());
+    for (var i = 0; i < count2M; i++) chosenQuestions.push(pool2M.pop());
+    for (var i = 0; i < count1M; i++) chosenQuestions.push(pool1M.pop());
+  } else {
+    var curM = 0;
+    while (curM < targetTotalMarks && chosenQuestions.length < targetTotalQuestions) {
+      var remM = targetTotalMarks - curM;
+      var remQ = targetTotalQuestions - chosenQuestions.length;
+      if (remM > remQ && pool2M.length > 0 && curM + 2 <= targetTotalMarks) {
+        chosenQuestions.push(pool2M.pop()); curM += 2;
+      } else if (pool1M.length > 0 && curM + 1 <= targetTotalMarks) {
+        chosenQuestions.push(pool1M.pop()); curM += 1;
+      } else if (remM >= 4 && pool4M.length > 0 && curM + 4 <= targetTotalMarks) {
+        chosenQuestions.push(pool4M.pop()); curM += 4;
+      } else if (pool2M.length > 0 && curM + 2 <= targetTotalMarks) {
+        chosenQuestions.push(pool2M.pop()); curM += 2;
+      } else if (pool1M.length > 0) {
+        chosenQuestions.push(pool1M.pop()); curM += 1;
+      } else break;
+    }
+  }
+
+  appState.activeGeneratedQuestions = chosenQuestions;
+  renderCurrentActiveQuestionsInPaper();
+
+  var outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // 🌟 ಪೇಪರ್ ರಚನೆಯಾದ ನಂತರ ಡೆಮೋ ಕೌಂಟರ್ ಅನ್ನು ೧ ಎಂದು ಲಾಕ್ ಮಾಡುವುದು
+  if (isDemo) {
+    sessionStorage.setItem('wy_demo_gen_count', '1');
+  }
+
+  showToast("✅ " + chosenQuestions.reduce(function(a, b) { return a + (b.marks || 1); }, 0) + " ಅಂಕಗಳ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!", "success");
+};
     
   </script>
 </body>
