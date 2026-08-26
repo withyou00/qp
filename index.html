@@ -8879,6 +8879,60 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   showToast(`✅ ${actualCalculatedMarks} ಅಂಕಗಳ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
+
+    /* ==========================================================================
+   PERFECT ICON & ANEK KANNADA FONT FIX (NO MORE EMPTY BOXES □)
+   ========================================================================== */
+
+(function fixFontAwesomeAndAnekKannada() {
+  // ೧. Google Fonts ನಿಂದ Anek Kannada ಮತ್ತು CDN ನಿಂದ FontAwesome ಖಚಿತಪಡಿಸುವುದು
+  if (!document.getElementById('google-font-anek-kannada')) {
+    const link = document.createElement('link');
+    link.id = 'google-font-anek-kannada';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800;900&display=swap';
+    document.head.appendChild(link);
+  }
+
+  // ೨. FontAwesome ಐಕಾನ್‌ಗಳಿಗೆ ತೊಂದರೆಯಾಗದಂತೆ ಫಾಂಟ್ ರೂಲ್ ಅಪ್‌ಡೇಟ್
+  const styleId = 'global-style-anek-kannada-fixed';
+  let styleTag = document.getElementById(styleId);
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = styleId;
+    document.head.appendChild(styleTag);
+  }
+
+  styleTag.innerHTML = `
+    @import url('https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800;900&display=swap');
+
+    /* ಕೇವಲ ಸಾಮಾನ್ಯ ಪಠ್ಯಕ್ಕೆ ಮಾತ್ರ Anek Kannada ಅನ್ವಯಿಸುವುದು */
+    html, body, p, span:not(.fa):not(.fas):not(.far):not(.fab):not([class*="fa-"]), 
+    h1, h2, h3, h4, h5, h6, input, select, textarea, button, table, th, td, div {
+      font-family: 'Anek Kannada', sans-serif !important;
+    }
+
+    /* 🛡️ FontAwesome ಐಕಾನ್‌ಗಳನ್ನು ಚೌಕಾಕಾರದ ಬಾಕ್ಸ್ (□) ಆಗದಂತೆ ರಕ್ಷಿಸುವುದು */
+    i, .fa, .fas, .far, .fab, [class*="fa-"], [class^="fa-"] {
+      font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+      font-style: normal !important;
+      font-variant: normal !important;
+      text-rendering: auto !important;
+      line-height: 1 !important;
+    }
+
+    .a4-sheet-container, #print-area, #rendered-paper, #rendered-key, #rendered-blueprint {
+      font-family: 'Anek Kannada', sans-serif !important;
+    }
+
+    /* ಮೊಬೈಲ್ ಹೆಡರ್ ಬಟನ್‌ಗಳು ಸುಂದರವಾಗಿ ಕಾಣಿಸಲು */
+    header .flex.items-center.space-x-1 button {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+  `;
+})();
     
   </script>
 </body>
