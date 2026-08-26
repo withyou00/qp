@@ -17394,7 +17394,45 @@ window.logoutAdmin = function() {
 
 // ತಕ್ಷಣವೇ ಲಾಕ್ ಆದ ಕ್ಲೀನ್ ಮೆನು ಲೋಡ್ ಮಾಡುವುದು
 updateTopNavbarClean();
-    
+
+    /* ==========================================================================
+   CENTER-ALIGNED DASHBOARD HERO BANNER & REMOVED REDUNDANT BUTTON
+   ========================================================================== */
+
+(function updateDashboardHeroToCenter() {
+  function applyHeroCenterLayout() {
+    const heroBox = document.querySelector('#view-dashboard > div.relative.overflow-hidden');
+    if (!heroBox) return;
+
+    heroBox.innerHTML = `
+      <div class="relative z-10 max-w-4xl mx-auto text-center space-y-4 flex flex-col items-center justify-center py-2">
+        
+        <!-- Live Tag Badge -->
+        <div class="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-1.5 rounded-full text-xs font-bold text-emerald-300 shadow-sm mx-auto">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Google Firebase Live Connected &bull; DSERT Question Bank</span>
+        </div>
+
+        <!-- Main Title (Centered) -->
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+          ಕರ್ನಾಟಕ ಶಾಲಾ ಶಿಕ್ಷಕರ ಸ್ಮಾರ್ಟ್ <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್</span>
+        </h1>
+        
+        <!-- Subtitle Description (Centered) -->
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl font-medium mx-auto">
+          ನಿಮ್ಮ ಪಠ್ಯಪುಸ್ತಕದ ಅಧಿಕೃತ ಪ್ರಶ್ನೋತ್ತರಗಳಿಂದ (ಚಿತ್ರ/ನಕ್ಷೆ ಸಹಿತ) ಕೇವಲ 0.01 ಸೆಕೆಂಡ್ನಲ್ಲಿ ನಿಖರ ಪರೀಕ್ಷಾ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ, ಕೀ ಉತ್ತರ ಮತ್ತು 3D ನೀಲನಕ್ಷೆ ಸಿದ್ಧಪಡಿಸಿ.
+        </p>
+
+      </div>
+    `;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyHeroCenterLayout);
+  } else {
+    applyHeroCenterLayout();
+  }
+})();
   </script>
 </body>
 </html>
