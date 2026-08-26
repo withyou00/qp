@@ -17267,6 +17267,133 @@ function injectExportToPDFButton() {
 }
 
 injectExportToPDFButton();
+    /* ==========================================================================
+   ROLE-BASED SECURITY: HIDE AI-IMPORT, Q-BANK & ADMIN FROM GENERAL USERS
+   ========================================================================== */
+
+// ೧. ಬಳಕೆದಾರರ ಪ್ರಕಾರಕ್ಕೆ ತಕ್ಕಂತೆ ಹೆಡರ್ ಮೆನು ಪ್ರದರ್ಶಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.updateTopNavbarClean = function() {
+  const navContainer = document.querySelector('header .flex.items-center.space-x-1');
+  if (!navContainer) return;
+
+  // ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆಗಿದ್ದಾರೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  if (isOwnerAdmin) {
+    // 👑 ಅಡ್ಮಿನ್‌ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಪೂರ್ಣ ಮೆನು (All 5 Tools Unlocked)
+    navContainer.innerHTML = `
+      <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+        <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+      </button>
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-database text-amber-600"></i>
+        <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+      </button>
+      <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-gear text-slate-700"></i>
+        <span>Admin</span>
+      </button>
+      <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow ml-1">
+        Logout
+      </button>
+    `;
+  } else {
+    // 👤 ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಕಾಣಿಸುವ ಕ್ಲೀನ್ ಮೆನು (AI ಇಂಪೋರ್ಟ್, ಪ್ರಶ್ನೆ ಭಂಡಾರ, Admin ಹೈಡ್!)
+    navContainer.innerHTML = `
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <!-- ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ರಹಸ್ಯ ಬಟನ್ -->
+      <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200">
+        <i class="fa-solid fa-lock"></i>
+        <span class="hidden sm:inline">Admin</span>
+      </button>
+    `;
+  }
+};
+
+// ೨. AI ಇಂಪೋರ್ಟರ್ ಅನ್ನು ಕೇವಲ ಅಡ್ಮಿನ್‌ಗೆ ಮಾತ್ರ ಲಾಕ್ ಮಾಡುವುದು
+const originalOpenBulkAIImportModal = window.openBulkAIImportModal;
+window.openBulkAIImportModal = function() {
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+  if (!isOwnerAdmin) {
+    alert('🔒 ಈ ಸೌಲಭ್ಯವು ಕೇವಲ Admin ಗೆ ಮಾತ್ರ ಲಭ್ಯವಿದೆ. ದಯವಿಟ್ಟು Admin ಲಾಗಿನ್ ಆಗಿ.');
+    showAdminLoginModal();
+    return;
+  }
+  if (typeof originalOpenBulkAIImportModal === 'function') {
+    originalOpenBulkAIImportModal();
+  }
+};
+
+// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೂ ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ರಕ್ಷಣೆ ನೀಡುವುದು
+const originalNavigateToSectionHandler = window.navigateToSection;
+window.navigateToSection = function(section) {
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್‌ವರ್ಡ್ ಕಡ್ಡಾಯ
+  if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
+    showAdminLoginModal();
+    return;
+  }
+
+  if (typeof originalNavigateToSectionHandler === 'function') {
+    originalNavigateToSectionHandler(section);
+  }
+  updateTopNavbarClean();
+};
+
+// ೪. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದಾಗ ತಕ್ಷಣ ಎಲ್ಲಾ ಟೂಲ್‌ಗಳನ್ನು ಅನ್‌ಲಾಕ್ ಮಾಡುವುದು
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+    
+    closeAdminLoginModal();
+    updateTopNavbarClean(); // 🌟 ಮೆನು ಅನ್‌ಲಾಕ್
+    showToast('👑 Admin ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಎಲ್ಲಾ ಪರಿಕರಗಳು ಅನ್‌ಲಾಕ್ ಆಗಿವೆ.', 'success');
+    navigateToSection('qbank');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
+
+// ೫. ಅಡ್ಮಿನ್ Logout ಆದಾಗ ಸಾಮಾನ್ಯ ಮೆನುವಿಗೆ ಮರಳುವುದು
+window.logoutAdmin = function() {
+  isAdminLoggedIn = false;
+  sessionStorage.removeItem('withyou_admin_auth_token');
+  sessionStorage.removeItem('withyou_active_role');
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+
+  updateTopNavbarClean(); // 🌟 ಮೆನು ಲಾಕ್
+  showToast('🔒 Admin ನಿಂದ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+  navigateToSection('dashboard');
+};
+
+// ತಕ್ಷಣವೇ ಲಾಕ್ ಆದ ಕ್ಲೀನ್ ಮೆನು ಲೋಡ್ ಮಾಡುವುದು
+updateTopNavbarClean();
     
   </script>
 </body>
