@@ -17433,6 +17433,223 @@ updateTopNavbarClean();
     applyHeroCenterLayout();
   }
 })();
+
+    /* ==========================================================================
+   SMART ROBUST TEACHER & SCHOOL LOGIN ENGINE (100% ACCURATE VALIDATION)
+   ========================================================================== */
+
+// ೧. ಶಿಕ್ಷಕರ ಡೇಟಾಬೇಸ್ ಅನ್ನು ಲೈವ್ ಆಗಿ ರಿಫ್ರೆಶ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+function getFreshTeachersList() {
+  const local = JSON.parse(localStorage.getItem('kar_qgen_teachers') || '[]');
+  const inMemory = appState.teachers || [];
+  // ಎರಡನ್ನೂ ಮರ್ಜ್ ಮಾಡಿ ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+  const mergedMap = new Map();
+  [...inMemory, ...local].forEach(t => {
+    if (t && (t.phone || t.accessKey)) {
+      mergedMap.set(t.id || (t.phone + t.accessKey), t);
+    }
+  });
+  const list = Array.from(mergedMap.values());
+  appState.teachers = list;
+  return list;
+}
+
+function getFreshSchoolsList() {
+  const local = JSON.parse(localStorage.getItem('kar_qgen_schools') || '[]');
+  const inMemory = appState.schools || [];
+  const mergedMap = new Map();
+  [...inMemory, ...local].forEach(s => {
+    if (s && (s.dise || s.accessKey)) {
+      mergedMap.set(s.id || (s.dise + s.accessKey), s);
+    }
+  });
+  const list = Array.from(mergedMap.values());
+  appState.schools = list;
+  return list;
+}
+
+// ೨. ಕೀ ಮತ್ತು ಮೊಬೈಲ್ ಹೋಲಿಕೆ ಮಾಡುವ ಸ್ಮಾರ್ಟ್ ಹೆಲ್ಪರ್
+function cleanPhoneDigits(phoneStr) {
+  const digits = String(phoneStr || '').replace(/\D/g, '');
+  return digits.slice(-10); // ಕೇವಲ ಕೊನೆಯ ೧೦ ಅಂಕಿಗಳು
+}
+
+function cleanKeyString(keyStr) {
+  // ಹೈಫನ್, ಸ್ಪೇಸ್ ಎಲ್ಲವನ್ನೂ ತೆಗೆದು ಅಕ್ಷರಗಳನ್ನು ಹೋಲಿಸುವುದು
+  return String(keyStr || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+}
+
+// ೩. 👨‍🏫 TEACHER MODAL LOGIN HANDLER (ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್)
+window.handleTeacherModalLogin = function(e) {
+  e.preventDefault();
+  const phoneInput = document.getElementById('modal-tch-phone');
+  const keyInput = document.getElementById('modal-tch-key');
+  const errBox = document.getElementById('modal-tch-login-err');
+
+  const inputPhone = cleanPhoneDigits(phoneInput?.value);
+  const inputKey = cleanKeyString(keyInput?.value);
+
+  const allTeachers = getFreshTeachersList();
+
+  // ನಿಖರ ಹುಡುಕಾಟ (ಕೊನೆಯ 10 ಅಂಕಿಗಳು & ಕೀ ಮ್ಯಾಚಿಂಗ್)
+  const matchedTeacher = allTeachers.find(t => {
+    const tPhone = cleanPhoneDigits(t.phone);
+    const tKey = cleanKeyString(t.accessKey);
+    return tPhone === inputPhone && tKey === inputKey;
+  });
+
+  if (matchedTeacher) {
+    appState.currentUserType = 'teacher';
+    appState.currentUserId = matchedTeacher.id;
+    sessionStorage.removeItem('withyou_active_role');
+    sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(matchedTeacher));
+
+    if (errBox) errBox.classList.add('hidden');
+    document.getElementById('teacher-auth-modal')?.classList.add('hidden');
+
+    // ಶಾಲೆ ಹೆಸರು & ಶಿಕ್ಷಕರ ವಿವರ ಅಪ್ಡೇಟ್
+    const schoolInput = document.getElementById('cfg-school-name');
+    if (schoolInput && matchedTeacher.school) {
+      schoolInput.value = matchedTeacher.school;
+    }
+
+    showToast(`🎉 ಸ್ವಾಗತ ${matchedTeacher.name} ಸರ್/ಮೇಡಂ! ವಾಟರ್‌ಮಾರ್ಕ್ ರದ್ದಾಗಿದೆ.`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (errBox) {
+      errBox.classList.remove('hidden');
+      errBox.innerHTML = `❌ ಮೊಬೈಲ್ ನಂಬರ್ (${inputPhone}) ಅಥವಾ Access Key (${keyInput?.value}) ತಪ್ಪಾಗಿದೆ!`;
+    }
+  }
+};
+
+// ೪. 👨‍🏫 TEACHER DIRECT CARD LOGIN HANDLER (ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಕಾರ್ಡ್ ಲಾಗಿನ್)
+window.handleTeacherDirectLoginSubmit = function(e) {
+  e.preventDefault();
+  const phoneInput = document.getElementById('direct-teacher-phone');
+  const keyInput = document.getElementById('direct-teacher-key');
+  const errBox = document.getElementById('direct-teacher-error');
+
+  const inputPhone = cleanPhoneDigits(phoneInput?.value);
+  const inputKey = cleanKeyString(keyInput?.value);
+
+  const allTeachers = getFreshTeachersList();
+
+  const matchedTeacher = allTeachers.find(t => {
+    const tPhone = cleanPhoneDigits(t.phone);
+    const tKey = cleanKeyString(t.accessKey);
+    return tPhone === inputPhone && tKey === inputKey;
+  });
+
+  if (matchedTeacher) {
+    appState.currentUserType = 'teacher';
+    appState.currentUserId = matchedTeacher.id;
+    sessionStorage.removeItem('withyou_active_role');
+    sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(matchedTeacher));
+
+    if (errBox) errBox.classList.add('hidden');
+
+    const schoolInput = document.getElementById('cfg-school-name');
+    if (schoolInput && matchedTeacher.school) {
+      schoolInput.value = matchedTeacher.school;
+    }
+
+    showToast(`🎉 ಸ್ವಾಗತ ${matchedTeacher.name} ಸರ್/ಮೇಡಂ!`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (errBox) {
+      errBox.classList.remove('hidden');
+      errBox.innerHTML = `❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!`;
+    }
+  }
+};
+
+// ೫. 🏫 SCHOOL MODAL LOGIN HANDLER (ಶಾಲಾ ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್)
+window.handleSchoolModalLogin = function(e) {
+  e.preventDefault();
+  const diseInput = document.getElementById('modal-sch-dise');
+  const keyInput = document.getElementById('modal-sch-key');
+  const errBox = document.getElementById('modal-sch-login-err');
+
+  const inputDise = cleanKeyString(diseInput?.value);
+  const inputKey = cleanKeyString(keyInput?.value);
+
+  const allSchools = getFreshSchoolsList();
+
+  const matchedSchool = allSchools.find(s => {
+    const sDise = cleanKeyString(s.dise);
+    const sKey = cleanKeyString(s.accessKey);
+    return sDise === inputDise && sKey === inputKey;
+  });
+
+  if (matchedSchool) {
+    appState.currentUserType = 'school';
+    appState.currentUserId = matchedSchool.id;
+    sessionStorage.removeItem('withyou_active_role');
+    sessionStorage.setItem('withyou_logged_school', JSON.stringify(matchedSchool));
+
+    if (errBox) errBox.classList.add('hidden');
+    document.getElementById('school-auth-modal')?.classList.add('hidden');
+
+    const schoolInput = document.getElementById('cfg-school-name');
+    if (schoolInput && matchedSchool.name) {
+      schoolInput.value = matchedSchool.name;
+    }
+
+    showToast(`🎉 ಶಾಲೆ: ${matchedSchool.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (errBox) {
+      errBox.classList.remove('hidden');
+      errBox.innerHTML = `❌ ಶಾಲೆಯ DISE ಕೋಡ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!`;
+    }
+  }
+};
+
+// ೬. 🏫 SCHOOL DIRECT CARD LOGIN HANDLER
+window.handleSchoolDirectLoginSubmit = function(e) {
+  e.preventDefault();
+  const diseInput = document.getElementById('direct-school-dise');
+  const keyInput = document.getElementById('direct-school-key');
+  const errBox = document.getElementById('direct-school-error');
+
+  const inputDise = cleanKeyString(diseInput?.value);
+  const inputKey = cleanKeyString(keyInput?.value);
+
+  const allSchools = getFreshSchoolsList();
+
+  const matchedSchool = allSchools.find(s => {
+    const sDise = cleanKeyString(s.dise);
+    const sKey = cleanKeyString(s.accessKey);
+    return sDise === inputDise && sKey === inputKey;
+  });
+
+  if (matchedSchool) {
+    appState.currentUserType = 'school';
+    appState.currentUserId = matchedSchool.id;
+    sessionStorage.removeItem('withyou_active_role');
+    sessionStorage.setItem('withyou_logged_school', JSON.stringify(matchedSchool));
+
+    if (errBox) errBox.classList.add('hidden');
+
+    const schoolInput = document.getElementById('cfg-school-name');
+    if (schoolInput && matchedSchool.name) {
+      schoolInput.value = matchedSchool.name;
+    }
+
+    showToast(`🎉 ಶಾಲೆ: ${matchedSchool.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (errBox) {
+      errBox.classList.remove('hidden');
+    }
+  }
+};
+
+// ಡೇಟಾಬೇಸ್ ಪ್ರಿ-ಲೋಡ್
+getFreshTeachersList();
+getFreshSchoolsList();
+    
   </script>
 </body>
 </html>
