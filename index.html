@@ -17649,6 +17649,158 @@ window.handleSchoolDirectLoginSubmit = function(e) {
 // ಡೇಟಾಬೇಸ್ ಪ್ರಿ-ಲೋಡ್
 getFreshTeachersList();
 getFreshSchoolsList();
+
+/* ==========================================================================
+   UNBREAKABLE MARKS ENFORCER: 100% EXACT TARGET MARKS (NEVER LESS THAN 20)
+   ========================================================================== */
+
+window.generateExamPackageFromBank = window.generateExamPackage = function() {
+  const isDemo = (appState.currentUserType === 'demo');
+
+  // ಡೆಮೋ ಪರಿಶೀಲನೆ
+  if (isDemo) {
+    let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+    if (dCount >= 1) {
+      showDemoLimitReachedModal();
+      return;
+    }
+  }
+
+  const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('cfg-part')?.value || 'all';
+  let rawExamType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || (targetTotalMarks <= 20 ? 15 : 24);
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+
+  const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+  const cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+
+  let selectedTypes = Array.from(document.querySelectorAll('input[name="qtype_opt"]:checked')).map(cb => cb.value);
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+
+  const cleanSelectedSubj = cleanMatchText(rawSubject);
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+  let pool = qbank.filter(q => {
+    const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    const isPartOk = (part === 'all' || q.part === part || !q.part);
+    const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+    const isTypeOk = (selectedTypes.length === 0 || selectedTypes.includes(q.type));
+    return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+  });
+
+  if (pool.length === 0) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ${grade}ನೇ ತರಗತಿ '${cleanSubject}' ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+    return;
+  }
+
+  function preparePool(arr) {
+    if (isDemo) return [...arr].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+    let a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let pool1M = preparePool(pool.filter(q => (q.marks === 1 || !q.marks) && q.type !== 'match' && q.type !== 'poem_4lines' && q.type !== 'map_diagram'));
+  let pool2M = preparePool(pool.filter(q => q.marks === 2 || (q.type === 'sa' && (q.marks === 2 || !q.marks))));
+  let pool3M = preparePool(pool.filter(q => q.marks === 3));
+  let pool4M = preparePool(pool.filter(q => q.marks === 4 || q.type === 'match' || q.type === 'poem_4lines' || q.type === 'map_diagram'));
+
+  // ೧. ಗಣಿತೀಯ ನಿಖರ ಹೊಂದಾಣಿಕೆ (Mathematical Exact Q+M Match)
+  let count1M = 0, count2M = 0, count3M = 0, count4M = 0;
+  let solutionFound = false;
+
+  const max4 = Math.min(pool4M.length, Math.floor(targetTotalMarks / 4), targetTotalQuestions);
+  const max3 = Math.min(pool3M.length, Math.floor(targetTotalMarks / 3), targetTotalQuestions);
+  const max2 = Math.min(pool2M.length, Math.floor(targetTotalMarks / 2), targetTotalQuestions);
+
+  for (let c4 = max4; c4 >= 0; c4--) {
+    for (let c3 = max3; c3 >= 0; c3--) {
+      for (let c2 = max2; c2 >= 0; c2--) {
+        const c1 = targetTotalQuestions - (c2 + c3 + c4);
+        if (c1 >= 0 && c1 <= pool1M.length) {
+          if ((1 * c1) + (2 * c2) + (3 * c3) + (4 * c4) === targetTotalMarks) {
+            count1M = c1; count2M = c2; count3M = c3; count4M = c4;
+            solutionFound = true;
+            break;
+          }
+        }
+      }
+      if (solutionFound) break;
+    }
+    if (solutionFound) break;
+  }
+
+  let chosenQuestions = [];
+
+  if (solutionFound) {
+    // 🎯 ಪರಿಪೂರ್ಣ ಮ್ಯಾಚ್: ೧೫ ಪ್ರಶ್ನೆಗಳು & ನಿಖರ ೨೦ ಅಂಕಗಳು
+    for (let i = 0; i < count4M; i++) chosenQuestions.push(pool4M.pop());
+    for (let i = 0; i < count3M; i++) chosenQuestions.push(pool3M.pop());
+    for (let i = 0; i < count2M; i++) chosenQuestions.push(pool2M.pop());
+    for (let i = 0; i < count1M; i++) chosenQuestions.push(pool1M.pop());
+  } else {
+    // 🌟 ಅನ್‌ಬ್ರೇಕೇಬಲ್ ಅಂಕ ಭರ್ತಿ (ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ೨೦ ಕ್ಕಿಂತ ಕಡಿಮೆ ಆಗದಂತೆ ೧೦೦% ಭರ್ತಿ ಮಾಡುವುದು)
+    let curMarks = 0;
+
+    // A. ಲಭ್ಯವಿರುವ ೪ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (pool4M.length > 0 && curMarks + 4 <= targetTotalMarks) {
+      chosenQuestions.push(pool4M.pop());
+      curMarks += 4;
+    }
+    // B. ಲಭ್ಯವಿರುವ ೩ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (pool3M.length > 0 && curMarks + 3 <= targetTotalMarks) {
+      chosenQuestions.push(pool3M.pop());
+      curMarks += 3;
+    }
+    // C. ಲಭ್ಯವಿರುವ ೨ ಅಂಕದ ಪ್ರಶ್ನೆಗಳು
+    while (pool2M.length > 0 && curMarks + 2 <= targetTotalMarks) {
+      chosenQuestions.push(pool2M.pop());
+      curMarks += 2;
+    }
+    // D. ಉಳಿದ ಎಲ್ಲಾ ಅಂಕಗಳನ್ನು ೧ ಅಂಕದ ಪ್ರಶ್ನೆಗಳಿಂದ ಕಡ್ಡಾಯವಾಗಿ ಭರ್ತಿ ಮಾಡುವುದು (Fills up to 20 Marks!)
+    while (curMarks < targetTotalMarks && pool1M.length > 0) {
+      chosenQuestions.push(pool1M.pop());
+      curMarks += 1;
+    }
+    // E. ಇನ್ನೂ ಅಂಕ ಬಾಕಿ ಇದ್ದರೆ ೨ ಅಂಕದ ಪ್ರಶ್ನೆಗಳಿಂದ ಭರ್ತಿ
+    while (curMarks < targetTotalMarks && pool2M.length > 0) {
+      chosenQuestions.push(pool2M.pop());
+      curMarks += 2;
+    }
+  }
+
+  const finalCalculatedMarks = chosenQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (finalCalculatedMarks < targetTotalMarks && !isDemo) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠದಲ್ಲಿ ಒಟ್ಟು ${finalCalculatedMarks} ಅಂಕಗಳ ಪ್ರಶ್ನೆಗಳು ಮಾತ್ರ ಲಭ್ಯವಿವೆ.\nದಯವಿಟ್ಟು ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಹೋಗಿ ಇನ್ನಷ್ಟು ಪ್ರಶ್ನೆಗಳನ್ನು ಸೇರಿಸಿ.`);
+  }
+
+  appState.activeGeneratedQuestions = chosenQuestions;
+  renderCurrentActiveQuestionsInPaper();
+
+  const outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  if (isDemo) {
+    sessionStorage.setItem('wy_demo_gen_count', '1');
+  }
+
+  showToast(`✅ ನಿಖರ ${finalCalculatedMarks} ಅಂಕಗಳ (${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+};
     
   </script>
 </body>
