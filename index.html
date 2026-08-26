@@ -14046,6 +14046,387 @@ window.handleClassOrSubjectChange = function() {
 // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
 updateStep3CheckboxesDynamically();
 setInterval(updateStep3CheckboxesDynamically, 1200);
+
+    /* ==========================================================================
+   COMPACT DASHBOARD AUTH BUTTONS & POPUP REGISTRATION / LOGIN SUITE
+   ========================================================================== */
+
+// ೧. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ ಕಾಂಪ್ಯಾಕ್ಟ್ ಬಟನ್ ಬಾರ್ ಜೋಡಣೆ
+function injectCompactDashboardButtons() {
+  const dashView = document.getElementById('view-dashboard');
+  if (!dashView) return;
+
+  // ಹಳೆಯ ದೊಡ್ಡ ಬಾಕ್ಸ್ ಇದ್ದರೆ ತೆಗೆದುಹಾಕುವುದು
+  const oldAuthBox = document.getElementById('dash-integrated-auth-box');
+  if (oldAuthBox) oldAuthBox.remove();
+
+  if (document.getElementById('dash-compact-auth-bar')) return;
+
+  const authBar = document.createElement('div');
+  authBar.id = 'dash-compact-auth-bar';
+  authBar.className = 'flex flex-wrap items-center justify-center gap-3 pt-2 pb-1';
+
+  authBar.innerHTML = `
+    <!-- ೧. Teacher Button -->
+    <button onclick="openTeacherAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2">
+      <i class="fa-solid fa-chalkboard-user text-sm"></i>
+      <span>ಶಿಕ್ಷಕರ ಲಾಗಿನ್ / ನೋಂದಣಿ (Teacher Portal)</span>
+    </button>
+
+    <!-- ೨. School Button -->
+    <button onclick="openSchoolAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2">
+      <i class="fa-solid fa-school text-sm"></i>
+      <span>ಶಾಲಾ ಲಾಗಿನ್ / ನೋಂದಣಿ (School Portal)</span>
+    </button>
+
+    <!-- ೩. Demo Button -->
+    <button onclick="launchDemoDirectly()" class="px-5 py-3 rounded-2xl font-black text-xs text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-400 hover:to-amber-500 shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2 border border-amber-500/30">
+      <i class="fa-solid fa-wand-magic-sparkles text-amber-800"></i>
+      <span>⭐ ಉಚಿತ ಡೆಮೋ (Free Demo)</span>
+    </button>
+  `;
+
+  // ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನ Quick Action Cards ಮೇಲೆ ಕೂರಿಸುವುದು
+  const quickCards = dashView.querySelector('.grid.grid-cols-1');
+  if (quickCards) {
+    dashView.insertBefore(authBar, quickCards);
+  } else {
+    dashView.appendChild(authBar);
+  }
+}
+
+// ೨. 👨‍🏫 TEACHER LOGIN & REGISTRATION POPUP MODAL
+window.openTeacherAuthModal = function() {
+  let modal = document.getElementById('teacher-auth-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'teacher-auth-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const subjects = getSystemSubjects();
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Modal Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl font-bold">
+            <i class="fa-solid fa-chalkboard-user text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ಪೋರ್ಟಲ್ (Teacher Portal)</h3>
+            <p class="text-[11px] text-slate-500">ಲಾಗಿನ್ ಆಗಿ ಅಥವಾ ಹೊಸಬರಾಗಿದ್ದರೆ ಉಚಿತವಾಗಿ ನೋಂದಾಯಿಸಿ</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('teacher-auth-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- Tab Switcher (ಲಾಗಿನ್ / ಹೊಸ ನೋಂದಣಿ) -->
+      <div class="flex bg-slate-100 p-1 rounded-xl font-bold">
+        <button type="button" id="tab-btn-tch-login" onclick="switchTeacherModalTab('login')" class="flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm">
+          ೧. ಲಾಗಿನ್ (Login)
+        </button>
+        <button type="button" id="tab-btn-tch-reg" onclick="switchTeacherModalTab('reg')" class="flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900">
+          ೨. ಹೊಸ ನೋಂದಣಿ (Register)
+        </button>
+      </div>
+
+      <!-- FORM A: TEACHER LOGIN -->
+      <form id="form-tch-modal-login" onsubmit="handleTeacherModalLogin(event)" class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+          <input type="tel" id="modal-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-700">ಶಿಕ್ಷಕರ Access Key *</label>
+            <button type="button" onclick="openForgotKeyModal('teacher')" class="text-[11px] text-emerald-700 underline font-bold">ಕೀ ಮರೆತಿರಾ?</button>
+          </div>
+          <input type="text" id="modal-tch-key" required placeholder="e.g. WY-TCH-7492" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div id="modal-tch-login-err" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center font-bold">
+          ❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!
+        </div>
+        <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಶಿಕ್ಷಕರ ಲಾಗಿನ್</button>
+      </form>
+
+      <!-- FORM B: TEACHER REGISTRATION -->
+      <form id="form-tch-modal-reg" onsubmit="handleTeacherModalRegister(event)" class="space-y-3 hidden">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಪೂರ್ಣ ಹೆಸರು *</label>
+          <input type="text" id="reg-tch-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+          <input type="text" id="reg-tch-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+          <input type="tel" id="reg-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        
+        <!-- ಬೋಧಿಸುವ ತರಗತಿಗಳು -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label>
+          <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+            ${ALL_CLASSES_LIST.map(c => `
+              <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="checkbox" name="modal_tch_class" value="${c.val}" class="rounded text-emerald-600 w-3.5 h-3.5" ${['6','7','8'].includes(c.val)?'checked':''}>
+                <span class="font-bold text-[11px]">${c.val}ನೇ</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- ಬೋಧಿಸುವ ವಿಷಯಗಳು -->
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ವಿಷಯಗಳು</label>
+          <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-28 overflow-y-auto">
+            ${subjects.map(s => `
+              <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="checkbox" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600 w-3.5 h-3.5" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}>
+                <span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಖಾತೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Key ಪಡೆಯಿರಿ</button>
+      </form>
+
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+// ೩. 🏫 SCHOOL LOGIN & REGISTRATION POPUP MODAL
+window.openSchoolAuthModal = function() {
+  let modal = document.getElementById('school-auth-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'school-auth-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2.5 bg-indigo-100 text-indigo-800 rounded-2xl font-bold">
+            <i class="fa-solid fa-school text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ಪೋರ್ಟಲ್ (School Portal)</h3>
+            <p class="text-[11px] text-slate-500">DISE ಕೋಡ್ ಬಳಸಿ ಲಾಗಿನ್ ಆಗಿ ಅಥವಾ ನೋಂದಾಯಿಸಿ</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('school-auth-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex bg-slate-100 p-1 rounded-xl font-bold">
+        <button type="button" id="tab-btn-sch-login" onclick="switchSchoolModalTab('login')" class="flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm">
+          ೧. ಶಾಲಾ ಲಾಗಿನ್
+        </button>
+        <button type="button" id="tab-btn-sch-reg" onclick="switchSchoolModalTab('reg')" class="flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900">
+          ೨. ಹೊಸ ಶಾಲೆ ನೋಂದಣಿ
+        </button>
+      </div>
+
+      <!-- FORM A: SCHOOL LOGIN -->
+      <form id="form-sch-modal-login" onsubmit="handleSchoolModalLogin(event)" class="space-y-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ DISE ಕೋಡ್ *</label>
+          <input type="text" id="modal-sch-dise" required placeholder="e.g. DISE-29150304" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-bold text-slate-700">ಶಾಲಾ Master Key *</label>
+            <button type="button" onclick="openForgotKeyModal('school')" class="text-[11px] text-indigo-700 underline font-bold">ಕೀ ಮರೆತಿರಾ?</button>
+          </div>
+          <input type="text" id="modal-sch-key" required placeholder="e.g. WY-SCH-2915" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div id="modal-sch-login-err" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center font-bold">
+          ❌ DISE ಕೋಡ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!
+        </div>
+        <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow">ಶಾಲಾ ಲಾಗಿನ್</button>
+      </form>
+
+      <!-- FORM B: SCHOOL REGISTRATION -->
+      <form id="form-sch-modal-reg" onsubmit="handleSchoolModalRegister(event)" class="space-y-3 hidden">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label>
+          <input type="text" id="reg-sch-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ (DISE Code) *</label>
+          <input type="text" id="reg-sch-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">ಮುಖ್ಯಶಿಕ್ಷಕರ (HM) ಹೆಸರು *</label>
+          <input type="text" id="reg-sch-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್ (WhatsApp) *</label>
+          <input type="tel" id="reg-sch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+        </div>
+        <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ಪಡೆಯಿರಿ</button>
+      </form>
+
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+// ಟ್ಯಾಬ್ ಸ್ವಿಚರ್‌ಗಳು
+window.switchTeacherModalTab = function(tab) {
+  const formLogin = document.getElementById('form-tch-modal-login');
+  const formReg = document.getElementById('form-tch-modal-reg');
+  const btnL = document.getElementById('tab-btn-tch-login');
+  const btnR = document.getElementById('tab-btn-tch-reg');
+
+  if (tab === 'login') {
+    formLogin.classList.remove('hidden');
+    formReg.classList.add('hidden');
+    btnL.className = 'flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm';
+    btnR.className = 'flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900';
+  } else {
+    formLogin.classList.add('hidden');
+    formReg.classList.remove('hidden');
+    btnR.className = 'flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm';
+    btnL.className = 'flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900';
+  }
+};
+
+window.switchSchoolModalTab = function(tab) {
+  const formLogin = document.getElementById('form-sch-modal-login');
+  const formReg = document.getElementById('form-sch-modal-reg');
+  const btnL = document.getElementById('tab-btn-sch-login');
+  const btnR = document.getElementById('tab-btn-sch-reg');
+
+  if (tab === 'login') {
+    formLogin.classList.remove('hidden');
+    formReg.classList.add('hidden');
+    btnL.className = 'flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm';
+    btnR.className = 'flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900';
+  } else {
+    formLogin.classList.add('hidden');
+    formReg.classList.remove('hidden');
+    btnR.className = 'flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm';
+    btnL.className = 'flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900';
+  }
+};
+
+// ೪. ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್ & ನೋಂದಣಿ ಸಬ್ಮಿಶನ್ ಹ್ಯಾಂಡ್ಲರ್‌ಗಳು
+window.handleTeacherModalLogin = function(e) {
+  e.preventDefault();
+  const phone = document.getElementById('modal-tch-phone').value.trim().replace(/[^0-9]/g, '');
+  const key = document.getElementById('modal-tch-key').value.trim().toLowerCase();
+  const err = document.getElementById('modal-tch-login-err');
+
+  const teacher = (appState.teachers || []).find(t => {
+    const tPhone = (t.phone || '').replace(/[^0-9]/g, '');
+    const tKey = (t.accessKey || '').toLowerCase();
+    return tPhone === phone && tKey === key;
+  });
+
+  if (teacher) {
+    appState.currentUserType = 'teacher';
+    appState.currentUserId = teacher.id;
+    document.getElementById('teacher-auth-modal').classList.add('hidden');
+    showToast(`ಸ್ವಾಗತ ${teacher.name} ಸರ್/ಮೇಡಂ!`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (err) err.classList.remove('hidden');
+  }
+};
+
+window.handleTeacherModalRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-tch-name').value.trim();
+  const school = document.getElementById('reg-tch-school').value.trim();
+  const phone = document.getElementById('reg-tch-phone').value.trim();
+  const grades = Array.from(document.querySelectorAll('input[name="modal_tch_class"]:checked')).map(cb => cb.value);
+  const subjects = Array.from(document.querySelectorAll('input[name="modal_tch_subj"]:checked')).map(cb => cb.value);
+
+  const accessKey = `WY-TCH-${Math.floor(1000 + Math.random() * 9000)}`;
+  const newTeacher = {
+    id: 'T' + Date.now().toString().slice(-4),
+    name, school, phone,
+    grades: grades.length > 0 ? grades : ['6', '7', '8'],
+    subjects: subjects.length > 0 ? subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)', 'ಕನ್ನಡ (Kannada)'],
+    accessKey
+  };
+
+  appState.teachers.push(newTeacher);
+  localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+
+  // ಆಟೋ-ಲಾಗಿನ್
+  appState.currentUserType = 'teacher';
+  appState.currentUserId = newTeacher.id;
+
+  document.getElementById('teacher-auth-modal').classList.add('hidden');
+  alert(`🎉 ಅಭಿನಂದನೆಗಳು ${name} ಸರ್/ಮೇಡಂ!\n\nನಿಮ್ಮ ಖಾತೆ ನೋಂದಣಿಯಾಗಿದೆ.\nನಿಮ್ಮ Access Key: ${accessKey}\n(ದಯವಿಟ್ಟು ಈ ಕೀಯನ್ನು ನೆನಪಿನಲ್ಲಿಡಿ)`);
+  navigateToSection('generator');
+};
+
+window.handleSchoolModalLogin = function(e) {
+  e.preventDefault();
+  const dise = document.getElementById('modal-sch-dise').value.trim().toLowerCase();
+  const key = document.getElementById('modal-sch-key').value.trim().toLowerCase();
+  const err = document.getElementById('modal-sch-login-err');
+
+  const school = (appState.schools || []).find(s => {
+    const sDise = (s.dise || '').toLowerCase();
+    const sKey = (s.accessKey || '').toLowerCase();
+    return (sDise === dise || sDise.replace(/[^0-9]/g, '') === dise.replace(/[^0-9]/g, '')) && sKey === key;
+  });
+
+  if (school) {
+    appState.currentUserType = 'school';
+    appState.currentUserId = school.id;
+    document.getElementById('school-auth-modal').classList.add('hidden');
+    showToast(`ಶಾಲೆ ${school.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+    navigateToSection('generator');
+  } else {
+    if (err) err.classList.remove('hidden');
+  }
+};
+
+window.handleSchoolModalRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-sch-name').value.trim();
+  const dise = document.getElementById('reg-sch-dise').value.trim();
+  const hm = document.getElementById('reg-sch-hm').value.trim();
+  const hmPhone = document.getElementById('reg-sch-phone').value.trim();
+
+  const accessKey = `WY-SCH-${Math.floor(1000 + Math.random() * 9000)}`;
+  const newSchool = {
+    id: 'SCH' + Date.now().toString().slice(-4),
+    name, dise, hm, hmPhone, accessKey
+  };
+
+  appState.schools.push(newSchool);
+  localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+
+  // ಆಟೋ-ಲಾಗಿನ್
+  appState.currentUserType = 'school';
+  appState.currentUserId = newSchool.id;
+
+  document.getElementById('school-auth-modal').classList.add('hidden');
+  alert(`🎉 ಅಭಿನಂದನೆಗಳು!\n\nಶಾಲೆ: ${name} ನೋಂದಣಿಯಾಗಿದೆ.\nಶಾಲಾ Master Key: ${accessKey}\n(ದಯವಿಟ್ಟು ಈ ಕೀಯನ್ನು ನೆನಪಿನಲ್ಲಿಡಿ)`);
+  navigateToSection('generator');
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಬಟನ್ ಬಾರ್ ಜೋಡಣೆ
+injectCompactDashboardButtons();
+setInterval(injectCompactDashboardButtons, 1200);
     
   </script>
 </body>
