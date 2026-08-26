@@ -14753,6 +14753,207 @@ window.renderDedicatedQuestionBankModule = function() {
 
 // ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಮೆನುವನ್ನು ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
 updateTopNavbarClean();
+
+    /* ==========================================================================
+   PERFECT ADMIN PANEL & QUESTION BANK ROUTING FIX (100% WORKING)
+   ========================================================================== */
+
+// ೧. ಮಾಸ್ಟರ್ ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ (Admin ಮತ್ತು ಪ್ರಶ್ನೆ ಭಂಡಾರ ಎರಡೂ ಪ್ರತ್ಯೇಕವಾಗಿ ಕೆಲಸ ಮಾಡುತ್ತವೆ)
+window.navigateToSection = function(section) {
+  // A. ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್‌ವರ್ಡ್ ಚೆಕ್ ಮಾಡುವುದು
+  if (section === 'admin' && !isAdminLoggedIn) {
+    showAdminLoginModal();
+    return;
+  }
+
+  // B. ಎಲ್ಲಾ ವೀವ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
+  ['dashboard', 'profile', 'generator', 'qbank', 'admin'].forEach(v => {
+    document.getElementById(`view-${v}`)?.classList.add('hidden');
+    const btn = document.getElementById(`nav-btn-${v}`);
+    if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs';
+  });
+
+  // C. ಆಕ್ಟಿವ್ ವೀವ್ ತೋರಿಸುವುದು
+  let targetViewId = `view-${section}`;
+  if (section === 'qbank' || section === 'admin') targetViewId = 'view-admin';
+
+  const activeEl = document.getElementById(targetViewId);
+  const activeBtn = document.getElementById(`nav-btn-${section}`);
+
+  if (activeEl) activeEl.classList.remove('hidden');
+  if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs';
+
+  if (section === 'generator') {
+    syncSubjectAndChapters();
+    updateStep3CheckboxesDynamically();
+  } else if (section === 'qbank') {
+    renderDedicatedQuestionBankModule();
+  } else if (section === 'admin') {
+    renderAdminMasterManagementHTML();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ೨. ⚙️ ADMIN MASTER CONTROL PANEL (ಶಿಕ್ಷಕರು, ಶಾಲೆಗಳು, Keys & ಸಿಸ್ಟಮ್ ಸೆಟ್ಟಿಂಗ್ಸ್)
+window.renderAdminMasterManagementHTML = function() {
+  const adminView = document.getElementById('view-admin');
+  if (!adminView) return;
+
+  const mediums = getSystemMediums();
+  const subjects = getSystemSubjects();
+
+  adminView.innerHTML = `
+    <!-- Top Control Bar -->
+    <div class="flex items-center justify-between bg-slate-900 text-white p-4 px-6 rounded-3xl shadow-md text-xs">
+      <div class="flex items-center space-x-2.5">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="font-extrabold text-sm">⚙️ ಅಡ್ಮಿನ್ ಮಾಸ್ಟರ್ ಕಂಟ್ರೋಲ್ ಪ್ಯಾನೆಲ್ (Admin Management Hub)</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="navigateToSection('qbank')" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow">
+          <i class="fa-solid fa-database"></i> <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಹೋಗಿ ➔</span>
+        </button>
+        <button onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl font-bold transition">
+          Logout
+        </button>
+      </div>
+    </div>
+
+    <!-- Registration Forms Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- ೧. ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಮತ್ತು ಕೀ ನಿರ್ವಹಣೆ -->
+      <div class="card-modern p-6 space-y-4">
+        <h3 class="font-extrabold text-sm text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-emerald-600"></i> <span>ಶಿಕ್ಷಕರ ನೋಂದಣಿ & Access Key (Teacher Management)</span>
+        </h3>
+        <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+            <input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು *</label>
+              <input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಮೊಬೈಲ್ ನಂಬರ್ (WhatsApp) *</label>
+              <input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ಮಾಧ್ಯಮ</label>
+              <button type="button" onclick="addNewMediumToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add Medium</button>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+              ${mediums.map(m => `
+                <label class="flex items-center space-x-1.5 cursor-pointer">
+                  <input type="checkbox" name="teacher_reg_medium" value="${m}" class="rounded text-emerald-600 w-3.5 h-3.5" ${m.includes('Kannada')?'checked':''}>
+                  <span class="font-bold truncate">${m}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label>
+            <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+              ${ALL_CLASSES_LIST.map(c => `
+                <label class="flex items-center space-x-1 cursor-pointer">
+                  <input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600 w-3 h-3" ${['6','7','8'].includes(c.val)?'checked':''}>
+                  <span class="font-bold">${c.val}ನೇ</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು</label>
+              <button type="button" onclick="addNewSubjectToSystem()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded font-bold">+ Add Subject</button>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-28 overflow-y-auto">
+              ${subjects.map(s => `
+                <label class="flex items-center space-x-1.5 cursor-pointer">
+                  <input type="checkbox" name="teacher_reg_subj" value="${s}" class="rounded text-emerald-600 w-3.5 h-3.5" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}>
+                  <span class="truncate font-medium">${s.split('(')[0].trim()}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+
+          <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl text-xs shadow">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Access Key ರಚಿಸಿ</button>
+        </form>
+
+        <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
+          <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">${(appState.teachers||[]).length}</span>)</h4>
+          <div id="list-registered-teachers" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- ೨. ಶಾಲಾ ನೋಂದಣಿ ಮತ್ತು Master Key ನಿರ್ವಹಣೆ -->
+      <div class="card-modern p-6 space-y-4">
+        <h3 class="font-extrabold text-sm text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
+          <i class="fa-solid fa-building-columns text-indigo-600"></i> <span>ಶಾಲಾ ನೋಂದಣಿ & Master Key (School Management)</span>
+        </h3>
+        <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label>
+            <input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label>
+              <input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label>
+              <input type="text" id="reg-school-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್ (WhatsApp) *</label>
+            <input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+          </div>
+          <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl text-xs shadow">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ರಚಿಸಿ</button>
+        </form>
+
+        <div class="mt-4 pt-3 border-t space-y-2">
+          <h4 class="text-xs font-bold text-slate-700 uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">${(appState.schools||[]).length}</span>)</h4>
+          <div id="list-registered-schools" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  renderRegisteredTeachers();
+  renderRegisteredSchools();
+};
+
+// ೩. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದ ತಕ್ಷಣ ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ಹೋಗುವಂತೆ ಮಾಡುವುದು
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+    closeAdminLoginModal();
+    showToast('🔓 Admin Master Access ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+    navigateToSection('admin');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
     
   </script>
 </body>
