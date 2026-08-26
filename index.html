@@ -10626,6 +10626,455 @@ window.analyzeAndPreviewBulkText = function() {
     </div>
   `).join('');
 };
+
+    /* ==========================================================================
+   PER-QUESTION LIVE POPUP EDITOR ON GENERATED PAPER WITH DYNAMIC RE-RENDER
+   ========================================================================== */
+
+// ೧. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಮೇಲಿರುವ Edit ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಪ್‌ಅಪ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.openPopupQuestionEditor = function(qIndex) {
+  const q = appState.activeGeneratedQuestions[qIndex];
+  if (!q) return;
+
+  let modal = document.getElementById('popup-q-editor-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'popup-q-editor-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2.5 bg-amber-100 text-amber-900 rounded-2xl font-bold">
+            <i class="fa-solid fa-pen-to-square text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ & ಉತ್ತರ ತಿದ್ದುಪಡಿ (Edit Question)</h3>
+            <p class="text-[11px] text-slate-500">ಪ್ರಶ್ನೆ ${qIndex + 1} &bull; <b>${q.type.toUpperCase()}</b> &bull; ${q.marks || 1} ಅಂಕ</p>
+          </div>
+        </div>
+        <button onclick="closePopupQuestionEditor()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="form-popup-q-edit" onsubmit="savePopupQuestionEdit(event, ${qIndex})" class="space-y-3.5">
+        
+        <!-- ಪ್ರಶ್ನೆ ಪಠ್ಯ -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ (Question Text) *</label>
+          <textarea id="pop-q-text" rows="3" required class="w-full p-3 bg-slate-50 border border-slate-300 rounded-2xl font-bold text-slate-900 text-xs leading-relaxed focus:outline-none focus:border-indigo-600">${escapeHtml(q.q)}</textarea>
+        </div>
+
+        <!-- MCQ ಆಯ್ಕೆಗಳು (MCQ ಇದ್ದರೆ ಮಾತ್ರ ಕಾಣಿಸುತ್ತದೆ) -->
+        ${q.type === 'mcq' ? `
+          <div class="p-3 bg-slate-50 border rounded-2xl space-y-2">
+            <label class="font-bold text-slate-800 block">MCQ ನಾಲ್ಕು ಆಯ್ಕೆಗಳು (Options):</label>
+            <div class="grid grid-cols-2 gap-2">
+              <div><span class="font-bold text-slate-500">(A)</span> <input type="text" id="pop-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(B)</span> <input type="text" id="pop-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(C)</span> <input type="text" id="pop-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
+              <div><span class="font-bold text-slate-500">(D)</span> <input type="text" id="pop-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-2 border rounded-xl bg-white font-semibold" /></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- ಕಲಿಕೋದ್ದೇಶ & ಕ್ಲಿಷ್ಟತೆ & ಅಂಕಗಳು -->
+        <div class="grid grid-cols-3 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ *</label>
+            <select id="pop-q-obj" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+              <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ (Knowledge)</option>
+              <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ (Understanding)</option>
+              <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ (Application)</option>
+              <option value="ಕೌಶಲ" ${q.obj==='ಕೌಶಲ'?'selected':''}>ಕೌಶಲ (Skill)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ *</label>
+            <select id="pop-q-diff" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800">
+              <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ (Easy)</option>
+              <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ (Average)</option>
+              <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ (Difficult)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ಅಂಕಗಳು</label>
+            <input type="number" id="pop-q-marks" value="${q.marks || 1}" min="1" max="10" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-black text-indigo-900" />
+          </div>
+        </div>
+
+        <!-- ಮಾದರಿ ಉತ್ತರ -->
+        <div>
+          <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
+          <textarea id="pop-q-ans" rows="3" required class="w-full p-3 bg-emerald-50/70 border border-emerald-300 rounded-2xl font-bold text-emerald-950 text-xs leading-relaxed">${escapeHtml(q.ans || '')}</textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t">
+          <button type="button" onclick="closePopupQuestionEditor()" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> <span>ಸೇವ್ ಮಾಡಿ (Update)</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+window.closePopupQuestionEditor = function() {
+  document.getElementById('popup-q-editor-modal')?.classList.add('hidden');
+};
+
+// ೨. ಎಡಿಟ್ ಮಾಡಿದ ವಿವರಗಳನ್ನು ಸೇವ್ ಮಾಡಿ ಪೇಪರ್ ಅನ್ನು ತಕ್ಷಣ ರಿಫ್ರೆಶ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.savePopupQuestionEdit = function(e, qIndex) {
+  e.preventDefault();
+  const q = appState.activeGeneratedQuestions[qIndex];
+  if (!q) return;
+
+  q.q = document.getElementById('pop-q-text').value.trim();
+  q.obj = document.getElementById('pop-q-obj').value;
+  q.diff = document.getElementById('pop-q-diff').value;
+  q.marks = parseInt(document.getElementById('pop-q-marks').value) || 1;
+  q.ans = document.getElementById('pop-q-ans').value.trim();
+
+  if (q.type === 'mcq') {
+    q.a = document.getElementById('pop-opt-a')?.value.trim() || q.a;
+    q.b = document.getElementById('pop-opt-b')?.value.trim() || q.b;
+    q.c = document.getElementById('pop-opt-c')?.value.trim() || q.c;
+    q.d = document.getElementById('pop-opt-d')?.value.trim() || q.d;
+  }
+
+  // ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಮತ್ತು ನೀಲನಕ್ಷೆಯನ್ನು ಮರು-ರೆಂಡರ್ ಮಾಡುವುದು
+  reRenderActiveExamFromQuestions();
+  closePopupQuestionEditor();
+  showToast('✅ ಪ್ರಶ್ನೆ, ಉತ್ತರ ಮತ್ತು ನೀಲನಕ್ಷೆ ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಆಗಿವೆ!', 'success');
+};
+
+// ೩. ಎಡಿಟ್ ಆದ ಪ್ರಶ್ನೆಗಳೊಂದಿಗೆ ಪೇಪರ್ ಮರು-ರಚಿಸುವ ಫಂಕ್ಷನ್
+function reRenderActiveExamFromQuestions() {
+  const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  let rawExamType = document.getElementById('cfg-exam-type')?.value || '4ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2025-26';
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
+
+  const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+  const cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+
+  const questions = appState.activeGeneratedQuestions;
+  const actualCalculatedMarks = questions.reduce((a, b) => a + (b.marks || 1), 0);
+
+  const mcqs = questions.filter(q => q.type === 'mcq');
+  const blanks = questions.filter(q => q.type === 'blanks');
+  const match = questions.filter(q => q.type === 'match');
+  const grammar = questions.filter(q => q.type === 'grammar');
+  const vsa = questions.filter(q => q.type === 'vsa');
+  const sa2M = questions.filter(q => q.type === 'sa' && (q.marks === 2 || !q.marks));
+  const sa3M = questions.filter(q => q.type === 'sa' && q.marks === 3);
+  const map = questions.filter(q => q.type === 'map_diagram');
+
+  let qNum = 1, kNum = 1, romanIndex = 1;
+  const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+  let paperSectionsHtml = [];
+  let keySectionsHtml = [];
+
+  // MCQ
+  if (mcqs.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+          <span>1x${mcqs.length}=${mcqs.length}</span>
+        </div>
+        <div>${mcqs.map(m => {
+          const globalIdx = questions.indexOf(m);
+          return `
+            <div style="margin-bottom: 8px;">
+              <div style="font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span>${qNum++}. ${escapeHtml(m.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 13.5px; padding-left: 15px; margin-top: 2px;">
+                <div>(A) ${escapeHtml(m.a||'')}</div><div>(B) ${escapeHtml(m.b||'')}</div>
+                <div>(C) ${escapeHtml(m.c||'')}</div><div>(D) ${escapeHtml(m.d||'')}</div>
+              </div>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${mcqs.map(m => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(m.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // Blanks
+  if (blanks.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಬಿಟ್ಟ ಸ್ಥಳಗಳನ್ನು ಸೂಕ್ತ ಪದಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
+          <span>1x${blanks.length}=${blanks.length}</span>
+        </div>
+        <div>${blanks.map(b => {
+          const globalIdx = questions.indexOf(b);
+          return `
+            <div style="margin-bottom: 6px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <span>${qNum++}. ${escapeHtml(b.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${blanks.map(b => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(b.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // Match
+  if (match.length > 0) {
+    match.forEach(mItem => {
+      const globalIdx = questions.indexOf(mItem);
+      const pairs = mItem.matchPairs || [{ a: 'ಅಂಶ 1', b: 'ಉತ್ತರ 1' }, { a: 'ಅಂಶ 2', b: 'ಉತ್ತರ 2' }, { a: 'ಅಂಶ 3', b: 'ಉತ್ತರ 3' }, { a: 'ಅಂಶ 4', b: 'ಉತ್ತರ 4' }];
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+            <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span>1x4=4</span>
+          </div>
+          <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>${qNum++}. 'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+            <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+              <i class="fa-solid fa-pen-to-square"></i> Edit
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 20px; font-weight: 600; font-size: 13.5px;">
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಅ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(97+i)}) ${escapeHtml(p.a||'')}</div>`).join('')}</div>
+            <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಬ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${escapeHtml(p.b||'')}</div>`).join('')}</div>
+          </div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px; font-size: 13.5px;"><b>${kNum++}.</b> ಹೊಂದಿಕೆ ಪೂರ್ಣಗೊಂಡಿದೆ.</div>
+        </div>
+      `);
+    });
+  }
+
+  // Grammar
+  if (grammar.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ವ್ಯಾಕರಣ ಭಾಗದ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:</span>
+          <span>1x${grammar.length}=${grammar.length}</span>
+        </div>
+        <div>${grammar.map(g => {
+          const globalIdx = questions.indexOf(g);
+          return `
+            <div style="margin-bottom: 6px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <span>${qNum++}. ${escapeHtml(g.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ವ್ಯಾಕರಣ ಭಾಗದ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${grammar.map(g => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(g.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // 1-Mark VSA
+  if (vsa.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span>1x${vsa.length}=${vsa.length}</span>
+        </div>
+        <div>${vsa.map(v => {
+          const globalIdx = questions.indexOf(v);
+          return `
+            <div style="margin-bottom: 6px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <span>${qNum++}. ${escapeHtml(v.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${vsa.map(v => `<div style="margin-bottom: 3px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(v.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // 2-Marks SA
+  if (sa2M.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span>2x${sa2M.length}=${sa2M.length * 2}</span>
+        </div>
+        <div>${sa2M.map(s => {
+          const globalIdx = questions.indexOf(s);
+          return `
+            <div style="margin-bottom: 6px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <span>${qNum++}. ${escapeHtml(s.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${sa2M.map(s => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(s.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // 3-Marks SA
+  if (sa3M.length > 0) {
+    const r = romanNumerals[romanIndex++ - 1];
+    paperSectionsHtml.push(`
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+          <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಐದು ಅಥವಾ ಆರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+          <span>3x${sa3M.length}=${sa3M.length * 3}</span>
+        </div>
+        <div>${sa3M.map(s => {
+          const globalIdx = questions.indexOf(s);
+          return `
+            <div style="margin-bottom: 6px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <span>${qNum++}. ${escapeHtml(s.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>`;
+        }).join('')}</div>
+      </div>
+    `);
+    keySectionsHtml.push(`
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಮೂರು ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+        <div style="padding-left: 10px;">${sa3M.map(s => `<div style="margin-bottom: 5px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(s.ans||'')}</div>`).join('')}</div>
+      </div>
+    `);
+  }
+
+  // Map / Diagram
+  if (map.length > 0) {
+    map.forEach(d => {
+      const globalIdx = questions.indexOf(d);
+      const r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14.5px; margin-bottom: 6px;">
+            <span>${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಬಿಡಿಸುವ ಪ್ರಶ್ನೆ:</span>
+            <span>1x4=4</span>
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+              <span>${qNum++}. ${escapeHtml(d.q)}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${globalIdx})" class="no-print bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-0.5 rounded text-[11px] font-bold border border-amber-300 ml-2 shrink-0">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+            </div>
+            ${d.image ? `<div class="my-2"><img src="${d.image}" class="max-h-48 mx-auto rounded border shadow" /></div>` : ''}
+            <div style="padding-left: 15px; font-size: 13.5px;">${escapeHtml(d.items || '')}</div>
+          </div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ನಕ್ಷೆ / ಚಿತ್ರ ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ:</div>
+          <div style="padding-left: 10px; font-size: 13.5px;"><b>${kNum++}.</b> ${escapeHtml(d.ans||'')}</div>
+        </div>
+      `);
+    });
+  }
+
+  // Header HTML
+  const professionalHeaderHtml = `
+    <div style="width: 100%; margin: 0 0 10px 0; padding: 0; box-sizing: border-box;">
+      <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+        <h1 style="font-size: 24px; font-weight: 900; color: #000; margin: 0; line-height: 1.25; letter-spacing: normal; display: inline-block;">
+          ${escapeHtml(schoolName)}
+        </h1>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 15px; font-weight: 900; color: #000; line-height: 1.8;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1; white-space: nowrap;">
+          <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+          <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+        </div>
+        <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center; white-space: nowrap; padding: 0 10px;">
+          <span style="font-size: 15.5px; font-weight: 900;">${escapeHtml(cleanExamType)}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right; white-space: nowrap;">
+          <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+          <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+        </div>
+      </div>
+      <hr style="border: none; border-top: 2.5px solid #000; margin: 6px 0 14px 0; width: 100%;" />
+    </div>
+  `;
+
+  document.getElementById('rendered-paper').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm; font-family: 'Anek Kannada', sans-serif;">
+      ${professionalHeaderHtml}
+      <div>${paperSectionsHtml.join('')}</div>
+    </div>
+  `;
+
+  document.getElementById('rendered-key').innerHTML = `
+    <div class="a4-sheet-container" style="min-height: 265mm; font-family: 'Anek Kannada', sans-serif;">
+      ${professionalHeaderHtml}
+      <div style="text-align: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px; font-weight: 900; text-decoration: underline; margin: 0 0 10px 0;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+      </div>
+      <div>${keySectionsHtml.join('')}</div>
+    </div>
+  `;
+
+  renderExactThreeBlueprints(questions, actualCalculatedMarks);
+}
     
   </script>
 </body>
