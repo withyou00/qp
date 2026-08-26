@@ -17115,6 +17115,158 @@ function injectExportToPDFButton() {
 
 injectExportToPDFButton();
 setInterval(injectExportToPDFButton, 1500);
+
+    /* ==========================================================================
+   PURE ISOLATED VECTOR PDF BRIDGE (NO HTML2CANVAS / 100% CRISP KANNADA)
+   ========================================================================== */
+
+// ೧. ಹಳೆಯ ಹಾಳಾದ html2pdf ಲೈಬ್ರರಿಯನ್ನು ಮೆಮೊರಿಯಿಂದ ಶಾಶ್ವತವಾಗಿ ಡಿಲೀಟ್ ಮಾಡುವುದು
+try {
+  window.html2pdf = null;
+  window.html2canvas = null;
+  document.getElementById('html2pdf-cdn-script')?.remove();
+} catch (e) {}
+
+// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್‌ಪೋರ್ಟರ್ (Iframe Vector Bridge)
+window.exportCurrentTabToPDF = window.printCurrentTab = function() {
+  // A. ಆಕ್ಟಿವ್ ಟ್ಯಾಬ್ ಗುರುತಿಸುವುದು
+  let activeTabId = 'tab-content-paper';
+  let fileLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+
+  if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-key';
+    fileLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ';
+  } else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-blueprint';
+    fileLabel = 'ನೀಲನಕ್ಷೆ';
+  }
+
+  const activeSheet = document.querySelector(`#${activeTabId} .a4-sheet-container`);
+  if (!activeSheet) {
+    return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
+  }
+
+  // B. ಪೇಪರ್ ಅನ್ನು ಕ್ಲೋನ್ ಮಾಡಿ ಎಡಿಟ್ ಬಟನ್‌ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ತೆಗೆದುಹಾಕುವುದು
+  const sheetClone = activeSheet.cloneNode(true);
+  sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
+
+  // C. ಫೈಲ್ ಹೆಸರು ರಚನೆ
+  const rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ_ವಿಜ್ಞಾನ';
+  const cleanSubject = rawSubject.split('(')[0].trim().replace(/\s+/g, '_');
+  const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
+  const fileName = `${cleanSubject}_${grade}_${fileLabel}`;
+
+  // D. ಪ್ರತ್ಯೇಕ ಪ್ರಿಂಟ್ ಐಫ್ರೇಮ್ ರಚಿಸಿ ವೆಕ್ಟರ್ ಮುದ್ರಣ ನೀಡುವುದು
+  let printFrame = document.getElementById('isolated-vector-print-frame');
+  if (printFrame) printFrame.remove();
+
+  printFrame = document.createElement('iframe');
+  printFrame.id = 'isolated-vector-print-frame';
+  printFrame.style.position = 'fixed';
+  printFrame.style.right = '0';
+  printFrame.style.bottom = '0';
+  printFrame.style.width = '0';
+  printFrame.style.height = '0';
+  printFrame.style.border = 'none';
+  document.body.appendChild(printFrame);
+
+  const frameDoc = printFrame.contentWindow.document;
+  frameDoc.open();
+  frameDoc.write(`
+    <!DOCTYPE html>
+    <html lang="kn">
+    <head>
+      <meta charset="UTF-8">
+      <title>${fileName}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+      <style>
+        @page {
+          size: A4 portrait;
+          margin: 8mm 10mm;
+        }
+        * {
+          box-sizing: border-box;
+          font-family: 'Anek Kannada', sans-serif !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: #fff;
+          color: #000;
+        }
+        .a4-sheet-container {
+          width: 100% !important;
+          max-width: 100% !important;
+          border: 2px solid #000 !important;
+          padding: 10mm 12mm !important;
+          margin: 0 auto !important;
+          min-height: 275mm !important;
+          position: relative !important;
+          overflow: hidden !important;
+          box-sizing: border-box !important;
+          page-break-after: always !important;
+          break-after: page !important;
+        }
+        .demo-watermark-overlay {
+          position: absolute !important;
+          top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+          width: 100% !important; height: 100% !important;
+          display: flex !important; align-items: center !important; justify-content: center !important;
+          pointer-events: none !important; z-index: 50 !important;
+        }
+        .demo-watermark-text {
+          position: absolute !important;
+          top: 50% !important; left: 50% !important;
+          transform: translate(-50%, -50%) rotate(-32deg) !important;
+          font-size: 34px !important; font-weight: 900 !important;
+          color: rgba(0, 0, 0, 0.16) !important;
+          border: 4px dashed rgba(0, 0, 0, 0.22) !important;
+          padding: 16px 36px !important; border-radius: 25px !important;
+          text-transform: uppercase !important; white-space: nowrap !important;
+        }
+      </style>
+    </head>
+    <body>
+      ${sheetClone.outerHTML}
+    </body>
+    </html>
+  `);
+  frameDoc.close();
+
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.', 'info');
+
+  // ಫಾಂಟ್ ಲೋಡ್ ಆದ ನಂತರ ನೇರ ಪ್ರಿಂಟ್/PDF ಡೈಲಾಗ್ ಚಾಲನೆ
+  setTimeout(() => {
+    printFrame.contentWindow.focus();
+    printFrame.contentWindow.print();
+  }, 400);
+};
+
+// ೩. ಬಟನ್ ಲಿಂಕ್ ಮಾಡುವುದು
+function injectExportToPDFButton() {
+  const btnContainer = document.querySelector('#output-section .border-b .flex.items-center.space-x-2:last-child');
+  if (btnContainer && !document.getElementById('btn-export-pdf-action')) {
+    const pdfBtn = document.createElement('button');
+    pdfBtn.id = 'btn-export-pdf-action';
+    pdfBtn.type = 'button';
+    pdfBtn.className = 'px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md transition flex items-center gap-1.5';
+    pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> <span>Export to PDF</span>';
+    pdfBtn.onclick = exportCurrentTabToPDF;
+
+    const printBtn = btnContainer.querySelector('button[onclick*="printCurrentTab"]');
+    if (printBtn) {
+      btnContainer.insertBefore(pdfBtn, printBtn);
+    } else {
+      btnContainer.appendChild(pdfBtn);
+    }
+  }
+}
+
+injectExportToPDFButton();
     
   </script>
 </body>
