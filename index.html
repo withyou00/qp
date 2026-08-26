@@ -20239,6 +20239,160 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
 
 // ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ LBA ಡ್ರಾಪ್‌ಡೌನ್ ಖಚಿತಪಡಿಸುವುದು
 ensureLBAInExamTypeDropdown();
+
+    /* ==========================================================================
+   PURE KANNADA "ಘಟಕ ಪರೀಕ್ಷೆ" (NO ENGLISH LBA) HEADER ENGINE
+   ========================================================================== */
+
+window.generateExamPackageFromBank = window.generateExamPackage = function() {
+  const isDemo = (appState.currentUserType === 'demo');
+
+  if (isDemo) {
+    let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+    if (dCount >= 1) {
+      showDemoLimitReachedModal();
+      return;
+    }
+  }
+
+  const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('cfg-part')?.value || 'all';
+  let rawExamType = document.getElementById('cfg-exam-type')?.value || 'ಘಟಕ ಪರೀಕ್ಷೆ';
+  const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || (targetTotalMarks <= 20 ? 15 : 24);
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+  // 🌟 ಇಂಗ್ಲಿಷ್ LBA ಬದಲಾಗಿ ಶುದ್ಧ ಕನ್ನಡ "ಘಟಕ ಪರೀಕ್ಷೆ" ಎಂದು ನಿಗದಿಪಡಿಸುವುದು
+  let cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+  if (cleanExamType.includes('LBA') || cleanExamType.includes('ಘಟಕ')) {
+    cleanExamType = 'ಘಟಕ ಪರೀಕ್ಷೆ';
+  }
+
+  const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+
+  // ಘಟಕ ಪರೀಕ್ಷೆ ಹೌದೇ ಎಂದು ಪರಿಶೀಲನೆ
+  const isLBAExam = cleanExamType.includes('ಘಟಕ ಪರೀಕ್ಷೆ') || rawExamType.includes('LBA') || rawExamType.includes('ಘಟಕ');
+
+  const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+  const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+  if (selectedTypes.length === 0) {
+    alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+    return;
+  }
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+  const selectedChapterNamesString = selectedChapters.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+
+  const cleanSelectedSubj = cleanMatchText(rawSubject);
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+  let pool = qbank.filter(q => {
+    const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    const isPartOk = (part === 'all' || q.part === part || !q.part);
+    const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+    const canonicalType = getCanonicalQuestionType(q);
+    const isTypeOk = selectedTypes.includes(canonicalType);
+    return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+  });
+
+  if (pool.length === 0) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+    return;
+  }
+
+  function preparePool(arr) {
+    if (isDemo) return [...arr].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+    let a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let pool1M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 1));
+  let pool2M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 2));
+  let pool3M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 3));
+  let pool4M = preparePool(pool.filter(q => getExactQuestionMarks(q) >= 4));
+
+  const bestCombo = findBestQuestionCombination(pool1M, pool2M, pool3M, pool4M, targetTotalMarks, targetTotalQuestions);
+
+  let chosenQuestions = [];
+  if (bestCombo) {
+    for (let i = 0; i < bestCombo.c4; i++) chosenQuestions.push(pool4M.pop());
+    for (let i = 0; i < bestCombo.c3; i++) chosenQuestions.push(pool3M.pop());
+    for (let i = 0; i < bestCombo.c2; i++) chosenQuestions.push(pool2M.pop());
+    for (let i = 0; i < bestCombo.c1; i++) chosenQuestions.push(pool1M.pop());
+  } else {
+    let curM = 0;
+    while (curM < targetTotalMarks && pool2M.length > 0 && curM + 2 <= targetTotalMarks) { chosenQuestions.push(pool2M.pop()); curM += 2; }
+    while (curM < targetTotalMarks && pool1M.length > 0 && curM + 1 <= targetTotalMarks) { chosenQuestions.push(pool1M.pop()); curM += 1; }
+    while (curM < targetTotalMarks && pool3M.length > 0 && curM + 3 <= targetTotalMarks) { chosenQuestions.push(pool3M.pop()); curM += 3; }
+    while (curM < targetTotalMarks && pool4M.length > 0 && curM + 4 <= targetTotalMarks) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+  }
+
+  appState.activeGeneratedQuestions = chosenQuestions;
+  const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+
+  // 🌟 ಪರ್ಫೆಕ್ಟ್ ಶುದ್ಧ ಕನ್ನಡ "ಘಟಕ ಪರೀಕ್ಷೆ" ಹೆಡರ್
+  const professionalHeaderHtml = `
+    <div style="width: 100%; margin: 0 0 10px 0; padding: 0; box-sizing: border-box;">
+      
+      <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+        <h1 style="font-size: 24px; font-weight: 900; color: #000; margin: 0; line-height: 1.25; letter-spacing: normal; display: inline-block;">
+          ${escapeHtml(schoolName)}
+        </h1>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 15px; font-weight: 900; color: #000; line-height: 1.8;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1; white-space: nowrap;">
+          <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+          <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+        </div>
+
+        <!-- 🌟 ಮಧ್ಯಭಾಗದಲ್ಲಿ ಶುದ್ಧ ಕನ್ನಡ 'ಘಟಕ ಪರೀಕ್ಷೆ' -->
+        <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center; white-space: nowrap; padding: 0 10px;">
+          <span style="font-size: 16px; font-weight: 900;">${escapeHtml(cleanExamType)}</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right; white-space: nowrap;">
+          <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+          <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+        </div>
+      </div>
+
+      <!-- 🌟 ಘಟಕ ಪರೀಕ್ಷೆಗೆ ಮಾತ್ರ ಘಟಕದ ಹೆಸರು -->
+      ${isLBAExam ? `
+        <div style="width: 100%; text-align: center; padding: 3px 0 1px 0; font-size: 14.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 4px;">
+          <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span>
+        </div>
+      ` : ''}
+
+      <hr style="border: none; border-top: 2.5px solid #000; margin: 6px 0 14px 0; width: 100%;" />
+    </div>
+  `;
+
+  renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+
+  const outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  if (isDemo) {
+    sessionStorage.setItem('wy_demo_gen_count', '1');
+  }
+
+  showToast(`✅ ${cleanExamType} (${actualCalculatedMarks} ಅಂಕಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+};
     
   </script>
 </body>
