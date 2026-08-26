@@ -16972,6 +16972,149 @@ window.exportCurrentTabToPDF = function() {
 // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಬಟನ್ ಅಳವಡಿಸುವುದು
 injectExportToPDFButton();
 setInterval(injectExportToPDFButton, 1200);
+
+/* ==========================================================================
+   PURE VECTOR KANNADA PDF EXPORTER (100% CRISP TYPOGRAPHY / ZERO LIGATURE BREAK)
+   ========================================================================== */
+
+// ೧. ಹೈ-ರೆಸಲ್ಯೂಶನ್ ಪ್ರಿಂಟ್ & PDF CSS (A4 Perfect Margins & Clear Text)
+(function injectPurePDFStyles() {
+  const styleId = 'pure-vector-pdf-print-style';
+  let st = document.getElementById(styleId);
+  if (!st) {
+    st = document.createElement('style');
+    st.id = styleId;
+    document.head.appendChild(st);
+  }
+  st.innerHTML = `
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 10mm;
+      }
+      
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-family: 'Anek Kannada', sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* ಪೇಪರ್ ಹೊರತುಪಡಿಸಿ ಉಳಿದೆಲ್ಲವನ್ನೂ ಹೈಡ್ ಮಾಡುವುದು */
+      body * {
+        visibility: hidden !important;
+      }
+
+      #print-area, #print-area * {
+        visibility: visible !important;
+      }
+
+      #print-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      .a4-sheet-container {
+        border: 2px solid #000 !important;
+        padding: 14mm 16mm !important;
+        width: 100% !important;
+        min-height: 275mm !important;
+        box-sizing: border-box !important;
+        margin: 0 auto !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+
+      /* ಎಡಿಟ್ ಬಟನ್ ಮತ್ತು ಅನಗತ್ಯ ಬಟನ್‌ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಡೆಯುವುದು */
+      .btn-live-q-edit, .no-print, header, footer, button {
+        display: none !important;
+        visibility: hidden !important;
+      }
+
+      /* ವಾಟರ್‌ಮಾರ್ಕ್ ನಿಖರ ಮುದ್ರಣ */
+      .demo-watermark-overlay {
+        display: flex !important;
+        visibility: visible !important;
+      }
+      .demo-watermark-text {
+        color: rgba(0, 0, 0, 0.16) !important;
+        border-color: rgba(0, 0, 0, 0.2) !important;
+        visibility: visible !important;
+      }
+    }
+  `;
+})();
+
+// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್‌ಪೋರ್ಟರ್ ಫಂಕ್ಷನ್
+window.exportCurrentTabToPDF = function() {
+  let activeTabId = 'tab-content-paper';
+  let fileTypeLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+
+  if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-key';
+    fileTypeLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ';
+  } else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) {
+    activeTabId = 'tab-content-blueprint';
+    fileTypeLabel = 'ನೀಲನಕ್ಷೆ';
+  }
+
+  const activeSheet = document.querySelector(`#${activeTabId} .a4-sheet-container`);
+  if (!activeSheet) {
+    return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ಜನರೇಟ್ ಮಾಡಿ.');
+  }
+
+  const rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ_ವಿಜ್ಞಾನ';
+  const cleanSubject = rawSubject.split('(')[0].trim().replace(/\s+/g, '_');
+  const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
+  const fileName = `${cleanSubject}_${grade}_${fileTypeLabel}`;
+
+  // PDF ಡೌನ್‌ಲೋಡ್ ಫೈಲ್ ಹೆಸರನ್ನು ಸೆಟ್ ಮಾಡುವುದು
+  const originalTitle = document.title;
+  document.title = fileName;
+
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.', 'info');
+
+  // ನೇರ ಹೈ-ಡೆಫಿನಿಷನ್ ವೆಕ್ಟರ್ ಪ್ರಿಂಟ್ ಡೈಲಾಗ್ ಚಾಲನೆ
+  setTimeout(() => {
+    window.print();
+    // ಪ್ರಿಂಟ್ ಮುಗಿದ ನಂತರ ಹಿಂದಿನ ಟೈಟಲ್ ಮರುಸ್ಥಾಪಿಸುವುದು
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
+  }, 200);
+};
+
+// ೩. ಬಟನ್ ಕೂರಿಸುವಿಕೆ
+function injectExportToPDFButton() {
+  const btnContainer = document.querySelector('#output-section .border-b .flex.items-center.space-x-2:last-child');
+  if (btnContainer && !document.getElementById('btn-export-pdf-action')) {
+    const pdfBtn = document.createElement('button');
+    pdfBtn.id = 'btn-export-pdf-action';
+    pdfBtn.type = 'button';
+    pdfBtn.className = 'px-4 py-2 rounded-xl text-xs font-black text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 shadow-md transition flex items-center gap-1.5';
+    pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> <span>Export to PDF</span>';
+    pdfBtn.onclick = exportCurrentTabToPDF;
+
+    const printBtn = btnContainer.querySelector('button[onclick*="printCurrentTab"]');
+    if (printBtn) {
+      btnContainer.insertBefore(pdfBtn, printBtn);
+    } else {
+      btnContainer.appendChild(pdfBtn);
+    }
+  }
+}
+
+injectExportToPDFButton();
+setInterval(injectExportToPDFButton, 1500);
     
   </script>
 </body>
