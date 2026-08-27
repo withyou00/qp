@@ -2654,6 +2654,134 @@ window.navigateToSection = function(section) {
 
 // ತಕ್ಷಣವೇ ಬಟನ್‌ಗಳನ್ನು ಲಿಂಕ್ ಮಾಡಿ ಆಕ್ಟಿವ್ ಮಾಡುವುದು
 bindTopHeaderButtonsDirectly();
+
+    /* ==========================================================================
+   SECRET ADMIN PORTAL & ULTRA-CLEAN USER NAVBAR (TRIPLE CLICK / SHORTCUT)
+   ========================================================================== */
+
+// ೧. ರಹಸ್ಯ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಟ್ರಿಕ್ಸ್ (Secret Triggers)
+let secretLogoClickCount = 0;
+let secretLogoTimer = null;
+
+// A. ಸೀಕ್ರೆಟ್ ಟ್ರಿಕ್ ೧: WY ಲೋಗೋ ಮೇಲೆ ೩ ಬಾರಿ ಕ್ಲಿಕ್
+window.handleSecretLogoClick = function() {
+  secretLogoClickCount++;
+  clearTimeout(secretLogoTimer);
+  secretLogoTimer = setTimeout(() => { secretLogoClickCount = 0; }, 1500);
+
+  if (secretLogoClickCount >= 3) {
+    secretLogoClickCount = 0;
+    showAdminLoginModal();
+    showToast('🔑 Secret Admin Access Activated', 'info');
+  }
+};
+
+// B. ಸೀಕ್ರೆಟ್ ಟ್ರಿಕ್ ೨: ಕೀಬೋರ್ಡ್ ಶಾರ್ಟ್‌ಕಟ್ (Ctrl + Shift + A ಅಥವಾ Alt + A)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) ||
+      (e.altKey && (e.key === 'A' || e.key === 'a'))) {
+    e.preventDefault();
+    showAdminLoginModal();
+    showToast('🔑 Secret Admin Access Activated', 'info');
+  }
+});
+
+// ೨. ಬಳಕೆದಾರರಿಗೆ ಕೇವಲ ೨ ಬಟನ್ & ಅಡ್ಮಿನ್‌ಗೆ ಎಲ್ಲಾ ಬಟನ್ ತೋರಿಸುವ ಮಾಸ್ಟರ್ ಮೆನು
+window.updateTopNavbarClean = function() {
+  const navContainer = document.querySelector('header .flex.items-center.space-x-1') || document.getElementById('top-nav-actions-container');
+  if (!navContainer) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  if (isOwnerAdmin) {
+    // 👑 ಅಡ್ಮಿನ್‌ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಪೂರ್ಣ ಮೆನು (All 5 Tools Unlocked)
+    navContainer.innerHTML = `
+      <button type="button" onclick="handleHeaderNavClick('ai-import')" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+        <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+      </button>
+      <button id="nav-btn-dashboard" type="button" onclick="handleHeaderNavClick('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="handleHeaderNavClick('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button id="nav-btn-qbank" type="button" onclick="handleHeaderNavClick('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-database text-amber-600"></i>
+        <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+      </button>
+      <button id="nav-btn-admin" type="button" onclick="handleHeaderNavClick('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-gear text-slate-700"></i>
+        <span>Admin</span>
+      </button>
+      <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow ml-1 cursor-pointer">
+        Logout
+      </button>
+    `;
+  } else {
+    // 👤 ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಕಾಣಿಸುವ ಅಲ್ಟ್ರಾ-ಕ್ಲೀನ್ ಮೆನು (ಕೇವಲ Dashboard & ಜನರೇಟರ್ ಮಾತ್ರ!)
+    navContainer.innerHTML = `
+      <button id="nav-btn-dashboard" type="button" onclick="handleHeaderNavClick('dashboard')" class="px-4 py-2 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="handleHeaderNavClick('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+    `;
+  }
+};
+
+// ೩. ಹೆಡರ್ ಲೋಗೋಗೆ ರಹಸ್ಯ ೩-ಕ್ಲಿಕ್ ಅಳವಡಿಸುವುದು
+(function attachSecretClickToLogo() {
+  const logoBox = document.querySelector('header .flex.items-center.space-x-3');
+  if (logoBox) {
+    logoBox.onclick = function() {
+      handleSecretLogoClick();
+    };
+  }
+})();
+
+// ೪. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಕ್ಸಸ್ ಆದ ತಕ್ಷಣ ಅನ್‌ಲಾಕ್ ಮಾಡುವುದು
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+    
+    document.getElementById('admin-login-modal')?.classList.add('hidden');
+    updateTopNavbarClean(); // 🌟 ಎಲ್ಲಾ ೫ ಟೂಲ್‌ಗಳು ಅನ್‌ಲಾಕ್
+    showToast('👑 Admin Master Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+    navigateToSection('qbank');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
+
+// ೫. Logout ಆದಾಗ ಯೂಸರ್ ಮೆನುವಿಗೆ ಲಾಕ್ ಮಾಡುವುದು
+window.logoutAdmin = function() {
+  isAdminLoggedIn = false;
+  sessionStorage.removeItem('withyou_admin_auth_token');
+  sessionStorage.removeItem('withyou_active_role');
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+
+  updateTopNavbarClean(); // 🌟 ಕೇವಲ ೨ ಬಟನ್‌ಗೆ ಲಾಕ್
+  showToast('🔒 Admin ನಿಂದ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+  navigateToSection('dashboard');
+};
+
+// ತಕ್ಷಣವೇ ಲಾಕ್ ಆದ ಅಚ್ಚುಕಟ್ಟಾದ ಮೆನು ಲೋಡ್ ಮಾಡುವುದು
+updateTopNavbarClean();
     
   </script>
 </body>
