@@ -3914,6 +3914,393 @@ window.navigateToSection = function(section) {
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+    
+/* ==========================================================================
+   INSTANT ADMIN ROUTING, TWO-MODULE SWITCHER & ZERO-REFRESH LOGOUT ENGINE
+   ========================================================================== */
+
+let activeAdminSubTab = 'qbank'; // 'qbank' ಅಥವಾ 'registration'
+
+// ೧. ಅಡ್ಮಿನ್ ಹೆಡರ್ ಮೆನುವನ್ನು (All 5 Tabs) ಲೈವ್ ಆಗಿ ಅಪ್ಡೇಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+window.updateTopNavbarClean = function() {
+  const navContainer = document.getElementById('top-nav-actions-container') || document.querySelector('header .flex.items-center.space-x-1');
+  if (!navContainer) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  if (isOwnerAdmin) {
+    // 👑 ಅಡ್ಮಿನ್ಗೆ ಎಲ್ಲಾ ೫ ಟೂಲ್ಗಳು ಅನ್ಲಾಕ್
+    navContainer.innerHTML = `
+      <button type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+        <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+      </button>
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-database text-amber-600"></i>
+        <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+      </button>
+      <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-gear text-slate-700"></i>
+        <span>Admin (ನೋಂದಣಿ)</span>
+      </button>
+      <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs shadow ml-1 cursor-pointer">
+        Logout
+      </button>
+    `;
+  } else {
+    // 👤 ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಕೇವಲ Dashboard & ಜನರೇಟರ್ ಮಾತ್ರ
+    navContainer.innerHTML = `
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200 cursor-pointer">
+        <i class="fa-solid fa-lock"></i>
+        <span class="hidden sm:inline">Admin</span>
+      </button>
+    `;
+  }
+};
+
+// ೨. ಅಡ್ಮಿನ್ ಒಳಗೆ 'ಪ್ರಶ್ನೆ ಭಂಡಾರ' ಮತ್ತು 'ಶಿಕ್ಷಕರು/ಶಾಲೆಗಳ ನೋಂದಣಿ' ಸ್ವಿಚ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.renderAdminMasterUnifiedView = function() {
+  const adminView = document.getElementById('view-admin');
+  if (!adminView) return;
+
+  const mediums = getSystemMediums();
+  const subjects = getSystemSubjects();
+  const teachersCount = (appState.teachers || []).length;
+  const schoolsCount = (appState.schools || []).length;
+  const qbankCount = (appState.qbank || []).length;
+
+  adminView.innerHTML = `
+    <!-- 🌟 TOP MASTER CONTROL & SUB-MODULE SWITCHER BAR -->
+    <div class="flex flex-wrap items-center justify-between bg-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-xl text-xs gap-3">
+      
+      <!-- Sub-Tab Switcher -->
+      <div class="flex items-center space-x-2 bg-slate-800/90 p-1.5 rounded-2xl border border-slate-700 font-bold">
+        <button type="button" onclick="switchAdminSubModuleTab('qbank')" id="sub-tab-btn-qbank" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='qbank'?'bg-amber-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2">
+          <i class="fa-solid fa-database"></i>
+          <span>೧. ಪ್ರಶ್ನೆ ಭಂಡಾರ (${qbankCount})</span>
+        </button>
+        <button type="button" onclick="switchAdminSubModuleTab('registration')" id="sub-tab-btn-reg" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2">
+          <i class="fa-solid fa-users"></i>
+          <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${teachersCount + schoolsCount})</span>
+        </button>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <button type="button" onclick="openBulkAIImportModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl font-extrabold shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+        </button>
+        <button type="button" onclick="exportSystemFullBackupJSON()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl font-bold shadow flex items-center gap-1.5">
+          <i class="fa-solid fa-download"></i>
+          <span>ಬ್ಯಾಕಪ್</span>
+        </button>
+        <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-black shadow flex items-center gap-1">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SUB-MODULE 1: ಪ್ರಶ್ನೆ ಭಂಡಾರ (QUESTION BANK)              -->
+    <!-- ======================================================== -->
+    <div id="admin-subview-qbank" class="${activeAdminSubTab==='qbank'?'':'hidden'} space-y-6">
+      
+      <!-- ೧. ಹೊಸ ಪ್ರಶ್ನೆ ಸೇರಿಸುವ ಫಾರ್ಮ್ -->
+      <div class="card-modern p-6 space-y-4">
+        <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="p-3 bg-amber-50 text-amber-700 rounded-2xl text-xl font-bold shadow-sm"><i class="fa-solid fa-circle-plus"></i></div>
+            <div>
+              <h3 class="font-extrabold text-base text-slate-900">ಹೊಸ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಸೇರಿಸಿ (Add Questions)</h3>
+              <p class="text-xs text-slate-500">ಮಾಧ್ಯಮ, ತರಗತಿ, ವಿಷಯ, ಭಾಗ (1 & 2) ಹಾಗೂ ಪಾಠವನ್ನು ಆರಿಸಿ ಪ್ರಶ್ನೆ ಸೇರಿಸಿ</p>
+            </div>
+          </div>
+          <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full">Firebase Live Synced</span>
+        </div>
+
+        <form id="form-add-custom-question" onsubmit="handleSaveCustomQuestion(event)" class="space-y-4 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಮಾಧ್ಯಮ</label>
+              <select id="qadd-medium" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-bold">${mediums.map(m=>`<option value="${m}">${m}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+              <select id="qadd-class" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-bold">${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+              <select id="qadd-subject" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಭಾಗ (Part)</label>
+              <select id="qadd-part" class="w-full px-3 py-2.5 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950">
+                <option value="ಭಾಗ 1" selected>ಭಾಗ 1</option>
+                <option value="ಭಾಗ 2">ಭಾಗ 2</option>
+                <option value="ಸಂಪೂರ್ಣ">ಸಂಪೂರ್ಣ</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಪಾಠದ ಹೆಸರು (Chapter) *</label>
+              <input type="text" id="qadd-chapter" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type) *</label>
+              <select id="qadd-type" onchange="handleQuestionTypeChangeInAdmin(this.value)" class="w-full px-3.5 py-2.5 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-950">
+                <option value="mcq">೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
+                <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
+                <option value="match">೩. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match the following)</option>
+                <option value="grammar" selected>೪. ವ್ಯಾಕರಣ ಭಾಗ (Kannada Grammar)</option>
+                <option value="poem_4lines">೫. ೪ ಸಾಲುಗಳ ಪದ್ಯ (Poem Completion)</option>
+                <option value="vsa">೬. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (VSA - 1 Mark)</option>
+                <option value="sa">೭. ೨ ಮತ್ತು ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA/LA)</option>
+                <option value="la">೮. ೪ ಅಂಕದ ದೀರ್ಘ ಪ್ರಶ್ನೆ (4 Marks)</option>
+                <option value="map_diagram">೯. ಚಿತ್ರ / ನಕ್ಷೆ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+              <select id="qadd-obj" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ">ಜ್ಞಾನ</option><option value="ತಿಳುವಳಿಕೆ" selected>ತಿಳುವಳಿಕೆ</option><option value="ಅನ್ವಯ">ಅನ್ವಯ</option><option value="ಕೌಶಲ">ಕೌಶಲ</option></select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+              <select id="qadd-diff" class="w-full px-3 py-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಸುಲಭ">ಸುಲಭ</option><option value="ಸಾಧಾರಣ" selected>ಸಾಧಾರಣ</option><option value="ಕಠಿಣ">ಕಠಿಣ</option></select>
+            </div>
+          </div>
+
+          <div id="admin-q-dynamic-fields" class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3"></div>
+
+          <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3.5 rounded-xl text-xs shadow-lg flex items-center justify-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> <span>ಈ ಪ್ರಶ್ನೋತ್ತರವನ್ನು ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಮಾಡಿ</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- ೨. ಪ್ರಶ್ನೆಗಳ ಪಟ್ಟಿ (Search, Filter, Freeze Header, Merge & Edit ಸಹಿತ) -->
+      <div class="card-modern p-6 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-emerald-600"></i>
+            <span>ಭಂಡಾರದಲ್ಲಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು (<span id="admin-qbank-total-count">${qbankCount}</span>)</span>
+          </h3>
+          <button onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Sync Cloud</span>
+          </button>
+        </div>
+        <div id="admin-qbank-display-list" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SUB-MODULE 2: ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (REGISTRATION PORTAL) -->
+    <!-- ======================================================== -->
+    <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
+      
+      <!-- Quick Count Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="card-modern p-4 flex items-center space-x-3 border border-slate-200">
+          <div class="p-3 bg-emerald-50 text-emerald-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-chalkboard-user"></i></div>
+          <div>
+            <span class="text-[11px] text-slate-500 font-bold block">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (${FEE_TEACHER_YEARLY}/ವರ್ಷ)</span>
+            <b class="text-xl font-black text-slate-900" id="count-teachers">${teachersCount}</b>
+          </div>
+        </div>
+
+        <div class="card-modern p-4 flex items-center space-x-3 border border-slate-200">
+          <div class="p-3 bg-indigo-50 text-indigo-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-school"></i></div>
+          <div>
+            <span class="text-[11px] text-slate-500 font-bold block">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (${FEE_SCHOOL_YEARLY}/ವರ್ಷ)</span>
+            <b class="text-xl font-black text-slate-900" id="count-schools">${schoolsCount}</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Forms -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 👨🏫 Teacher Reg Form -->
+        <div class="card-modern p-6 space-y-4">
+          <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-user-plus text-emerald-600"></i> <span>೧. ಶಿಕ್ಷಕರ ನೋಂದಣಿ & Access Key (${FEE_TEACHER_YEARLY})</span>
+          </h3>
+          <form onsubmit="handleTeacherRegister(event)" class="space-y-3 text-xs">
+            <div><label class="font-bold">ಶಿಕ್ಷಕರ ಹೆಸರು *</label><input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="font-bold">ಶಾಲೆಯ ಹೆಸರು *</label><input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+              <div><label class="font-bold">WhatsApp ಮೊಬೈಲ್ *</label><input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            </div>
+            <div><label class="font-bold">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label><div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">${ALL_CLASSES_LIST.map(c=>`<label class="flex items-center space-x-1"><input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}</div></div>
+            <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl shadow">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ರಚಿಸಿ</button>
+          </form>
+          <div class="pt-3 border-t space-y-2">
+            <h4 class="text-xs font-black text-slate-800 uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು</h4>
+            <div id="list-registered-teachers" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- 🏫 School Reg Form -->
+        <div class="card-modern p-6 space-y-4">
+          <h3 class="font-extrabold text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-building-columns text-indigo-600"></i> <span>೨. ಶಾಲಾ ನೋಂದಣಿ & Master Key (${FEE_SCHOOL_YEARLY})</span>
+          </h3>
+          <form onsubmit="handleSchoolRegister(event)" class="space-y-3 text-xs">
+            <div><label class="font-bold">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label><input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            <div class="grid grid-cols-2 gap-2">
+              <div><label class="font-bold">DISE ಕೋಡ್ *</label><input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+              <div><label class="font-bold">HM ಹೆಸರು *</label><input type="text" id="reg-school-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            </div>
+            <div><label class="font-bold">HM ಮೊಬೈಲ್ (WhatsApp) *</label><input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl shadow">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ರಚಿಸಿ</button>
+          </form>
+          <div class="pt-3 border-t space-y-2">
+            <h4 class="text-xs font-black text-slate-800 uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು</h4>
+            <div id="list-registered-schools" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  handleQuestionTypeChangeInAdmin('grammar');
+  renderCustomQuestionList();
+  renderRegisteredTeachers();
+  renderRegisteredSchools();
+};
+
+// ೩. ಅಡ್ಮಿನ್ ಮಾಡ್ಯೂಲ್ ಟ್ಯಾಬ್ ಸ್ವಿಚರ್ ಫಂಕ್ಷನ್
+window.switchAdminSubModuleTab = function(subTab) {
+  activeAdminSubTab = subTab;
+  const qbSubView = document.getElementById('admin-subview-qbank');
+  const regSubView = document.getElementById('admin-subview-registration');
+  const btnQb = document.getElementById('sub-tab-btn-qbank');
+  const btnReg = document.getElementById('sub-tab-btn-reg');
+
+  if (subTab === 'qbank') {
+    if (qbSubView) qbSubView.classList.remove('hidden');
+    if (regSubView) regSubView.classList.add('hidden');
+    if (btnQb) btnQb.className = "px-4 py-2 rounded-xl transition bg-amber-500 text-slate-950 font-black shadow-md flex items-center gap-2";
+    if (btnReg) btnReg.className = "px-4 py-2 rounded-xl transition text-slate-300 hover:text-white flex items-center gap-2";
+    renderCustomQuestionList();
+  } else {
+    if (qbSubView) qbSubView.classList.add('hidden');
+    if (regSubView) regSubView.classList.remove('hidden');
+    if (btnReg) btnReg.className = "px-4 py-2 rounded-xl transition bg-emerald-500 text-slate-950 font-black shadow-md flex items-center gap-2";
+    if (btnQb) btnQb.className = "px-4 py-2 rounded-xl transition text-slate-300 hover:text-white flex items-center gap-2";
+    renderRegisteredTeachers();
+    renderRegisteredSchools();
+  }
+};
+
+// ೪. ಮಾಸ್ಟರ್ ನ್ಯಾವಿಗೇಷನ್ (ಪ್ರಶ್ನೆ ಭಂಡಾರ & ಅಡ್ಮಿನ್ ಕ್ಲೀನ್ ಸ್ವಿಚಿಂಗ್)
+window.navigateToSection = function(section) {
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
+    showAdminLoginModal();
+    return;
+  }
+
+  // ಎಲ್ಲಾ ಮುಖ್ಯ ಸೆಕ್ಷನ್ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
+  ['dashboard', 'generator', 'admin'].forEach(function(v) {
+    const el = document.getElementById('view-' + v);
+    if (el) el.classList.add('hidden');
+  });
+
+  const dashView = document.getElementById('view-dashboard');
+  const genView = document.getElementById('view-generator');
+  const adminView = document.getElementById('view-admin');
+
+  if (section === 'dashboard') {
+    if (dashView) dashView.classList.remove('hidden');
+  } else if (section === 'generator') {
+    if (genView) genView.classList.remove('hidden');
+    syncSubjectAndChapters();
+  } else if (section === 'qbank') {
+    if (adminView) {
+      adminView.classList.remove('hidden');
+      activeAdminSubTab = 'qbank';
+      renderAdminMasterUnifiedView();
+    }
+  } else if (section === 'admin') {
+    if (adminView) {
+      adminView.classList.remove('hidden');
+      activeAdminSubTab = 'registration';
+      renderAdminMasterUnifiedView();
+    }
+  }
+
+  updateTopNavbarClean();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ೫. 🚪 ೧-ಕ್ಲಿಕ್ ತಕ್ಷಣದ LOGOUT (NO REFRESH REQUIRED!)
+window.logoutAdmin = function() {
+  isAdminLoggedIn = false;
+  sessionStorage.removeItem('withyou_admin_auth_token');
+  sessionStorage.removeItem('withyou_active_role');
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+
+  // 🌟 ತಕ್ಷಣವೇ ಅಡ್ಮಿನ್ ವೀವ್ ಹೈಡ್ ಮಾಡಿ Dashboard ಓಪನ್ ಮಾಡುವುದು
+  document.getElementById('view-admin')?.classList.add('hidden');
+  document.getElementById('view-generator')?.classList.add('hidden');
+  document.getElementById('view-dashboard')?.classList.remove('hidden');
+
+  updateTopNavbarClean(); // 🌟 ಮೆನು ತಕ್ಷಣ ಲಾಕ್
+  showToast('🔒 Admin ನಿಂದ ಯಶಸ್ವಿಯಾಗಿ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ೬. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಕ್ಸಸ್ ಆದಾಗ ತಕ್ಷಣ ಎಲ್ಲಾ ಮೆನುಗಳು ಅನ್ಲಾಕ್ ಆಗಿ ತೆರೆಯುವುದು
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+
+    document.getElementById('admin-login-modal')?.classList.add('hidden');
+    updateTopNavbarClean(); // 🌟 ಎಲ್ಲಾ ೫ ಟೂಲ್ಗಳು ತಕ್ಷಣ ಅನ್ಲಾಕ್
+    showToast('👑 Admin Master Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+    navigateToSection('qbank');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
+
+// ತಕ್ಷಣವೇ ಮೆನು ರಿಫ್ರೆಶ್
+updateTopNavbarClean();
+
     
   </script>
 </body>
