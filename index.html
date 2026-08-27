@@ -1948,17 +1948,17 @@
 
 let currentTargetAdminSection = 'qbank';
 
-// 1. ಹೆಡರ್‌ನಲ್ಲಿರುವ 5 ಟ್ಯಾಬ್‌ಗಳ ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್
+// 1. ಹೆಡರ್ನಲ್ಲಿರುವ 5 ಟ್ಯಾಬ್ಗಳ ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್
 const origNavHandler = window.navigateToSection;
 window.navigateToSection = function(section) {
-  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್‌ವರ್ಡ್ ಚೆಕ್ ಮಾಡಿ
+  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್ವರ್ಡ್ ಚೆಕ್ ಮಾಡಿ
   if ((section === 'admin' || section === 'qbank') && !isAdminLoggedIn) {
     currentTargetAdminSection = section;
     showAdminLoginModal();
     return;
   }
 
-  // ಎಲ್ಲಾ ವೀವ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡಿ
+  // ಎಲ್ಲಾ ವೀವ್ಗಳನ್ನು ಹೈಡ್ ಮಾಡಿ
   const views = ['dashboard', 'profile', 'generator', 'qbank', 'admin'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
@@ -1980,7 +1980,7 @@ window.navigateToSection = function(section) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 2. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಕ್ಸಸ್ ಆದಾಗ ಆಯ್ಕೆಮಾಡಿದ ಮಾಡ್ಯೂಲ್‌ಗೆ ಕರೆದೊಯ್ಯುವುದು
+// 2. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಕ್ಸಸ್ ಆದಾಗ ಆಯ್ಕೆಮಾಡಿದ ಮಾಡ್ಯೂಲ್ಗೆ ಕರೆದೊಯ್ಯುವುದು
 const origAdminLoginSubmit = window.handleAdminLoginSubmit;
 window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
@@ -1996,7 +1996,7 @@ window.handleAdminLoginSubmit = function(e) {
     closeAdminLoginModal();
     showToast('🔓 Admin Login ಯಶಸ್ವಿಯಾಗಿದೆ!', 'success');
     
-    // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್‌ಗೆ ನ್ಯಾವಿಗೇಟ್ ಮಾಡಿ
+    // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ಗೆ ನ್ಯಾವಿಗೇಟ್ ಮಾಡಿ
     navigateToSection(currentTargetAdminSection || 'qbank');
   } else {
     document.getElementById('admin-login-error')?.classList.remove('hidden');
@@ -2280,7 +2280,7 @@ setTimeout(() => {
    DEDICATED QUESTION BANK MODULE WIRE-UP (Complete Standalone Feature)
    ========================================================================== */
 
-// 1. ಹೆಡರ್‌ನಲ್ಲಿ 'ಪ್ರಶ್ನೆ ಭಂಡಾರ' ಟ್ಯಾಬ್ ಬಟನ್ ಖಚಿತಪಡಿಸುವುದು
+// 1. ಹೆಡರ್ನಲ್ಲಿ 'ಪ್ರಶ್ನೆ ಭಂಡಾರ' ಟ್ಯಾಬ್ ಬಟನ್ ಖಚಿತಪಡಿಸುವುದು
 (function injectQuestionBankNavbarButton() {
   setTimeout(() => {
     const navContainer = document.querySelector('header .flex.items-center.space-x-1');
@@ -2302,17 +2302,17 @@ setTimeout(() => {
   }, 100);
 })();
 
-// 2. ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ ಅಪ್‌ಡೇಟ್ (ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ ಆಕ್ಟಿವೇಶನ್)
+// 2. ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ ಅಪ್ಡೇಟ್ (ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ ಆಕ್ಟಿವೇಶನ್)
 const originalNavMaster = window.navigateToSection;
 window.navigateToSection = function(section) {
-  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್‌ಗೆ ಲಾಗಿನ್ ಪರಿಶೀಲನೆ
+  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ಗೆ ಲಾಗಿನ್ ಪರಿಶೀಲನೆ
   if ((section === 'qbank' || section === 'admin') && !isAdminLoggedIn) {
     currentTargetAdminSection = section;
     showAdminLoginModal();
     return;
   }
 
-  // ಎಲ್ಲಾ ವೀವ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡಿ
+  // ಎಲ್ಲಾ ವೀವ್ಗಳನ್ನು ಹೈಡ್ ಮಾಡಿ
   ['dashboard', 'profile', 'generator', 'qbank', 'admin'].forEach(v => {
     document.getElementById(`view-${v}`)?.classList.add('hidden');
     const btn = document.getElementById(`nav-btn-${v}`);
@@ -2572,7 +2572,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
       </div>
     `;
 
-  // 7. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (೫ ಸಾಲುಗಳ ಪ್ರಶ್ನೆ + ೫ ಸಾಲುಗಳ ಉತ್ತರ ಬಾಕ್ಸ್‌ಗಳು)
+  // 7. ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (೫ ಸಾಲುಗಳ ಪ್ರಶ್ನೆ + ೫ ಸಾಲುಗಳ ಉತ್ತರ ಬಾಕ್ಸ್ಗಳು)
   } else if (type === 'poem_5lines') {
     formFieldsBox.innerHTML = `
       <div>
@@ -2636,7 +2636,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ / ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
         <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 text-center cursor-pointer relative">
           <input type="file" id="qadd-image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewQuestionImageUpload(this)" />
           <div id="qadd-image-preview-container" class="space-y-1">
@@ -2651,7 +2651,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
   }
 };
 
-// 2. ಡ್ರಾಪ್‌ಡೌನ್‌ನಲ್ಲಿ ಹೊಸ ವ್ಯಾಕರಣ ಪ್ರಕಾರಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+// 2. ಡ್ರಾಪ್ಡೌನ್ನಲ್ಲಿ ಹೊಸ ವ್ಯಾಕರಣ ಪ್ರಕಾರಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
 (function updateQuestionTypeDropdown() {
   const qTypeSelect = document.getElementById('qadd-type');
   if (qTypeSelect) {
@@ -2761,7 +2761,7 @@ window.handleSaveCustomQuestion = function(e) {
    KANNADA GRAMMAR (OPPOSITES, SYNONYMS, OWN SENTENCE) & 4-LINE POEM ENGINE
    ========================================================================== */
 
-// 1. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಡ್ರಾಪ್‌ಡೌನ್‌ಗೆ ವ್ಯಾಕರಣ ಮತ್ತು ಪದ್ಯ ಭಾಗಗಳ ಸೇರ್ಪಡೆ
+// 1. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಡ್ರಾಪ್ಡೌನ್ಗೆ ವ್ಯಾಕರಣ ಮತ್ತು ಪದ್ಯ ಭಾಗಗಳ ಸೇರ್ಪಡೆ
 (function updateQuestionBankTypes() {
   setTimeout(() => {
     const qTypeSelect = document.getElementById('qadd-type');
@@ -2914,7 +2914,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2 bg-slate-50 border rounded-xl" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Optional)</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Optional)</label>
         <input type="file" id="qadd-image-file" accept="image/*" onchange="previewQuestionImageUpload(this)" class="w-full p-2 border rounded-xl bg-slate-50" />
       </div>
       <div><label class="block font-bold text-slate-700 mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು</label><input type="text" id="qadd-items" placeholder="1) ಭಾಗ ಎ, 2) ಭಾಗ ಬಿ" class="w-full px-3.5 py-2 bg-slate-50 border rounded-xl" /></div>
@@ -3012,7 +3012,7 @@ window.handleSaveCustomQuestion = function(e) {
    KANNADA GRAMMAR SUITE (OPPOSITES, SYNONYMS, OWN SENTENCE) & 4-LINE POEM ENGINE
    ========================================================================== */
 
-// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡ್ರಾಪ್‌ಡೌನ್ ಅಪ್‌ಡೇಟ್ (ವ್ಯಾಕರಣ ಮತ್ತು ೪ ಸಾಲುಗಳ ಪದ್ಯ ಸಹಿತ)
+// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡ್ರಾಪ್ಡೌನ್ ಅಪ್ಡೇಟ್ (ವ್ಯಾಕರಣ ಮತ್ತು ೪ ಸಾಲುಗಳ ಪದ್ಯ ಸಹಿತ)
 function applyKannadaGrammarAndPoemDropdown() {
   const typeSelects = document.querySelectorAll('#qadd-type');
   typeSelects.forEach(select => {
@@ -3031,7 +3031,7 @@ function applyKannadaGrammarAndPoemDropdown() {
   });
 }
 
-// ೨. ಡೈನಾಮಿಕ್ ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು (ವ್ಯಾಕರಣ & ೪ ಸಾಲುಗಳ ಪದ್ಯದ ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್‌ಗಳು)
+// ೨. ಡೈನಾಮಿಕ್ ಫಾರ್ಮ್ ಫೀಲ್ಡ್ಗಳು (ವ್ಯಾಕರಣ & ೪ ಸಾಲುಗಳ ಪದ್ಯದ ಇನ್ಪುಟ್ ಬಾಕ್ಸ್ಗಳು)
 window.handleQuestionTypeChangeInAdmin = function(type) {
   const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
   if (!formFieldsBox) return;
@@ -3113,7 +3113,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
           <input type="text" id="poem-title-instruction" required value="ಈ ಕೆಳಗಿನ ಪದ್ಯ ಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800" />
         </div>
 
-        <!-- ಪ್ರಶ್ನೆಗೆ ೪ ಸಾಲುಗಳ ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್‌ಗಳು -->
+        <!-- ಪ್ರಶ್ನೆಗೆ ೪ ಸಾಲುಗಳ ಇನ್ಪುಟ್ ಬಾಕ್ಸ್ಗಳು -->
         <div class="space-y-1.5 p-3 bg-slate-100/90 border border-slate-300 rounded-2xl">
           <div class="flex items-center justify-between mb-1">
             <label class="font-bold text-slate-800 text-xs">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ ಬರುವ ೪ ಸಾಲುಗಳು (೪ ಸಾಲುಗಳ ಜಾಗ):</label>
@@ -3143,7 +3143,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
           </div>
         </div>
 
-        <!-- ಉತ್ತರಕ್ಕೆ ೪ ಸಾಲುಗಳ ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್‌ಗಳು -->
+        <!-- ಉತ್ತರಕ್ಕೆ ೪ ಸಾಲುಗಳ ಇನ್ಪುಟ್ ಬಾಕ್ಸ್ಗಳು -->
         <div class="space-y-1.5 p-3 bg-emerald-50/80 border border-emerald-300 rounded-2xl">
           <label class="block font-bold text-emerald-950 text-xs mb-1">ಕಂಠಪಾಠ ಪದ್ಯದ ಮಾದರಿ ಉತ್ತರ (Answer Key - ೪ ಸಾಲುಗಳು) *</label>
           <input type="text" id="poem-ans-line-1" placeholder="೧ ನೇ ಸಾಲಿನ ಪೂರ್ಣ ಉತ್ತರ..." class="w-full p-2 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-emerald-950" />
@@ -3208,7 +3208,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
         <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 text-center cursor-pointer relative">
           <input type="file" id="qadd-image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewQuestionImageUpload(this)" />
           <div id="qadd-image-preview-container" class="space-y-1">
@@ -3319,7 +3319,7 @@ setTimeout(() => {
    PERMANENT FIX: KANNADA GRAMMAR & 4-LINE POEM QUESTION BUILDER
    ========================================================================== */
 
-// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡ್ರಾಪ್‌ಡೌನ್ HTML (ಎಲ್ಲಾ ಕಡೆ ಇದೇ ಲೋಡ್ ಆಗುತ್ತದೆ)
+// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡ್ರಾಪ್ಡೌನ್ HTML (ಎಲ್ಲಾ ಕಡೆ ಇದೇ ಲೋಡ್ ಆಗುತ್ತದೆ)
 const KANNADA_QUESTION_TYPES_HTML = `
   <option value="mcq">೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
   <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
@@ -3333,7 +3333,7 @@ const KANNADA_QUESTION_TYPES_HTML = `
   <option value="map_diagram">೧೦. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
 `;
 
-// ೨. ಡ್ರಾಪ್‌ಡೌನ್ ಬದಲಾದಾಗ ಬರುವ ಇನ್‌ಪುಟ್ ಫೀಲ್ಡ್‌ಗಳು
+// ೨. ಡ್ರಾಪ್ಡೌನ್ ಬದಲಾದಾಗ ಬರುವ ಇನ್ಪುಟ್ ಫೀಲ್ಡ್ಗಳು
 window.handleQuestionTypeChangeInAdmin = function(type) {
   const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
   if (!formFieldsBox) return;
@@ -3508,7 +3508,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
         <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 text-center cursor-pointer relative">
           <input type="file" id="qadd-image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewQuestionImageUpload(this)" />
           <div id="qadd-image-preview-container" class="space-y-1">
@@ -3523,7 +3523,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
   }
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ ಓವರ್‌ರೈಡ್ (ಸ್ಥಿರವಾಗಿ ಹೊಸ ಆಪ್ಶನ್‌ಗಳು ಬರುವಂತೆ)
+// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮಾಡ್ಯೂಲ್ ಓವರ್ರೈಡ್ (ಸ್ಥಿರವಾಗಿ ಹೊಸ ಆಪ್ಶನ್ಗಳು ಬರುವಂತೆ)
 window.renderDedicatedQuestionBankModule = window.renderQuestionBankModuleHTML = function() {
   let qbView = document.getElementById('view-qbank');
   if (!qbView) {
@@ -3737,7 +3737,7 @@ renderDedicatedQuestionBankModule();
    SAFE & CLEAN INJECTION: KANNADA GRAMMAR SUB-TYPES & 4-LINE POEM
    ========================================================================== */
 
-// ೧. ವ್ಯಾಕರಣ ಸಬ್-ಆಯ್ಕೆಯ ಪ್ಲೇಸ್‌ಹೋಲ್ಡರ್ ಅಪ್‌ಡೇಟ್
+// ೧. ವ್ಯಾಕರಣ ಸಬ್-ಆಯ್ಕೆಯ ಪ್ಲೇಸ್ಹೋಲ್ಡರ್ ಅಪ್ಡೇಟ್
 window.updateGrammarSubtypeFields = function(subType) {
   const qInput = document.getElementById('qadd-text');
   const ansInput = document.getElementById('qadd-ans');
@@ -3771,7 +3771,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
 
   uploadedImageBase64 = '';
 
-  // ೪. ವ್ಯಾಕರಣ ಭಾಗ (ಸಬ್-ಡ್ರಾಪ್‌ಡೌನ್ ಸಹಿತ)
+  // ೪. ವ್ಯಾಕರಣ ಭಾಗ (ಸಬ್-ಡ್ರಾಪ್ಡೌನ್ ಸಹಿತ)
   if (type === 'grammar') {
     formFieldsBox.innerHTML = `
       <div class="space-y-3 p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-2xl">
@@ -3910,7 +3910,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
         <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 text-center cursor-pointer relative">
           <input type="file" id="qadd-image-file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewQuestionImageUpload(this)" />
           <div id="qadd-image-preview-container" class="space-y-1">
@@ -4133,7 +4133,7 @@ window.buildAdminView = function() {
   renderCustomQuestionList();
 };
 
-// ೫. ಸ್ವಯಂಚಾಲಿತ ಅಪ್‌ಡೇಟ್
+// ೫. ಸ್ವಯಂಚಾಲಿತ ಅಪ್ಡೇಟ್
 buildAdminView();
 
     /* ==========================================================================
@@ -4411,9 +4411,9 @@ renderCustomQuestionList();
    PERMANENT MASTER FIX: INSTANT VISIBLE AI BULK IMPORTER & GRAMMAR SUITE
    ========================================================================== */
 
-// ೧. ಹೆಡರ್‌ನಲ್ಲಿ ಹಾಗೂ ಪೇಜ್‌ನಲ್ಲಿ ತಕ್ಷಣ 'AI ಇಂಪೋರ್ಟ್' ಬಟನ್ ಕೂರಿಸುವ ಫಂಕ್ಷನ್
+// ೧. ಹೆಡರ್ನಲ್ಲಿ ಹಾಗೂ ಪೇಜ್ನಲ್ಲಿ ತಕ್ಷಣ 'AI ಇಂಪೋರ್ಟ್' ಬಟನ್ ಕೂರಿಸುವ ಫಂಕ್ಷನ್
 function ensureVisibleAIImportButtons() {
-  // A. ಮೇಲ್ಭಾಗದ ಹೆಡರ್ ನ್ಯಾವಿಗೇಶನ್ ಬಾರ್‌ಗೆ ಬಟನ್ ಸೇರ್ಪಡೆ
+  // A. ಮೇಲ್ಭಾಗದ ಹೆಡರ್ ನ್ಯಾವಿಗೇಶನ್ ಬಾರ್ಗೆ ಬಟನ್ ಸೇರ್ಪಡೆ
   const navBar = document.querySelector('header .flex.items-center.space-x-1');
   if (navBar && !document.getElementById('header-ai-import-btn')) {
     const aiBtn = document.createElement('button');
@@ -4425,7 +4425,7 @@ function ensureVisibleAIImportButtons() {
     navBar.insertBefore(aiBtn, navBar.firstChild);
   }
 
-  // B. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಬಾಕ್ಸ್‌ನಲ್ಲೂ ಬಟನ್ ಸೇರ್ಪಡೆ
+  // B. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಬಾಕ್ಸ್ನಲ್ಲೂ ಬಟನ್ ಸೇರ್ಪಡೆ
   const chapHeader = document.querySelector('#view-generator .card-modern .flex.items-center.space-x-2');
   if (chapHeader && !document.getElementById('step2-ai-import-btn')) {
     const btn2 = document.createElement('button');
@@ -4438,7 +4438,7 @@ function ensureVisibleAIImportButtons() {
   }
 }
 
-// ೨. AI ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್ ಪಾಪ್‌ಅಪ್ ವಿಂಡೋ
+// ೨. AI ಬಲ್ಕ್ ಇಂಪೋರ್ಟರ್ ಪಾಪ್ಅಪ್ ವಿಂಡೋ
 window.openBulkAIImportModal = function() {
   let modal = document.getElementById('ai-bulk-import-modal');
   if (!modal) {
@@ -4637,7 +4637,7 @@ window.processSmartBulkImport = function() {
     }
   }
 
-  // ಟೆಕ್ಸ್ಟ್ ಪಾರ್ಸಿಂಗ್ (ಫಾಲ್‌ಬ್ಯಾಕ್)
+  // ಟೆಕ್ಸ್ಟ್ ಪಾರ್ಸಿಂಗ್ (ಫಾಲ್ಬ್ಯಾಕ್)
   if (finalQuestions.length === 0) {
     const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
     let currentType = 'vsa';
@@ -4714,7 +4714,7 @@ window.updateGrammarSubtypeFields = function(subType) {
   }
 };
 
-// ೬. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡೈನಾಮಿಕ್ ಫೀಲ್ಡ್‌ಗಳು
+// ೬. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಡೈನಾಮಿಕ್ ಫೀಲ್ಡ್ಗಳು
 window.handleQuestionTypeChangeInAdmin = function(type) {
   const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
   if (!formFieldsBox) return;
@@ -4823,7 +4823,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
       <div>
-        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ</label>
+        <label class="block font-bold text-slate-700 mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ</label>
         <input type="file" id="qadd-image-file" accept="image/*" class="w-full p-2 bg-slate-50 border rounded-xl" onchange="previewQuestionImageUpload(this)" />
       </div>
       <div><label class="block font-bold text-slate-700 mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು</label><input type="text" id="qadd-items" placeholder="e.g. 1) ಭಾಗ ಎ, 2) ಭಾಗ ಬಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold" /></div>
@@ -4832,7 +4832,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
   }
 };
 
-// ೭. ಪುಟ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಬಟನ್‌ಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+// ೭. ಪುಟ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಬಟನ್ಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
 ensureVisibleAIImportButtons();
 setInterval(ensureVisibleAIImportButtons, 1000);
 
@@ -5036,7 +5036,7 @@ window.analyzeAndPreviewBulkText = function() {
   `).join('');
 };
 
-// ೩. ಪ್ರತ್ಯೇಕ ಬ್ಲಾಕ್‌ಗಳಾಗಿ ವಿಭಜಿಸುವ ಫಂಕ್ಷನ್ (ಉತ್ತರವನ್ನು ಹೊಸ ಪ್ರಶ್ನೆ ಎಂದು ಎಣಿಸುವುದಿಲ್ಲ!)
+// ೩. ಪ್ರತ್ಯೇಕ ಬ್ಲಾಕ್ಗಳಾಗಿ ವಿಭಜಿಸುವ ಫಂಕ್ಷನ್ (ಉತ್ತರವನ್ನು ಹೊಸ ಪ್ರಶ್ನೆ ಎಂದು ಎಣಿಸುವುದಿಲ್ಲ!)
 function splitIntoExactQuestionBlocks(text) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   let blocks = [];
@@ -5045,7 +5045,7 @@ function splitIntoExactQuestionBlocks(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // ಹೊಸ ಪ್ರಶ್ನೆ ಹೌದೇ ಎಂದು ನಿಖರವಾಗಿ ಗುರುತಿಸುವುದು (A, B, C, D ಅಥವಾ 'ಉತ್ತರ' ಲೈನ್‌ಗಳನ್ನು ಪ್ರಶ್ನೆ ಎಂದು ಭಾವಿಸುವುದಿಲ್ಲ!)
+    // ಹೊಸ ಪ್ರಶ್ನೆ ಹೌದೇ ಎಂದು ನಿಖರವಾಗಿ ಗುರುತಿಸುವುದು (A, B, C, D ಅಥವಾ 'ಉತ್ತರ' ಲೈನ್ಗಳನ್ನು ಪ್ರಶ್ನೆ ಎಂದು ಭಾವಿಸುವುದಿಲ್ಲ!)
     const isOptionLine = /^[A-Da-d\(\)ಅ-ಡಿ][\.\)\:\-]/i.test(line);
     const isAnswerLine = /^(ಉತ್ತರ|Ans|Answer|Key|ಸರಿಯಾದ ಉತ್ತರ)[\:\.\-]/i.test(line);
     const isQuestionStart = /^(\d+)[\.\)\:\-]\s+/i.test(line) || /^ಪ್ರಶ್ನೆ\s*\d*[\:\.]/i.test(line);
@@ -5164,9 +5164,9 @@ window.confirmAndSaveBulkQuestions = function() {
    ULTIMATE NOTEBOOK-LM PARSER: BULLETPROOF MARKDOWN & MULTI-QUESTION MATCHER
    ========================================================================== */
 
-// ೧. ಪಠ್ಯವನ್ನು ನಿಖರವಾಗಿ ಪ್ರತ್ಯೇಕ ಪ್ರಶ್ನೆ ಬ್ಲಾಕ್‌ಗಳಾಗಿ ವಿಂಗಡಿಸುವ ಸುಧಾರಿತ ಫಂಕ್ಷನ್
+// ೧. ಪಠ್ಯವನ್ನು ನಿಖರವಾಗಿ ಪ್ರತ್ಯೇಕ ಪ್ರಶ್ನೆ ಬ್ಲಾಕ್ಗಳಾಗಿ ವಿಂಗಡಿಸುವ ಸುಧಾರಿತ ಫಂಕ್ಷನ್
 function splitIntoExactQuestionBlocks(text) {
-  // ಎಲ್ಲಾ ರೀತಿಯ ಮಾರ್ಕ್‌ಡೌನ್ ಸ್ಟಾರ್‌ಗಳು (**) ಹಾಗೂ ಅನಗತ್ಯ ಸ್ಪೇಸ್‌ಗಳನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸುವುದು
+  // ಎಲ್ಲಾ ರೀತಿಯ ಮಾರ್ಕ್ಡೌನ್ ಸ್ಟಾರ್ಗಳು (**) ಹಾಗೂ ಅನಗತ್ಯ ಸ್ಪೇಸ್ಗಳನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸುವುದು
   const cleanLines = text
     .split('\n')
     .map(l => l.trim())
@@ -5209,9 +5209,9 @@ function splitIntoExactQuestionBlocks(text) {
   return blocks;
 }
 
-// ೨. ಪ್ರತಿಯೊಂದು ಬ್ಲಾಕ್‌ನಿಂದ ಪ್ರಶ್ನೆ, ಆಪ್ಷನ್ (A,B,C,D) ಮತ್ತು ಉತ್ತರ ಪ್ರತ್ಯೇಕಿಸುವ ಫಂಕ್ಷನ್
+// ೨. ಪ್ರತಿಯೊಂದು ಬ್ಲಾಕ್ನಿಂದ ಪ್ರಶ್ನೆ, ಆಪ್ಷನ್ (A,B,C,D) ಮತ್ತು ಉತ್ತರ ಪ್ರತ್ಯೇಕಿಸುವ ಫಂಕ್ಷನ್
 function parseSingleBlock(blockText, meta) {
-  // ಸ್ಟಾರ್‌ಗಳು (Bold **) ತೆಗೆಯುವುದು
+  // ಸ್ಟಾರ್ಗಳು (Bold **) ತೆಗೆಯುವುದು
   let lines = blockText.split('\n').map(l => l.replace(/^\*+|\*+$/g, '').trim()).filter(Boolean);
   if (lines.length === 0) return null;
 
@@ -5227,7 +5227,7 @@ function parseSingleBlock(blockText, meta) {
   let type = 'vsa';
   let marks = 1;
 
-  // ೨. ಸಾಲುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಆಪ್ಷನ್‌ಗಳು ಮತ್ತು ಉತ್ತರ ಹುಡುಕುವುದು
+  // ೨. ಸಾಲುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಆಪ್ಷನ್ಗಳು ಮತ್ತು ಉತ್ತರ ಹುಡುಕುವುದು
   for (let i = 1; i < lines.length; i++) {
     let line = lines[i];
 
@@ -5313,7 +5313,7 @@ function parseSingleBlock(blockText, meta) {
   };
 }
 
-// ೩. ಪ್ರಿವ್ಯೂ ಮತ್ತು ಅನಾಲಿಸಿಸ್ ಫಂಕ್ಷನ್ ಅಪ್‌ಡೇಟ್
+// ೩. ಪ್ರಿವ್ಯೂ ಮತ್ತು ಅನಾಲಿಸಿಸ್ ಫಂಕ್ಷನ್ ಅಪ್ಡೇಟ್
 window.analyzeAndPreviewBulkText = function() {
   const rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
   const grade = document.getElementById('bulk-import-class')?.value || '6';
@@ -5367,7 +5367,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -5404,7 +5404,7 @@ window.analyzeAndPreviewBulkText = function() {
 
 // ೧. ಪಠ್ಯದಲ್ಲಿರುವ ೨೦ ಪ್ರಶ್ನೆಗಳನ್ನು ೨೦ ಪ್ರತ್ಯೇಕ ಭಾಗಗಳಾಗಿ ವಿಭಜಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
 function splitIntoExactQuestionBlocks(rawText) {
-  // A. ಹಿಡನ್ ಸ್ಪೇಸ್ ಮತ್ತು ಯುನಿಕೋಡ್ ಕ್ಯಾರೆಕ್ಟರ್‌ಗಳನ್ನು ಕ್ಲೀನ್ ಮಾಡುವುದು
+  // A. ಹಿಡನ್ ಸ್ಪೇಸ್ ಮತ್ತು ಯುನಿಕೋಡ್ ಕ್ಯಾರೆಕ್ಟರ್ಗಳನ್ನು ಕ್ಲೀನ್ ಮಾಡುವುದು
   let text = rawText
     .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ')
     .replace(/\r\n/g, '\n')
@@ -5423,7 +5423,7 @@ function splitIntoExactQuestionBlocks(rawText) {
     matches.push({ index: matchIndex, fullMatch: matchedStr });
   }
 
-  // ಒಂದು ವೇಳೆ ರೆಜೆಕ್ಸ್ ಸಿಗದಿದ್ದರೆ ಫಾಲ್‌ಬ್ಯಾಕ್ (ಡಬಲ್ ಎಂಟರ್ ಆಧಾರದ ಮೇಲೆ)
+  // ಒಂದು ವೇಳೆ ರೆಜೆಕ್ಸ್ ಸಿಗದಿದ್ದರೆ ಫಾಲ್ಬ್ಯಾಕ್ (ಡಬಲ್ ಎಂಟರ್ ಆಧಾರದ ಮೇಲೆ)
   if (matches.length <= 1) {
     return text.split(/\n\s*\n/).map(b => b.trim()).filter(b => b.length > 5);
   }
@@ -5443,7 +5443,7 @@ function splitIntoExactQuestionBlocks(rawText) {
 
 // ೨. ಪ್ರತಿಯೊಂದು ಪ್ರಶ್ನೆಯ ಪಠ್ಯ, (A,B,C,D) ಆಯ್ಕೆಗಳು & ಉತ್ತರವನ್ನು ಪ್ರತ್ಯೇಕಿಸುವ ಫಂಕ್ಷನ್
 function parseSingleBlock(blockText, meta) {
-  // Bold (**) ಮತ್ತು ಬುಲೆಟ್‌ಗಳನ್ನು ತೆಗೆದು ಕ್ಲೀನ್ ಮಾಡುವುದು
+  // Bold (**) ಮತ್ತು ಬುಲೆಟ್ಗಳನ್ನು ತೆಗೆದು ಕ್ಲೀನ್ ಮಾಡುವುದು
   let cleanBlock = blockText
     .replace(/^\s*[\*\-\•\+]\s*/, '')
     .replace(/\*\*/g, '')
@@ -5465,7 +5465,7 @@ function parseSingleBlock(blockText, meta) {
     cleanBlock = cleanBlock.replace(ansRegex, '').trim();
   }
 
-  // ೩. ಆಪ್ಶನ್‌ಗಳು (A, B, C, D ಅಥವಾ ಅ, ಆ, ಇ, ಈ ಅಥವಾ ಎ, ಬಿ, ಸಿ, ಡಿ) ಇವೆಯೇ ಎಂದು ಪರೀಕ್ಷಿಸುವುದು
+  // ೩. ಆಪ್ಶನ್ಗಳು (A, B, C, D ಅಥವಾ ಅ, ಆ, ಇ, ಈ ಅಥವಾ ಎ, ಬಿ, ಸಿ, ಡಿ) ಇವೆಯೇ ಎಂದು ಪರೀಕ್ಷಿಸುವುದು
   const optRegex = /[\(\[]?\s*([A-Da-d]|ಅ|ಆ|ಇ|ಈ|ಎ|ಬಿ|ಸಿ|ಡಿ)\s*[\)\]\.\:\-]\s*([^\(\[\n]+)/gi;
   let optMatches = [...cleanBlock.matchAll(optRegex)];
 
@@ -5478,7 +5478,7 @@ function parseSingleBlock(blockText, meta) {
       qText = cleanBlock.split('\n')[0].trim();
     }
 
-    // ಆಪ್ಶನ್‌ಗಳನ್ನು (A, B, C, D) ಜೋಡಿಸುವುದು
+    // ಆಪ್ಶನ್ಗಳನ್ನು (A, B, C, D) ಜೋಡಿಸುವುದು
     optMatches.forEach((m, idx) => {
       const val = m[2].trim();
       if (idx === 0) optA = val;
@@ -5487,7 +5487,7 @@ function parseSingleBlock(blockText, meta) {
       else if (idx === 3) optD = val;
     });
   } else {
-    // ಆಪ್ಶನ್‌ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ (೧ ಅಂಕ / ೨ ಅಂಕ / ಬಿಟ್ಟ ಸ್ಥಳ)
+    // ಆಪ್ಶನ್ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ (೧ ಅಂಕ / ೨ ಅಂಕ / ಬಿಟ್ಟ ಸ್ಥಳ)
     qText = cleanBlock.trim();
   }
 
@@ -5584,7 +5584,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -5620,7 +5620,7 @@ window.analyzeAndPreviewBulkText = function() {
    ========================================================================== */
 
 function parseSingleBlock(blockText, meta) {
-  // Bold (**) ಮತ್ತು ಅನಗತ್ಯ ಸ್ಪೇಸ್‌ಗಳನ್ನು ತೆಗೆಯುವುದು
+  // Bold (**) ಮತ್ತು ಅನಗತ್ಯ ಸ್ಪೇಸ್ಗಳನ್ನು ತೆಗೆಯುವುದು
   let cleanBlock = blockText
     .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ')
     .replace(/\*\*/g, '')
@@ -5635,7 +5635,7 @@ function parseSingleBlock(blockText, meta) {
     cleanBlock = cleanBlock.replace(ansRegex, '').trim();
   }
 
-  // ೨. ಪ್ರಶ್ನೆ ಮತ್ತು ಆಪ್ಷನ್‌ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+  // ೨. ಪ್ರಶ್ನೆ ಮತ್ತು ಆಪ್ಷನ್ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
   let qText = '';
   let optA = '', optB = '', optC = '', optD = '';
 
@@ -5643,12 +5643,12 @@ function parseSingleBlock(blockText, meta) {
   const firstOptMatch = cleanBlock.match(/(?:[\n\s]|\b)[\(\[]?\s*([A|a|ಅ|ಎ])\s*[\)\]\.\:\-]/);
 
   if (firstOptMatch && firstOptMatch.index !== undefined) {
-    // ಮೊದಲ ಆಪ್ಷನ್‌ಗಿಂತ ಮುಂಚೆ ಇರುವುದೆಲ್ಲವೂ ಪ್ರಶ್ನೆ!
+    // ಮೊದಲ ಆಪ್ಷನ್ಗಿಂತ ಮುಂಚೆ ಇರುವುದೆಲ್ಲವೂ ಪ್ರಶ್ನೆ!
     let qPart = cleanBlock.substring(0, firstOptMatch.index).trim();
     // ಪ್ರಶ್ನೆ ನಂಬರ್ (1., 2), ಪ್ರಶ್ನೆ 1: ಇತ್ಯಾದಿ) ತೆಗೆಯುವುದು
     qText = qPart.replace(/^(?:ಪ್ರಶ್ನೆ\s*|Q(?:uestion)?\s*)?(\d+|[೧-೯][೦-೯]*)[\.\)\:\-\]]\s*/i, '').trim();
 
-    // ಆಪ್ಷನ್‌ಗಳ ಭಾಗ
+    // ಆಪ್ಷನ್ಗಳ ಭಾಗ
     const optsPart = cleanBlock.substring(firstOptMatch.index).trim();
     const optRegex = /[\(\[]?\s*([A-Da-d]|ಅ|ಆ|ಇ|ಈ|ಎ|ಬಿ|ಸಿ|ಡಿ)\s*[\)\]\.\:\-]\s*([^\(\[\n\r]+)/gi;
     let optMatches = [...optsPart.matchAll(optRegex)];
@@ -5661,7 +5661,7 @@ function parseSingleBlock(blockText, meta) {
       else if (idx === 3) optD = val;
     });
   } else {
-    // ಆಪ್ಷನ್‌ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ (1 ಅಂಕ / 2 ಅಂಕ / ಬಿಟ್ಟ ಸ್ಥಳ)
+    // ಆಪ್ಷನ್ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ (1 ಅಂಕ / 2 ಅಂಕ / ಬಿಟ್ಟ ಸ್ಥಳ)
     const lines = cleanBlock.split('\n').map(l => l.trim()).filter(Boolean);
     qText = lines[0].replace(/^(?:ಪ್ರಶ್ನೆ\s*|Q(?:uestion)?\s*)?(\d+|[೧-೯][೦-೯]*)[\.\)\:\-\]]\s*/i, '').trim();
     if (lines.length > 1 && !ans) {
@@ -5767,7 +5767,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -5803,7 +5803,7 @@ window.analyzeAndPreviewBulkText = function() {
    ========================================================================== */
 
 function parseSingleBlock(blockText, meta) {
-  // Bold (**) ಮತ್ತು ಅನಗತ್ಯ ಸ್ಪೇಸ್‌ಗಳನ್ನು ಕ್ಲೀನ್ ಮಾಡಿ ಸಾಲುಗಳಾಗಿ ವಿಂಗಡಿಸುವುದು
+  // Bold (**) ಮತ್ತು ಅನಗತ್ಯ ಸ್ಪೇಸ್ಗಳನ್ನು ಕ್ಲೀನ್ ಮಾಡಿ ಸಾಲುಗಳಾಗಿ ವಿಂಗಡಿಸುವುದು
   const lines = blockText
     .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ')
     .replace(/\*\*/g, '')
@@ -5827,7 +5827,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೨. ಆಪ್ಷನ್‌ಗಳು ಒಂದೇ ಸಾಲಿನಲ್ಲಿದ್ದರೆ: (A) ... (B) ... (C) ... (D)
+    // ೨. ಆಪ್ಷನ್ಗಳು ಒಂದೇ ಸಾಲಿನಲ್ಲಿದ್ದರೆ: (A) ... (B) ... (C) ... (D)
     if (line.includes('(A)') && line.includes('(B)')) {
       const mA = line.match(/\(A\)\s*([^(\(B)]+)/i);
       const mB = line.match(/\(B\)\s*([^(\(C)]+)/i);
@@ -5840,7 +5840,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೩. ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಲ್ಲಿ ಆಪ್ಷನ್‌ಗಳಿದ್ದರೆ:
+    // ೩. ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಲ್ಲಿ ಆಪ್ಷನ್ಗಳಿದ್ದರೆ:
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -5899,7 +5899,7 @@ function parseSingleBlock(blockText, meta) {
   };
 }
 
-// ಅನಾಲಿಸಿಸ್ ಎಂಜಿನ್ ಅಪ್‌ಡೇಟ್
+// ಅನಾಲಿಸಿಸ್ ಎಂಜಿನ್ ಅಪ್ಡೇಟ್
 window.analyzeAndPreviewBulkText = function() {
   const rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
   const grade = document.getElementById('bulk-import-class')?.value || '6';
@@ -5953,7 +5953,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -6075,7 +6075,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೪. ಆಪ್ಷನ್‌ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
+    // ೪. ಆಪ್ಷನ್ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -6161,7 +6161,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -6526,7 +6526,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   // ನೀಲನಕ್ಷೆ ರೆಂಡರಿಂಗ್
   renderExactThreeBlueprints(allActiveQuestions, actualCalculatedMarks);
 
-  // ಔಟ್‌ಪುಟ್ ತೋರಿಸುವುದು
+  // ಔಟ್ಪುಟ್ ತೋರಿಸುವುದು
   const outSec = document.getElementById('output-section');
   if (outSec) {
     outSec.classList.remove('hidden');
@@ -6600,7 +6600,7 @@ function parseSingleBlock(blockText, meta) {
   for (let i = 0; i < rawLines.length; i++) {
     let line = rawLines[i];
 
-    // 'ಭಾಗ 1 — 1 ಅಂಕದ ಪ್ರಶ್ನೆಗಳು' ಮುಂತಾದ ಸೆಕ್ಷನ್ ಹೆಡರ್‌ಗಳನ್ನು ಬಿಟ್ಟುಬಿಡುವುದು
+    // 'ಭಾಗ 1 — 1 ಅಂಕದ ಪ್ರಶ್ನೆಗಳು' ಮುಂತಾದ ಸೆಕ್ಷನ್ ಹೆಡರ್ಗಳನ್ನು ಬಿಟ್ಟುಬಿಡುವುದು
     if (/^ಭಾಗ\s*\d+/i.test(line)) {
       continue;
     }
@@ -6644,7 +6644,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ಆಪ್ಷನ್‌ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
+    // ಆಪ್ಷನ್ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -6663,7 +6663,7 @@ function parseSingleBlock(blockText, meta) {
   let fullQBlock = remainingLines.join(' ').trim();
   fullQBlock = fullQBlock.replace(/^(?:ಪ್ರಶ್ನೆ\s*|Q(?:uestion)?\s*)?(\d+|[೧-೯][೦-೯]*)[\:\.\-\]]\s*/i, '').trim();
 
-  // ಒಂದು ವೇಳೆ ಆಪ್ಷನ್‌ಗಳು ಪ್ರಶ್ನೆಯ ಕೊನೆಯಲ್ಲಿ ಒಂದೇ ಸಾಲಿನಲ್ಲಿಯೇ ಇದ್ದರೆ: ? A) ... B) ... C) ... D) ...
+  // ಒಂದು ವೇಳೆ ಆಪ್ಷನ್ಗಳು ಪ್ರಶ್ನೆಯ ಕೊನೆಯಲ್ಲಿ ಒಂದೇ ಸಾಲಿನಲ್ಲಿಯೇ ಇದ್ದರೆ: ? A) ... B) ... C) ... D) ...
   if (fullQBlock.includes('A)') && fullQBlock.includes('B)')) {
     const optSplitIdx = fullQBlock.search(/(?:\?|\b)\s*A\)/i);
     if (optSplitIdx !== -1) {
@@ -6744,7 +6744,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -6797,7 +6797,7 @@ window.analyzeAndPreviewBulkText = function() {
     document.head.appendChild(link);
   }
 
-  // ೨. ಇಡೀ ವೆಬ್‌ಸೈಟ್ ಹಾಗೂ ಪ್ರಿಂಟ್ ಪೇಜ್‌ಗಳಿಗೆ ಗ್ಲೋಬಲ್ CSS ಅನ್ವಯಿಸುವುದು
+  // ೨. ಇಡೀ ವೆಬ್ಸೈಟ್ ಹಾಗೂ ಪ್ರಿಂಟ್ ಪೇಜ್ಗಳಿಗೆ ಗ್ಲೋಬಲ್ CSS ಅನ್ವಯಿಸುವುದು
   const styleId = 'global-style-anek-kannada';
   let styleTag = document.getElementById(styleId);
   if (!styleTag) {
@@ -7174,7 +7174,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
   const examDate = document.getElementById('cfg-exam-date')?.value || '2025-26';
 
-  // ಇಂಗ್ಲಿಷ್ ಬ್ರಾಕೆಟ್‌ಗಳನ್ನು ತೆಗೆದು ಶುದ್ಧ ಕನ್ನಡ ವಿಷಯ ಮತ್ತು ಪರೀಕ್ಷೆಯ ಹೆಸರು ಪಡೆಯುವುದು
+  // ಇಂಗ್ಲಿಷ್ ಬ್ರಾಕೆಟ್ಗಳನ್ನು ತೆಗೆದು ಶುದ್ಧ ಕನ್ನಡ ವಿಷಯ ಮತ್ತು ಪರೀಕ್ಷೆಯ ಹೆಸರು ಪಡೆಯುವುದು
   const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
   const cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
 
@@ -8821,7 +8821,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
         </h1>
       </div>
 
-      <!-- ೨. ಮೂರು ವಿಭಾಗಗಳ ಫ್ಲೆಕ್ಸ್ ಲೇಔಟ್ (white-space: nowrap ಮೂಲಕ 2025-26 ಒಂದೇ ಲೈನ್‌ನಲ್ಲಿ ಬರುತ್ತದೆ) -->
+      <!-- ೨. ಮೂರು ವಿಭಾಗಗಳ ಫ್ಲೆಕ್ಸ್ ಲೇಔಟ್ (white-space: nowrap ಮೂಲಕ 2025-26 ಒಂದೇ ಲೈನ್ನಲ್ಲಿ ಬರುತ್ತದೆ) -->
       <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 15px; font-weight: 900; color: #000; line-height: 1.8;">
         
         <!-- ಎಡಭಾಗ: ವಿಷಯ ಮತ್ತು ಅಂಕ -->
@@ -8894,7 +8894,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     document.head.appendChild(link);
   }
 
-  // ೨. FontAwesome ಐಕಾನ್‌ಗಳಿಗೆ ತೊಂದರೆಯಾಗದಂತೆ ಫಾಂಟ್ ರೂಲ್ ಅಪ್‌ಡೇಟ್
+  // ೨. FontAwesome ಐಕಾನ್ಗಳಿಗೆ ತೊಂದರೆಯಾಗದಂತೆ ಫಾಂಟ್ ರೂಲ್ ಅಪ್ಡೇಟ್
   const styleId = 'global-style-anek-kannada-fixed';
   let styleTag = document.getElementById(styleId);
   if (!styleTag) {
@@ -8912,7 +8912,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
       font-family: 'Anek Kannada', sans-serif !important;
     }
 
-    /* 🛡️ FontAwesome ಐಕಾನ್‌ಗಳನ್ನು ಚೌಕಾಕಾರದ ಬಾಕ್ಸ್ (□) ಆಗದಂತೆ ರಕ್ಷಿಸುವುದು */
+    /* 🛡️ FontAwesome ಐಕಾನ್ಗಳನ್ನು ಚೌಕಾಕಾರದ ಬಾಕ್ಸ್ (□) ಆಗದಂತೆ ರಕ್ಷಿಸುವುದು */
     i, .fa, .fas, .far, .fab, [class*="fa-"], [class^="fa-"] {
       font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
       font-style: normal !important;
@@ -8925,7 +8925,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
       font-family: 'Anek Kannada', sans-serif !important;
     }
 
-    /* ಮೊಬೈಲ್ ಹೆಡರ್ ಬಟನ್‌ಗಳು ಸುಂದರವಾಗಿ ಕಾಣಿಸಲು */
+    /* ಮೊಬೈಲ್ ಹೆಡರ್ ಬಟನ್ಗಳು ಸುಂದರವಾಗಿ ಕಾಣಿಸಲು */
     header .flex.items-center.space-x-1 button {
       display: inline-flex !important;
       align-items: center !important;
@@ -8981,7 +8981,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೪. ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್‌ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+    // ೪. ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
     if (/(?:^|\s)[A|a|ಅ|ಎ][\)\.\:\-]\s+.*(?:^|\s)[B|b|ಆ|ಬಿ][\)\.\:\-]\s+/i.test(line)) {
       const mA = line.match(/(?:^|\s)[A|a|ಅ|ಎ][\)\.\:\-]\s*([^BCDbcdಆ-ಡಿ\(\)]+)/i);
       const mB = line.match(/(?:^|\s)[B|b|ಆ|ಬಿ][\)\.\:\-]\s*([^CDcdಇ-ಡಿ\(\)]+)/i);
@@ -8995,7 +8995,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೫. ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಲ್ಲಿರುವ ಆಪ್ಷನ್‌ಗಳು
+    // ೫. ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಲ್ಲಿರುವ ಆಪ್ಷನ್ಗಳು
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -9126,7 +9126,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -9235,7 +9235,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೪. ಆಪ್ಷನ್‌ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
+    // ೪. ಆಪ್ಷನ್ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -9256,7 +9256,7 @@ function parseSingleBlock(blockText, meta) {
   // ಪ್ರಶ್ನೆ ಹೆಡರ್ ಅನ್ನು ಕರಾರುವಾಕ್ಕಾಗಿ ಸ್ವಚ್ಛಗೊಳಿಸುವುದು (ಶ್ನೆ 1 ಮುಂತಾದ ಅಕ್ಷರಗಳು ಮುರಿಯದಂತೆ!)
   combinedQText = combinedQText.replace(/^(?:ಪ್ರಶ್ನೆ\s*(\d+|[೧-೯][೦-೯]*)[\:\.]?|(\d+|[೧-೯][೦-೯]*)[\.\)\:\-])\s*/i, '').trim();
 
-  // ೫. ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್‌ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+  // ೫. ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
   if (combinedQText.includes('A)') && combinedQText.includes('B)')) {
     const optSplitIndex = combinedQText.search(/(?:^|\s|\?)[A|a|ಅ|ಎ]\)\s*/);
     if (optSplitIndex !== -1) {
@@ -9373,7 +9373,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -9520,7 +9520,7 @@ function parseSingleBlock(blockText, meta) {
       optB = content.substring(optBMatch).replace(/(?:^|\s|\n)[\(\[]?\s*[B|b|ಆ|ಬಿ]\s*[\)\]\.\:\-]\s*/, '').trim();
     }
   } else {
-    // ಆಪ್ಷನ್‌ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ
+    // ಆಪ್ಷನ್ಗಳಿಲ್ಲದ ಪ್ರಶ್ನೆ
     qText = content;
   }
 
@@ -9617,7 +9617,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -9931,7 +9931,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -9945,7 +9945,7 @@ window.analyzeAndPreviewBulkText = function() {
           <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
         </div>
         
-        <!-- ಅಂಕ ಬದಲಾವಣೆ ಡ್ರಾಪ್‌ಡೌನ್ -->
+        <!-- ಅಂಕ ಬದಲಾವಣೆ ಡ್ರಾಪ್ಡೌನ್ -->
         <div class="flex items-center space-x-1">
           <span class="text-[11px] font-bold text-slate-500">ಅಂಕ:</span>
           <select onchange="updateStagedQuestionMarks(${idx}, this.value)" class="p-1 bg-white border border-slate-300 rounded font-black text-xs text-indigo-900">
@@ -10431,7 +10431,7 @@ function parseSingleBlock(blockText, meta) {
       continue;
     }
 
-    // ೩. ಆಪ್ಷನ್‌ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
+    // ೩. ಆಪ್ಷನ್ಗಳು ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
     const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
     const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
@@ -10459,7 +10459,7 @@ function parseSingleBlock(blockText, meta) {
 
   let qText = '';
 
-  // ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್‌ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+  // ಒಂದೇ ಸಾಲಿನಲ್ಲಿರುವ A) ... B) ... C) ... D) ... ಆಪ್ಷನ್ಗಳನ್ನು ಬೇರ್ಪಡಿಸುವುದು
   if (fullQBlock.includes('A)') && fullQBlock.includes('B)')) {
     const optSplitIndex = fullQBlock.search(/(?:^|\s|\?)[A|a|ಅ|ಎ]\)\s*/);
     if (optSplitIndex !== -1) {
@@ -10586,7 +10586,7 @@ window.analyzeAndPreviewBulkText = function() {
 
   stagedParsedQuestions = parsedQuestions;
 
-  // UI ಅಪ್‌ಡೇಟ್
+  // UI ಅಪ್ಡೇಟ್
   document.getElementById('bulk-import-step-input')?.classList.add('hidden');
   document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
   document.getElementById('preview-total-count').innerText = parsedQuestions.length;
@@ -10631,7 +10631,7 @@ window.analyzeAndPreviewBulkText = function() {
    PER-QUESTION LIVE POPUP EDITOR ON GENERATED PAPER WITH DYNAMIC RE-RENDER
    ========================================================================== */
 
-// ೧. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಮೇಲಿರುವ Edit ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಪ್‌ಅಪ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೧. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಮೇಲಿರುವ Edit ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಪ್ಅಪ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.openPopupQuestionEditor = function(qIndex) {
   const q = appState.activeGeneratedQuestions[qIndex];
   if (!q) return;
@@ -11116,7 +11116,7 @@ function reRenderActiveExamFromQuestions() {
   `;
 })();
 
-// ೨. ಪಾಪ್‌ಅಪ್ ಎಡಿಟರ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೨. ಪಾಪ್ಅಪ್ ಎಡಿಟರ್ ಓಪನ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.openPopupQuestionEditor = function(qIndex) {
   const q = appState.activeGeneratedQuestions[qIndex];
   if (!q) return;
@@ -11228,7 +11228,7 @@ window.savePopupQuestionEdit = function(e, qIndex) {
   showToast('✅ ಪ್ರಶ್ನೆ ಯಶಸ್ವಿಯಾಗಿ ಅಪ್ಡೇಟ್ ಆಗಿದೆ!', 'success');
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್ ಎಂಜಿನ್ (೧೦೦% ಗ್ಯಾರಂಟಿ ಔಟ್‌ಪುಟ್)
+// ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್ ಎಂಜಿನ್ (೧೦೦% ಗ್ಯಾರಂಟಿ ಔಟ್ಪುಟ್)
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ';
   const grade = document.getElementById('cfg-class')?.value || '6';
@@ -11546,7 +11546,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
 
-  // 🌟 ಔಟ್‌ಪುಟ್ ಸೆಕ್ಷನ್ ಅನ್ನು ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಕಡ್ಡಾಯವಾಗಿ ತೋರಿಸುವುದು
+  // 🌟 ಔಟ್ಪುಟ್ ಸೆಕ್ಷನ್ ಅನ್ನು ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಕಡ್ಡಾಯವಾಗಿ ತೋರಿಸುವುದು
   const outSec = document.getElementById('output-section');
   if (outSec) {
     outSec.classList.remove('hidden');
@@ -11640,7 +11640,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     return arr;
   }
 
-  // ಪೂಲ್‌ಗಳನ್ನು ಸಿದ್ಧಪಡಿಸುವುದು
+  // ಪೂಲ್ಗಳನ್ನು ಸಿದ್ಧಪಡಿಸುವುದು
   let pool1M = shuffleArray(pool.filter(q => (q.marks === 1 || !q.marks) && q.type !== 'match' && q.type !== 'poem_4lines' && q.type !== 'map_diagram'));
   let pool2M = shuffleArray(pool.filter(q => q.marks === 2 || (q.type === 'sa' && (q.marks === 2 || !q.marks))));
   let pool3M = shuffleArray(pool.filter(q => q.marks === 3));
@@ -11674,7 +11674,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     if (solutionFound) break;
   }
 
-  // ನಿಖರ ಸಂಯೋಜನೆ ಸಿಗದಿದ್ದಾಗ ಫಾಲ್‌ಬ್ಯಾಕ್ (Greedy allocation)
+  // ನಿಖರ ಸಂಯೋಜನೆ ಸಿಗದಿದ್ದಾಗ ಫಾಲ್ಬ್ಯಾಕ್ (Greedy allocation)
   let chosenQuestions = [];
   if (solutionFound) {
     for (let i = 0; i < count4M; i++) chosenQuestions.push(pool4M.pop());
@@ -11682,7 +11682,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     for (let i = 0; i < count2M; i++) chosenQuestions.push(pool2M.pop());
     for (let i = 0; i < count1M; i++) chosenQuestions.push(pool1M.pop());
   } else {
-    // ಫಾಲ್‌ಬ್ಯಾಕ್: ಅಂಕಗಳನ್ನು ಮೊದಲು ಭರ್ತಿ ಮಾಡಿ ಪ್ರಶ್ನೆ ಸಂಖ್ಯೆಯನ್ನು ಸಮೀಪಿಸುವುದು
+    // ಫಾಲ್ಬ್ಯಾಕ್: ಅಂಕಗಳನ್ನು ಮೊದಲು ಭರ್ತಿ ಮಾಡಿ ಪ್ರಶ್ನೆ ಸಂಖ್ಯೆಯನ್ನು ಸಮೀಪಿಸುವುದು
     let curMarks = 0;
     while (curMarks < targetTotalMarks && chosenQuestions.length < targetTotalQuestions) {
       const remM = targetTotalMarks - curMarks;
@@ -12031,7 +12031,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   showToast(`✅ ${actualCalculatedMarks} ಅಂಕಗಳ (${actualTotalQuestionsCount} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
 
-// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ "ಒಟ್ಟು ಪ್ರಶ್ನೆಗಳು" ಇನ್‌ಪುಟ್ ಬಾಕ್ಸ್ ಅಳವಡಿಸುವುದು
+// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ "ಒಟ್ಟು ಪ್ರಶ್ನೆಗಳು" ಇನ್ಪುಟ್ ಬಾಕ್ಸ್ ಅಳವಡಿಸುವುದು
 injectQuestionsCountInputInUI();
 setInterval(injectQuestionsCountInputInUI, 1000);
 
@@ -12045,7 +12045,7 @@ window.savePopupQuestionEdit = function(e, qIndex) {
   const q = appState.activeGeneratedQuestions[qIndex];
   if (!q) return;
 
-  // ಫಾರ್ಮ್‌ನಿಂದ ತಿದ್ದುಪಡಿ ಮಾಡಿದ ವಿವರಗಳನ್ನು ಪಡೆಯುವುದು
+  // ಫಾರ್ಮ್ನಿಂದ ತಿದ್ದುಪಡಿ ಮಾಡಿದ ವಿವರಗಳನ್ನು ಪಡೆಯುವುದು
   q.q = document.getElementById('pop-q-text').value.trim();
   q.obj = document.getElementById('pop-q-obj').value;
   q.diff = document.getElementById('pop-q-diff').value;
@@ -12388,7 +12388,7 @@ function renderCurrentActiveQuestionsInPaper() {
    4-MARKS DESCRIPTIVE QUESTION SUITE & STEP 3 UI ENHANCEMENT
    ========================================================================== */
 
-// ೧. Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) ಬಾಕ್ಸ್‌ನಲ್ಲಿ "೪ ಅಂಕದ ಪ್ರಶ್ನೆ" ಸೇರಿಸುವ ಫಂಕ್ಷನ್
+// ೧. Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) ಬಾಕ್ಸ್ನಲ್ಲಿ "೪ ಅಂಕದ ಪ್ರಶ್ನೆ" ಸೇರಿಸುವ ಫಂಕ್ಷನ್
 function injectFourMarksOptionInStep3() {
   const step3Container = document.querySelector('#view-generator .card-modern:nth-of-type(2) .grid') || 
                          document.querySelector('#view-generator .grid-cols-2.sm\\:grid-cols-3') ||
@@ -12427,7 +12427,7 @@ function injectFourMarksOptionInStep3() {
   }
 }
 
-// ೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್‌ನಲ್ಲಿ ೪ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಪೂರ್ಣ ಅಳವಡಿಕೆ
+// ೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್ನಲ್ಲಿ ೪ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಪೂರ್ಣ ಅಳವಡಿಕೆ
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ';
   const grade = document.getElementById('cfg-class')?.value || '6';
@@ -12945,7 +12945,7 @@ window.renderCustomQuestionList = function() {
         ` : ''}
       </div>
 
-      <!-- ೨. ೪ ಡ್ರಾಪ್‌ಡೌನ್ ಫಿಲ್ಟರ್‌ಗಳು -->
+      <!-- ೨. ೪ ಡ್ರಾಪ್ಡೌನ್ ಫಿಲ್ಟರ್ಗಳು -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div>
           <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ:</label>
@@ -13075,7 +13075,7 @@ function preserveSearchFocus() {
    EDIT MODAL WITH QUESTION TYPE (ಪ್ರಶ್ನೆ ಪ್ರಕಾರ) SELECTOR & INSTANT RE-CLASSIFIER
    ========================================================================== */
 
-// ೧. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ ಮಾಡಲ್ (ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಡ್ರಾಪ್‌ಡೌನ್ ಸಹಿತ)
+// ೧. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ ಮಾಡಲ್ (ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಡ್ರಾಪ್ಡೌನ್ ಸಹಿತ)
 window.openAdminQuestionEditModal = function(qId) {
   const q = (appState.qbank || []).find(item => item.id === qId);
   if (!q) return;
@@ -13205,7 +13205,7 @@ window.closeAdminQuestionEditModal = function() {
   document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
 };
 
-// ೨. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಎಡಿಟ್ ಆದ ಪ್ರಶ್ನೆಯನ್ನು ಸೇವ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೨. ಅಡ್ಮಿನ್ನಲ್ಲಿ ಎಡಿಟ್ ಆದ ಪ್ರಶ್ನೆಯನ್ನು ಸೇವ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.saveAdminQuestionEdit = function(e, qId) {
   e.preventDefault();
   const q = (appState.qbank || []).find(item => item.id === qId);
@@ -13447,7 +13447,7 @@ function parseSingleBlock(blockText, meta) {
 
   let qText = fullQ;
 
-  // ಇನ್‌ಲೈನ್ ಆಪ್ಷನ್‌ಗಳ ಹುಡುಕಾಟ
+  // ಇನ್ಲೈನ್ ಆಪ್ಷನ್ಗಳ ಹುಡುಕಾಟ
   if (fullQ.includes('A)') && fullQ.includes('B)')) {
     const optIdx = fullQ.search(/(?:^|\s|\?)[A|a|ಅ|ಎ]\)\s*/);
     if (optIdx !== -1) {
@@ -13581,7 +13581,7 @@ window.analyzeAndPreviewBulkText = function() {
    PERFECT KANNADA GRAMMAR SUITE (SANDHI, SAMASA, OPPOSITES, GENDER & NUMBER)
    ========================================================================== */
 
-// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಮುಖ್ಯ ಡ್ರಾಪ್‌ಡೌನ್ ಪಟ್ಟಿ (ವ್ಯಾಕರಣ ಭಾಗ ಒಳಗೊಂಡಂತೆ)
+// ೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಮುಖ್ಯ ಡ್ರಾಪ್ಡೌನ್ ಪಟ್ಟಿ (ವ್ಯಾಕರಣ ಭಾಗ ಒಳಗೊಂಡಂತೆ)
 const KANNADA_MASTER_QUESTION_TYPES_HTML = `
   <option value="mcq">೧. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆ (MCQ)</option>
   <option value="blanks">೨. ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ (Fill in Blanks)</option>
@@ -13594,7 +13594,7 @@ const KANNADA_MASTER_QUESTION_TYPES_HTML = `
   <option value="map_diagram">೯. ಚಿತ್ರ / ನಕ್ಷೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಶ್ನೆ (Diagram/Map)</option>
 `;
 
-// ೨. ವ್ಯಾಕರಣ ಸಬ್-ಆಯ್ಕೆ ಬದಲಾದಾಗ ಪ್ಲೇಸ್‌ಹೋಲ್ಡರ್ ಮತ್ತು ಉದಾಹರಣೆ ಬದಲಿಸುವುದು
+// ೨. ವ್ಯಾಕರಣ ಸಬ್-ಆಯ್ಕೆ ಬದಲಾದಾಗ ಪ್ಲೇಸ್ಹೋಲ್ಡರ್ ಮತ್ತು ಉದಾಹರಣೆ ಬದಲಿಸುವುದು
 window.updateGrammarSubtypeFields = function(subType) {
   const qInput = document.getElementById('qadd-text');
   const ansInput = document.getElementById('qadd-ans');
@@ -13627,14 +13627,14 @@ window.updateGrammarSubtypeFields = function(subType) {
   }
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಬದಲಾದಾಗ ಬರುವ ಡೈನಾಮಿಕ್ ಫಾರ್ಮ್ ಫೀಲ್ಡ್‌ಗಳು
+// ೩. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಬದಲಾದಾಗ ಬರುವ ಡೈನಾಮಿಕ್ ಫಾರ್ಮ್ ಫೀಲ್ಡ್ಗಳು
 window.handleQuestionTypeChangeInAdmin = function(type) {
   const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
   if (!formFieldsBox) return;
 
   uploadedImageBase64 = '';
 
-  // 🌟 ೪. ವ್ಯಾಕರಣ ಭಾಗ (ಸಂಪೂರ್ಣ ಸಬ್-ಡ್ರಾಪ್‌ಡೌನ್ ಸಹಿತ)
+  // 🌟 ೪. ವ್ಯಾಕರಣ ಭಾಗ (ಸಂಪೂರ್ಣ ಸಬ್-ಡ್ರಾಪ್ಡೌನ್ ಸಹಿತ)
   if (type === 'grammar') {
     formFieldsBox.innerHTML = `
       <div class="space-y-3 p-4 bg-indigo-50/60 border-2 border-indigo-200 rounded-2xl">
@@ -13759,7 +13759,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
     formFieldsBox.innerHTML = `
       <div><label class="block font-bold text-slate-700 text-xs mb-1">ಪ್ರಶ್ನೆ ಶೀರ್ಷಿಕೆ *</label><input type="text" id="qadd-text" required placeholder="e.g. ಚಿತ್ರ/ನಕ್ಷೆ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ:" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-semibold text-xs" /></div>
       <div>
-        <label class="block font-bold text-slate-700 text-xs mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
+        <label class="block font-bold text-slate-700 text-xs mb-1">ಚಿತ್ರ / ನಕ್ಷೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Image Upload - Optional)</label>
         <input type="file" id="qadd-image-file" accept="image/*" class="w-full p-2 bg-slate-50 border rounded-xl text-xs" onchange="previewQuestionImageUpload(this)" />
       </div>
       <div><label class="block font-bold text-slate-700 text-xs mb-1">ಸ್ಥಳಗಳು / ಭಾಗಗಳು</label><input type="text" id="qadd-items" placeholder="e.g. 1) ಭಾಗ ಎ, 2) ಭಾಗ ಬಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-semibold" /></div>
@@ -13768,7 +13768,7 @@ window.handleQuestionTypeChangeInAdmin = function(type) {
   }
 };
 
-// ೪. ಅಡ್ಮಿನ್ ಫಾರ್ಮ್‌ನಲ್ಲಿ ಡ್ರಾಪ್‌ಡೌನ್ ಅಪ್‌ಡೇಟ್ ಖಚಿತಪಡಿಸುವುದು
+// ೪. ಅಡ್ಮಿನ್ ಫಾರ್ಮ್ನಲ್ಲಿ ಡ್ರಾಪ್ಡೌನ್ ಅಪ್ಡೇಟ್ ಖಚಿತಪಡಿಸುವುದು
 function ensureGrammarInAdminDropdown() {
   const qTypeSelect = document.getElementById('qadd-type');
   if (qTypeSelect && !qTypeSelect.querySelector('option[value="grammar"]')) {
@@ -13784,7 +13784,7 @@ setInterval(ensureGrammarInAdminDropdown, 1000);
    DASHBOARD INTEGRATED LOGIN & REGISTRATION PORTAL ENGINE
    ========================================================================== */
 
-// ೧. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ ಲಾಗಿನ್ ಮತ್ತು ನೋಂದಣಿ ವಿಭಾಗಗಳನ್ನು ಜೋಡಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+// ೧. ಡ್ಯಾಶ್ಬೋರ್ಡ್ನಲ್ಲಿ ಲಾಗಿನ್ ಮತ್ತು ನೋಂದಣಿ ವಿಭಾಗಗಳನ್ನು ಜೋಡಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
 function injectDirectLoginAndRegistrationIntoDashboard() {
   const dashView = document.getElementById('view-dashboard');
   if (!dashView || document.getElementById('dash-integrated-auth-box')) return;
@@ -13803,10 +13803,10 @@ function injectDirectLoginAndRegistrationIntoDashboard() {
       <p class="text-xs text-slate-500 font-semibold">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಲು ಲಾಗಿನ್ ಆಗಿ ಅಥವಾ ಹೊಸಬರಾಗಿದ್ದರೆ ಕೆಳಗೆ ಉಚಿತವಾಗಿ ನೋಂದಾಯಿಸಿ</p>
     </div>
 
-    <!-- ೧ & ೨: ಶಿಕ್ಷಕರು & ಶಾಲಾ ಲಾಗಿನ್ ಕಾರ್ಡ್‌ಗಳು (Side-by-Side) -->
+    <!-- ೧ & ೨: ಶಿಕ್ಷಕರು & ಶಾಲಾ ಲಾಗಿನ್ ಕಾರ್ಡ್ಗಳು (Side-by-Side) -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       
-      <!-- CARD 1: 👨‍🏫 TEACHER LOGIN -->
+      <!-- CARD 1: 👨🏫 TEACHER LOGIN -->
       <div class="card-modern p-6 sm:p-7 space-y-4 border-2 border-emerald-500/50 shadow-md relative bg-white">
         <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
           <div class="p-3 bg-emerald-100 text-emerald-800 rounded-2xl text-xl font-bold shadow-sm">
@@ -13951,7 +13951,7 @@ function injectDirectLoginAndRegistrationIntoDashboard() {
   dashView.appendChild(authContainer);
 }
 
-// ೨. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲಾಗಿನ್ & ರಿಜಿಸ್ಟ್ರೇಷನ್ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಆಗುವುದು
+// ೨. ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಲಾಗಿನ್ & ರಿಜಿಸ್ಟ್ರೇಷನ್ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೋಡ್ ಆಗುವುದು
 injectDirectLoginAndRegistrationIntoDashboard();
 setInterval(injectDirectLoginAndRegistrationIntoDashboard, 1000);
 
@@ -13972,7 +13972,7 @@ function isLanguageSubjectCheck(subj) {
          s.includes('ದ್ವಿತೀಯ ಭಾಷೆ') || s.includes('ತೃತೀಯ ಭಾಷೆ');
 }
 
-// ೨. ವಿಷಯ ಬದಲಾದಾಗ Step 3 ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಡೈನಾಮಿಕ್ ಆಗಿ ಅಪ್ಡೇಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೨. ವಿಷಯ ಬದಲಾದಾಗ Step 3 ಚೆಕ್ಬಾಕ್ಸ್ಗಳನ್ನು ಡೈನಾಮಿಕ್ ಆಗಿ ಅಪ್ಡೇಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 function updateStep3CheckboxesDynamically() {
   const subjectSelect = document.getElementById('cfg-subject');
   const subject = subjectSelect ? subjectSelect.value : '';
@@ -14051,7 +14051,7 @@ setInterval(updateStep3CheckboxesDynamically, 1200);
    COMPACT DASHBOARD AUTH BUTTONS & POPUP REGISTRATION / LOGIN SUITE
    ========================================================================== */
 
-// ೧. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಲ್ಲಿ ಕಾಂಪ್ಯಾಕ್ಟ್ ಬಟನ್ ಬಾರ್ ಜೋಡಣೆ
+// ೧. ಡ್ಯಾಶ್ಬೋರ್ಡ್ನಲ್ಲಿ ಕಾಂಪ್ಯಾಕ್ಟ್ ಬಟನ್ ಬಾರ್ ಜೋಡಣೆ
 function injectCompactDashboardButtons() {
   const dashView = document.getElementById('view-dashboard');
   if (!dashView) return;
@@ -14086,7 +14086,7 @@ function injectCompactDashboardButtons() {
     </button>
   `;
 
-  // ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನ Quick Action Cards ಮೇಲೆ ಕೂರಿಸುವುದು
+  // ಡ್ಯಾಶ್ಬೋರ್ಡ್ನ Quick Action Cards ಮೇಲೆ ಕೂರಿಸುವುದು
   const quickCards = dashView.querySelector('.grid.grid-cols-1');
   if (quickCards) {
     dashView.insertBefore(authBar, quickCards);
@@ -14095,7 +14095,7 @@ function injectCompactDashboardButtons() {
   }
 }
 
-// ೨. 👨‍🏫 TEACHER LOGIN & REGISTRATION POPUP MODAL
+// ೨. 👨🏫 TEACHER LOGIN & REGISTRATION POPUP MODAL
 window.openTeacherAuthModal = function() {
   let modal = document.getElementById('teacher-auth-modal');
   if (!modal) {
@@ -14284,7 +14284,7 @@ window.openSchoolAuthModal = function() {
   modal.classList.remove('hidden');
 };
 
-// ಟ್ಯಾಬ್ ಸ್ವಿಚರ್‌ಗಳು
+// ಟ್ಯಾಬ್ ಸ್ವಿಚರ್ಗಳು
 window.switchTeacherModalTab = function(tab) {
   const formLogin = document.getElementById('form-tch-modal-login');
   const formReg = document.getElementById('form-tch-modal-reg');
@@ -14323,7 +14323,7 @@ window.switchSchoolModalTab = function(tab) {
   }
 };
 
-// ೪. ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್ & ನೋಂದಣಿ ಸಬ್ಮಿಶನ್ ಹ್ಯಾಂಡ್ಲರ್‌ಗಳು
+// ೪. ಪಾಪ್ಅಪ್ ಲಾಗಿನ್ & ನೋಂದಣಿ ಸಬ್ಮಿಶನ್ ಹ್ಯಾಂಡ್ಲರ್ಗಳು
 window.handleTeacherModalLogin = function(e) {
   e.preventDefault();
   const phone = document.getElementById('modal-tch-phone').value.trim().replace(/[^0-9]/g, '');
@@ -14432,7 +14432,7 @@ setInterval(injectCompactDashboardButtons, 1200);
    PERMANENT BLINKING FIX: CLEAN SINGLE-EVENT CONTROLLER (ZERO GLITCHES)
    ========================================================================== */
 
-// ೧. ಬ್ರೌಸರ್‌ನಲ್ಲಿ ರನ್ ಆಗುತ್ತಿರುವ ಎಲ್ಲಾ ಹಳೆಯ ಬ್ಲಿಂಕಿಂಗ್ ಟೈಮರ್‌ಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ನಿಲ್ಲಿಸುವುದು
+// ೧. ಬ್ರೌಸರ್ನಲ್ಲಿ ರನ್ ಆಗುತ್ತಿರುವ ಎಲ್ಲಾ ಹಳೆಯ ಬ್ಲಿಂಕಿಂಗ್ ಟೈಮರ್ಗಳನ್ನು ಶಾಶ್ವತವಾಗಿ ನಿಲ್ಲಿಸುವುದು
 (function killAllBlinkingIntervals() {
   // ಎಲ್ಲಾ ಟೈಮರ್ ಐಡಿಗಳನ್ನು ಕ್ಲಿಯರ್ ಮಾಡುವುದು
   let highestTimeoutId = setTimeout(";");
@@ -14442,12 +14442,12 @@ setInterval(injectCompactDashboardButtons, 1200);
   }
 })();
 
-// ೨. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್‌ಗಳನ್ನು ಕೇವಲ ಒಂದೇ ಬಾರಿ ಸ್ಥಿರವಾಗಿ ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೨. ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಬಟನ್ಗಳನ್ನು ಕೇವಲ ಒಂದೇ ಬಾರಿ ಸ್ಥಿರವಾಗಿ ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 function injectStableDashboardButtons() {
   const dashView = document.getElementById('view-dashboard');
   if (!dashView) return;
 
-  // ಹಳೆಯ ಬಾಕ್ಸ್‌ಗಳನ್ನು ತೆಗೆಯುವುದು
+  // ಹಳೆಯ ಬಾಕ್ಸ್ಗಳನ್ನು ತೆಗೆಯುವುದು
   document.getElementById('dash-integrated-auth-box')?.remove();
 
   if (document.getElementById('dash-compact-auth-bar')) return;
@@ -14481,7 +14481,7 @@ function injectStableDashboardButtons() {
   }
 }
 
-// ೩. Step 3 ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳನ್ನು ಕೇವಲ ವಿಷಯ ಬದಲಾದಾಗ ಮಾತ್ರ ಲೋಡ್ ಮಾಡುವ ಸ್ಥಿರ ಫಂಕ್ಷನ್
+// ೩. Step 3 ಚೆಕ್ಬಾಕ್ಸ್ಗಳನ್ನು ಕೇವಲ ವಿಷಯ ಬದಲಾದಾಗ ಮಾತ್ರ ಲೋಡ್ ಮಾಡುವ ಸ್ಥಿರ ಫಂಕ್ಷನ್
 function updateStep3CheckboxesDynamically() {
   const subjectSelect = document.getElementById('cfg-subject');
   const subject = subjectSelect ? subjectSelect.value : '';
@@ -14562,7 +14562,7 @@ function updateTopNavbarClean() {
   // "ಪ್ರೊಫೈಲ್ ಲಾಗಿನ್" ಬಟನ್ ತೆಗೆದುಹಾಕುವುದು
   document.getElementById('nav-btn-profile')?.remove();
 
-  // ಹೆಡರ್ ಬಟನ್‌ಗಳ ಹೊಸ ಕ್ಲೀನ್ ವಿನ್ಯಾಸ
+  // ಹೆಡರ್ ಬಟನ್ಗಳ ಹೊಸ ಕ್ಲೀನ್ ವಿನ್ಯಾಸ
   navContainer.innerHTML = `
     <!-- ೧. AI ಇಂಪೋರ್ಟ್ -->
     <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
@@ -14598,7 +14598,7 @@ function updateTopNavbarClean() {
 
 // ೨. ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ (ಪ್ರಶ್ನೆ ಭಂಡಾರ ಮತ್ತು ಅಡ್ಮಿನ್ ನೇರ ಪ್ರವೇಶ)
 window.navigateToSection = function(section) {
-  // ಎಲ್ಲಾ ವೀವ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
+  // ಎಲ್ಲಾ ವೀವ್ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
   ['dashboard', 'profile', 'generator', 'qbank', 'admin'].forEach(v => {
     document.getElementById(`view-${v}`)?.classList.add('hidden');
     const btn = document.getElementById(`nav-btn-${v}`);
@@ -14760,13 +14760,13 @@ updateTopNavbarClean();
 
 // ೧. ಮಾಸ್ಟರ್ ನ್ಯಾವಿಗೇಷನ್ ಕಂಟ್ರೋಲರ್ (Admin ಮತ್ತು ಪ್ರಶ್ನೆ ಭಂಡಾರ ಎರಡೂ ಪ್ರತ್ಯೇಕವಾಗಿ ಕೆಲಸ ಮಾಡುತ್ತವೆ)
 window.navigateToSection = function(section) {
-  // A. ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್‌ವರ್ಡ್ ಚೆಕ್ ಮಾಡುವುದು
+  // A. ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್ವರ್ಡ್ ಚೆಕ್ ಮಾಡುವುದು
   if (section === 'admin' && !isAdminLoggedIn) {
     showAdminLoginModal();
     return;
   }
 
-  // B. ಎಲ್ಲಾ ವೀವ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
+  // B. ಎಲ್ಲಾ ವೀವ್ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
   ['dashboard', 'profile', 'generator', 'qbank', 'admin'].forEach(v => {
     document.getElementById(`view-${v}`)?.classList.add('hidden');
     const btn = document.getElementById(`nav-btn-${v}`);
@@ -14935,7 +14935,7 @@ window.renderAdminMasterManagementHTML = function() {
   renderRegisteredSchools();
 };
 
-// ೩. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದ ತಕ್ಷಣ ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ಹೋಗುವಂತೆ ಮಾಡುವುದು
+// ೩. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದ ತಕ್ಷಣ ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ಗೆ ಹೋಗುವಂತೆ ಮಾಡುವುದು
 window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
   const u = document.getElementById('admin-login-user').value.trim();
@@ -14980,7 +14980,7 @@ function generateGuaranteedUniqueKey(prefix) {
   return uniqueKey;
 }
 
-// ೨. Firebase ಕ್ಲೌಡ್‌ನಿಂದ ಎಲ್ಲಾ ಶಿಕ್ಷಕರು ಮತ್ತು ಶಾಲೆಗಳ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
+// ೨. Firebase ಕ್ಲೌಡ್ನಿಂದ ಎಲ್ಲಾ ಶಿಕ್ಷಕರು ಮತ್ತು ಶಾಲೆಗಳ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
 async function fetchAuthDataFromFirebase() {
   try {
     const [tRes, sRes] = await Promise.all([
@@ -15009,7 +15009,7 @@ async function fetchAuthDataFromFirebase() {
   }
 }
 
-// ೩. Firebase ಕ್ಲೌಡ್‌ಗೆ ಶಿಕ್ಷಕರು & ಶಾಲಾ ಡೇಟಾ ಸೇವ್ ಮಾಡುವುದು
+// ೩. Firebase ಕ್ಲೌಡ್ಗೆ ಶಿಕ್ಷಕರು & ಶಾಲಾ ಡೇಟಾ ಸೇವ್ ಮಾಡುವುದು
 async function pushAuthDataToFirebase() {
   try {
     await Promise.all([
@@ -15024,7 +15024,7 @@ async function pushAuthDataToFirebase() {
         body: JSON.stringify(appState.schools)
       })
     ]);
-    showToast('🔥 ಎಲ್ಲಾ Keys Firebase ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಲೈವ್ ಆಗಿವೆ!', 'success');
+    showToast('🔥 ಎಲ್ಲಾ Keys Firebase ಕ್ಲೌಡ್ನಲ್ಲಿ ಲೈವ್ ಆಗಿವೆ!', 'success');
   } catch (err) {
     console.warn("Firebase Auth Push note:", err);
   }
@@ -15133,7 +15133,7 @@ window.handleSchoolRegister = function(e) {
   alert(`🎉 ಶಾಲೆ ${name} ನೋಂದಣಿಯಾಗಿದೆ!\n\nಶಾಲಾ Unique Master Key: ${accessKey}\n\nಕೆಳಗಿನ ಪಟ್ಟಿಯಲ್ಲಿರುವ 'WhatsApp Key ಕಳುಹಿಸಿ' ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ HM ಗೆ ಕಳುಹಿಸಬಹುದು.`);
 };
 
-// ೮. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಶಿಕ್ಷಕರ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
+// ೮. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ನಲ್ಲಿ ಶಿಕ್ಷಕರ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
 window.renderRegisteredTeachers = function() {
   const container = document.getElementById('list-registered-teachers');
   const countEl = document.getElementById('count-teachers');
@@ -15165,7 +15165,7 @@ window.renderRegisteredTeachers = function() {
   `).join('');
 };
 
-// ೯. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಶಾಲೆಗಳ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
+// ೯. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ನಲ್ಲಿ ಶಾಲೆಗಳ ಪಟ್ಟಿ ಮತ್ತು ೧-ಕ್ಲಿಕ್ WhatsApp Key ಕಳುಹಿಸುವ ಬಟನ್
 window.renderRegisteredSchools = function() {
   const container = document.getElementById('list-registered-schools');
   const countEl = document.getElementById('count-schools');
@@ -15196,7 +15196,7 @@ window.renderRegisteredSchools = function() {
   `).join('');
 };
 
-// ೧೦. ಅಡ್ಮಿನ್‌ನಿಂದ ಶಿಕ್ಷಕರಿಗೆ/ಶಾಲೆಗೆ ನೇರ WhatsApp Key ರವಾನೆ
+// ೧೦. ಅಡ್ಮಿನ್ನಿಂದ ಶಿಕ್ಷಕರಿಗೆ/ಶಾಲೆಗೆ ನೇರ WhatsApp Key ರವಾನೆ
 window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
   const cleanPhone = phone.replace(/[^0-9]/g, '');
   const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
@@ -15204,7 +15204,7 @@ window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
               `ನಿಮ್ಮ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
               `🔑 *ನಿಮ್ಮ Teacher Access Key:* *${key}*\n` +
               `📱 *ಲಾಗಿನ್ ಮೊಬೈಲ್:* ${cleanPhone}\n\n` +
-              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಜನರೇಟ್ ಮಾಡಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಜನರೇಟ್ ಮಾಡಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
 
   window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
 };
@@ -15241,14 +15241,14 @@ window.deleteSchool = function(id) {
   }
 };
 
-// ಪುಟ ಆರಂಭವಾದಾಗ Firebase ನಿಂದ ಅಥೆಂಟಿಕೇಶನ್ ಡೌನ್‌ಲೋಡ್
+// ಪುಟ ಆರಂಭವಾದಾಗ Firebase ನಿಂದ ಅಥೆಂಟಿಕೇಶನ್ ಡೌನ್ಲೋಡ್
 fetchAuthDataFromFirebase();
 
     /* ==========================================================================
    STRICT DEMO LIMIT ENFORCER & PROMINENT A4 PRINT WATERMARK ENGINE
    ========================================================================== */
 
-// ೧. ವಾಟರ್‌ಮಾರ್ಕ್ CSS ಸ್ಟೈಲ್ (ಸ್ಕ್ರೀನ್ ಹಾಗೂ ಪ್ರಿಂಟ್ / PDF ಎರಡರಲ್ಲೂ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣಲು)
+// ೧. ವಾಟರ್ಮಾರ್ಕ್ CSS ಸ್ಟೈಲ್ (ಸ್ಕ್ರೀನ್ ಹಾಗೂ ಪ್ರಿಂಟ್ / PDF ಎರಡರಲ್ಲೂ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣಲು)
 (function injectWatermarkStyles() {
   const styleId = 'strict-demo-watermark-style';
   let st = document.getElementById(styleId);
@@ -15296,11 +15296,11 @@ fetchAuthDataFromFirebase();
   `;
 })();
 
-// ೨. ವಾಟರ್‌ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೨. ವಾಟರ್ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಫಂಕ್ಷನ್
 function applyDemoWatermarkToOutput() {
   document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
 
-  // ಕೇವಲ ಡೆಮೋ ಯೂಸರ್‌ಗೆ ಮಾತ್ರ ವಾಟರ್‌ಮಾರ್ಕ್
+  // ಕೇವಲ ಡೆಮೋ ಯೂಸರ್ಗೆ ಮಾತ್ರ ವಾಟರ್ಮಾರ್ಕ್
   if (appState.currentUserType === 'demo') {
     const watermarkHtml = `
       <div class="demo-watermark-overlay">
@@ -15318,7 +15318,7 @@ function applyDemoWatermarkToOutput() {
   }
 }
 
-// ೩. ಡೆಮೋ ಮಿತಿ ಮುಕ್ತಾಯದ ಪಾಪ್‌ಅಪ್ ವಿಂಡೋ
+// ೩. ಡೆಮೋ ಮಿತಿ ಮುಕ್ತಾಯದ ಪಾಪ್ಅಪ್ ವಿಂಡೋ
 function showDemoLimitReachedModal() {
   let modal = document.getElementById('demo-limit-modal');
   if (!modal) {
@@ -15336,12 +15336,12 @@ function showDemoLimitReachedModal() {
       <div class="space-y-1">
         <h3 class="font-black text-lg text-slate-900">⭐ ಡೆಮೋ ಪರೀಕ್ಷಾ ಮಿತಿ ಮುಕ್ತಾಯವಾಗಿದೆ!</h3>
         <p class="text-xs text-slate-600 leading-relaxed font-semibold">
-          ನೀವು ಡೆಮೋ ಮೋಡ್‌ನ ಉಚಿತ ಪರೀಕ್ಷಾ ಮಿತಿಯನ್ನು ತಲುಪಿದ್ದೀರಿ. ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಲು ನಿಮ್ಮ ಅಧಿಕೃತ <b>Access Key</b> ಪಡೆಯಿರಿ.
+          ನೀವು ಡೆಮೋ ಮೋಡ್ನ ಉಚಿತ ಪರೀಕ್ಷಾ ಮಿತಿಯನ್ನು ತಲುಪಿದ್ದೀರಿ. ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಲು ನಿಮ್ಮ ಅಧಿಕೃತ <b>Access Key</b> ಪಡೆಯಿರಿ.
         </p>
       </div>
 
       <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-900 font-bold text-left space-y-1 text-[11px]">
-        <div>• ವಾಟರ್‌ಮಾರ್ಕ್ ಸಂಪೂರ್ಣವಾಗಿ ರದ್ದು.</div>
+        <div>• ವಾಟರ್ಮಾರ್ಕ್ ಸಂಪೂರ್ಣವಾಗಿ ರದ್ದು.</div>
         <div>• ಎಲ್ಲಾ ತರಗತಿ & ವಿಷಯಗಳ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳು.</div>
         <div>• 3D ನೀಲನಕ್ಷೆ ಮತ್ತು ನಿಖರ ಕೀ ಉತ್ತರಗಳು.</div>
       </div>
@@ -15362,12 +15362,12 @@ function showDemoLimitReachedModal() {
 
 window.requestKeyFromDemoModal = function() {
   const msg = `*With You QP Generator - ಡೆಮೋ ಮಿತಿ ಮುಕ್ತಾಯ / ಹೊಸ Key ಕೋರಿಕೆ*\n\n` +
-              `ನಮಸ್ಕಾರ ಸರ್, ನಾನು ಡೆಮೋ ಆವೃತ್ತಿ ಪರೀಕ್ಷಿಸಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
+              `ನಮಸ್ಕಾರ ಸರ್, ನಾನು ಡೆಮೋ ಆವೃತ್ತಿ ಪರೀಕ್ಷಿಸಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
   window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
   document.getElementById('demo-limit-modal')?.classList.add('hidden');
 };
 
-// ೪. ಜನರೇಟ್ ಫಂಕ್ಷನ್‌ನಲ್ಲಿ ಡೆಮೋ ಕೌಂಟರ್ ಮತ್ತು ವಾಟರ್‌ಮಾರ್ಕ್ ಪರಿಶೀಲನೆ
+// ೪. ಜನರೇಟ್ ಫಂಕ್ಷನ್ನಲ್ಲಿ ಡೆಮೋ ಕೌಂಟರ್ ಮತ್ತು ವಾಟರ್ಮಾರ್ಕ್ ಪರಿಶೀಲನೆ
 const originalGenerateExamPackageMaster = window.generateExamPackageFromBank;
 
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
@@ -15386,11 +15386,11 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     originalGenerateExamPackageMaster();
   }
 
-  // ವಾಟರ್‌ಮಾರ್ಕ್ ಅನ್ವಯ
+  // ವಾಟರ್ಮಾರ್ಕ್ ಅನ್ವಯ
   applyDemoWatermarkToOutput();
 };
 
-// ೫. ಎಡಿಟ್ ನಂತರವೂ ವಾಟರ್‌ಮಾರ್ಕ್ ಉಳಿಯುವಂತೆ ಮಾಡುವುದು
+// ೫. ಎಡಿಟ್ ನಂತರವೂ ವಾಟರ್ಮಾರ್ಕ್ ಉಳಿಯುವಂತೆ ಮಾಡುವುದು
 const originalRenderCurrentActiveQuestions = window.renderCurrentActiveQuestionsInPaper;
 if (typeof originalRenderCurrentActiveQuestions === 'function') {
   window.renderCurrentActiveQuestionsInPaper = function() {
@@ -15403,7 +15403,7 @@ if (typeof originalRenderCurrentActiveQuestions === 'function') {
    DEAD-CENTER WATERMARK & STRICT 1-TIME FIXED FROZEN DEMO MODE
    ========================================================================== */
 
-// ೧. ವಾಟರ್‌ಮಾರ್ಕ್ ಪೇಪರ್‌ನ ನಿಖರ ಮಧ್ಯಭಾಗದಲ್ಲಿ (Center) ಕೂರುವಂತೆ ಮಾಡುವ CSS
+// ೧. ವಾಟರ್ಮಾರ್ಕ್ ಪೇಪರ್ನ ನಿಖರ ಮಧ್ಯಭಾಗದಲ್ಲಿ (Center) ಕೂರುವಂತೆ ಮಾಡುವ CSS
 (function injectCenteredWatermarkStyles() {
   const styleId = 'dead-center-watermark-style';
   let st = document.getElementById(styleId);
@@ -15459,7 +15459,7 @@ if (typeof originalRenderCurrentActiveQuestions === 'function') {
   `;
 })();
 
-// ೨. ವಾಟರ್‌ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಸೆಂಟರ್ಡ್ ಫಂಕ್ಷನ್
+// ೨. ವಾಟರ್ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಸೆಂಟರ್ಡ್ ಫಂಕ್ಷನ್
 function applyDemoWatermarkToOutput() {
   document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
 
@@ -15479,7 +15479,7 @@ function applyDemoWatermarkToOutput() {
   }
 }
 
-// ೩. ಡೆಮೋ ಮಿತಿ ಪಾಪ್‌ಅಪ್ (೧ ಬಾರಿ ಮುಗಿದ ತಕ್ಷಣ ಲಾಕ್)
+// ೩. ಡೆಮೋ ಮಿತಿ ಪಾಪ್ಅಪ್ (೧ ಬಾರಿ ಮುಗಿದ ತಕ್ಷಣ ಲಾಕ್)
 function showDemoLimitReachedModal() {
   let modal = document.getElementById('demo-limit-modal');
   if (!modal) {
@@ -15497,12 +15497,12 @@ function showDemoLimitReachedModal() {
       <div class="space-y-1">
         <h3 class="font-black text-lg text-slate-900">⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮುಕ್ತಾಯವಾಗಿದೆ!</h3>
         <p class="text-xs text-slate-600 leading-relaxed font-semibold">
-          ನೀವು ಡೆಮೋ ಮೋಡ್‌ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ, ನಿಮ್ಮ ಶಾಲೆಯ ಹೆಸರಿನ, ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
+          ನೀವು ಡೆಮೋ ಮೋಡ್ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ, ನಿಮ್ಮ ಶಾಲೆಯ ಹೆಸರಿನ, ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
         </p>
       </div>
 
       <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-900 font-bold text-left space-y-1 text-[11px]">
-        <div>• ವಾಟರ್‌ಮಾರ್ಕ್ ಸಂಪೂರ್ಣವಾಗಿ ರದ್ದು.</div>
+        <div>• ವಾಟರ್ಮಾರ್ಕ್ ಸಂಪೂರ್ಣವಾಗಿ ರದ್ದು.</div>
         <div>• ಪ್ರತಿ ಬಾರಿಯೂ ಹೊಸ ಹೊಸ ಯಾದೃಚ್ಛಿಕ ಪ್ರಶ್ನೆಗಳು.</div>
         <div>• ಎಲ್ಲಾ ತರಗತಿ & ವಿಷಯಗಳ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳು.</div>
       </div>
@@ -15521,7 +15521,7 @@ function showDemoLimitReachedModal() {
   modal.classList.remove('hidden');
 }
 
-// ೪. ಮಾಸ್ಟರ್ ಜನರೇಟರ್: ಡೆಮೋ ಮೋಡ್‌ನಲ್ಲಿ ಕೇವಲ ೧ ಬಾರಿ & ಸ್ಥಿರ ಪ್ರಶ್ನೆಗಳು (Frozen Same Paper)
+// ೪. ಮಾಸ್ಟರ್ ಜನರೇಟರ್: ಡೆಮೋ ಮೋಡ್ನಲ್ಲಿ ಕೇವಲ ೧ ಬಾರಿ & ಸ್ಥಿರ ಪ್ರಶ್ನೆಗಳು (Frozen Same Paper)
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const isDemoUser = (appState.currentUserType === 'demo');
 
@@ -15569,7 +15569,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     return;
   }
 
-  // 🌟 ಡೆಮೋ ಮೋಡ್‌ನಲ್ಲಿ ಸ್ಥಿರ ಪ್ರಶ್ನೆಗಳು (Deterministic Sort - Same Paper Always), ಪ್ರೋ ಮೋಡ್‌ನಲ್ಲಿ ರಾಂಡಮ್ ಷಫಲ್
+  // 🌟 ಡೆಮೋ ಮೋಡ್ನಲ್ಲಿ ಸ್ಥಿರ ಪ್ರಶ್ನೆಗಳು (Deterministic Sort - Same Paper Always), ಪ್ರೋ ಮೋಡ್ನಲ್ಲಿ ರಾಂಡಮ್ ಷಫಲ್
   function getPreparedPool(array) {
     if (isDemoUser) {
       // ಡೆಮೋ ಮೋಡ್: ಪ್ರತಿ ಬಾರಿಯೂ ಬದಲಾಗದಂತೆ ID ಆಧಾರದಲ್ಲಿ ಸ್ಥಿರವಾಗಿರಿಸುವುದು
@@ -15958,7 +15958,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
 
-  // 🌟 ಪರ್ಫೆಕ್ಟ್ ಸೆಂಟರ್ಡ್ ವಾಟರ್‌ಮಾರ್ಕ್ ಅನ್ವಯ
+  // 🌟 ಪರ್ಫೆಕ್ಟ್ ಸೆಂಟರ್ಡ್ ವಾಟರ್ಮಾರ್ಕ್ ಅನ್ವಯ
   applyDemoWatermarkToOutput();
 
   const outSec = document.getElementById('output-section');
@@ -15977,7 +15977,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
 (function initUnbreakableMasterSuite() {
 
-  // ೧. ಎಲ್ಲಾ ಹಳೆಯ ಗ್ಲಿಚ್ ಟೈಮರ್‌ಗಳನ್ನು ರದ್ದುಪಡಿಸುವುದು
+  // ೧. ಎಲ್ಲಾ ಹಳೆಯ ಗ್ಲಿಚ್ ಟೈಮರ್ಗಳನ್ನು ರದ್ದುಪಡಿಸುವುದು
   var highestId = setTimeout(";");
   for (var i = 0; i < highestId; i++) {
     clearTimeout(i);
@@ -16130,7 +16130,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ೫. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್ ಇಂಜೆಕ್ಷನ್
+  // ೫. ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಬಟನ್ ಇಂಜೆಕ್ಷನ್
   window.injectCompactDashboardButtons = function() {
     var dashView = document.getElementById('view-dashboard');
     if (!dashView || document.getElementById('dash-compact-auth-bar')) return;
@@ -16159,7 +16159,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     else dashView.appendChild(authBar);
   };
 
-  // ೬. ವಾಟರ್‌ಮಾರ್ಕ್ ಅಪ್ಲೈಯರ್
+  // ೬. ವಾಟರ್ಮಾರ್ಕ್ ಅಪ್ಲೈಯರ್
   window.applyDemoWatermarkToOutput = function() {
     document.querySelectorAll('.demo-watermark-overlay').forEach(function(el) { el.remove(); });
     if (appState.currentUserType === 'demo') {
@@ -16641,7 +16641,7 @@ window.launchDemoDirectly = function() {
   appState.currentUserType = 'demo';
   appState.currentUserId = 'guest';
   sessionStorage.removeItem('withyou_active_role');
-  sessionStorage.removeItem('wy_demo_gen_count'); // ೧ ಬಾರಿ ಟ್ರಯಲ್‌ಗೆ ಫ್ರೆಶ್ ಆಗಿ ಓಪನ್
+  sessionStorage.removeItem('wy_demo_gen_count'); // ೧ ಬಾರಿ ಟ್ರಯಲ್ಗೆ ಫ್ರೆಶ್ ಆಗಿ ಓಪನ್
   showToast('⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
   navigateToSection('generator');
 };
@@ -16793,7 +16793,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
       overflow: hidden !important;
     }
 
-    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್‌ಮಾರ್ಕ್ ಕಂಟೈನರ್ */
+    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್ಮಾರ್ಕ್ ಕಂಟೈನರ್ */
     .demo-watermark-overlay {
       position: absolute !important;
       top: 0 !important;
@@ -16848,7 +16848,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   `;
 })();
 
-// ವಾಟರ್‌ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ವಾಟರ್ಮಾರ್ಕ್ ಅಪ್ಲೈ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.applyDemoWatermarkToOutput = function() {
   document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
 
@@ -16896,7 +16896,7 @@ function injectExportToPDFButton() {
     pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf text-sm"></i> <span>Export to PDF</span>';
     pdfBtn.onclick = exportCurrentTabToPDF;
 
-    // ಪ್ರಿಂಟ್ ಬಟನ್‌ಗಿಂತ ಮುಂಚೆ ಕೂರಿಸುವುದು
+    // ಪ್ರಿಂಟ್ ಬಟನ್ಗಿಂತ ಮುಂಚೆ ಕೂರಿಸುವುದು
     const printBtn = btnContainer.querySelector('button[onclick*="printCurrentTab"]');
     if (printBtn) {
       btnContainer.insertBefore(pdfBtn, printBtn);
@@ -16906,7 +16906,7 @@ function injectExportToPDFButton() {
   }
 }
 
-// ೩. ಸಕ್ರಿಯವಾಗಿರುವ ಟ್ಯಾಬ್ ಅನ್ನು (ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ / ಕೀ ಉತ್ತರ / ನೀಲನಕ್ಷೆ) ನೇರವಾಗಿ PDF ಗೆ ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+// ೩. ಸಕ್ರಿಯವಾಗಿರುವ ಟ್ಯಾಬ್ ಅನ್ನು (ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ / ಕೀ ಉತ್ತರ / ನೀಲನಕ್ಷೆ) ನೇರವಾಗಿ PDF ಗೆ ಎಕ್ಸ್ಪೋರ್ಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
 window.exportCurrentTabToPDF = function() {
   let activeTabId = 'tab-content-paper';
   let fileTypeLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
@@ -16950,20 +16950,20 @@ window.exportCurrentTabToPDF = function() {
     }
   };
 
-  // ಎಡಿಟ್ ಬಟನ್‌ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಾತ್ಕಾಲಿಕವಾಗಿ ಹೈಡ್ ಮಾಡುವುದು
+  // ಎಡಿಟ್ ಬಟನ್ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಾತ್ಕಾಲಿಕವಾಗಿ ಹೈಡ್ ಮಾಡುವುದು
   document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = 'none');
 
   if (window.html2pdf) {
     html2pdf().set(opt).from(elementToExport).save().then(() => {
       document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
-      showToast('✅ PDF ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ!', 'success');
+      showToast('✅ PDF ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್ಲೋಡ್ ಆಗಿದೆ!', 'success');
     }).catch(err => {
       document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
       console.warn("PDF engine fallback to print:", err);
       window.print();
     });
   } else {
-    // ಫಾಲ್‌ಬ್ಯಾಕ್
+    // ಫಾಲ್ಬ್ಯಾಕ್
     window.print();
     document.querySelectorAll('.btn-live-q-edit').forEach(b => b.style.display = '');
   }
@@ -17034,13 +17034,13 @@ setInterval(injectExportToPDFButton, 1200);
         break-after: page !important;
       }
 
-      /* ಎಡಿಟ್ ಬಟನ್ ಮತ್ತು ಅನಗತ್ಯ ಬಟನ್‌ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಡೆಯುವುದು */
+      /* ಎಡಿಟ್ ಬಟನ್ ಮತ್ತು ಅನಗತ್ಯ ಬಟನ್ಗಳು ಪ್ರಿಂಟ್ ಆಗದಂತೆ ತಡೆಯುವುದು */
       .btn-live-q-edit, .no-print, header, footer, button {
         display: none !important;
         visibility: hidden !important;
       }
 
-      /* ವಾಟರ್‌ಮಾರ್ಕ್ ನಿಖರ ಮುದ್ರಣ */
+      /* ವಾಟರ್ಮಾರ್ಕ್ ನಿಖರ ಮುದ್ರಣ */
       .demo-watermark-overlay {
         display: flex !important;
         visibility: visible !important;
@@ -17054,7 +17054,7 @@ setInterval(injectExportToPDFButton, 1200);
   `;
 })();
 
-// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್‌ಪೋರ್ಟರ್ ಫಂಕ್ಷನ್
+// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್ಪೋರ್ಟರ್ ಫಂಕ್ಷನ್
 window.exportCurrentTabToPDF = function() {
   let activeTabId = 'tab-content-paper';
   let fileTypeLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
@@ -17077,11 +17077,11 @@ window.exportCurrentTabToPDF = function() {
   const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
   const fileName = `${cleanSubject}_${grade}_${fileTypeLabel}`;
 
-  // PDF ಡೌನ್‌ಲೋಡ್ ಫೈಲ್ ಹೆಸರನ್ನು ಸೆಟ್ ಮಾಡುವುದು
+  // PDF ಡೌನ್ಲೋಡ್ ಫೈಲ್ ಹೆಸರನ್ನು ಸೆಟ್ ಮಾಡುವುದು
   const originalTitle = document.title;
   document.title = fileName;
 
-  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.', 'info');
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ.', 'info');
 
   // ನೇರ ಹೈ-ಡೆಫಿನಿಷನ್ ವೆಕ್ಟರ್ ಪ್ರಿಂಟ್ ಡೈಲಾಗ್ ಚಾಲನೆ
   setTimeout(() => {
@@ -17127,7 +17127,7 @@ try {
   document.getElementById('html2pdf-cdn-script')?.remove();
 } catch (e) {}
 
-// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್‌ಪೋರ್ಟರ್ (Iframe Vector Bridge)
+// ೨. ಶುದ್ಧ ವೆಕ್ಟರ್ PDF ಎಕ್ಸ್ಪೋರ್ಟರ್ (Iframe Vector Bridge)
 window.exportCurrentTabToPDF = window.printCurrentTab = function() {
   // A. ಆಕ್ಟಿವ್ ಟ್ಯಾಬ್ ಗುರುತಿಸುವುದು
   let activeTabId = 'tab-content-paper';
@@ -17146,7 +17146,7 @@ window.exportCurrentTabToPDF = window.printCurrentTab = function() {
     return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
   }
 
-  // B. ಪೇಪರ್ ಅನ್ನು ಕ್ಲೋನ್ ಮಾಡಿ ಎಡಿಟ್ ಬಟನ್‌ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ತೆಗೆದುಹಾಕುವುದು
+  // B. ಪೇಪರ್ ಅನ್ನು ಕ್ಲೋನ್ ಮಾಡಿ ಎಡಿಟ್ ಬಟನ್ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ತೆಗೆದುಹಾಕುವುದು
   const sheetClone = activeSheet.cloneNode(true);
   sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
 
@@ -17237,7 +17237,7 @@ window.exportCurrentTabToPDF = window.printCurrentTab = function() {
   `);
   frameDoc.close();
 
-  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.', 'info');
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ.', 'info');
 
   // ಫಾಂಟ್ ಲೋಡ್ ಆದ ನಂತರ ನೇರ ಪ್ರಿಂಟ್/PDF ಡೈಲಾಗ್ ಚಾಲನೆ
   setTimeout(() => {
@@ -17280,7 +17280,7 @@ window.updateTopNavbarClean = function() {
   const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
 
   if (isOwnerAdmin) {
-    // 👑 ಅಡ್ಮಿನ್‌ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಪೂರ್ಣ ಮೆನು (All 5 Tools Unlocked)
+    // 👑 ಅಡ್ಮಿನ್ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಪೂರ್ಣ ಮೆನು (All 5 Tools Unlocked)
     navContainer.innerHTML = `
       <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
         <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
@@ -17326,7 +17326,7 @@ window.updateTopNavbarClean = function() {
   }
 };
 
-// ೨. AI ಇಂಪೋರ್ಟರ್ ಅನ್ನು ಕೇವಲ ಅಡ್ಮಿನ್‌ಗೆ ಮಾತ್ರ ಲಾಕ್ ಮಾಡುವುದು
+// ೨. AI ಇಂಪೋರ್ಟರ್ ಅನ್ನು ಕೇವಲ ಅಡ್ಮಿನ್ಗೆ ಮಾತ್ರ ಲಾಕ್ ಮಾಡುವುದು
 const originalOpenBulkAIImportModal = window.openBulkAIImportModal;
 window.openBulkAIImportModal = function() {
   const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
@@ -17340,12 +17340,12 @@ window.openBulkAIImportModal = function() {
   }
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೂ ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ರಕ್ಷಣೆ ನೀಡುವುದು
+// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೂ ಅಡ್ಮಿನ್ ಪಾಸ್ವರ್ಡ್ ರಕ್ಷಣೆ ನೀಡುವುದು
 const originalNavigateToSectionHandler = window.navigateToSection;
 window.navigateToSection = function(section) {
   const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
 
-  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್‌ವರ್ಡ್ ಕಡ್ಡಾಯ
+  // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಅಥವಾ ಅಡ್ಮಿನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪಾಸ್ವರ್ಡ್ ಕಡ್ಡಾಯ
   if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
     showAdminLoginModal();
     return;
@@ -17357,7 +17357,7 @@ window.navigateToSection = function(section) {
   updateTopNavbarClean();
 };
 
-// ೪. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದಾಗ ತಕ್ಷಣ ಎಲ್ಲಾ ಟೂಲ್‌ಗಳನ್ನು ಅನ್‌ಲಾಕ್ ಮಾಡುವುದು
+// ೪. ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದಾಗ ತಕ್ಷಣ ಎಲ್ಲಾ ಟೂಲ್ಗಳನ್ನು ಅನ್ಲಾಕ್ ಮಾಡುವುದು
 window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
   const u = document.getElementById('admin-login-user').value.trim();
@@ -17371,8 +17371,8 @@ window.handleAdminLoginSubmit = function(e) {
     appState.currentUserId = 'master_admin';
     
     closeAdminLoginModal();
-    updateTopNavbarClean(); // 🌟 ಮೆನು ಅನ್‌ಲಾಕ್
-    showToast('👑 Admin ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಎಲ್ಲಾ ಪರಿಕರಗಳು ಅನ್‌ಲಾಕ್ ಆಗಿವೆ.', 'success');
+    updateTopNavbarClean(); // 🌟 ಮೆನು ಅನ್ಲಾಕ್
+    showToast('👑 Admin ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ! ಎಲ್ಲಾ ಪರಿಕರಗಳು ಅನ್ಲಾಕ್ ಆಗಿವೆ.', 'success');
     navigateToSection('qbank');
   } else {
     document.getElementById('admin-login-error')?.classList.remove('hidden');
@@ -17479,7 +17479,7 @@ function cleanKeyString(keyStr) {
   return String(keyStr || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
 }
 
-// ೩. 👨‍🏫 TEACHER MODAL LOGIN HANDLER (ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್)
+// ೩. 👨🏫 TEACHER MODAL LOGIN HANDLER (ಪಾಪ್ಅಪ್ ಲಾಗಿನ್)
 window.handleTeacherModalLogin = function(e) {
   e.preventDefault();
   const phoneInput = document.getElementById('modal-tch-phone');
@@ -17513,7 +17513,7 @@ window.handleTeacherModalLogin = function(e) {
       schoolInput.value = matchedTeacher.school;
     }
 
-    showToast(`🎉 ಸ್ವಾಗತ ${matchedTeacher.name} ಸರ್/ಮೇಡಂ! ವಾಟರ್‌ಮಾರ್ಕ್ ರದ್ದಾಗಿದೆ.`, 'success');
+    showToast(`🎉 ಸ್ವಾಗತ ${matchedTeacher.name} ಸರ್/ಮೇಡಂ! ವಾಟರ್ಮಾರ್ಕ್ ರದ್ದಾಗಿದೆ.`, 'success');
     navigateToSection('generator');
   } else {
     if (errBox) {
@@ -17523,7 +17523,7 @@ window.handleTeacherModalLogin = function(e) {
   }
 };
 
-// ೪. 👨‍🏫 TEACHER DIRECT CARD LOGIN HANDLER (ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಕಾರ್ಡ್ ಲಾಗಿನ್)
+// ೪. 👨🏫 TEACHER DIRECT CARD LOGIN HANDLER (ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಕಾರ್ಡ್ ಲಾಗಿನ್)
 window.handleTeacherDirectLoginSubmit = function(e) {
   e.preventDefault();
   const phoneInput = document.getElementById('direct-teacher-phone');
@@ -17564,7 +17564,7 @@ window.handleTeacherDirectLoginSubmit = function(e) {
   }
 };
 
-// ೫. 🏫 SCHOOL MODAL LOGIN HANDLER (ಶಾಲಾ ಪಾಪ್‌ಅಪ್ ಲಾಗಿನ್)
+// ೫. 🏫 SCHOOL MODAL LOGIN HANDLER (ಶಾಲಾ ಪಾಪ್ಅಪ್ ಲಾಗಿನ್)
 window.handleSchoolModalLogin = function(e) {
   e.preventDefault();
   const diseInput = document.getElementById('modal-sch-dise');
@@ -17749,7 +17749,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     for (let i = 0; i < count2M; i++) chosenQuestions.push(pool2M.pop());
     for (let i = 0; i < count1M; i++) chosenQuestions.push(pool1M.pop());
   } else {
-    // 🌟 ಅನ್‌ಬ್ರೇಕೇಬಲ್ ಅಂಕ ಭರ್ತಿ (ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ೨೦ ಕ್ಕಿಂತ ಕಡಿಮೆ ಆಗದಂತೆ ೧೦೦% ಭರ್ತಿ ಮಾಡುವುದು)
+    // 🌟 ಅನ್ಬ್ರೇಕೇಬಲ್ ಅಂಕ ಭರ್ತಿ (ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ೨೦ ಕ್ಕಿಂತ ಕಡಿಮೆ ಆಗದಂತೆ ೧೦೦% ಭರ್ತಿ ಮಾಡುವುದು)
     let curMarks = 0;
 
     // A. ಲಭ್ಯವಿರುವ ೪ ಅಂಕದ ಪ್ರಶ್ನೆ
@@ -17864,7 +17864,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   let poolShuffled = preparePool(pool);
   
-  // ಪ್ರಕಾರವಾರು ಪೂಲ್‌ಗಳು
+  // ಪ್ರಕಾರವಾರು ಪೂಲ್ಗಳು
   let poolMcq = poolShuffled.filter(q => q.type === 'mcq');
   let poolBlanks = poolShuffled.filter(q => q.type === 'blanks');
   let poolMatch = poolShuffled.filter(q => q.type === 'match');
@@ -17954,7 +17954,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   appState.activeGeneratedQuestions = chosenQuestions;
 
-  // 🌟 ಪೂರ್ಣ ಪ್ರಶ್ನೆಗಳನ್ನು ನೇರವಾಗಿ ಪೇಪರ್‌ಗೆ ರೆಂಡರ್ ಮಾಡುವುದು
+  // 🌟 ಪೂರ್ಣ ಪ್ರಶ್ನೆಗಳನ್ನು ನೇರವಾಗಿ ಪೇಪರ್ಗೆ ರೆಂಡರ್ ಮಾಡುವುದು
   renderFullExamPaperWithoutTrimming(targetTotalMarks, schoolName, cleanSubject, cleanExamType, grade, examDate);
 
   const outSec = document.getElementById('output-section');
@@ -17971,7 +17971,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   showToast(`✅ ನಿಖರ ${currentMarks} ಅಂಕಗಳ (${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
 };
 
-// ೩. ಯಾವುದೇ ಪ್ರಶ್ನೆಯನ್ನು ಕತ್ತರಿಸದೆ ಪೂರ್ಣವಾಗಿ ಡಿಸ್ಪ್ಲೇ ಮಾಡುವ ಅನ್‌ಬ್ರೇಕೇಬಲ್ ರೆಂಡರರ್
+// ೩. ಯಾವುದೇ ಪ್ರಶ್ನೆಯನ್ನು ಕತ್ತರಿಸದೆ ಪೂರ್ಣವಾಗಿ ಡಿಸ್ಪ್ಲೇ ಮಾಡುವ ಅನ್ಬ್ರೇಕೇಬಲ್ ರೆಂಡರರ್
 function renderFullExamPaperWithoutTrimming(targetTotalMarks, schoolName, cleanSubject, cleanExamType, grade, examDate) {
   const allQuestions = appState.activeGeneratedQuestions || [];
   const actualCalculatedMarks = allQuestions.reduce((a, b) => a + (b.marks || 1), 0);
@@ -18366,7 +18366,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
 
   let poolShuffled = preparePool(pool);
 
-  // ಪ್ರಕಾರವಾರು ಪೂಲ್‌ಗಳು
+  // ಪ್ರಕಾರವಾರು ಪೂಲ್ಗಳು
   let poolMcq = poolShuffled.filter(q => q.type === 'mcq');
   let poolBlanks = poolShuffled.filter(q => q.type === 'blanks');
   let poolMatch = poolShuffled.filter(q => q.type === 'match');
@@ -18560,7 +18560,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     return a;
   }
 
-  // ನಿಖರ ಪೂಲ್‌ಗಳ ವಿಂಗಡಣೆ
+  // ನಿಖರ ಪೂಲ್ಗಳ ವಿಂಗಡಣೆ
   let pool1M = preparePool(pool.filter(q => (q.marks === 1 || !q.marks) && q.type !== 'match' && q.type !== 'poem_4lines' && q.type !== 'la' && q.type !== 'map_diagram'));
   let pool2M = preparePool(pool.filter(q => q.marks === 2 || (q.type === 'sa' && (q.marks === 2 || !q.marks))));
   let pool3M = preparePool(pool.filter(q => q.marks === 3));
@@ -18577,7 +18577,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     for (let i = 0; i < bestCombo.c2; i++) chosenQuestions.push(pool2M.pop());
     for (let i = 0; i < bestCombo.c1; i++) chosenQuestions.push(pool1M.pop());
   } else {
-    // ಫಾಲ್‌ಬ್ಯಾಕ್: ಲಭ್ಯವಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಂದ ಗುರಿ ಅಂಕ ತಲುಪುವುದು
+    // ಫಾಲ್ಬ್ಯಾಕ್: ಲಭ್ಯವಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಂದ ಗುರಿ ಅಂಕ ತಲುಪುವುದು
     let curM = 0;
     while (curM < targetTotalMarks && pool2M.length > 0 && curM + 2 <= targetTotalMarks) { chosenQuestions.push(pool2M.pop()); curM += 2; }
     while (curM < targetTotalMarks && pool1M.length > 0 && curM + 1 <= targetTotalMarks) { chosenQuestions.push(pool1M.pop()); curM += 1; }
@@ -18627,7 +18627,7 @@ function getCanonicalQuestionType(q) {
   return 'vsa'; // ೧ ಅಂಕದ ಪ್ರಶ್ನೆ
 }
 
-// ೨. ಮಾಸ್ಟರ್ ಜನರೇಟರ್ (ಅನ್‌ಟಿಕ್ ಮಾಡಿದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ೧೦೦% ಬ್ಲಾಕ್ ಮಾಡುವುದು)
+// ೨. ಮಾಸ್ಟರ್ ಜನರೇಟರ್ (ಅನ್ಟಿಕ್ ಮಾಡಿದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ೧೦೦% ಬ್ಲಾಕ್ ಮಾಡುವುದು)
 window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const isDemo = (appState.currentUserType === 'demo');
 
@@ -18667,7 +18667,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   const cleanSelectedSubj = cleanMatchText(rawSubject);
   const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
 
-  // 🌟 ಕಟ್ಟುನಿಟ್ಟಾದ ಫಿಲ್ಟರ್: ಅನ್‌ಟಿಕ್ ಆದ ಪ್ರಕಾರಗಳು ೧೦೦% ಹೊರಗುಳಿಯುತ್ತವೆ!
+  // 🌟 ಕಟ್ಟುನಿಟ್ಟಾದ ಫಿಲ್ಟರ್: ಅನ್ಟಿಕ್ ಆದ ಪ್ರಕಾರಗಳು ೧೦೦% ಹೊರಗುಳಿಯುತ್ತವೆ!
   let pool = qbank.filter(q => {
     const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
     const cleanQSubj = cleanMatchText(q.subject);
@@ -18697,7 +18697,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     return a;
   }
 
-  // ಕೇವಲ ಫಿಲ್ಟರ್ ಆದ ಪೂಲ್‌ನಿಂದ ಮಾತ್ರ ಅಂಕವಾರು ವಿಂಗಡಣೆ (Zero Leakage)
+  // ಕೇವಲ ಫಿಲ್ಟರ್ ಆದ ಪೂಲ್ನಿಂದ ಮಾತ್ರ ಅಂಕವಾರು ವಿಂಗಡಣೆ (Zero Leakage)
   let pool1M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 1));
   let pool2M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 2));
   let pool3M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 3));
@@ -18714,7 +18714,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
     for (let i = 0; i < bestCombo.c2; i++) chosenQuestions.push(pool2M.pop());
     for (let i = 0; i < bestCombo.c1; i++) chosenQuestions.push(pool1M.pop());
   } else {
-    // ಫಾಲ್‌ಬ್ಯಾಕ್: ಕೇವಲ ಅನುಮತಿಸಿದ ಪ್ರಕಾರಗಳಿಂದಲೇ ಗುರಿ ಅಂಕ ತಲುಪುವುದು
+    // ಫಾಲ್ಬ್ಯಾಕ್: ಕೇವಲ ಅನುಮತಿಸಿದ ಪ್ರಕಾರಗಳಿಂದಲೇ ಗುರಿ ಅಂಕ ತಲುಪುವುದು
     let curM = 0;
     while (curM < targetTotalMarks && pool2M.length > 0 && curM + 2 <= targetTotalMarks) { chosenQuestions.push(pool2M.pop()); curM += 2; }
     while (curM < targetTotalMarks && pool1M.length > 0 && curM + 1 <= targetTotalMarks) { chosenQuestions.push(pool1M.pop()); curM += 1; }
@@ -18751,11 +18751,11 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
    PERFECT GENERATOR VIEW CLEANUP: REMOVE NOTEBOOK-LM & OPEN ADMIN FROM USERS
    ========================================================================== */
 
-// ೧. ಜನರೇಟರ್ ಪೇಜ್‌ನಲ್ಲಿರುವ ಅಡ್ಮಿನ್ ಅಂಶಗಳನ್ನು ಬಳಕೆದಾರರಿಗೆ ಹೈಡ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+// ೧. ಜನರೇಟರ್ ಪೇಜ್ನಲ್ಲಿರುವ ಅಡ್ಮಿನ್ ಅಂಶಗಳನ್ನು ಬಳಕೆದಾರರಿಗೆ ಹೈಡ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
 function sanitizeGeneratorViewSecurity() {
   const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
 
-  // A. Step 1 ಮತ್ತು Step 2 ನಲ್ಲಿರುವ AI ಇಂಪೋರ್ಟ್ ಬಟನ್‌ಗಳನ್ನು ನಿರ್ವಹಿಸುವುದು
+  // A. Step 1 ಮತ್ತು Step 2 ನಲ್ಲಿರುವ AI ಇಂಪೋರ್ಟ್ ಬಟನ್ಗಳನ್ನು ನಿರ್ವಹಿಸುವುದು
   const stepAiBtns = document.querySelectorAll('#step2-ai-import-btn, #step1-ai-import-btn, button[onclick*="openBulkAIImportModal"]:not(#header-ai-import-btn)');
   stepAiBtns.forEach(btn => {
     if (!isOwnerAdmin) {
@@ -18844,7 +18844,7 @@ window.renderAdminMasterManagementHTML = function() {
 
       <div class="flex flex-wrap items-center gap-2">
         <button onclick="exportSystemFullBackupJSON()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-download"></i> <span>ಬ್ಯಾಕಪ್ ಡೌನ್‌ಲೋಡ್</span>
+          <i class="fa-solid fa-download"></i> <span>ಬ್ಯಾಕಪ್ ಡೌನ್ಲೋಡ್</span>
         </button>
         <button onclick="document.getElementById('file-restore-backup-json').click()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 border border-slate-700">
           <i class="fa-solid fa-upload"></i> <span>ರಿಸ್ಟೋರ್ (Restore)</span>
@@ -18856,7 +18856,7 @@ window.renderAdminMasterManagementHTML = function() {
       </div>
     </div>
 
-    <!-- ೨. ಅಂಕಿಅಂಶಗಳ ಸಣ್ಣ ಕಾರ್ಡ್‌ಗಳು (Quick Stats) -->
+    <!-- ೨. ಅಂಕಿಅಂಶಗಳ ಸಣ್ಣ ಕಾರ್ಡ್ಗಳು (Quick Stats) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="card-modern p-4 flex items-center space-x-3 border border-slate-200">
         <div class="p-3 bg-emerald-50 text-emerald-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-chalkboard-user"></i></div>
@@ -18886,7 +18886,7 @@ window.renderAdminMasterManagementHTML = function() {
     <!-- ೩. ಶಿಕ್ಷಕರು ಮತ್ತು ಶಾಲಾ ನಿರ್ವಹಣೆ ಗ್ರಿಡ್ -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
-      <!-- 👨‍🏫 TEACHER MANAGEMENT SECTION -->
+      <!-- 👨🏫 TEACHER MANAGEMENT SECTION -->
       <div class="card-modern p-6 space-y-4 border border-slate-200">
         <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
           <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
@@ -19015,7 +19015,7 @@ window.renderAdminMasterManagementHTML = function() {
   renderRegisteredSchools();
 };
 
-// ೨. 👨‍🏫 ಶಿಕ್ಷಕರ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ (Edit Teacher Modal)
+// ೨. 👨🏫 ಶಿಕ್ಷಕರ ಮಾಹಿತಿ ತಿದ್ದುಪಡಿ (Edit Teacher Modal)
 window.openEditTeacherModal = function(teacherId) {
   const t = (appState.teachers || []).find(item => item.id === teacherId);
   if (!t) return;
@@ -19328,7 +19328,7 @@ window.exportSystemFullBackupJSON = function() {
   downloadAnchor.click();
   downloadAnchor.remove();
 
-  showToast('💾 ಪೂರ್ಣ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ!', 'success');
+  showToast('💾 ಪೂರ್ಣ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಯಶಸ್ವಿಯಾಗಿ ಡೌನ್ಲೋಡ್ ಆಗಿದೆ!', 'success');
 };
 
 window.importSystemBackupJSON = function(input) {
@@ -19441,7 +19441,7 @@ window.renewSchoolAccount = function(schoolId) {
   }
 };
 
-// ೪. ಶಾಶ್ವತ ಡಿಲೀಟ್ ಫಂಕ್ಷನ್‌ಗಳು (Permanent Delete & Firebase Sync)
+// ೪. ಶಾಶ್ವತ ಡಿಲೀಟ್ ಫಂಕ್ಷನ್ಗಳು (Permanent Delete & Firebase Sync)
 window.deleteTeacher = function(id) {
   if (confirm('ಈ ಶಿಕ್ಷಕರ ವಿವರವನ್ನು ಶಾಶ್ವತವಾಗಿ ಡಿಲೀಟ್ ಮಾಡಬೇಕೇ?')) {
     appState.teachers = (appState.teachers || []).filter(t => t.id !== id);
@@ -19612,7 +19612,7 @@ const NEXT_RENEWAL_VALIDITY = "2027-28";
   }
 })();
 
-// ೨. ಜನರೇಟರ್ ಹೆಡರ್‌ನಲ್ಲಿ ಲಾಗಿನ್ ಆದವರ ಹೆಸರು, ಕೀ & ವ್ಯಾಲಿಡಿಟಿ ತೋರಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+// ೨. ಜನರೇಟರ್ ಹೆಡರ್ನಲ್ಲಿ ಲಾಗಿನ್ ಆದವರ ಹೆಸರು, ಕೀ & ವ್ಯಾಲಿಡಿಟಿ ತೋರಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
 const originalSyncSubjectAndChaptersMaster = window.syncSubjectAndChapters;
 window.syncSubjectAndChapters = function() {
   if (typeof originalSyncSubjectAndChaptersMaster === 'function') {
@@ -19624,7 +19624,7 @@ window.syncSubjectAndChapters = function() {
   const genBadge = document.getElementById('gen-active-badge');
   const schoolNameInput = document.getElementById('cfg-school-name');
 
-  // A. 👨‍🏫 ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (Teacher Mode)
+  // A. 👨🏫 ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (Teacher Mode)
   if (appState.currentUserType === 'teacher') {
     const allTeachers = getFreshTeachersList();
     const teacher = allTeachers.find(t => t.id === appState.currentUserId) || 
@@ -19678,13 +19678,13 @@ window.syncSubjectAndChapters = function() {
       }
     }
   } 
-  // C. ⭐ ಡೆಮೋ ಮೋಡ್‌ನಲ್ಲಿದ್ದಾಗ (Demo Mode)
+  // C. ⭐ ಡೆಮೋ ಮೋಡ್ನಲ್ಲಿದ್ದಾಗ (Demo Mode)
   else if (appState.currentUserType === 'demo') {
     if (genNameEl) {
       genNameEl.innerHTML = `<span class="text-sm font-black text-amber-950">⭐ ಅತಿಥಿ ಡೆಮೋ ಪ್ರೊಫೈಲ್ (Guest Demo)</span>`;
     }
     if (genSchoolEl) {
-      genSchoolEl.innerHTML = `ಉಚಿತ ೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ`;
+      genSchoolEl.innerHTML = `ಉಚಿತ ೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್ಮಾರ್ಕ್ ಸಹಿತ`;
     }
     if (genBadge) {
       genBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-600"></i> ಡೆಮೋ ಟ್ರಯಲ್ (Demo Mode)`;
@@ -19764,7 +19764,7 @@ window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
               `🔑 *ನಿಮ್ಮ Teacher Access Key:* *${key}*\n` +
               `🗓️ *ಸದಸ್ಯತ್ವ ವ್ಯಾಲಿಡಿಟಿ:* *${val} ರವರೆಗೆ*\n` +
               `📱 *ಲಾಗಿನ್ ಮೊಬೈಲ್:* ${cleanPhone}\n\n` +
-              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಜನರೇಟ್ ಮಾಡಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಜನರೇಟ್ ಮಾಡಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
 
   window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
 };
@@ -19791,7 +19791,7 @@ syncSubjectAndChapters();
    LBA (GHATAKA PARIKSHE / UNIT TEST) SPECIAL HEADER & CHAPTER-NAME ENGINE
    ========================================================================== */
 
-// ೧. ಪರೀಕ್ಷಾ ವಿಧಾನ ಡ್ರಾಪ್‌ಡೌನ್‌ನಲ್ಲಿ 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)' ಸೇರಿಸುವ ಫಂಕ್ಷನ್
+// ೧. ಪರೀಕ್ಷಾ ವಿಧಾನ ಡ್ರಾಪ್ಡೌನ್ನಲ್ಲಿ 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)' ಸೇರಿಸುವ ಫಂಕ್ಷನ್
 function ensureLBAInExamTypeDropdown() {
   const examTypeSelect = document.getElementById('cfg-exam-type');
   if (examTypeSelect && !examTypeSelect.querySelector('option[value*="LBA"]')) {
@@ -20237,7 +20237,7 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
   applyDemoWatermarkToOutput();
 }
 
-// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ LBA ಡ್ರಾಪ್‌ಡೌನ್ ಖಚಿತಪಡಿಸುವುದು
+// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ LBA ಡ್ರಾಪ್ಡೌನ್ ಖಚಿತಪಡಿಸುವುದು
 ensureLBAInExamTypeDropdown();
 
     /* ==========================================================================
@@ -20445,7 +20445,7 @@ window.generateExamPackageFromBank = window.generateExamPackage = function() {
   `;
 })();
 
-// ೨. PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ ಐಫ್ರೇಮ್‌ನಲ್ಲೂ ಕೆಳಭಾಗದ ಬಾರ್ಡರ್ ಅನ್ನು ಗಟ್ಟಿಗೊಳಿಸುವುದು
+// ೨. PDF ಎಕ್ಸ್ಪೋರ್ಟ್ ಐಫ್ರೇಮ್ನಲ್ಲೂ ಕೆಳಭಾಗದ ಬಾರ್ಡರ್ ಅನ್ನು ಗಟ್ಟಿಗೊಳಿಸುವುದು
 const originalExportCurrentTabToPDFWithBorder = window.exportCurrentTabToPDF;
 window.exportCurrentTabToPDF = window.printCurrentTab = function() {
   let activeTabId = 'tab-content-paper';
@@ -20553,7 +20553,7 @@ window.exportCurrentTabToPDF = window.printCurrentTab = function() {
   `);
   frameDoc.close();
 
-  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ.', 'info');
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ ಡೌನ್ಲೋಡ್ ಮಾಡಿ.', 'info');
 
   setTimeout(() => {
     printFrame.contentWindow.focus();
@@ -20567,7 +20567,7 @@ window.exportCurrentTabToPDF = window.printCurrentTab = function() {
    PERFECT A4 PAGE BORDER & COMPACT SINGLE-PAGE FIT ENGINE (CLOSED BORDERS)
    ========================================================================== */
 
-// ೧. ಎಲ್ಲಾ ಪೇಜ್‌ಗಳಿಗೂ ಸಂಪೂರ್ಣ ನಾಲ್ಕೂ ಕಡೆ ಬಾರ್ಡರ್ ನೀಡುವ ಮಾಸ್ಟರ್ CSS
+// ೧. ಎಲ್ಲಾ ಪೇಜ್ಗಳಿಗೂ ಸಂಪೂರ್ಣ ನಾಲ್ಕೂ ಕಡೆ ಬಾರ್ಡರ್ ನೀಡುವ ಮಾಸ್ಟರ್ CSS
 (function injectPerfectClosedBorderCSS() {
   const styleId = 'perfect-closed-border-css';
   let st = document.getElementById(styleId);
@@ -20623,7 +20623,7 @@ window.exportCurrentTabToPDF = window.printCurrentTab = function() {
   `;
 })();
 
-// ೨. ಕಾಂಪ್ಯಾಕ್ಟ್ ಪ್ರೊಫೆಶನಲ್ ರೆಂಡರರ್ (೨೦ ಅಂಕದ ಪೇಪರ್ ೧ ಪೇಜ್‌ನಲ್ಲೇ ಫಿಟ್ ಆಗಲು)
+// ೨. ಕಾಂಪ್ಯಾಕ್ಟ್ ಪ್ರೊಫೆಶನಲ್ ರೆಂಡರರ್ (೨೦ ಅಂಕದ ಪೇಪರ್ ೧ ಪೇಜ್ನಲ್ಲೇ ಫಿಟ್ ಆಗಲು)
 function renderFullExamPaperWithCustomHeader(headerHtml) {
   const allQuestions = appState.activeGeneratedQuestions || [];
   const actualCalculatedMarks = allQuestions.reduce((a, b) => a + (b.marks || 1), 0);
@@ -20973,7 +20973,7 @@ window.renderChapterCheckboxes = function() {
     headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ಭಂಡಾರದಲ್ಲಿರುವ ${uniqueChapters.length} ಪಾಠಗಳು</span>`;
   }
 
-  // ಚೆಕ್‌ಬಾಕ್ಸ್ ಪ್ರದರ್ಶನ
+  // ಚೆಕ್ಬಾಕ್ಸ್ ಪ್ರದರ್ಶನ
   container.innerHTML = uniqueChapters.map(chap => `
     <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 transition cursor-pointer text-xs">
       <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
@@ -20982,7 +20982,7 @@ window.renderChapterCheckboxes = function() {
   `).join('');
 };
 
-// ೩. AI ಇಂಪೋರ್ಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ ಪಾಠದ ಡ್ರಾಪ್‌ಡೌನ್ & ಟೆಕ್ಸ್ಟ್‌ಬಾಕ್ಸ್ ಸುಧಾರಣೆ
+// ೩. AI ಇಂಪೋರ್ಟ್ ಮಾಡಲ್ನಲ್ಲಿ ಪಾಠದ ಡ್ರಾಪ್ಡೌನ್ & ಟೆಕ್ಸ್ಟ್ಬಾಕ್ಸ್ ಸುಧಾರಣೆ
 const originalOpenBulkAIImportModalMaster = window.openBulkAIImportModal;
 
 window.openBulkAIImportModal = function() {
@@ -20990,7 +20990,7 @@ window.openBulkAIImportModal = function() {
     originalOpenBulkAIImportModalMaster();
   }
 
-  // ಪಾಠಗಳ ಡ್ರಾಪ್‌ಡೌನ್ ಅನ್ನು ಇಂಜೆಕ್ಟ್ ಮಾಡುವುದು
+  // ಪಾಠಗಳ ಡ್ರಾಪ್ಡೌನ್ ಅನ್ನು ಇಂಜೆಕ್ಟ್ ಮಾಡುವುದು
   setTimeout(updateBulkImportChapterSelector, 50);
 };
 
@@ -21107,7 +21107,7 @@ function autoCleanAndMergeAllDuplicateChapters() {
   }
 }
 
-// ೨. ಪಾಠದ ಹೆಸರು ಬದಲಾವಣೆ & ವಿಲೀನ ಮಾಡುವ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್ (Manual Merge Tool)
+// ೨. ಪಾಠದ ಹೆಸರು ಬದಲಾವಣೆ & ವಿಲೀನ ಮಾಡುವ ಪಾಪ್ಅಪ್ ಮಾಡಲ್ (Manual Merge Tool)
 window.openChapterMergeModal = function() {
   let modal = document.getElementById('chapter-merge-tool-modal');
   if (!modal) {
@@ -21255,7 +21255,7 @@ window.handleExecuteChapterMerge = function(e) {
   }
 };
 
-// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಹೆಡರ್‌ನಲ್ಲಿ "📑 ಪಾಠಗಳ ವಿಲೀನ" ಬಟನ್ ಸೇರ್ಪಡೆ
+// ೩. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಹೆಡರ್ನಲ್ಲಿ "📑 ಪಾಠಗಳ ವಿಲೀನ" ಬಟನ್ ಸೇರ್ಪಡೆ
 function injectChapterMergeButtonInAdmin() {
   const adminHeaderActions = document.querySelector('#view-admin .bg-slate-900 .flex.items-center.space-x-2');
   if (adminHeaderActions && !document.getElementById('btn-admin-merge-chaps')) {
@@ -21418,7 +21418,7 @@ window.renderCustomQuestionList = function() {
         ` : ''}
       </div>
 
-      <!-- ೪ ಡ್ರಾಪ್‌ಡೌನ್ ಫಿಲ್ಟರ್‌ಗಳು -->
+      <!-- ೪ ಡ್ರಾಪ್ಡೌನ್ ಫಿಲ್ಟರ್ಗಳು -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div>
           <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ:</label>
@@ -21620,7 +21620,7 @@ renderChapterCheckboxes();
     }).join('');
   };
 
-  // ೩. ಪಾಠಗಳ ವಿಲೀನ ಪಾಪ್‌ಅಪ್ ವಿಂಡೋ
+  // ೩. ಪಾಠಗಳ ವಿಲೀನ ಪಾಪ್ಅಪ್ ವಿಂಡೋ
   window.openChapterMergeModal = function() {
     var modal = document.getElementById('chapter-merge-tool-modal');
     if (!modal) {
@@ -21816,7 +21816,7 @@ renderChapterCheckboxes();
           ${adminSearchQuery ? `<button onclick="adminSearchQuery=''; renderCustomQuestionList();" class="absolute inset-y-0 right-0 pr-3 font-bold text-slate-400 hover:text-red-600 text-base">&times;</button>` : ''}
         </div>
 
-        <!-- ಫಿಲ್ಟರ್‌ಗಳು -->
+        <!-- ಫಿಲ್ಟರ್ಗಳು -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div>
             <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ:</label>
@@ -21857,7 +21857,7 @@ renderChapterCheckboxes();
           </div>
         </div>
         
-        <!-- 🌟 ಬಟನ್‌ಗಳು (ಪಾಠಗಳ ವಿಲೀನ & ಡಿಲೀಟ್) -->
+        <!-- 🌟 ಬಟನ್ಗಳು (ಪಾಠಗಳ ವಿಲೀನ & ಡಿಲೀಟ್) -->
         <div class="flex flex-wrap items-center justify-between pt-2 border-t border-indigo-100 gap-2">
           <label class="flex items-center space-x-2 font-extrabold text-slate-800 cursor-pointer">
             <input type="checkbox" id="admin-select-all-cb" onchange="toggleSelectAllAdminQuestions(this.checked)" class="w-4 h-4 text-emerald-600 rounded" />
@@ -21949,7 +21949,7 @@ renderChapterCheckboxes();
 <script>
 (function initGlobalMasterSuite() {
 
-  // ೧. ಗ್ಲೋಬಲ್ ಫಾಂಟ್, ಕ್ಲೋಸ್ಡ್ ಬಾರ್ಡರ್, ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್‌ಮಾರ್ಕ್ & ಎಡಿಟ್ ಬಟನ್ CSS
+  // ೧. ಗ್ಲೋಬಲ್ ಫಾಂಟ್, ಕ್ಲೋಸ್ಡ್ ಬಾರ್ಡರ್, ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್ಮಾರ್ಕ್ & ಎಡಿಟ್ ಬಟನ್ CSS
   var masterCss = document.createElement('style');
   masterCss.id = 'wy-final-master-css';
   masterCss.innerHTML = `
@@ -21981,7 +21981,7 @@ renderChapterCheckboxes();
       box-decoration-break: clone !important;
     }
 
-    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್‌ಮಾರ್ಕ್ */
+    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್ಮಾರ್ಕ್ */
     .demo-watermark-overlay {
       position: absolute !important;
       top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
@@ -22291,7 +22291,7 @@ renderChapterCheckboxes();
           ${adminSearchQuery ? `<button onclick="adminSearchQuery=''; renderCustomQuestionList();" class="absolute inset-y-0 right-0 pr-3 font-bold text-slate-400 hover:text-red-600 text-base">&times;</button>` : ''}
         </div>
 
-        <!-- ಫಿಲ್ಟರ್‌ಗಳು -->
+        <!-- ಫಿಲ್ಟರ್ಗಳು -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div>
             <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ:</label>
@@ -22332,7 +22332,7 @@ renderChapterCheckboxes();
           </div>
         </div>
         
-        <!-- 🌟 ಬಟನ್‌ಗಳು (ಪಾಠಗಳ ವಿಲೀನ & ಡಿಲೀಟ್) -->
+        <!-- 🌟 ಬಟನ್ಗಳು (ಪಾಠಗಳ ವಿಲೀನ & ಡಿಲೀಟ್) -->
         <div class="flex flex-wrap items-center justify-between pt-2 border-t border-indigo-100 gap-2">
           <label class="flex items-center space-x-2 font-extrabold text-slate-800 cursor-pointer">
             <input type="checkbox" id="admin-select-all-cb" onchange="toggleSelectAllAdminQuestions(this.checked)" class="w-4 h-4 text-emerald-600 rounded" />
@@ -22418,244 +22418,6 @@ renderChapterCheckboxes();
 })();
 </script>
 
-<script>
-/* ==========================================================================
-   FINAL UNIFIED MASTER ENGINE (ALL IN ONE CLEAN SCRIPT TAG)
-   ========================================================================== */
-
-(function initCleanMasterSuite() {
-
-  // ೧. ಗ್ಲೋಬಲ್ ಸಿಎಸ್‌ಎಸ್ (Anek Kannada + Closed Borders + Centered Watermark)
-  var masterCss = document.createElement('style');
-  masterCss.id = 'wy-final-master-css';
-  masterCss.innerHTML = `
-    @import url('https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800;900&display=swap');
-
-    html, body, p, span:not(.fa):not(.fas):not(.far):not(.fab):not([class*="fa-"]), 
-    h1, h2, h3, h4, h5, h6, input, select, textarea, button, table, th, td, div {
-      font-family: 'Anek Kannada', sans-serif !important;
-    }
-
-    i, .fa, .fas, .far, .fab, [class*="fa-"], [class^="fa-"] {
-      font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
-      font-style: normal !important;
-      display: inline-block !important;
-    }
-
-    .a4-sheet-container {
-      width: 100% !important;
-      max-width: 820px !important;
-      border: 2.5px solid #000 !important;
-      padding: 8mm 12mm 10mm 12mm !important;
-      margin: 0 auto 20px auto !important;
-      min-height: 272mm !important;
-      position: relative !important;
-      box-sizing: border-box !important;
-      background: #fff !important;
-      -webkit-box-decoration-break: clone !important;
-      box-decoration-break: clone !important;
-    }
-
-    .demo-watermark-overlay {
-      position: absolute !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      width: 100% !important; height: 100% !important;
-      pointer-events: none !important; z-index: 50 !important; overflow: hidden !important;
-    }
-    .demo-watermark-text {
-      position: absolute !important;
-      top: 50% !important; left: 50% !important;
-      transform: translate(-50%, -50%) rotate(-32deg) !important;
-      transform-origin: center center !important;
-      font-size: 34px !important; font-weight: 900 !important;
-      color: rgba(220, 38, 38, 0.16) !important;
-      text-align: center !important; line-height: 1.45 !important;
-      letter-spacing: 2px !important;
-      border: 4px dashed rgba(220, 38, 38, 0.22) !important;
-      padding: 16px 36px !important; border-radius: 25px !important;
-      text-transform: uppercase !important; white-space: nowrap !important;
-      user-select: none !important; margin: 0 !important;
-    }
-
-    .btn-live-q-edit {
-      display: inline-flex !important; align-items: center !important; gap: 4px !important;
-      background-color: #fef3c7 !important; color: #92400e !important;
-      border: 1.5px solid #f59e0b !important; padding: 2px 8px !important;
-      border-radius: 6px !important; font-size: 11px !important; font-weight: 800 !important;
-      cursor: pointer !important; margin-left: 8px !important;
-    }
-    .btn-live-q-edit:hover { background-color: #fde68a !important; }
-
-    @media print {
-      @page { size: A4 portrait; margin: 6mm 8mm; }
-      body * { visibility: hidden !important; }
-      #print-area, #print-area * { visibility: visible !important; }
-      #print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
-      .a4-sheet-container { border: 2.5px solid #000 !important; padding: 8mm 10mm !important; -webkit-box-decoration-break: clone !important; box-decoration-break: clone !important; }
-      .demo-watermark-overlay { display: block !important; visibility: visible !important; }
-      .demo-watermark-text { color: rgba(0, 0, 0, 0.16) !important; border-color: rgba(0, 0, 0, 0.22) !important; visibility: visible !important; }
-      .btn-live-q-edit, .no-print, header, footer, button { display: none !important; visibility: hidden !important; }
-    }
-  `;
-  document.head.appendChild(masterCss);
-
-  // ೨. ಸೀರಿಯಲ್ ನಂಬರ್ ಸಾರ್ಟರ್
-  window.getSerialSortNum = function(str) {
-    if (!str) return 9999;
-    var knMap = {'೦':'0','೧':'1','೨':'2','೩':'3','೪':'4','೫':'5','೬':'6','೭':'7','೮':'8','೯':'9'};
-    var norm = String(str).replace(/[೦-೯]/g, function(d) { return knMap[d]; });
-    var m = norm.match(/(\d+)/);
-    return m ? parseInt(m[1], 10) : 9999;
-  };
-
-  // ೩. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಸೀರಿಯಲ್ ನಂಬರ್ (1, 2, 3... 10, 11)
-  window.renderChapterCheckboxes = function() {
-    var subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
-    var grade = document.getElementById('cfg-class')?.value || '6';
-    var part = document.getElementById('cfg-part')?.value || 'all';
-    var container = document.getElementById('chapter-list-box');
-    var headerLabel = document.getElementById('chapters-header-label');
-    if (!container) return;
-
-    var cleanFormSubj = cleanMatchText(subject);
-
-    var matchedQuestions = (appState.qbank || []).filter(function(q) {
-      var isGradeOk = (String(q.grade) === String(grade) || parseInt(q.grade) === parseInt(grade));
-      var cleanQSubj = cleanMatchText(q.subject);
-      var isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
-      var isPartOk = (part === 'all' || q.part === part || !q.part);
-      return isGradeOk && isSubjOk && isPartOk;
-    });
-
-    var chapterMap = new Map();
-    matchedQuestions.forEach(function(q) {
-      if (q.chapter) {
-        var cleanChap = q.chapter.trim().replace(/\s+/g, ' ');
-        var uKey = cleanChap.toLowerCase().replace(/[^a-zA-Z0-9\u0C80-\u0CFF]/g, '');
-        if (!chapterMap.has(uKey)) {
-          chapterMap.set(uKey, cleanChap);
-        }
-      }
-    });
-
-    var uniqueChapters = Array.from(chapterMap.values());
-
-    // 🌟 ಏರಿಕೆ ಕ್ರಮದ ಸಾರ್ಟಿಂಗ್ (1, 2, 3... 10, 11)
-    uniqueChapters.sort(function(a, b) {
-      var nA = getSerialSortNum(a);
-      var nB = getSerialSortNum(b);
-      if (nA !== nB) return nA - nB;
-      return String(a).localeCompare(String(b), 'kn');
-    });
-
-    if (uniqueChapters.length === 0) {
-      if (headerLabel) headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full ml-1">ಖಾಲಿ ಭಂಡಾರ</span>`;
-      container.innerHTML = `<div class="col-span-2 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-bold text-center">⚠️ ಈ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ.</div>`;
-      return;
-    }
-
-    if (headerLabel) {
-      headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ಭಂಡಾರದಲ್ಲಿರುವ ${uniqueChapters.length} ಪಾಠಗಳು</span>`;
-    }
-
-    container.innerHTML = uniqueChapters.map(function(chap) {
-      return `
-        <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 transition cursor-pointer text-xs">
-          <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
-          <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
-        </label>
-      `;
-    }).join('');
-  };
-
-  // ೪. ಶುದ್ಧ ಹೆಡರ್ ಮೆನು (ಸಾಮಾನ್ಯ ಯೂಸರ್ಸ್‌ಗೆ ಕ್ಲೀನ್ & ಅಡ್ಮಿನ್‌ಗೆ ಅನ್‌ಲಾಕ್)
-  window.updateTopNavbarClean = function() {
-    var navContainer = document.querySelector('header .flex.items-center.space-x-1');
-    if (!navContainer) return;
-    document.getElementById('nav-btn-profile')?.remove();
-
-    var isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
-
-    if (isOwnerAdmin) {
-      navContainer.innerHTML = `
-        <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
-          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-          <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
-        </button>
-        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-house text-emerald-600"></i>
-          <span>Dashboard</span>
-        </button>
-        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-file-signature text-teal-600"></i>
-          <span>ಜನರೇಟರ್</span>
-        </button>
-        <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-database text-amber-600"></i>
-          <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
-        </button>
-        <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-gear text-slate-700"></i>
-          <span>Admin</span>
-        </button>
-        <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow ml-1">Logout</button>
-      `;
-    } else {
-      navContainer.innerHTML = `
-        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-house text-emerald-600"></i>
-          <span>Dashboard</span>
-        </button>
-        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-          <i class="fa-solid fa-file-signature text-teal-600"></i>
-          <span>ಜನರೇಟರ್</span>
-        </button>
-        <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200">
-          <i class="fa-solid fa-lock"></i>
-          <span class="hidden sm:inline">Admin</span>
-        </button>
-      `;
-    }
-  };
-
-  // ೫. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್ ಇಂಜೆಕ್ಷನ್
-  window.injectCompactDashboardButtons = function() {
-    var dashView = document.getElementById('view-dashboard');
-    if (!dashView || document.getElementById('dash-compact-auth-bar')) return;
-    document.getElementById('dash-integrated-auth-box')?.remove();
-
-    var authBar = document.createElement('div');
-    authBar.id = 'dash-compact-auth-bar';
-    authBar.className = 'flex flex-wrap items-center justify-center gap-3 pt-2 pb-1';
-    authBar.innerHTML = `
-      <button onclick="openTeacherAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition flex items-center gap-2">
-        <i class="fa-solid fa-chalkboard-user text-sm"></i>
-        <span>ಶಿಕ್ಷಕರ ಲಾಗಿನ್ / ನೋಂದಣಿ (₹200/ವರ್ಷ)</span>
-      </button>
-      <button onclick="openSchoolAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition flex items-center gap-2">
-        <i class="fa-solid fa-school text-sm"></i>
-        <span>ಶಾಲಾ ಲಾಗಿನ್ / ನೋಂದಣಿ (₹500/ವರ್ಷ)</span>
-      </button>
-      <button onclick="launchDemoDirectly()" class="px-5 py-3 rounded-2xl font-black text-xs text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-400 hover:to-amber-500 shadow-md transition flex items-center gap-2 border border-amber-500/30">
-        <i class="fa-solid fa-wand-magic-sparkles text-amber-800"></i>
-        <span>⭐ ಉಚಿತ ಡೆಮೋ (Free Demo)</span>
-      </button>
-    `;
-
-    var quickCards = dashView.querySelector('.grid.grid-cols-1');
-    if (quickCards) dashView.insertBefore(authBar, quickCards);
-    else dashView.appendChild(authBar);
-  };
-
-  // ತಕ್ಷಣವೇ ಲೋಡ್
-  updateTopNavbarClean();
-  injectCompactDashboardButtons();
-  renderChapterCheckboxes();
-
-})();
-</script>
-</html>
-  
   </script>
 </body>
 </html>
