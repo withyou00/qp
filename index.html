@@ -4831,6 +4831,276 @@ window.renderRegisteredSchools = function() {
   renderDashboardUserStatusBanner();
   updateGlobalUserValidityDisplayEverywhere();
 })();
+
+    /* ==========================================================================
+   PERMANENT LOGIN SESSION PERSISTENCE & ACCURATE 365-DAY COUNTDOWN ENGINE
+   ========================================================================== */
+
+// ೧. ನಿಖರ ದಿನಾಂಕ ಪಾರ್ಸರ್ ಮತ್ತು ದಿನಗಳ ಲೆಕ್ಕಾಚಾರ (Mathematical Date Engine)
+function parseDDMMYYYYDate(dateStr) {
+  if (!dateStr || !dateStr.includes('-')) return null;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+    return new Date(year, month, day, 23, 59, 59);
+  }
+  return null;
+}
+
+function getAccurateDaysRemaining(expiryStr) {
+  const targetDate = parseDDMMYYYYDate(expiryStr);
+  if (!targetDate) return 365;
+  const now = new Date();
+  const diffMs = targetDate.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+function addExactOneYearToDate(baseDateStr) {
+  const parsed = parseDDMMYYYYDate(baseDateStr);
+  const base = parsed ? parsed : new Date();
+  const nextYearDate = new Date(base);
+  nextYearDate.setFullYear(nextYearDate.getFullYear() + 1);
+
+  const day = String(nextYearDate.getDate()).padStart(2, '0');
+  const month = String(nextYearDate.getMonth() + 1).padStart(2, '0');
+  const year = nextYearDate.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+// ೨. ಲಾಗಿನ್ ಆದ ಸೆಷನ್ ಅನ್ನು ಶಾಶ್ವತವಾಗಿ ನೆನಪಿನಲ್ಲಿಟ್ಟುಕೊಳ್ಳುವ ಆಟೋ-ರಿಸ್ಟೋರರ್
+function restoreActiveUserSessionState() {
+  const loggedTeacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null');
+  const loggedSchool = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null');
+  const adminAuth = (sessionStorage.getItem('withyou_admin_auth_token') === 'true');
+
+  if (adminAuth) {
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+    isAdminLoggedIn = true;
+  } else if (loggedTeacher) {
+    appState.currentUserType = 'teacher';
+    appState.currentUserId = loggedTeacher.id;
+  } else if (loggedSchool) {
+    appState.currentUserType = 'school';
+    appState.currentUserId = loggedSchool.id;
+  }
+}
+
+// ೩. ಜನರೇಟರ್ ಹೆಡರ್ ಪ್ರೊಫೈಲ್ ಮತ್ತು ವಿಷಯಗಳ ಆಟೋ-ಸೆಲೆಕ್ಷನ್
+window.syncSubjectAndChapters = function() {
+  restoreActiveUserSessionState();
+
+  const mediumSelect = document.getElementById('cfg-medium');
+  const classSelect = document.getElementById('cfg-class');
+  const subjectSelect = document.getElementById('cfg-subject');
+  const schoolNameInput = document.getElementById('cfg-school-name');
+  const genProfileBox = document.querySelector('#view-generator > div.bg-white.rounded-2xl');
+
+  const allMediums = getSystemMediums();
+  const allSubjects = getSystemSubjects();
+
+  // A. 👨‍🏫 ಶಿಕ್ಷಕರು ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (Permanent Pro Active State)
+  if (appState.currentUserType === 'teacher') {
+    const allTeachers = getFreshTeachersList();
+    const teacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null') || 
+                    allTeachers.find(t => t.id === appState.currentUserId) || 
+                    allTeachers[0];
+
+    if (teacher) {
+      const expDate = teacher.expiryDate || calculateOneFullYearExpiry();
+      const daysLeft = getAccurateDaysRemaining(expDate);
+      const isExpired = daysLeft <= 0;
+
+      // ಜನರೇಟರ್ ಮೇಲ್ಭಾಗದ ಪ್ರೊಫೈಲ್ ಬ್ಯಾನರ್
+      if (genProfileBox) {
+        genProfileBox.innerHTML = `
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+            <div class="flex items-center space-x-3">
+              <div class="h-11 w-11 rounded-2xl ${isExpired ? 'bg-red-800' : 'bg-slate-900'} text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+                <i class="fa-solid fa-chalkboard-user text-emerald-400"></i>
+              </div>
+              <div>
+                <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                  <span>${escapeHtml(teacher.name)}</span>
+                  <span class="font-mono text-[11px] bg-emerald-100 text-emerald-950 px-2.5 py-0.5 rounded-lg font-black border border-emerald-300">${teacher.accessKey}</span>
+                </div>
+                <p class="text-[11px] text-slate-600 font-semibold">${escapeHtml(teacher.school)} &bull; 📱 ${teacher.phone}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-emerald-50 text-emerald-950 border-2 border-emerald-500'} px-3.5 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-circle-check text-emerald-600'}"></i>
+                <span>ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
+              </span>
+              <button onclick="logoutTeacherOrSchool()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">Logout</button>
+            </div>
+          </div>
+        `;
+      }
+
+      // ಶಿಕ್ಷಕರ ಶಾಲೆ, ತರಗತಿ & ವಿಷಯಗಳ ಆಟೋ-ಸೆಲೆಕ್ಷನ್ (ಖಾಲಿ ಬರುವುದನ್ನು ತಪ್ಪಿಸಲು)
+      if (schoolNameInput && teacher.school) schoolNameInput.value = teacher.school;
+      
+      const teacherGrades = (teacher.grades && teacher.grades.length > 0) ? teacher.grades : ['6', '7', '8'];
+      const teacherSubjects = (teacher.subjects && teacher.subjects.length > 0) ? teacher.subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'];
+
+      if (classSelect) {
+        classSelect.innerHTML = teacherGrades.map(g => `<option value="${g}">${g} ನೇ ತರಗತಿ</option>`).join('');
+      }
+      if (subjectSelect) {
+        subjectSelect.innerHTML = teacherSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+      }
+      if (mediumSelect) {
+        mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+      }
+
+      renderChapterCheckboxes();
+      updateStep3CheckboxesDynamically();
+      return;
+    }
+  }
+
+  // B. 🏫 ಶಾಲೆ ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (School Master Mode)
+  if (appState.currentUserType === 'school') {
+    const allSchools = getFreshSchoolsList();
+    const school = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null') || 
+                   allSchools.find(s => s.id === appState.currentUserId) || 
+                   allSchools[0];
+
+    if (school) {
+      const expDate = school.expiryDate || calculateOneFullYearExpiry();
+      const daysLeft = getAccurateDaysRemaining(expDate);
+      const isExpired = daysLeft <= 0;
+
+      if (genProfileBox) {
+        genProfileBox.innerHTML = `
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+            <div class="flex items-center space-x-3">
+              <div class="h-11 w-11 rounded-2xl ${isExpired ? 'bg-red-800' : 'bg-slate-900'} text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+                <i class="fa-solid fa-school text-indigo-400"></i>
+              </div>
+              <div>
+                <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                  <span>${escapeHtml(school.name)}</span>
+                  <span class="font-mono text-[11px] bg-indigo-100 text-indigo-950 px-2.5 py-0.5 rounded-lg font-black border border-indigo-300">${school.accessKey}</span>
+                </div>
+                <p class="text-[11px] text-slate-600 font-semibold">DISE: ${school.dise} &bull; HM: ${escapeHtml(school.hm)} (📱 ${school.hmPhone})</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-indigo-50 text-indigo-950 border-2 border-indigo-500'} px-3.5 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+                <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-building-circle-check text-indigo-600'}"></i>
+                <span>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
+              </span>
+              <button onclick="logoutTeacherOrSchool()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">Logout</button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (schoolNameInput && school.name) schoolNameInput.value = school.name;
+      if (classSelect) classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('');
+      if (subjectSelect) subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+      if (mediumSelect) mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+
+      renderChapterCheckboxes();
+      updateStep3CheckboxesDynamically();
+      return;
+    }
+  }
+
+  // C. ⭐ ಡೆಮೋ ಮೋಡ್ (Guest Demo)
+  if (genProfileBox) {
+    genProfileBox.innerHTML = `
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+        <div class="flex items-center space-x-3">
+          <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl shadow-sm shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <div>
+            <h3 class="text-sm font-black text-amber-950">⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್ (Guest Demo)</h3>
+            <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <span class="text-xs bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1.5 rounded-2xl font-bold">ಡೆಮೋ ಟ್ರಯಲ್</span>
+          <button onclick="navigateToSection('dashboard')" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold px-3 py-1.5 rounded-xl border border-amber-300">ಲಾಗಿನ್ ಆಗಿ</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (classSelect) classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('');
+  if (subjectSelect) subjectSelect.innerHTML = allSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (mediumSelect) mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  renderChapterCheckboxes();
+  updateStep3CheckboxesDynamically();
+};
+
+// ೪. ಶಿಕ್ಷಕರು/ಶಾಲೆ ಲಾಗಿನ್ ಸಕ್ಸಸ್ ಆದ ತಕ್ಷಣ ಜನರೇಟರ್ ಅಪ್ಡೇಟ್
+window.handleTeacherModalLogin = function(e) {
+  e.preventDefault();
+  const p = cleanPhoneDigits(document.getElementById('modal-tch-phone')?.value);
+  const k = cleanKeyString(document.getElementById('modal-tch-key')?.value);
+  const allTeachers = getFreshTeachersList();
+
+  const match = allTeachers.find(t => cleanPhoneDigits(t.phone) === p && cleanKeyString(t.accessKey) === k);
+  if (match) {
+    appState.currentUserType = 'teacher';
+    appState.currentUserId = match.id;
+    sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(match));
+    sessionStorage.removeItem('withyou_logged_school');
+
+    document.getElementById('teacher-auth-modal').classList.add('hidden');
+    showToast(`🎉 ಸ್ವಾಗತ ${match.name} ಸರ್/ಮೇಡಂ!`, 'success');
+    
+    // ನೇರವಾಗಿ ಜನರೇಟರ್ ತೆರೆದು ಶಿಕ್ಷಕರ ಡೇಟಾ ಲೋಡ್ ಮಾಡುವುದು
+    navigateToSection('generator');
+    syncSubjectAndChapters();
+  } else {
+    document.getElementById('modal-tch-login-err')?.classList.remove('hidden');
+  }
+};
+
+window.handleSchoolModalLogin = function(e) {
+  e.preventDefault();
+  const d = cleanKeyString(document.getElementById('modal-sch-dise')?.value);
+  const k = cleanKeyString(document.getElementById('modal-sch-key')?.value);
+  const allSchools = getFreshSchoolsList();
+
+  const match = allSchools.find(s => cleanKeyString(s.dise) === d && cleanKeyString(s.accessKey) === k);
+  if (match) {
+    appState.currentUserType = 'school';
+    appState.currentUserId = match.id;
+    sessionStorage.setItem('withyou_logged_school', JSON.stringify(match));
+    sessionStorage.removeItem('withyou_logged_teacher');
+
+    document.getElementById('school-auth-modal').classList.add('hidden');
+    showToast(`🎉 ಶಾಲೆ: ${match.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+    
+    navigateToSection('generator');
+    syncSubjectAndChapters();
+  } else {
+    document.getElementById('modal-sch-login-err')?.classList.remove('hidden');
+  }
+};
+
+// ೫. ಶಿಕ್ಷಕರು/ಶಾಲಾ Logout ಫಂಕ್ಷನ್
+window.logoutTeacherOrSchool = function() {
+  sessionStorage.removeItem('withyou_logged_teacher');
+  sessionStorage.removeItem('withyou_logged_school');
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+  showToast('🔒 ಲಾಗಿನ್‌ನಿಂದ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+  navigateToSection('dashboard');
+  syncSubjectAndChapters();
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಸೆಷನ್ ರಿಸ್ಟೋರ್ ಮಾಡುವುದು
+restoreActiveUserSessionState();
+syncSubjectAndChapters();
+    
   </script>
 </body>
 </html>
