@@ -2782,6 +2782,124 @@ window.logoutAdmin = function() {
 
 // ತಕ್ಷಣವೇ ಲಾಕ್ ಆದ ಅಚ್ಚುಕಟ್ಟಾದ ಮೆನು ಲೋಡ್ ಮಾಡುವುದು
 updateTopNavbarClean();
+
+    /* ==========================================================================
+   100% MOBILE RESPONSIVE LAYOUT & AUTO-STACKING BUTTONS ENGINE
+   ========================================================================== */
+
+// ೧. ಮೊಬೈಲ್ ಸಿಎಸ್‌ಎಸ್ ಅಪ್ಲಿಕೇಶನ್ (Mobile-First CSS Injection)
+(function injectMobileResponsiveStyles() {
+  const styleId = 'mobile-responsive-master-style';
+  let st = document.getElementById(styleId);
+  if (!st) {
+    st = document.createElement('style');
+    st.id = styleId;
+    document.head.appendChild(st);
+  }
+  st.innerHTML = `
+    /* ಮೊಬೈಲ್‌ನಲ್ಲಿ ಸೈಡ್ ಸ್ಕ್ರೋಲ್ ಬ್ಲಾಕ್ ಮಾಡುವುದು */
+    html, body {
+      overflow-x: hidden !important;
+      width: 100% !important;
+      max-width: 100vw !important;
+    }
+
+    /* ಮೊಬೈಲ್ ಹೆಡರ್ ಬಾರ್ ರೆಸ್ಪಾನ್ಸಿವ್ */
+    header {
+      height: auto !important;
+      min-height: 60px !important;
+      padding: 6px 0 !important;
+    }
+    header .max-w-7xl > div {
+      height: auto !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      justify-content: center !important;
+    }
+    @media (min-width: 768px) {
+      header .max-w-7xl > div {
+        justify-content: space-between !important;
+      }
+    }
+
+    /* ಮೊಬೈಲ್‌ನಲ್ಲಿ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್‌ಗಳು ಒಂದರ ಕೆಳಗೆ ಒಂದು ಬರುವುದು */
+    @media (max-width: 640px) {
+      #dash-compact-auth-bar {
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 8px !important;
+      }
+      #dash-compact-auth-bar button {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 12px 14px !important;
+        font-size: 12px !important;
+      }
+
+      /* ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್‌ಗಳು ಮೊಬೈಲ್ ಸ್ಕ್ರೀನ್‌ಗೆ ಫಿಟ್ ಆಗಲು */
+      .fixed.inset-0 > div {
+        max-width: 95vw !important;
+        padding: 18px 14px !important;
+        margin: auto !important;
+      }
+    }
+  `;
+})();
+
+// ೨. ಮೊಬೈಲ್ ಮತ್ತು ಡೆಸ್ಕ್‌ಟಾಪ್ ಎರಡಕ್ಕೂ ಹೊಂದುವ ರೆಸ್ಪಾನ್ಸಿವ್ ಹೆಡರ್ ಮೆನು
+window.updateTopNavbarClean = function() {
+  const navContainer = document.querySelector('header .flex.items-center.space-x-1') || document.getElementById('top-nav-actions-container');
+  if (!navContainer) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+  // ಫ್ಲೆಕ್ಸ್-ವ್ರ್ಯಾಪ್ ಕ್ಲಾಸ್ ಅಳವಡಿಕೆ
+  navContainer.className = "flex flex-wrap items-center justify-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200 text-xs font-bold w-full sm:w-auto";
+
+  if (isOwnerAdmin) {
+    // 👑 ಅಡ್ಮಿನ್‌ಗೆ ಎಲ್ಲಾ ೫ ಬಟನ್‌ಗಳು (ಮೊಬೈಲ್‌ನಲ್ಲಿ ಆಟೋ-ವ್ರ್ಯಾಪ್)
+    navContainer.innerHTML = `
+      <button type="button" onclick="handleHeaderNavClick('ai-import')" class="px-2.5 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1 text-[11px] sm:text-xs">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+        <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+      </button>
+      <button id="nav-btn-dashboard" type="button" onclick="handleHeaderNavClick('dashboard')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-[11px] sm:text-xs">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="handleHeaderNavClick('generator')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-[11px] sm:text-xs">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button id="nav-btn-qbank" type="button" onclick="handleHeaderNavClick('qbank')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-[11px] sm:text-xs">
+        <i class="fa-solid fa-database text-amber-600"></i>
+        <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+      </button>
+      <button id="nav-btn-admin" type="button" onclick="handleHeaderNavClick('admin')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-[11px] sm:text-xs">
+        <i class="fa-solid fa-gear text-slate-700"></i>
+        <span>Admin</span>
+      </button>
+      <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-[11px] sm:text-xs shadow">
+        Logout
+      </button>
+    `;
+  } else {
+    // 👤 ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಕೇವಲ ೨ ಬಟನ್‌ಗಳು (ಮೊಬೈಲ್‌ನಲ್ಲಿ ಸೂಪರ್ ಕ್ಲೀನ್)
+    navContainer.innerHTML = `
+      <button id="nav-btn-dashboard" type="button" onclick="handleHeaderNavClick('dashboard')" class="flex-1 sm:flex-none px-4 py-2 rounded-xl font-bold bg-white text-slate-900 shadow-sm flex items-center justify-center gap-1.5 text-xs">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="handleHeaderNavClick('generator')" class="flex-1 sm:flex-none px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center justify-center gap-1.5 text-xs">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+    `;
+  }
+};
+
+// ತಕ್ಷಣವೇ ರೆಸ್ಪಾನ್ಸಿವ್ ಲೇಔಟ್ ಅನ್ವಯಿಸುವುದು
+updateTopNavbarClean();
     
   </script>
 </body>
