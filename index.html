@@ -22499,6 +22499,433 @@ renderChapterCheckboxes();
   window.renderChapterCheckboxes();
 
 })();
+
+  /* ==========================================================================
+   ANNUAL SUBSCRIPTION ENGINE: ₹200 TEACHER / ₹500 SCHOOL & EXACT EXPIRY DATES
+   ========================================================================== */
+
+const FEE_TEACHER_YEARLY = "₹200";
+const FEE_SCHOOL_YEARLY = "₹500";
+
+// ೧. ನಿಖರ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ (ಉದಾ: ಪ್ರಸ್ತುತ ವರ್ಷಕ್ಕೆ 31-03-2027)
+function getStandardAcademicExpiryDate() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  // ಪ್ರಸ್ತುತ ಶೈಕ್ಷಣಿಕ ವರ್ಷದ ಮುಕ್ತಾಯ ದಿನಾಂಕ (31-03-2027)
+  const targetYear = (now.getMonth() >= 3) ? (currentYear + 1) : currentYear;
+  return `31-03-${targetYear + 1}`; // 31-03-2027
+}
+
+// ರಿನೀವಲ್ ಮಾಡಿದಾಗ +೧ ವರ್ಷ ವಿಸ್ತರಣೆ (e.g. 31-03-2028)
+function getNextRenewedExpiryDate(currentExpiryStr) {
+  if (currentExpiryStr && currentExpiryStr.includes('-')) {
+    const parts = currentExpiryStr.split('-');
+    if (parts.length === 3) {
+      const nextY = parseInt(parts[2]) + 1;
+      return `${parts[0]}-${parts[1]}-${nextY}`;
+    }
+  }
+  return "31-03-2028";
+}
+
+// ಎಕ್ಸ್‌ಪೈರ್ ಆಗಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸುವ ಫಂಕ್ಷನ್
+function checkIsAccountExpired(expiryDateStr) {
+  if (!expiryDateStr) return false;
+  const parts = expiryDateStr.split('-');
+  if (parts.length === 3) {
+    const expDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
+    return new Date() > expDate;
+  }
+  return false;
+}
+
+// ೨. ಹಳೆಯ ದಾಖಲೆಗಳಿಗೆ 31-03-2027 ದಿನಾಂಕವನ್ನು ಆಟೋ-ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+(function standardizeAllExpiryDates() {
+  let changed = false;
+  const defDate = getStandardAcademicExpiryDate();
+
+  (appState.teachers || []).forEach(t => {
+    if (!t.expiryDate || t.expiryDate.length < 8) {
+      t.expiryDate = defDate;
+      t.fee = FEE_TEACHER_YEARLY;
+      changed = true;
+    }
+  });
+
+  (appState.schools || []).forEach(s => {
+    if (!s.expiryDate || s.expiryDate.length < 8) {
+      s.expiryDate = defDate;
+      s.fee = FEE_SCHOOL_YEARLY;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+    localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+    pushAuthDataToFirebase();
+  }
+})();
+
+// ೩. ಲಾಗಿನ್ ಆದಾಗ ಜನರೇಟರ್ ಹೆಡರ್‌ನಲ್ಲಿ ನಿಖರ ದಿನಾಂಕ & ಎಕ್ಸ್‌ಪೈರಿ ಸ್ಟೇಟಸ್ ಪ್ರದರ್ಶನ
+const originalSyncWithExpiryDisplay = window.syncSubjectAndChapters;
+window.syncSubjectAndChapters = function() {
+  if (typeof originalSyncWithExpiryDisplay === 'function') {
+    originalSyncWithExpiryDisplay();
+  }
+
+  const genNameEl = document.getElementById('gen-active-user-name');
+  const genSchoolEl = document.getElementById('gen-active-user-school');
+  const genBadge = document.getElementById('gen-active-badge');
+  const schoolNameInput = document.getElementById('cfg-school-name');
+
+  // A. 👨‍🏫 ಶಿಕ್ಷಕರ ಲಾಗಿನ್
+  if (appState.currentUserType === 'teacher') {
+    const allTeachers = getFreshTeachersList();
+    const teacher = allTeachers.find(t => t.id === appState.currentUserId) || 
+                    JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null') || 
+                    allTeachers[0];
+
+    if (teacher) {
+      const expDate = teacher.expiryDate || getStandardAcademicExpiryDate();
+      const isExpired = checkIsAccountExpired(expDate);
+
+      if (genNameEl) {
+        genNameEl.innerHTML = `
+          <span class="text-sm font-black text-slate-900">${escapeHtml(teacher.name)}</span>
+          <span class="font-mono text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg font-black border border-emerald-300 ml-1.5">${teacher.accessKey}</span>
+        `;
+      }
+      if (genSchoolEl) {
+        genSchoolEl.innerHTML = `<b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; 📱 ${teacher.phone} &bull; 💰 ಶುಲ್ಕ: ${FEE_TEACHER_YEARLY}/ವರ್ಷ`;
+      }
+      if (genBadge) {
+        if (isExpired) {
+          genBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600"></i> ಚಂದಾದಾರಿಕೆ ಮುಕ್ತಾಯವಾಗಿದೆ (${expDate})`;
+          genBadge.className = "text-[11px] bg-red-100 text-red-900 border-2 border-red-400 px-3 py-1 rounded-full font-black flex items-center gap-1 shadow-sm";
+        } else {
+          genBadge.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> ವ್ಯಾಲಿಡಿಟಿ: ${expDate} ರವರೆಗೆ (ಸಕ್ರಿಯ)`;
+          genBadge.className = "text-[11px] bg-emerald-50 text-emerald-900 border-2 border-emerald-400 px-3 py-1 rounded-full font-black flex items-center gap-1 shadow-sm";
+        }
+      }
+      if (schoolNameInput && teacher.school) {
+        schoolNameInput.value = teacher.school;
+      }
+    }
+  }
+  // B. 🏫 ಶಾಲಾ ಲಾಗಿನ್
+  else if (appState.currentUserType === 'school') {
+    const allSchools = getFreshSchoolsList();
+    const school = allSchools.find(s => s.id === appState.currentUserId) || 
+                   JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null') || 
+                   allSchools[0];
+
+    if (school) {
+      const expDate = school.expiryDate || getStandardAcademicExpiryDate();
+      const isExpired = checkIsAccountExpired(expDate);
+
+      if (genNameEl) {
+        genNameEl.innerHTML = `
+          <span class="text-sm font-black text-slate-900">${escapeHtml(school.name)}</span>
+          <span class="font-mono text-[10px] bg-indigo-100 text-indigo-900 px-2 py-0.5 rounded-lg font-black border border-indigo-300 ml-1.5">${school.accessKey}</span>
+        `;
+      }
+      if (genSchoolEl) {
+        genSchoolEl.innerHTML = `<b>DISE:</b> ${school.dise} &bull; <b>HM:</b> ${escapeHtml(school.hm)} (📱 ${school.hmPhone}) &bull; 💰 ಶುಲ್ಕ: ${FEE_SCHOOL_YEARLY}/ವರ್ಷ`;
+      }
+      if (genBadge) {
+        if (isExpired) {
+          genBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600"></i> ಶಾಲಾ ಚಂದಾದಾರಿಕೆ ಮುಕ್ತಾಯವಾಗಿದೆ (${expDate})`;
+          genBadge.className = "text-[11px] bg-red-100 text-red-900 border-2 border-red-400 px-3 py-1 rounded-full font-black flex items-center gap-1 shadow-sm";
+        } else {
+          genBadge.innerHTML = `<i class="fa-solid fa-building-circle-check text-indigo-600"></i> ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: ${expDate} ರವರೆಗೆ (ಸಕ್ರಿಯ)`;
+          genBadge.className = "text-[11px] bg-indigo-50 text-indigo-900 border-2 border-indigo-400 px-3 py-1 rounded-full font-black flex items-center gap-1 shadow-sm";
+        }
+      }
+      if (schoolNameInput && school.name) {
+        schoolNameInput.value = school.name;
+      }
+    }
+  }
+};
+
+// ೪. ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ & WhatsApp ಸಂದೇಶ (ದಿನಾಂಕ + ₹200 ಶುಲ್ಕ)
+window.handleTeacherRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-teacher-name').value.trim();
+  const school = document.getElementById('reg-teacher-school').value.trim();
+  const phone = document.getElementById('reg-teacher-phone').value.trim();
+  const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+  const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+
+  const accessKey = generateGuaranteedUniqueKey('TCH');
+  const expiryDate = getStandardAcademicExpiryDate(); // 31-03-2027
+
+  const newTeacher = {
+    id: 'T_' + Date.now(),
+    name, school, phone,
+    grades: grades.length > 0 ? grades : ['6', '7', '8'],
+    subjects: subjects.length > 0 ? subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'],
+    accessKey,
+    fee: FEE_TEACHER_YEARLY,
+    expiryDate: expiryDate,
+    createdAt: new Date().toLocaleDateString()
+  };
+
+  appState.teachers.unshift(newTeacher);
+  localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+
+  renderRegisteredTeachers();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-teacher').reset();
+
+  alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nವಾರ್ಷಿಕ ಶುಲ್ಕ: ${FEE_TEACHER_YEARLY}\nವ್ಯಾಲಿಡಿಟಿ: ${expiryDate} ರವರೆಗೆ\n\n'WhatsApp Key ಕಳುಹಿಸಿ' ಬಟನ್ ಬಳಸಿ ಕೀಯನ್ನು ಅವರಿಗೆ ರವಾನಿಸಿ.`);
+};
+
+// ೫. ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ & WhatsApp ಸಂದೇಶ (ದಿನಾಂಕ + ₹500 ಶುಲ್ಕ)
+window.handleSchoolRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-school-name').value.trim();
+  const dise = document.getElementById('reg-school-dise').value.trim();
+  const hm = document.getElementById('reg-school-hm').value.trim();
+  const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+
+  const accessKey = generateGuaranteedUniqueKey('SCH');
+  const expiryDate = getStandardAcademicExpiryDate(); // 31-03-2027
+
+  const newSchool = {
+    id: 'SCH_' + Date.now(),
+    name, dise, hm, hmPhone,
+    accessKey,
+    fee: FEE_SCHOOL_YEARLY,
+    expiryDate: expiryDate,
+    createdAt: new Date().toLocaleDateString()
+  };
+
+  appState.schools.unshift(newSchool);
+  localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+
+  renderRegisteredSchools();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-school').reset();
+
+  alert(`🎉 ಶಾಲೆ: ${name} ನೋಂದಣಿಯಾಗಿದೆ!\n\nMaster Key: ${accessKey}\nವಾರ್ಷಿಕ ಶುಲ್ಕ: ${FEE_SCHOOL_YEARLY}\nಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: ${expiryDate} ರವರೆಗೆ\n\n'WhatsApp Master Key ಕಳುಹಿಸಿ' ಬಟನ್ ಬಳಸಿ ಕೀಯನ್ನು HM ಗೆ ರವಾನಿಸಿ.`);
+};
+
+// ೬. WhatsApp ನಲ್ಲಿ ದಿನಾಂಕ & ಶುಲ್ಕ ಸಹಿತ ಕೀ ಕಳುಹಿಸುವಿಕೆ
+window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const t = (appState.teachers || []).find(item => item.accessKey === key);
+  const expDate = t ? (t.expiryDate || getStandardAcademicExpiryDate()) : getStandardAcademicExpiryDate();
+
+  const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
+              `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+              `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆ ಖಾತೆಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+              `🔑 *Teacher Access Key:* *${key}*\n` +
+              `📱 *ಲಾಗಿನ್ ಮೊಬೈಲ್:* ${cleanPhone}\n` +
+              `💰 *ವಾರ್ಷಿಕ ಶುಲ್ಕ:* ${FEE_TEACHER_YEARLY} (ಪಾವತಿಸಲಾಗಿದೆ)\n` +
+              `🗓️ *ಸದಸ್ಯತ್ವ ವ್ಯಾಲಿಡಿಟಿ:* *${expDate} ರವರೆಗೆ*\n\n` +
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ನೀವು ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಿಕೊಳ್ಳಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+window.sendKeyToSchoolWhatsApp = function(phone, schoolName, key) {
+  const cleanPhone = phone.replace(/[^0-9]/g, '');
+  const s = (appState.schools || []).find(item => item.accessKey === key);
+  const expDate = s ? (s.expiryDate || getStandardAcademicExpiryDate()) : getStandardAcademicExpiryDate();
+
+  const msg = `*With You QP Generator - ಶಾಲಾ Master Access Key*\n\n` +
+              `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
+              `*${schoolName}* ಶಾಲೆಯ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+              `🔑 *ಶಾಲಾ Master Key:* *${key}*\n` +
+              `💰 *ಶಾಲಾ ವಾರ್ಷಿಕ ಶುಲ್ಕ:* ${FEE_SCHOOL_YEARLY} (ಪಾವತಿಸಲಾಗಿದೆ)\n` +
+              `🗓️ *ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ:* *${expDate} ರವರೆಗೆ*\n\n` +
+              `ಈ ಕೀಯನ್ನು ಬಳಸಿ ಶಾಲೆಯ ಎಲ್ಲಾ ತರಗತಿ & ವಿಷಯಗಳ ಪರೀಕ್ಷಾ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಿಕೊಳ್ಳಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+
+  window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// ೭. 🔄 ೧-ಕ್ಲಿಕ್ ವಾರ್ಷಿಕ ರಿನೀವಲ್ (+೧ ವರ್ಷ ವಿಸ್ತರಣೆ & ಹೊಸ ಕೀ)
+window.renewTeacherAccount = function(teacherId) {
+  const t = (appState.teachers || []).find(item => item.id === teacherId);
+  if (!t) return;
+
+  const nextExpDate = getNextRenewedExpiryDate(t.expiryDate);
+  const newAccessKey = generateGuaranteedUniqueKey('TCH');
+
+  if (confirm(`ಶಿಕ್ಷಕ: ${t.name} ಅವರ ಖಾತೆಯನ್ನು ಮುಂದಿನ ವರ್ಷಕ್ಕೆ (${nextExpDate} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?\n\nಹೊಸ Access Key: ${newAccessKey}\nಶುಲ್ಕ: ${FEE_TEACHER_YEARLY}`)) {
+    t.accessKey = newAccessKey;
+    t.expiryDate = nextExpDate;
+    t.renewedAt = new Date().toLocaleDateString();
+
+    localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+    pushAuthDataToFirebase();
+    renderRegisteredTeachers();
+
+    const cleanPhone = (t.phone || '').replace(/[^0-9]/g, '');
+    const msg = `*With You QP Generator - ವಾರ್ಷಿಕ ರಿನೀವಲ್ ಯಶಸ್ವಿ (Renewal Success)*\n\n` +
+                `ನಮಸ್ಕಾರ ${t.name} ಸರ್/ಮೇಡಂ,\n` +
+                `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆಯನ್ನು (${FEE_TEACHER_YEARLY}) ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ (Renewed).\n\n` +
+                `🔑 *ನಿಮ್ಮ ಹೊಸ Teacher Access Key:* *${newAccessKey}*\n` +
+                `📱 *ಮೊಬೈಲ್:* ${cleanPhone}\n` +
+                `🗓️ *ಹೊಸ ವ್ಯಾಲಿಡಿಟಿ:* *${nextExpDate} ರವರೆಗೆ*\n\n` +
+                `ಈ ಹೊಸ ಕೀಯನ್ನು ಬಳಸಿ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ರಚಿಸಬಹುದು. ಧನ್ಯವಾದಗಳು!`;
+
+    window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    showToast(`🔄 ಶಿಕ್ಷಕ ${t.name} ಖಾತೆ ರಿನೀವಲ್ ಆಗಿದೆ! ವ್ಯಾಲಿಡಿಟಿ: ${nextExpDate}`, 'success');
+  }
+};
+
+window.renewSchoolAccount = function(schoolId) {
+  const s = (appState.schools || []).find(item => item.id === schoolId);
+  if (!s) return;
+
+  const nextExpDate = getNextRenewedExpiryDate(s.expiryDate);
+  const newMasterKey = generateGuaranteedUniqueKey('SCH');
+
+  if (confirm(`ಶಾಲೆ: ${s.name} ಖಾತೆಯನ್ನು ಮುಂದಿನ ವರ್ಷಕ್ಕೆ (${nextExpDate} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?\n\nಹೊಸ Master Key: ${newMasterKey}\nಶುಲ್ಕ: ${FEE_SCHOOL_YEARLY}`)) {
+    s.accessKey = newMasterKey;
+    s.expiryDate = nextExpDate;
+    s.renewedAt = new Date().toLocaleDateString();
+
+    localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+    pushAuthDataToFirebase();
+    renderRegisteredSchools();
+
+    const cleanPhone = (s.hmPhone || '').replace(/[^0-9]/g, '');
+    const msg = `*With You QP Generator - ಶಾಲಾ ಮಾಸ್ಟರ್ ರಿನೀವಲ್ (Renewal Success)*\n\n` +
+                `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
+                `*${s.name}* ಶಾಲೆಯ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆಯನ್ನು (${FEE_SCHOOL_YEARLY}) ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ.\n\n` +
+                `🔑 *ಶಾಲೆಯ ಹೊಸ Master Key:* *${newMasterKey}*\n` +
+                `🗓️ *ಹೊಸ ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ:* *${nextExpDate} ರವರೆಗೆ*\n\n` +
+                `ಧನ್ಯವಾದಗಳು!`;
+
+    window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    showToast(`🔄 ಶಾಲೆ ${s.name} ರಿನೀವಲ್ ಆಗಿದೆ! ವ್ಯಾಲಿಡಿಟಿ: ${nextExpDate}`, 'success');
+  }
+};
+
+// ೮. ಅಡ್ಮಿನ್ ಲಿಸ್ಟ್‌ನಲ್ಲಿ ದಿನಾಂಕ & ಶುಲ್ಕ ಪ್ರದರ್ಶನ
+window.renderRegisteredTeachers = function() {
+  const container = document.getElementById('list-registered-teachers');
+  const countEl = document.getElementById('count-teachers');
+  const allTeachers = appState.teachers || [];
+  if (countEl) countEl.innerText = allTeachers.length;
+  if (!container) return;
+
+  let filtered = allTeachers;
+  if (adminTeacherSearchQuery.trim() !== '') {
+    const q = adminTeacherSearchQuery.toLowerCase();
+    filtered = filtered.filter(t => 
+      (t.name || '').toLowerCase().includes(q) ||
+      (t.school || '').toLowerCase().includes(q) ||
+      (t.phone || '').includes(q) ||
+      (t.accessKey || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಿಕ್ಷಕರು ಕಂಡುಬಂದಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(t => `
+    <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-emerald-400 transition">
+      <div class="flex items-center justify-between">
+        <span class="font-black text-slate-900 text-[13px]">
+          ${escapeHtml(t.name)} 
+          <span class="bg-emerald-100 text-emerald-900 font-mono px-2 py-0.5 rounded font-black border border-emerald-300 ml-1">${t.accessKey}</span>
+        </span>
+        
+        <div class="flex items-center space-x-1">
+          <button onclick="renewTeacherAccount('${t.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್</span>
+          </button>
+          <button onclick="openEditTeacherModal('${t.id}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+            <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+          </button>
+          <button onclick="deleteTeacher('${t.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px]">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-slate-600 font-semibold">${t.school} &bull; 📱 ${t.phone} &bull; 💰 ${t.fee || FEE_TEACHER_YEARLY}</div>
+
+      <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+        <span class="text-[10px] bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-200">
+          🗓️ ವ್ಯಾಲಿಡಿಟಿ: <b>${t.expiryDate || getStandardAcademicExpiryDate()}</b>
+        </span>
+        <button onclick="sendKeyToTeacherWhatsApp('${t.phone}', '${t.name}', '${t.accessKey}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+          <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Key ಕಳುಹಿಸಿ</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+window.renderRegisteredSchools = function() {
+  const container = document.getElementById('list-registered-schools');
+  const countEl = document.getElementById('count-schools');
+  const allSchools = appState.schools || [];
+  if (countEl) countEl.innerText = allSchools.length;
+  if (!container) return;
+
+  let filtered = allSchools;
+  if (adminSchoolSearchQuery.trim() !== '') {
+    const q = adminSchoolSearchQuery.toLowerCase();
+    filtered = filtered.filter(s => 
+      (s.name || '').toLowerCase().includes(q) ||
+      (s.dise || '').toLowerCase().includes(q) ||
+      (s.hm || '').toLowerCase().includes(q) ||
+      (s.hmPhone || '').includes(q) ||
+      (s.accessKey || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಾಲೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => `
+    <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-indigo-400 transition">
+      <div class="flex items-center justify-between">
+        <span class="font-black text-slate-900 text-[13px]">
+          ${escapeHtml(s.name)} 
+          <span class="bg-indigo-100 text-indigo-950 font-mono px-2 py-0.5 rounded font-black border border-indigo-300 ml-1">${s.accessKey}</span>
+        </span>
+
+        <div class="flex items-center space-x-1">
+          <button onclick="renewSchoolAccount('${s.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್</span>
+          </button>
+          <button onclick="openEditSchoolModal('${s.id}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+            <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+          </button>
+          <button onclick="deleteSchool('${s.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px]">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-slate-600 font-semibold">DISE: ${s.dise} &bull; HM: ${s.hm} (📱 ${s.hmPhone}) &bull; 💰 ${s.fee || FEE_SCHOOL_YEARLY}</div>
+
+      <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+        <span class="text-[10px] bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-200">
+          🗓️ ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${s.expiryDate || getStandardAcademicExpiryDate()}</b>
+        </span>
+        <button onclick="sendKeyToSchoolWhatsApp('${s.hmPhone}', '${s.name}', '${s.accessKey}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1">
+          <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Master Key ಕಳುಹಿಸಿ</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+// ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ವ್ಯಾಲಿಡಿಟಿ ರಿಫ್ರೆಶ್
+syncSubjectAndChapters();
   
   </script>
 </body>
