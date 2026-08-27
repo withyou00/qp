@@ -3531,6 +3531,154 @@ window.handleBulkExistingChapterSelect = function(val) {
     chapterInput.value = val; // ಈಗಾಗಲೇ ಇರುವ ಪಾಠದ ಹೆಸರನ್ನೇ ನಿಖರವಾಗಿ ಕಾಪಿ ಮಾಡುತ್ತದೆ
   }
 };
+   /* ==========================================================================
+   PROMINENT LIVE USER PROFILE & EXACT EXPIRY DATE (31-03-2027) ENGINE
+   ========================================================================== */
+
+// ೧. ಲಾಗಿನ್ ಆದ ಬಳಕೆದಾರರ ಪೂರ್ಣ ವಿವರ ಮತ್ತು ವ್ಯಾಲಿಡಿಟಿಯನ್ನು ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಪ್ರದರ್ಶಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.updateGlobalUserValidityDisplayEverywhere = function() {
+  const genProfileBox = document.querySelector('#view-generator > div.bg-white.rounded-2xl');
+  if (!genProfileBox) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+  const savedTeacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null');
+  const savedSchool = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null');
+
+  // A. 👑 ಅಡ್ಮಿನ್ ಆಗಿದ್ದಾಗ
+  if (isOwnerAdmin) {
+    genProfileBox.innerHTML = `
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+        <div class="flex items-center space-x-3">
+          <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-purple-700 to-indigo-900 text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+            <i class="fa-solid fa-crown text-amber-300"></i>
+          </div>
+          <div>
+            <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+              <span>Admin Master Account</span>
+              <span class="text-[10px] bg-purple-100 text-purple-900 border border-purple-300 px-2.5 py-0.5 rounded-full font-black">Full Access</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-semibold">ಸಂಪೂರ್ಣ ಅಧಿಕಾರ &bull; Unlimited Question Papers</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <span class="text-xs bg-purple-50 text-purple-950 border-2 border-purple-400 px-3.5 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-infinity text-purple-600"></i> <span>ವ್ಯಾಲಿಡಿಟಿ: ಅನಿಯಮಿತ (Lifetime)</span>
+          </span>
+          <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಬದಲಿಸಿ</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // B. 👨‍🏫 ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (Teacher Login Active)
+  if (appState.currentUserType === 'teacher' || savedTeacher) {
+    const teacher = savedTeacher || (appState.teachers || []).find(t => t.id === appState.currentUserId) || (appState.teachers || [])[0];
+    if (teacher) {
+      const expDate = teacher.expiryDate || "31-03-2027";
+      const isExpired = checkIsAccountExpired(expDate);
+
+      genProfileBox.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+          <div class="flex items-center space-x-3">
+            <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-800 text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+              <i class="fa-solid fa-chalkboard-user"></i>
+            </div>
+            <div>
+              <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>${escapeHtml(teacher.name)}</span>
+                <span class="font-mono text-[11px] bg-emerald-100 text-emerald-950 px-2.5 py-0.5 rounded-lg font-black border border-emerald-300">${teacher.accessKey}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 font-semibold"><b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; 📱 ${teacher.phone}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-emerald-50 text-emerald-950 border-2 border-emerald-500'} px-3.5 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-circle-check text-emerald-600 text-sm'}"></i>
+              <span>ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ ${isExpired ? '(ಮುಕ್ತಾಯ)' : '(ಸಕ್ರಿಯ)'}</span>
+            </span>
+            <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಬದಲಿಸಿ</button>
+          </div>
+        </div>
+      `;
+
+      // ಶಾಲೆಯ ಹೆಸರು ಆಟೋ-ಫಿಲ್
+      const schoolInput = document.getElementById('cfg-school-name');
+      if (schoolInput && teacher.school) schoolInput.value = teacher.school;
+      return;
+    }
+  }
+
+  // C. 🏫 ಶಾಲಾ ಲಾಗಿನ್ ಆಗಿದ್ದಾಗ (School Master Login Active)
+  if (appState.currentUserType === 'school' || savedSchool) {
+    const school = savedSchool || (appState.schools || []).find(s => s.id === appState.currentUserId) || (appState.schools || [])[0];
+    if (school) {
+      const expDate = school.expiryDate || "31-03-2027";
+      const isExpired = checkIsAccountExpired(expDate);
+
+      genProfileBox.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+          <div class="flex items-center space-x-3">
+            <div class="h-11 w-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-800 text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+              <i class="fa-solid fa-school"></i>
+            </div>
+            <div>
+              <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>${escapeHtml(school.name)}</span>
+                <span class="font-mono text-[11px] bg-indigo-100 text-indigo-950 px-2.5 py-0.5 rounded-lg font-black border border-indigo-300">${school.accessKey}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 font-semibold">DISE: ${school.dise} &bull; HM: ${escapeHtml(school.hm)} (📱 ${school.hmPhone})</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-indigo-50 text-indigo-950 border-2 border-indigo-500'} px-3.5 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-building-circle-check text-indigo-600 text-sm'}"></i>
+              <span>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ ${isExpired ? '(ಮುಕ್ತಾಯ)' : '(ಸಕ್ರಿಯ)'}</span>
+            </span>
+            <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಬದಲಿಸಿ</button>
+          </div>
+        </div>
+      `;
+
+      const schoolInput = document.getElementById('cfg-school-name');
+      if (schoolInput && school.name) schoolInput.value = school.name;
+      return;
+    }
+  }
+
+  // D. ⭐ ಡೆಮೋ ಮೋಡ್ (Demo Mode)
+  genProfileBox.innerHTML = `
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+      <div class="flex items-center space-x-3">
+        <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl shadow-sm shrink-0">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-black text-amber-950">⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್ (Guest Demo)</h3>
+          <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        <span class="text-xs bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1.5 rounded-2xl font-bold flex items-center gap-1">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> <span>ಡೆಮೋ ಟ್ರಯಲ್</span>
+        </span>
+        <button onclick="navigateToSection('dashboard')" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold px-3 py-1.5 rounded-xl border border-amber-300">ಲಾಗಿನ್ ಆಗಿ</button>
+      </div>
+    </div>
+  `;
+};
+
+// ೨. ಸಿಂಕ್ ಹ್ಯಾಂಡ್ಲರ್‌ಗೆ ಲಿಂಕ್ ಮಾಡುವುದು
+const origSyncForValidity = window.syncSubjectAndChapters;
+window.syncSubjectAndChapters = function() {
+  if (typeof origSyncForValidity === 'function') {
+    origSyncForValidity();
+  }
+  updateGlobalUserValidityDisplayEverywhere();
+};
+
+// ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಲೈವ್ ಬ್ಯಾನರ್ ಲೋಡ್ ಮಾಡುವುದು
+updateGlobalUserValidityDisplayEverywhere(); 
     
   </script>
 </body>
