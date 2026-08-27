@@ -2561,6 +2561,99 @@ window.toggleLiveEditMode = function() {
     showToast('✅ ಬದಲಾವಣೆಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
   }
 };
+
+    /* ==========================================================================
+   TOP HEADER NAVIGATION BAR 100% WORKING EVENT ATTACHER
+   ========================================================================== */
+
+// ೧. ಹೆಡರ್ ಬಟನ್‌ಗಳ ಈವೆಂಟ್ ಹ್ಯಾಂಡ್ಲರ್
+window.handleHeaderNavClick = function(type) {
+  if (type === 'ai-import') {
+    openBulkAIImportModal();
+  } else if (type === 'dashboard') {
+    navigateToSection('dashboard');
+  } else if (type === 'generator') {
+    navigateToSection('generator');
+  } else if (type === 'qbank') {
+    navigateToSection('qbank');
+  } else if (type === 'admin') {
+    navigateToSection('admin');
+  }
+};
+
+// ೨. ಹೆಡರ್ ಬಾರ್ ಅನ್ನು ಮರು-ರಚಿಸಿ ಎಲ್ಲಾ ಬಟನ್‌ಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+function bindTopHeaderButtonsDirectly() {
+  const navContainer = document.querySelector('header .flex.items-center.space-x-1') || document.getElementById('top-nav-actions-container');
+  if (!navContainer) return;
+
+  navContainer.innerHTML = `
+    <!-- ೧. AI ಇಂಪೋರ್ಟ್ -->
+    <button type="button" onclick="handleHeaderNavClick('ai-import')" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+      <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+      <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+    </button>
+
+    <!-- ೨. Dashboard -->
+    <button id="nav-btn-dashboard" type="button" onclick="handleHeaderNavClick('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+      <i class="fa-solid fa-house text-emerald-600"></i>
+      <span>Dashboard</span>
+    </button>
+
+    <!-- ೩. ಜನರೇಟರ್ -->
+    <button id="nav-btn-generator" type="button" onclick="handleHeaderNavClick('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+      <i class="fa-solid fa-file-signature text-teal-600"></i>
+      <span>ಜನರೇಟರ್</span>
+    </button>
+
+    <!-- ೪. ಪ್ರಶ್ನೆ ಭಂಡಾರ -->
+    <button id="nav-btn-qbank" type="button" onclick="handleHeaderNavClick('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+      <i class="fa-solid fa-database text-amber-600"></i>
+      <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+    </button>
+
+    <!-- ೫. Admin -->
+    <button id="nav-btn-admin" type="button" onclick="handleHeaderNavClick('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer">
+      <i class="fa-solid fa-gear text-slate-700"></i>
+      <span>Admin</span>
+    </button>
+  `;
+}
+
+// ೩. ನ್ಯಾವಿಗೇಷನ್ ಸ್ವಿಚರ್ ಫಂಕ್ಷನ್
+window.navigateToSection = function(section) {
+  // ಎಲ್ಲಾ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ಹೈಡ್ ಮಾಡುವುದು
+  ['dashboard', 'profile', 'generator', 'admin'].forEach(function(v) {
+    const el = document.getElementById('view-' + v);
+    if (el) el.classList.add('hidden');
+    const btn = document.getElementById('nav-btn-' + v);
+    if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs cursor-pointer';
+  });
+
+  // ಆಕ್ಟಿವ್ ಸೆಕ್ಷನ್ ತೋರಿಸುವುದು
+  let targetViewId = (section === 'qbank' || section === 'admin') ? 'view-admin' : ('view-' + section);
+  const activeEl = document.getElementById(targetViewId);
+  const activeBtn = document.getElementById('nav-btn-' + section);
+
+  if (activeEl) activeEl.classList.remove('hidden');
+  if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer';
+
+  if (section === 'generator') {
+    syncSubjectAndChapters();
+  } else if (section === 'qbank') {
+    renderDedicatedQuestionBankModule();
+  } else if (section === 'admin') {
+    if (!isAdminLoggedIn) {
+      showAdminLoginModal();
+    } else {
+      renderAdminMasterManagementHTML();
+    }
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ತಕ್ಷಣವೇ ಬಟನ್‌ಗಳನ್ನು ಲಿಂಕ್ ಮಾಡಿ ಆಕ್ಟಿವ್ ಮಾಡುವುದು
+bindTopHeaderButtonsDirectly();
     
   </script>
 </body>
