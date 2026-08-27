@@ -2465,6 +2465,103 @@
 
     function escapeHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     window.toggleChapters = function(b) { document.querySelectorAll('input[name="selected_chapter"]').forEach(c=>c.checked=b); };
+
+    /* ==========================================================================
+   ALL BUTTONS ACTIVATION & COMPLETE FUNCTIONALITY MASTER FIX
+   ========================================================================== */
+
+let adminSelectedQIds = new Set();
+
+// ೧. ಸಿಂಗಲ್ & ಬಲ್ಕ್ ಸೆಲೆಕ್ಷನ್ ಚೆಕ್‌ಬಾಕ್ಸ್ ಬಟನ್‌ಗಳು
+window.toggleSingleAdminQuestionSelection = function(qId, isChecked) {
+  if (isChecked) adminSelectedQIds.add(qId);
+  else adminSelectedQIds.delete(qId);
+  const countSpan = document.getElementById('admin-selected-count');
+  if (countSpan) countSpan.innerText = adminSelectedQIds.size;
+};
+
+window.toggleSelectAllAdminQuestions = function(selectAll) {
+  let filteredList = appState.qbank || [];
+  if (adminFilterGrade !== 'all') filteredList = filteredList.filter(q => String(q.grade) === String(adminFilterGrade));
+  if (adminFilterSubject !== 'all') filteredList = filteredList.filter(q => q.subject === adminFilterSubject);
+
+  if (selectAll) {
+    filteredList.forEach(q => adminSelectedQIds.add(q.id));
+  } else {
+    filteredList.forEach(q => adminSelectedQIds.delete(q.id));
+  }
+  renderCustomQuestionList();
+};
+
+// ೨. ಪ್ರಶ್ನೆ ಭಂಡಾರದಿಂದ ಬಲ್ಕ್ ಡಿಲೀಟ್ ಬಟನ್
+window.bulkDeleteSelectedQuestions = function() {
+  if (adminSelectedQIds.size === 0) {
+    return alert('ದಯವಿಟ್ಟು ಅಳಿಸಲು ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ (Select ಮಾಡಿ).');
+  }
+
+  const count = adminSelectedQIds.size;
+  if (confirm(`ಆಯ್ಕೆಮಾಡಿದ ಒಟ್ಟು ${count} ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರಶ್ನೆ ಭಂಡಾರದಿಂದ ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?`)) {
+    appState.qbank = appState.qbank.filter(q => !adminSelectedQIds.has(q.id));
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    adminSelectedQIds.clear();
+    
+    showToast(`✅ ${count} ಪ್ರಶ್ನೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ!`, 'success');
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    pushToFirebaseCloud();
+  }
+};
+
+// ೩. ಪ್ರತ್ಯೇಕ ಪ್ರಶ್ನೆ ಡಿಲೀಟ್ ಬಟನ್ (🗑️)
+window.deleteQuestionFromBank = function(qId) {
+  if (confirm('ಈ ಪ್ರಶ್ನೆಯನ್ನು ಅಳಿಸಬೇಕೇ?')) {
+    appState.qbank = (appState.qbank || []).filter(q => q.id !== qId);
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    pushToFirebaseCloud();
+    showToast('ಪ್ರಶ್ನೆಯನ್ನು ಅಳಿಸಲಾಗಿದೆ.', 'info');
+  }
+};
+
+// ೪. ಜನರೇಟರ್ ಸೆಲೆಕ್ಟ್ ಆಲ್ & ಕ್ಲಿಯರ್ ಬಟನ್‌ಗಳು
+window.toggleChapters = function(select) {
+  document.querySelectorAll('input[name="selected_chapter"]').forEach(cb => cb.checked = select);
+};
+
+// ೫. ಔಟ್‌ಪುಟ್ ಟ್ಯಾಬ್ ಸ್ವಿಚರ್ ಬಟನ್‌ಗಳು (1. ಪೇಪರ್, 2. ಕೀ ಉತ್ತರ, 3. ನೀಲನಕ್ಷೆ)
+window.switchOutputTab = function(tab) {
+  ['paper', 'key', 'blueprint'].forEach(t => {
+    document.getElementById(`tab-content-${t}`)?.classList.toggle('hidden', t !== tab);
+    const b = document.getElementById(`tab-btn-${t}`);
+    if (b) {
+      b.className = (t === tab) 
+        ? 'px-4 py-2 rounded-xl text-xs font-extrabold bg-white text-slate-900 shadow-sm border border-slate-200 flex items-center gap-1.5' 
+        : 'px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center gap-1.5';
+    }
+  });
+};
+
+// ೬. ಲೈವ್ ಎಡಿಟ್ ಮೋಡ್ ಟಾಗಲ್ ಬಟನ್
+window.toggleLiveEditMode = function() {
+  const p = document.getElementById('rendered-paper');
+  const k = document.getElementById('rendered-key');
+  const btn = document.getElementById('btn-edit-paper');
+  isEditModeActive = !isEditModeActive;
+
+  if (isEditModeActive) {
+    if (p) { p.contentEditable = "true"; p.style.outline = "2px dashed #f59e0b"; }
+    if (k) { k.contentEditable = "true"; k.style.outline = "2px dashed #f59e0b"; }
+    if (btn) { btn.className = 'bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Done / ಸೇವ್ ಮಾಡಿ</span>'; }
+    showToast('📝 ತಿದ್ದುಪಡಿ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
+  } else {
+    if (p) { p.contentEditable = "false"; p.style.outline = "none"; }
+    if (k) { k.contentEditable = "false"; k.style.outline = "none"; }
+    if (btn) { btn.className = 'bg-amber-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow'; btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span>Edit / ತಿದ್ದುಪಡಿ ಮಾಡಿ</span>'; }
+    showToast('✅ ಬದಲಾವಣೆಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
+  }
+};
+    
   </script>
 </body>
 </html>
