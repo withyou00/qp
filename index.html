@@ -20908,6 +20908,147 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
   applyDemoWatermarkToOutput();
 }
 
+/* ==========================================================================
+   SMART CHAPTER DEDUPLICATION, NATURAL 1-11 NUMERIC SORTER & AI SELECTOR
+   ========================================================================== */
+
+// ೧. ಪಾಠಗಳನ್ನು ೧, ೨, ೩... ನೈಸರ್ಗಿಕ ಕ್ರಮದಲ್ಲಿ ಸಾರ್ಟ್ ಮಾಡುವ ಹೆಲ್ಪರ್
+function sortChaptersNaturally(chapA, chapB) {
+  const numA = parseInt((String(chapA).match(/\d+/) || [999])[0]);
+  const numB = parseInt((String(chapB).match(/\d+/) || [999])[0]);
+  if (numA !== numB) return numA - numB;
+  return String(chapA).localeCompare(String(chapB), 'kn');
+}
+
+// ೨. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಪಟ್ಟಿಯನ್ನು Double ಆಗದಂತೆ ಸೀರಿಯಲ್ ಆಗಿ ರೆಂಡರ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.renderChapterCheckboxes = function() {
+  const subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const part = document.getElementById('cfg-part')?.value || 'all';
+  const container = document.getElementById('chapter-list-box');
+  const headerLabel = document.getElementById('chapters-header-label');
+  if (!container) return;
+
+  const cleanFormSubj = cleanMatchText(subject);
+
+  // ಫಿಲ್ಟರ್ ಆದ ಪ್ರಶ್ನೆಗಳು
+  const matchedQuestions = (appState.qbank || []).filter(q => {
+    const isGradeOk = (String(q.grade) === String(grade) || parseInt(q.grade) === parseInt(grade));
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    const isPartOk = (part === 'all' || q.part === part || !q.part);
+    return isGradeOk && isSubjOk && isPartOk;
+  });
+
+  // 🌟 Double ಆಗದಂತೆ ಸ್ವಚ್ಛಗೊಳಿಸಿ ಒಂದೇ ಪಾಠಕ್ಕೆ ವಿಲೀನಗೊಳಿಸುವುದು (Deduplication)
+  const chapterMap = new Map();
+  matchedQuestions.forEach(q => {
+    if (q.chapter) {
+      const cleanChapName = q.chapter.trim().replace(/\s+/g, ' ');
+      // ಸ್ಪೇಸ್ ಮತ್ತು ಸ್ಪೆಷಲ್ ಕ್ಯಾರೆಕ್ಟರ್ ತೆಗೆದು ಕೀ ಹೋಲಿಕೆ
+      const uniqueKey = cleanChapName.toLowerCase().replace(/[^a-zA-Z0-9\u0C80-\u0CFF]/g, '');
+      if (!chapterMap.has(uniqueKey)) {
+        chapterMap.set(uniqueKey, cleanChapName);
+      }
+    }
+  });
+
+  const uniqueChapters = Array.from(chapterMap.values());
+
+  // 🌟 ೧, ೨, ೩... ನೈಸರ್ಗಿಕ ಸಂಖ್ಯೆಯ ಕ್ರಮದಲ್ಲಿ ಸಾರ್ಟ್ ಮಾಡುವುದು
+  uniqueChapters.sort(sortChaptersNaturally);
+
+  if (uniqueChapters.length === 0) {
+    if (headerLabel) headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full ml-1">ಖಾಲಿ ಭಂಡಾರ</span>`;
+    container.innerHTML = `
+      <div class="col-span-2 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
+        <p class="font-bold">⚠️ ಈ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಇನ್ನೂ ಪ್ರಶ್ನೆಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ.</p>
+        <p class="text-[11px]">[ 📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ ] ಗೆ ಹೋಗಿ ಪ್ರಶ್ನೆಗಳನ್ನು ಸೇರಿಸಿ.</p>
+      </div>
+    `;
+    return;
+  }
+
+  if (headerLabel) {
+    headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ಭಂಡಾರದಲ್ಲಿರುವ ${uniqueChapters.length} ಪಾಠಗಳು</span>`;
+  }
+
+  // ಚೆಕ್‌ಬಾಕ್ಸ್ ಪ್ರದರ್ಶನ
+  container.innerHTML = uniqueChapters.map(chap => `
+    <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 transition cursor-pointer text-xs">
+      <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+      <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+    </label>
+  `).join('');
+};
+
+// ೩. AI ಇಂಪೋರ್ಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ ಪಾಠದ ಡ್ರಾಪ್‌ಡೌನ್ & ಟೆಕ್ಸ್ಟ್‌ಬಾಕ್ಸ್ ಸುಧಾರಣೆ
+const originalOpenBulkAIImportModalMaster = window.openBulkAIImportModal;
+
+window.openBulkAIImportModal = function() {
+  if (typeof originalOpenBulkAIImportModalMaster === 'function') {
+    originalOpenBulkAIImportModalMaster();
+  }
+
+  // ಪಾಠಗಳ ಡ್ರಾಪ್‌ಡೌನ್ ಅನ್ನು ಇಂಜೆಕ್ಟ್ ಮಾಡುವುದು
+  setTimeout(updateBulkImportChapterSelector, 50);
+};
+
+function updateBulkImportChapterSelector() {
+  const chapterInput = document.getElementById('bulk-import-chapter');
+  if (!chapterInput) return;
+
+  const cls = document.getElementById('bulk-import-class')?.value || '6';
+  const subj = document.getElementById('bulk-import-subject')?.value || '';
+  const cleanSubj = cleanMatchText(subj);
+
+  // ಈಗಾಗಲೇ ಭಂಡಾರದಲ್ಲಿರುವ ಪಾಠಗಳ ಪಟ್ಟಿ
+  const existingChaps = Array.from(new Set(
+    (appState.qbank || [])
+      .filter(q => String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj))
+      .map(q => q.chapter.trim().replace(/\s+/g, ' '))
+      .filter(Boolean)
+  )).sort(sortChaptersNaturally);
+
+  const parentDiv = chapterInput.parentElement;
+  if (parentDiv && !document.getElementById('bulk-import-chap-select-box')) {
+    const selectorDiv = document.createElement('div');
+    selectorDiv.id = 'bulk-import-chap-select-box';
+    selectorDiv.className = 'space-y-1';
+    selectorDiv.innerHTML = `
+      <label class="block font-bold text-slate-700 mb-0.5">ಪಾಠದ ಆಯ್ಕೆ (ಅಥವಾ ಹೊಸ ಪಾಠ) *</label>
+      <select id="bulk-import-chap-dropdown" onchange="handleBulkImportChapDropdownChange(this.value)" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950 text-xs mb-1">
+        <option value="NEW">➕ ಹೊಸ ಪಾಠ ಟೈಪ್ ಮಾಡಿ (Type New Chapter)...</option>
+        ${existingChaps.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+      </select>
+    `;
+    parentDiv.insertBefore(selectorDiv, chapterInput);
+    chapterInput.placeholder = "e.g. 5. ಹೊಸ ಧರ್ಮಗಳ ಉದಯ (ಪಾಠದ ಹೆಸರು)";
+  }
+}
+
+window.handleBulkImportChapDropdownChange = function(val) {
+  const chapterInput = document.getElementById('bulk-import-chapter');
+  if (!chapterInput) return;
+  if (val === 'NEW') {
+    chapterInput.value = '';
+    chapterInput.focus();
+  } else {
+    chapterInput.value = val; // ಈಗಾಗಲೇ ಇರುವ ಪಾಠದ ಹೆಸರನ್ನೇ ನಿಖರವಾಗಿ ಕಾಪಿ ಮಾಡುತ್ತದೆ
+  }
+};
+
+// ತರಗತಿ ಅಥವಾ ವಿಷಯ ಬದಲಾದಾಗ AI ಮಾಡಲ್ ಪಾಠಗಳ ಪಟ್ಟಿ ಅಪ್ಡೇಟ್
+document.addEventListener('change', (e) => {
+  if (e.target && (e.target.id === 'bulk-import-class' || e.target.id === 'bulk-import-subject')) {
+    const existingBox = document.getElementById('bulk-import-chap-select-box');
+    if (existingBox) existingBox.remove();
+    updateBulkImportChapterSelector();
+  }
+});
+
+// ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್
+renderChapterCheckboxes();
     
   </script>
 </body>
