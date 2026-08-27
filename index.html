@@ -74,7 +74,7 @@
       font-family: 'Anek Kannada', sans-serif !important;
     }
 
-    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್‌ಮಾರ್ಕ್ */
+    /* 🎯 ನಿಖರ 50% ಡೆಡ್-ಸೆಂಟರ್ ವಾಟರ್ಮಾರ್ಕ್ */
     .demo-watermark-overlay {
       position: absolute !important;
       top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
@@ -120,8 +120,8 @@
 </head>
 <body class="flex flex-col">
 
-  <!-- TOP HEADER -->
-  <header class="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+  <!-- TOP HEADER (ALL 5 BUTTONS FULLY VISIBLE & ACCESSIBLE) -->
+  <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
@@ -138,7 +138,29 @@
           </div>
         </div>
 
-        <div id="top-nav-actions-container" class="flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold"></div>
+        <!-- 🌟 ALL 5 NAVIGATION BUTTONS VISIBLE -->
+        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+          <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+            <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+          </button>
+          <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+            <i class="fa-solid fa-house text-emerald-600"></i>
+            <span>Dashboard</span>
+          </button>
+          <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+            <i class="fa-solid fa-file-signature text-teal-600"></i>
+            <span>ಜನರೇಟರ್</span>
+          </button>
+          <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+            <i class="fa-solid fa-database text-amber-600"></i>
+            <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+          </button>
+          <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+            <i class="fa-solid fa-gear text-slate-700"></i>
+            <span>Admin</span>
+          </button>
+        </div>
 
       </div>
     </div>
@@ -398,11 +420,9 @@
   <!-- TOAST CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  <!-- JAVASCRIPT MASTER APPLICATION ENGINE -->
+
+  <!-- JAVASCRIPT MASTER APPLICATION ENGINE PART 1 -->
   <script>
-    /* ==========================================================================
-       CONSTANTS & STATE CONFIGURATION
-       ========================================================================== */
     const ADMIN_CREDENTIALS = { user: "WithYou2026", pass: "WithYoupassword2026" };
     const ADMIN_PHONE_NUMBER = "9902090911";
     const FIREBASE_REST_BASE = "https://withyouqp-default-rtdb.firebaseio.com";
@@ -438,99 +458,14 @@
     let adminSchoolSearchQuery = '';
     let stagedParsedQuestions = [];
 
-    // ೧. ಆರಂಭಿಕ ಬೂಟ್‌ಸ್ಟ್ರ್ಯಾಪ್
     window.addEventListener('DOMContentLoaded', () => {
       syncSubjectAndChapters();
-      updateTopNavbarClean();
       autoCleanAndMergeAllDuplicateChapters();
       fetchFromFirebaseCloud();
       fetchAuthDataFromFirebase();
       navigateToSection('dashboard');
     });
 
-    /* ==========================================================================
-       ROLE-BASED SECURITY & NAVBAR CONTROLLER
-       ========================================================================== */
-    window.updateTopNavbarClean = function() {
-      const navContainer = document.getElementById('top-nav-actions-container');
-      if (!navContainer) return;
-
-      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
-
-      if (isOwnerAdmin) {
-        navContainer.innerHTML = `
-          <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-            <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
-          </button>
-          <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-house text-emerald-600"></i>
-            <span>Dashboard</span>
-          </button>
-          <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-file-signature text-teal-600"></i>
-            <span>ಜನರೇಟರ್</span>
-          </button>
-          <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-database text-amber-600"></i>
-            <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
-          </button>
-          <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-gear text-slate-700"></i>
-            <span>Admin</span>
-          </button>
-          <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow ml-1">Logout</button>
-        `;
-      } else {
-        navContainer.innerHTML = `
-          <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-house text-emerald-600"></i>
-            <span>Dashboard</span>
-          </button>
-          <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
-            <i class="fa-solid fa-file-signature text-teal-600"></i>
-            <span>ಜನರೇಟರ್</span>
-          </button>
-          <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200">
-            <i class="fa-solid fa-lock"></i>
-            <span class="hidden sm:inline">Admin</span>
-          </button>
-        `;
-      }
-    };
-
-    window.navigateToSection = function(section) {
-      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
-
-      if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
-        showAdminLoginModal();
-        return;
-      }
-
-      ['dashboard', 'generator', 'admin'].forEach(v => {
-        document.getElementById(`view-${v}`)?.classList.add('hidden');
-      });
-
-      let targetViewId = (section === 'qbank' || section === 'admin') ? 'view-admin' : (`view-${section}`);
-      const activeEl = document.getElementById(targetViewId);
-      if (activeEl) activeEl.classList.remove('hidden');
-
-      updateTopNavbarClean();
-
-      if (section === 'generator') {
-        syncSubjectAndChapters();
-      } else if (section === 'qbank') {
-        renderDedicatedQuestionBankModule();
-      } else if (section === 'admin') {
-        renderAdminMasterManagementHTML();
-      }
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    /* ==========================================================================
-       AUTHENTICATION & POPUP MODALS
-       ========================================================================== */
     window.showAdminLoginModal = function() {
       let modal = document.getElementById('admin-login-modal');
       if (!modal) {
@@ -584,9 +519,8 @@
         appState.currentUserType = 'admin';
         appState.currentUserId = 'master_admin';
         document.getElementById('admin-login-modal').classList.add('hidden');
-        updateTopNavbarClean();
         showToast('👑 Admin ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!', 'success');
-        navigateToSection('qbank');
+        navigateToSection('admin');
       } else {
         document.getElementById('admin-login-error')?.classList.remove('hidden');
       }
@@ -598,12 +532,10 @@
       sessionStorage.removeItem('withyou_active_role');
       appState.currentUserType = 'demo';
       appState.currentUserId = 'guest';
-      updateTopNavbarClean();
       showToast('🔒 Admin ನಿಂದ ಹೊರಬರಲಾಗಿದೆ.', 'info');
       navigateToSection('dashboard');
     };
 
-    // ೨. TEACHER & SCHOOL POPUPS
     window.openTeacherAuthModal = function() {
       let modal = document.getElementById('teacher-auth-modal');
       if (!modal) {
@@ -662,7 +594,7 @@
                 ${subjects.map(s => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}><span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span></label>`).join('')}
               </div>
             </div>
-            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
           </form>
         </div>
       `;
@@ -714,7 +646,7 @@
             <div><label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label><input type="text" id="reg-sch-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label><input type="text" id="reg-sch-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ (WhatsApp) *</label><input type="tel" id="reg-sch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
-            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
           </form>
         </div>
       `;
@@ -827,6 +759,7 @@
       navigateToSection('generator');
     };
 
+
     /* ==========================================================================
        GENERATOR & CHAPTERS ENGINE
        ========================================================================== */
@@ -861,8 +794,7 @@
 
       const matchedQuestions = (appState.qbank || []).filter(q => {
         const isGradeOk = (String(q.grade) === String(grade) || parseInt(q.grade) === parseInt(grade));
-        const cleanQSubj = cleanMatchText(q.subject);
-        const isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+        const isSubjOk = cleanMatchText(q.subject).includes(cleanFormSubj) || cleanFormSubj.includes(cleanMatchText(q.subject));
         const isPartOk = (part === 'all' || q.part === part || !q.part);
         return isGradeOk && isSubjOk && isPartOk;
       });
@@ -994,7 +926,7 @@
         if (genBadge) genBadge.innerHTML = `Admin Active`;
       } else {
         if (genNameEl) genNameEl.innerHTML = `⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್`;
-        if (genSchoolEl) genSchoolEl.innerHTML = `೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ`;
+        if (genSchoolEl) genSchoolEl.innerHTML = `೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್ಮಾರ್ಕ್ ಸಹಿತ`;
         if (genBadge) genBadge.innerHTML = `ಡೆಮೋ ಟ್ರಯಲ್`;
       }
 
@@ -1256,7 +1188,7 @@
         keySectionsHtml.push(`
           <div style="margin-bottom: 10px;">
             <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
-            <div style="padding-left: 10px;">${selBlanks.map(b => `<div style="margin-bottom: 3px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(b.ans||'')}</div>`).join('')}</div>
+            <div style="padding-left: 10px;">${selBlanks.map(b => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(b.ans||'')}</div>`).join('')}</div>
           </div>
         `);
       }
@@ -1278,14 +1210,14 @@
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 2px 15px; font-weight: 600; font-size: 12.5px;">
                 <div><div style="text-decoration: underline; margin-bottom: 2px;">'ಅ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(97+i)}) ${escapeHtml(p.a||'')}</div>`).join('')}</div>
-                <div><div style="text-decoration: underline; margin-bottom: 4px;">'ಬ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${escapeHtml(p.b||'')}</div>`).join('')}</div>
+                <div><div style="text-decoration: underline; margin-bottom: 2px;">'ಬ' ಗುಂಪು</div>${pairs.map((p, i) => `<div>(${String.fromCharCode(65+i)}) ${escapeHtml(p.b||'')}</div>`).join('')}</div>
               </div>
             </div>
           `);
           keySectionsHtml.push(`
-            <div style="margin-bottom: 12px;">
-              <div style="font-weight: 800; font-size: 14px; margin-bottom: 4px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
-              <div style="padding-left: 10px; font-size: 13.5px;"><b>${kNum++}.</b> ಹೊಂದಿಕೆ ಪೂರ್ಣಗೊಂಡಿದೆ.</div>
+            <div style="margin-bottom: 10px;">
+              <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+              <div style="padding-left: 10px; font-size: 13px;"><b>${kNum++}.</b> ಹೊಂದಿಕೆ ಪೂರ್ಣಗೊಂಡಿದೆ.</div>
             </div>
           `);
         });
@@ -1312,7 +1244,7 @@
         keySectionsHtml.push(`
           <div style="margin-bottom: 10px;">
             <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ವ್ಯಾಕರಣ ಭಾಗದ ಉತ್ತರಗಳು:</div>
-            <div style="padding-left: 10px;">${selGrammar.map(g => `<div style="margin-bottom: 3px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(g.ans||'')}</div>`).join('')}</div>
+            <div style="padding-left: 10px;">${selGrammar.map(g => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(g.ans||'')}</div>`).join('')}</div>
           </div>
         `);
       }
@@ -1338,7 +1270,7 @@
         keySectionsHtml.push(`
           <div style="margin-bottom: 10px;">
             <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
-            <div style="padding-left: 10px;">${selVsa.map(v => `<div style="margin-bottom: 3px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(v.ans||'')}</div>`).join('')}</div>
+            <div style="padding-left: 10px;">${selVsa.map(v => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(v.ans||'')}</div>`).join('')}</div>
           </div>
         `);
       }
@@ -1541,7 +1473,7 @@
           <div class="space-y-1">
             <h3 class="font-black text-lg text-slate-900">⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮುಕ್ತಾಯವಾಗಿದೆ!</h3>
             <p class="text-xs text-slate-600 leading-relaxed font-semibold">
-              ನೀವು ಡೆಮೋ ಮೋಡ್‌ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
+              ನೀವು ಡೆಮೋ ಮೋಡ್ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
             </p>
           </div>
           <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-900 font-bold text-left space-y-1 text-[11px]">
@@ -1561,7 +1493,7 @@
     }
 
     window.requestKeyFromWhatsAppDirect = function() {
-      const msg = `*With You QP Generator - Access Key ಕೋರಿಕೆ*\n\nನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
+      const msg = `*With You QP Generator - Access Key ಕೋರಿಕೆ*\n\nನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
       window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
       document.getElementById('demo-limit-modal')?.classList.add('hidden');
     };
