@@ -4583,7 +4583,254 @@ window.navigateToSection = function(section) {
 
 // ತಕ್ಷಣವೇ Dashboard ಕಾರ್ಡ್ ಲೋಡ್ ಮಾಡುವುದು
 renderDashboardUserStatusBanner();
-    
+
+    /* ==========================================================================
+   100% UNIFIED DYNAMIC EXPIRY DATE (28-08-2027) SYNC ACROSS MOBILE & LAPTOP
+   ========================================================================== */
+
+// ೧. ಬಳಕೆದಾರರ ನಿಖರವಾದ ಡೈನಾಮಿಕ್ ಎಕ್ಸ್‌ಪೈರಿ ದಿನಾಂಕವನ್ನು ಪಡೆಯುವ ಮಾಸ್ಟರ್ ಹೆಲ್ಪರ್
+function getExactDynamicExpiryDate(userObj) {
+  if (userObj && userObj.expiryDate && userObj.expiryDate.includes('-') && userObj.expiryDate !== '31-03-2027') {
+    return userObj.expiryDate;
+  }
+  if (userObj && userObj.expiryDate) {
+    return userObj.expiryDate;
+  }
+  return calculateOneFullYearExpiry();
+}
+
+// ೨. ಜನರೇಟರ್ ಹೆಡರ್‌ನಲ್ಲಿ ಮೊಬೈಲ್ & ಲ್ಯಾಪ್‌ಟಾಪ್ ಎರಡರಲ್ಲೂ ನಿಖರ ದಿನಾಂಕ ಪ್ರದರ್ಶನ
+window.updateGlobalUserValidityDisplayEverywhere = function() {
+  const genProfileBox = document.querySelector('#view-generator > div.bg-white.rounded-2xl');
+  if (!genProfileBox) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+  const savedTeacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null');
+  const savedSchool = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null');
+
+  // A. 👑 ಅಡ್ಮಿನ್
+  if (isOwnerAdmin) {
+    genProfileBox.innerHTML = `
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+        <div class="flex items-center space-x-3">
+          <div class="h-11 w-11 rounded-2xl bg-purple-900 text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0"><i class="fa-solid fa-crown text-amber-300"></i></div>
+          <div>
+            <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap"><span>Admin Master Account</span><span class="text-[10px] bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-full font-black">Full Access</span></div>
+            <p class="text-[11px] text-slate-500 font-semibold">ಸಂಪೂರ್ಣ ಅಧಿಕಾರ &bull; Unlimited Access</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <span class="text-xs bg-purple-50 text-purple-950 border-2 border-purple-400 px-3.5 py-1.5 rounded-2xl font-black shadow-sm">ವ್ಯಾಲಿಡಿಟಿ: ಅನಿಯಮಿತ (Lifetime)</span>
+          <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಬದಲಿಸಿ</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // B. 👨‍🏫 ಶಿಕ್ಷಕರು (Teacher Mode - Mobile & Laptop Sync)
+  if (appState.currentUserType === 'teacher' || savedTeacher) {
+    const allTeachers = getFreshTeachersList();
+    const teacher = savedTeacher || allTeachers.find(t => t.id === appState.currentUserId) || allTeachers[0];
+    if (teacher) {
+      const expDate = getExactDynamicExpiryDate(teacher); // 🌟 ನಿಖರ ಡೈನಾಮಿಕ್ ದಿನಾಂಕ e.g. 28-08-2027
+      const daysLeft = getRemainingDaysCount(expDate);
+      const isExpired = daysLeft <= 0;
+
+      genProfileBox.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+          <div class="flex items-center space-x-3">
+            <div class="h-11 w-11 rounded-2xl ${isExpired ? 'bg-red-800' : 'bg-slate-900'} text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+              <i class="fa-solid fa-chalkboard-user text-emerald-400"></i>
+            </div>
+            <div>
+              <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>${escapeHtml(teacher.name)}</span>
+                <span class="font-mono text-[11px] bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-lg font-black border border-emerald-300">${teacher.accessKey}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 font-semibold">${escapeHtml(teacher.school)} &bull; 📱 ${teacher.phone}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-emerald-50 text-emerald-950 border-2 border-emerald-500'} px-3 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-circle-check text-emerald-600'}"></i>
+              <span>ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ</span>
+            </span>
+            <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಪ್ರೊಫೈಲ್ ಬದಲಿಸಿ</button>
+          </div>
+        </div>
+      `;
+
+      const schoolInput = document.getElementById('cfg-school-name');
+      if (schoolInput && teacher.school) schoolInput.value = teacher.school;
+      return;
+    }
+  }
+
+  // C. 🏫 ಶಾಲೆ (School Master Mode)
+  if (appState.currentUserType === 'school' || savedSchool) {
+    const allSchools = getFreshSchoolsList();
+    const school = savedSchool || allSchools.find(s => s.id === appState.currentUserId) || allSchools[0];
+    if (school) {
+      const expDate = getExactDynamicExpiryDate(school);
+      const daysLeft = getRemainingDaysCount(expDate);
+      const isExpired = daysLeft <= 0;
+
+      genProfileBox.innerHTML = `
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+          <div class="flex items-center space-x-3">
+            <div class="h-11 w-11 rounded-2xl ${isExpired ? 'bg-red-800' : 'bg-slate-900'} text-white flex items-center justify-center font-bold text-xl shadow-md shrink-0">
+              <i class="fa-solid fa-school text-indigo-400"></i>
+            </div>
+            <div>
+              <div class="text-sm font-black text-slate-900 flex items-center gap-2 flex-wrap">
+                <span>${escapeHtml(school.name)}</span>
+                <span class="font-mono text-[11px] bg-indigo-100 text-indigo-950 px-2 py-0.5 rounded-lg font-black border border-indigo-300">${school.accessKey}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 font-semibold">DISE: ${school.dise} &bull; HM: ${escapeHtml(school.hm)} (📱 ${school.hmPhone})</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <span class="text-xs ${isExpired ? 'bg-red-100 text-red-950 border-2 border-red-500' : 'bg-indigo-50 text-indigo-950 border-2 border-indigo-500'} px-3 py-1.5 rounded-2xl font-black shadow-sm flex items-center gap-1.5">
+              <i class="fa-solid ${isExpired ? 'fa-triangle-exclamation text-red-600' : 'fa-building-circle-check text-indigo-600'}"></i>
+              <span>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> ರವರೆಗೆ</span>
+            </span>
+            <button onclick="navigateToSection('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border">ಪ್ರೊಫೈಲ್ ಬದಲಿಸಿ</button>
+          </div>
+        </div>
+      `;
+
+      const schoolInput = document.getElementById('cfg-school-name');
+      if (schoolInput && school.name) schoolInput.value = school.name;
+      return;
+    }
+  }
+
+  // D. ⭐ ಡೆಮೋ ಮೋಡ್
+  genProfileBox.innerHTML = `
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full">
+      <div class="flex items-center space-x-3">
+        <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl shadow-sm shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div>
+          <h3 class="text-sm font-black text-amber-950">⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್ (Guest Demo)</h3>
+          <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+        <span class="text-xs bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1.5 rounded-2xl font-bold">ಡೆಮೋ ಟ್ರಯಲ್</span>
+        <button onclick="navigateToSection('dashboard')" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold px-3 py-1.5 rounded-xl border border-amber-300">ಲಾಗಿನ್ ಆಗಿ</button>
+      </div>
+    </div>
+  `;
+};
+
+// ೩. ಅಡ್ಮಿನ್ ಲಿಸ್ಟ್‌ನಲ್ಲೂ 28-08-2027 ನಿಖರ ದಿನಾಂಕ ಪ್ರದರ್ಶನ
+window.renderRegisteredTeachers = function() {
+  const container = document.getElementById('list-registered-teachers');
+  const countEl = document.getElementById('count-teachers');
+  const allTeachers = appState.teachers || [];
+  if (countEl) countEl.innerText = allTeachers.length;
+  if (!container) return;
+
+  let filtered = allTeachers;
+  if (adminTeacherSearchQuery.trim() !== '') {
+    const q = adminTeacherSearchQuery.toLowerCase();
+    filtered = filtered.filter(t => 
+      (t.name || '').toLowerCase().includes(q) ||
+      (t.school || '').toLowerCase().includes(q) ||
+      (t.phone || '').includes(q) ||
+      (t.accessKey || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಿಕ್ಷಕರು ಕಂಡುಬಂದಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(t => {
+    const expDate = getExactDynamicExpiryDate(t);
+    return `
+      <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-emerald-400 transition">
+        <div class="flex items-center justify-between">
+          <span class="font-black text-slate-900 text-[13px]">
+            ${escapeHtml(t.name)} 
+            <span class="bg-emerald-100 text-emerald-900 font-mono px-2 py-0.5 rounded font-black border border-emerald-300 ml-1">${t.accessKey}</span>
+          </span>
+          <div class="flex items-center space-x-1">
+            <button onclick="renewTeacherAccount('${t.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್</span></button>
+            <button onclick="openEditTeacherModal('${t.id}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> <span>Edit</span></button>
+            <button onclick="deleteTeacher('${t.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px]"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-600 font-semibold">${t.school} &bull; 📱 ${t.phone} &bull; 💰 ${t.fee || FEE_TEACHER_YEARLY}</div>
+        <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+          <span class="text-[10px] bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-200">
+            🗓️ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b>
+          </span>
+          <button onclick="sendKeyToTeacherWhatsApp('${t.phone}', '${t.name}', '${t.accessKey}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Key ಕಳುಹಿಸಿ</span></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.renderRegisteredSchools = function() {
+  const container = document.getElementById('list-registered-schools');
+  const countEl = document.getElementById('count-schools');
+  const allSchools = appState.schools || [];
+  if (countEl) countEl.innerText = allSchools.length;
+  if (!container) return;
+
+  let filtered = allSchools;
+  if (adminSchoolSearchQuery.trim() !== '') {
+    const q = adminSchoolSearchQuery.toLowerCase();
+    filtered = filtered.filter(s => 
+      (s.name || '').toLowerCase().includes(q) ||
+      (s.dise || '').toLowerCase().includes(q) ||
+      (s.hm || '').toLowerCase().includes(q) ||
+      (s.hmPhone || '').includes(q) ||
+      (s.accessKey || '').toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="p-4 bg-slate-50 border rounded-xl text-center text-slate-500 font-bold">ಯಾವುದೇ ಶಾಲೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(s => {
+    const expDate = getExactDynamicExpiryDate(s);
+    return `
+      <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-indigo-400 transition">
+        <div class="flex items-center justify-between">
+          <span class="font-black text-slate-900 text-[13px]">
+            ${escapeHtml(s.name)} 
+            <span class="bg-indigo-100 text-indigo-950 font-mono px-2 py-0.5 rounded font-black border border-indigo-300 ml-1">${s.accessKey}</span>
+          </span>
+          <div class="flex items-center space-x-1">
+            <button onclick="renewSchoolAccount('${s.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್</span></button>
+            <button onclick="openEditSchoolModal('${s.id}')" class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i> <span>Edit</span></button>
+            <button onclick="deleteSchool('${s.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px]"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-600 font-semibold">DISE: ${s.dise} &bull; HM: ${s.hm} (📱 ${s.hmPhone}) &bull; 💰 ${s.fee || FEE_SCHOOL_YEARLY}</div>
+        <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+          <span class="text-[10px] bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded border border-slate-200">
+            🗓️ ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b>
+          </span>
+          <button onclick="sendKeyToSchoolWhatsApp('${s.hmPhone}', '${s.name}', '${s.accessKey}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> <span>WhatsApp Master Key ಕಳುಹಿಸಿ</span></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+// ೪. ಮೊಬೈಲ್ ಮತ್ತು ಡೆಸ್ಕ್‌ಟಾಪ್ Dashboard ನಲ್ಲಿ ಲೈವ್ ಕಾರ್ಡ್ ಕಡ್ಡಾಯ ಲೋಡ್ ಮಾಡುವುದು
+(function triggerLiveDashboardAndGeneratorDisplay() {
+  renderDashboardUserStatusBanner();
+  updateGlobalUserValidityDisplayEverywhere();
+})();
   </script>
 </body>
 </html>
