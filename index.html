@@ -4301,6 +4301,288 @@ window.handleAdminLoginSubmit = function(e) {
 // ತಕ್ಷಣವೇ ಮೆನು ರಿಫ್ರೆಶ್
 updateTopNavbarClean();
 
+/* ==========================================================================
+   DYNAMIC 1-YEAR (365 DAYS) VALIDITY ENGINE & LIVE DASHBOARD VALIDITY CARD
+   ========================================================================== */
+
+// ೧. ನೋಂದಾಯಿಸಿದ ದಿನದಿಂದ ನಿಖರವಾಗಿ ೧ ವರ್ಷದ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ (DD-MM-YYYY)
+function calculateOneFullYearExpiry(startDate) {
+  const d = startDate ? new Date(startDate) : new Date();
+  const target = new Date(d);
+  target.setFullYear(target.getFullYear() + 1);
+
+  const day = String(target.getDate()).padStart(2, '0');
+  const month = String(target.getMonth() + 1).padStart(2, '0');
+  const year = target.getFullYear();
+  return `${day}-${month}-${year}`; // e.g. 28-02-2026
+}
+
+// ಇಂದಿನ ದಿನಾಂಕ (DD-MM-YYYY)
+function getTodayFormattedDate() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+// ಉಳಿದ ದಿನಗಳ ಕೌಂಟ್‌ಡೌನ್ (Days Remaining)
+function getRemainingDaysCount(expiryStr) {
+  if (!expiryStr || !expiryStr.includes('-')) return 365;
+  const parts = expiryStr.split('-');
+  if (parts.length === 3) {
+    const expDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
+    const diff = expDate - new Date();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+  return 365;
+}
+
+// ೨. Dashboard ನಲ್ಲಿ ಲಾಗಿನ್ ಆದವರ ಪೂರ್ಣ ದಿನಾಂಕ-ತಿಂಗಳು-ವರ್ಷದ ಲೈವ್ ವ್ಯಾಲಿಡಿಟಿ ಕಾರ್ಡ್
+window.renderDashboardUserStatusBanner = function() {
+  const dashView = document.getElementById('view-dashboard');
+  if (!dashView) return;
+
+  const oldCard = document.getElementById('dash-active-validity-card');
+  if (oldCard) oldCard.remove();
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+  const teacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null');
+  const school = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null');
+
+  // ಕೇವಲ ಲಾಗಿನ್ ಆದವರಿಗೆ ಮಾತ್ರ Dashboard ನಲ್ಲಿ ವ್ಯಾಲಿಡಿಟಿ ಕಾರ್ಡ್ ತೋರಿಸುವುದು
+  if (!isOwnerAdmin && !teacher && !school) return;
+
+  const card = document.createElement('div');
+  card.id = 'dash-active-validity-card';
+  card.className = 'w-full mb-4 transition-all duration-300';
+
+  if (isOwnerAdmin) {
+    card.innerHTML = `
+      <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-purple-400 rounded-3xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="h-12 w-12 rounded-2xl bg-purple-500 text-slate-950 flex items-center justify-center font-bold text-2xl shadow"><i class="fa-solid fa-crown text-amber-300"></i></div>
+          <div>
+            <div class="flex items-center gap-2">
+              <b class="text-sm sm:text-base font-black">👑 Admin Master ಸಕ್ರಿಯವಾಗಿದೆ</b>
+              <span class="bg-purple-500/30 text-purple-200 border border-purple-400 px-2 py-0.5 rounded-full text-[10px] font-bold">ಮಾಲೀಕರು</span>
+            </div>
+            <p class="text-slate-300 text-xs mt-0.5">ಸಂಪೂರ್ಣ ಅಧಿಕಾರ &bull; ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚನೆ &bull; <b>ವ್ಯಾಲಿಡಿಟಿ: ಜೀವಿತಾವಧಿ (Lifetime)</b></p>
+          </div>
+        </div>
+        <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl shadow-md text-xs hover:scale-105 transition">
+          🚀 ಜನರೇಟರ್ ತೆರೆಯಿರಿ ➔
+        </button>
+      </div>
+    `;
+  } else if (teacher) {
+    const expDate = teacher.expiryDate || calculateOneFullYearExpiry();
+    const daysLeft = getRemainingDaysCount(expDate);
+    const isExpired = daysLeft <= 0;
+
+    card.innerHTML = `
+      <div class="p-4 sm:p-5 ${isExpired ? 'bg-red-50 border-2 border-red-400 text-red-950' : 'bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-400 text-emerald-950'} rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="h-12 w-12 rounded-2xl ${isExpired ? 'bg-red-200 text-red-800' : 'bg-emerald-200 text-emerald-900'} flex items-center justify-center font-bold text-2xl shadow-sm shrink-0">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <b class="text-sm sm:text-base font-black text-slate-900">${escapeHtml(teacher.name)}</b>
+              <span class="font-mono text-xs bg-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-lg font-black border border-emerald-300">${teacher.accessKey}</span>
+              <span class="${isExpired ? 'bg-red-200 text-red-900' : 'bg-emerald-600 text-white'} px-2.5 py-0.5 rounded-full text-[10px] font-black">${isExpired ? 'ಮುಕ್ತಾಯವಾಗಿದೆ' : 'ಸಕ್ರಿಯ (Active Pro)'}</span>
+            </div>
+            <p class="text-slate-600 text-xs mt-1">
+              <b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; 
+              🗓️ <b>ಸದಸ್ಯತ್ವ ವ್ಯಾಲಿಡಿಟಿ: <span class="text-emerald-900 font-black">${expDate}</span> ರವರೆಗೆ</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
+            </p>
+          </div>
+        </div>
+        <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-3 btn-emerald-gradient text-white font-extrabold rounded-2xl shadow-lg text-xs hover:scale-105 transition flex items-center justify-center gap-2">
+          <span>🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    `;
+  } else if (school) {
+    const expDate = school.expiryDate || calculateOneFullYearExpiry();
+    const daysLeft = getRemainingDaysCount(expDate);
+    const isExpired = daysLeft <= 0;
+
+    card.innerHTML = `
+      <div class="p-4 sm:p-5 ${isExpired ? 'bg-red-50 border-2 border-red-400 text-red-950' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-400 text-indigo-950'} rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-3">
+          <div class="h-12 w-12 rounded-2xl ${isExpired ? 'bg-red-200 text-red-800' : 'bg-indigo-200 text-indigo-900'} flex items-center justify-center font-bold text-2xl shadow-sm shrink-0">
+            <i class="fa-solid fa-school"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <b class="text-sm sm:text-base font-black text-slate-900">${escapeHtml(school.name)}</b>
+              <span class="font-mono text-xs bg-indigo-200 text-indigo-950 px-2.5 py-0.5 rounded-lg font-black border border-indigo-300">${school.accessKey}</span>
+              <span class="${isExpired ? 'bg-red-200 text-red-900' : 'bg-indigo-600 text-white'} px-2.5 py-0.5 rounded-full text-[10px] font-black">${isExpired ? 'ಮುಕ್ತಾಯವಾಗಿದೆ' : 'School Master ಸಕ್ರಿಯ'}</span>
+            </div>
+            <p class="text-slate-600 text-xs mt-1">
+              DISE: ${school.dise} &bull; HM: ${escapeHtml(school.hm)} &bull; 
+              🗓️ <b>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <span class="text-indigo-950 font-black">${expDate}</span> ರವರೆಗೆ</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
+            </p>
+          </div>
+        </div>
+        <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-3 btn-primary-gradient text-white font-extrabold rounded-2xl shadow-lg text-xs hover:scale-105 transition flex items-center justify-center gap-2">
+          <span>🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  // Dashboard ನ ಮೇಲ್ಭಾಗದಲ್ಲಿ ಕೂರಿಸುವುದು
+  const heroBox = dashView.querySelector('div.relative.overflow-hidden');
+  if (heroBox) {
+    heroBox.insertAdjacentElement('afterend', card);
+  } else {
+    dashView.insertBefore(card, dashView.firstChild);
+  }
+};
+
+// ೩. ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ (ನೋಂದಾಯಿಸಿದ ದಿನದಿಂದ ನಿಖರ ೧ ವರ್ಷ)
+window.handleTeacherRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-teacher-name').value.trim();
+  const school = document.getElementById('reg-teacher-school').value.trim();
+  const phone = document.getElementById('reg-teacher-phone').value.trim();
+  const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+  const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+
+  const accessKey = generateGuaranteedUniqueKey('TCH');
+  const regDate = getTodayFormattedDate(); // ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ
+  const expiryDate = calculateOneFullYearExpiry(); // ನಿಖರ ೧ ವರ್ಷ (365 ದಿನಗಳು)
+
+  const newTeacher = {
+    id: 'T_' + Date.now(),
+    name, school, phone,
+    grades: grades.length > 0 ? grades : ['6', '7', '8'],
+    subjects: subjects.length > 0 ? subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'],
+    accessKey,
+    registeredDate: regDate,
+    expiryDate: expiryDate,
+    fee: FEE_TEACHER_YEARLY
+  };
+
+  appState.teachers.unshift(newTeacher);
+  localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+
+  renderRegisteredTeachers();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-teacher').reset();
+
+  alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ: ${regDate}\nವ್ಯಾಲಿಡಿಟಿ: ${expiryDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)\n\n'WhatsApp Key ಕಳುಹಿಸಿ' ಬಟನ್ ಬಳಸಿ ಕೀಯನ್ನು ರವಾನಿಸಿ.`);
+};
+
+// ೪. ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ (ನೋಂದಾಯಿಸಿದ ದಿನದಿಂದ ನಿಖರ ೧ ವರ್ಷ)
+window.handleSchoolRegister = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-school-name').value.trim();
+  const dise = document.getElementById('reg-school-dise').value.trim();
+  const hm = document.getElementById('reg-school-hm').value.trim();
+  const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+
+  const accessKey = generateGuaranteedUniqueKey('SCH');
+  const regDate = getTodayFormattedDate();
+  const expiryDate = calculateOneFullYearExpiry(); // ನಿಖರ ೧ ವರ್ಷ
+
+  const newSchool = {
+    id: 'SCH_' + Date.now(),
+    name, dise, hm, hmPhone,
+    accessKey,
+    registeredDate: regDate,
+    expiryDate: expiryDate,
+    fee: FEE_SCHOOL_YEARLY
+  };
+
+  appState.schools.unshift(newSchool);
+  localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+
+  renderRegisteredSchools();
+  pushAuthDataToFirebase();
+  document.getElementById('form-register-school').reset();
+
+  alert(`🎉 ಶಾಲೆ: ${name} ನೋಂದಣಿಯಾಗಿದೆ!\n\nMaster Key: ${accessKey}\nನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ: ${regDate}\nವ್ಯಾಲಿಡಿಟಿ: ${expiryDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)\n\n'WhatsApp Master Key ಕಳುಹಿಸಿ' ಬಟನ್ ಬಳಸಿ HM ಗೆ ರವಾನಿಸಿ.`);
+};
+
+// ೫. 🔄 ವಾರ್ಷಿಕ ರಿನೀವಲ್ ಮಾಡಿದಾಗಲೂ ದಿನಾಂಕದಿಂದ +೧ ವರ್ಷ ವಿಸ್ತರಣೆ
+window.renewTeacherAccount = function(id) {
+  const t = (appState.teachers || []).find(x => x.id === id);
+  if (!t) return;
+
+  const newKey = generateGuaranteedUniqueKey('TCH');
+  // ಹಾಲಿ ಇರುವ ಎಕ್ಸ್‌ಪೈರಿ ದಿನಾಂಕದಿಂದ ಅಥವಾ ಇಂದಿನಿಂದ +೧ ವರ್ಷ ವಿಸ್ತರಣೆ
+  const newExpiryDate = calculateOneFullYearExpiry(t.expiryDate ? new Date(t.expiryDate.split('-').reverse().join('-')) : new Date());
+
+  if (confirm(`ಶಿಕ್ಷಕ: ${t.name} ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ (${newExpiryDate} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?\n\nಹೊಸ Access Key: ${newKey}\nವಾರ್ಷಿಕ ಶುಲ್ಕ: ${FEE_TEACHER_YEARLY}`)) {
+    t.accessKey = newKey;
+    t.expiryDate = newExpiryDate;
+    t.renewedAt = getTodayFormattedDate();
+
+    localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+    pushAuthDataToFirebase();
+    renderRegisteredTeachers();
+
+    const cleanPhone = (t.phone || '').replace(/[^0-9]/g, '');
+    const msg = `*With You QP Generator - ವಾರ್ಷಿಕ ರಿನೀವಲ್ ಯಶಸ್ವಿ (Renewal Success)*\n\n` +
+                `ನಮಸ್ಕಾರ ${t.name} ಸರ್/ಮೇಡಂ,\n` +
+                `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆಯನ್ನು (${FEE_TEACHER_YEARLY}) ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ (Renewed).\n\n` +
+                `🔑 *ನಿಮ್ಮ ಹೊಸ Teacher Access Key:* *${newKey}*\n` +
+                `📱 *ಮೊಬೈಲ್:* ${cleanPhone}\n` +
+                `🗓️ *ಹೊಸ ವ್ಯಾಲಿಡಿಟಿ:* *${newExpiryDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)*\n\n` +
+                `ಧನ್ಯವಾದಗಳು!`;
+
+    window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    showToast(`🔄 ಶಿಕ್ಷಕ ${t.name} ಖಾತೆ ರಿನೀವಲ್ ಆಗಿದೆ! ಹೊಸ ವ್ಯಾಲಿಡಿಟಿ: ${newExpiryDate}`, 'success');
+  }
+};
+
+window.renewSchoolAccount = function(id) {
+  const s = (appState.schools || []).find(x => x.id === id);
+  if (!s) return;
+
+  const newKey = generateGuaranteedUniqueKey('SCH');
+  const newExpiryDate = calculateOneFullYearExpiry(s.expiryDate ? new Date(s.expiryDate.split('-').reverse().join('-')) : new Date());
+
+  if (confirm(`ಶಾಲೆ: ${s.name} ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ (${newExpiryDate} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?\n\nಹೊಸ Master Key: ${newKey}\nಶುಲ್ಕ: ${FEE_SCHOOL_YEARLY}`)) {
+    s.accessKey = newKey;
+    s.expiryDate = newExpiryDate;
+    s.renewedAt = getTodayFormattedDate();
+
+    localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+    pushAuthDataToFirebase();
+    renderRegisteredSchools();
+
+    const cleanPhone = (s.hmPhone || '').replace(/[^0-9]/g, '');
+    const msg = `*With You QP Generator - ಶಾಲಾ Master ರಿನೀವಲ್ (Renewal Success)*\n\n` +
+                `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
+                `*${s.name}* ಶಾಲೆಯ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆಯನ್ನು (${FEE_SCHOOL_YEARLY}) ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ.\n\n` +
+                `🔑 *ಶಾಲೆಯ ಹೊಸ Master Key:* *${newKey}*\n` +
+                `🗓️ *ಹೊಸ ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ:* *${newExpiryDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)*\n\n` +
+                `ಧನ್ಯವಾದಗಳು!`;
+
+    window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    showToast(`🔄 ಶಾಲೆ ${s.name} ರಿನೀವಲ್ ಆಗಿದೆ! ಹೊಸ ವ್ಯಾಲಿಡಿಟಿ: ${newExpiryDate}`, 'success');
+  }
+};
+
+// ೬. ನ್ಯಾವಿಗೇಷನ್ ಆದಾಗಲೆಲ್ಲಾ Dashboard ನಲ್ಲೂ ವ್ಯಾಲಿಡಿಟಿ ಕಾರ್ಡ್ ಅಪ್ಡೇಟ್
+const origNavForDashBanner = window.navigateToSection;
+window.navigateToSection = function(section) {
+  if (typeof origNavForDashBanner === 'function') {
+    origNavForDashBanner(section);
+  }
+  if (section === 'dashboard') {
+    renderDashboardUserStatusBanner();
+  }
+};
+
+// ತಕ್ಷಣವೇ Dashboard ಕಾರ್ಡ್ ಲೋಡ್ ಮಾಡುವುದು
+renderDashboardUserStatusBanner();
     
   </script>
 </body>
