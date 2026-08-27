@@ -22418,6 +22418,88 @@ renderChapterCheckboxes();
 })();
 </script>
 
+  /* ==========================================================================
+   STRICT ASCENDING CHAPTER SERIAL SORTER (1, 2, 3, 4, 5... 10, 11)
+   ========================================================================== */
+
+(function forceAscendingChapterSorting() {
+
+  // ೧. ಸಂಖ್ಯೆಯನ್ನು ನಿಖರವಾಗಿ ಹೊರತೆಗೆಯುವ ಫಂಕ್ಷನ್ (ಕನ್ನಡ & ಇಂಗ್ಲಿಷ್ ಅಂಕಿಗಳು)
+  function extractChapterNumberStrict(str) {
+    if (!str) return 9999;
+    var knMap = {'೦':'0','೧':'1','೨':'2','೩':'3','೪':'4','೫':'5','೬':'6','೭':'7','೮':'8','೯':'9'};
+    var normalized = String(str).replace(/[೦-೯]/g, function(d) { return knMap[d]; });
+    var m = normalized.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 9999;
+  }
+
+  // ೨. ಜನರೇಟರ್ Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಪಟ್ಟಿಯನ್ನು ಏರಿಕೆ ಕ್ರಮದಲ್ಲಿ (Ascending 1 to 11) ಜೋಡಿಸುವುದು
+  window.renderChapterCheckboxes = function() {
+    var subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+    var grade = document.getElementById('cfg-class')?.value || '6';
+    var part = document.getElementById('cfg-part')?.value || 'all';
+    var container = document.getElementById('chapter-list-box');
+    var headerLabel = document.getElementById('chapters-header-label');
+    if (!container) return;
+
+    var cleanFormSubj = cleanMatchText(subject);
+
+    var matchedQuestions = (appState.qbank || []).filter(function(q) {
+      var isGradeOk = (String(q.grade) === String(grade) || parseInt(q.grade) === parseInt(grade));
+      var cleanQSubj = cleanMatchText(q.subject);
+      var isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+      var isPartOk = (part === 'all' || q.part === part || !q.part);
+      return isGradeOk && isSubjOk && isPartOk;
+    });
+
+    var chapterMap = new Map();
+    matchedQuestions.forEach(function(q) {
+      if (q.chapter) {
+        var cleanChap = q.chapter.trim().replace(/\s+/g, ' ');
+        var uKey = cleanChap.toLowerCase().replace(/[^a-zA-Z0-9\u0C80-\u0CFF]/g, '');
+        if (!chapterMap.has(uKey)) {
+          chapterMap.set(uKey, cleanChap);
+        }
+      }
+    });
+
+    var uniqueChapters = Array.from(chapterMap.values());
+
+    // 🌟 ಕಟ್ಟುನಿಟ್ಟಾದ ಏರಿಕೆ ಕ್ರಮ (Strict Ascending: 1, 2, 3, 4, 5... 10, 11)
+    uniqueChapters.sort(function(a, b) {
+      var numA = extractChapterNumberStrict(a);
+      var numB = extractChapterNumberStrict(b);
+      if (numA !== numB) {
+        return numA - numB; // 1 ರಿಂದ ಆರಂಭವಾಗಿ 11 ರವರೆಗೆ ಏರಿಕೆ ಕ್ರಮ
+      }
+      return String(a).localeCompare(String(b), 'kn');
+    });
+
+    if (uniqueChapters.length === 0) {
+      if (headerLabel) headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full ml-1">ಖಾಲಿ ಭಂಡಾರ</span>`;
+      container.innerHTML = `<div class="col-span-2 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-bold text-center">⚠️ ಈ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ.</div>`;
+      return;
+    }
+
+    if (headerLabel) {
+      headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ಭಂಡಾರದಲ್ಲಿರುವ ${uniqueChapters.length} ಪಾಠಗಳು</span>`;
+    }
+
+    container.innerHTML = uniqueChapters.map(function(chap) {
+      return `
+        <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 transition cursor-pointer text-xs">
+          <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+          <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+        </label>
+      `;
+    }).join('');
+  };
+
+  // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಸೀರಿಯಲ್ ನಂಬರ್ ಪ್ರಕಾರ ಮರುಜೋಡಿಸುವುದು
+  window.renderChapterCheckboxes();
+
+})();
+  
   </script>
 </body>
 </html>
