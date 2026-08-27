@@ -22418,7 +22418,243 @@ renderChapterCheckboxes();
 })();
 </script>
 
+<script>
+/* ==========================================================================
+   FINAL UNIFIED MASTER ENGINE (ALL IN ONE CLEAN SCRIPT TAG)
+   ========================================================================== */
 
+(function initCleanMasterSuite() {
+
+  // ೧. ಗ್ಲೋಬಲ್ ಸಿಎಸ್‌ಎಸ್ (Anek Kannada + Closed Borders + Centered Watermark)
+  var masterCss = document.createElement('style');
+  masterCss.id = 'wy-final-master-css';
+  masterCss.innerHTML = `
+    @import url('https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@300;400;500;600;700;800;900&display=swap');
+
+    html, body, p, span:not(.fa):not(.fas):not(.far):not(.fab):not([class*="fa-"]), 
+    h1, h2, h3, h4, h5, h6, input, select, textarea, button, table, th, td, div {
+      font-family: 'Anek Kannada', sans-serif !important;
+    }
+
+    i, .fa, .fas, .far, .fab, [class*="fa-"], [class^="fa-"] {
+      font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+      font-style: normal !important;
+      display: inline-block !important;
+    }
+
+    .a4-sheet-container {
+      width: 100% !important;
+      max-width: 820px !important;
+      border: 2.5px solid #000 !important;
+      padding: 8mm 12mm 10mm 12mm !important;
+      margin: 0 auto 20px auto !important;
+      min-height: 272mm !important;
+      position: relative !important;
+      box-sizing: border-box !important;
+      background: #fff !important;
+      -webkit-box-decoration-break: clone !important;
+      box-decoration-break: clone !important;
+    }
+
+    .demo-watermark-overlay {
+      position: absolute !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100% !important; height: 100% !important;
+      pointer-events: none !important; z-index: 50 !important; overflow: hidden !important;
+    }
+    .demo-watermark-text {
+      position: absolute !important;
+      top: 50% !important; left: 50% !important;
+      transform: translate(-50%, -50%) rotate(-32deg) !important;
+      transform-origin: center center !important;
+      font-size: 34px !important; font-weight: 900 !important;
+      color: rgba(220, 38, 38, 0.16) !important;
+      text-align: center !important; line-height: 1.45 !important;
+      letter-spacing: 2px !important;
+      border: 4px dashed rgba(220, 38, 38, 0.22) !important;
+      padding: 16px 36px !important; border-radius: 25px !important;
+      text-transform: uppercase !important; white-space: nowrap !important;
+      user-select: none !important; margin: 0 !important;
+    }
+
+    .btn-live-q-edit {
+      display: inline-flex !important; align-items: center !important; gap: 4px !important;
+      background-color: #fef3c7 !important; color: #92400e !important;
+      border: 1.5px solid #f59e0b !important; padding: 2px 8px !important;
+      border-radius: 6px !important; font-size: 11px !important; font-weight: 800 !important;
+      cursor: pointer !important; margin-left: 8px !important;
+    }
+    .btn-live-q-edit:hover { background-color: #fde68a !important; }
+
+    @media print {
+      @page { size: A4 portrait; margin: 6mm 8mm; }
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      .a4-sheet-container { border: 2.5px solid #000 !important; padding: 8mm 10mm !important; -webkit-box-decoration-break: clone !important; box-decoration-break: clone !important; }
+      .demo-watermark-overlay { display: block !important; visibility: visible !important; }
+      .demo-watermark-text { color: rgba(0, 0, 0, 0.16) !important; border-color: rgba(0, 0, 0, 0.22) !important; visibility: visible !important; }
+      .btn-live-q-edit, .no-print, header, footer, button { display: none !important; visibility: hidden !important; }
+    }
+  `;
+  document.head.appendChild(masterCss);
+
+  // ೨. ಸೀರಿಯಲ್ ನಂಬರ್ ಸಾರ್ಟರ್
+  window.getSerialSortNum = function(str) {
+    if (!str) return 9999;
+    var knMap = {'೦':'0','೧':'1','೨':'2','೩':'3','೪':'4','೫':'5','೬':'6','೭':'7','೮':'8','೯':'9'};
+    var norm = String(str).replace(/[೦-೯]/g, function(d) { return knMap[d]; });
+    var m = norm.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 9999;
+  };
+
+  // ೩. Step 2 (ಪಾಠಗಳ ಆಯ್ಕೆ) ಸೀರಿಯಲ್ ನಂಬರ್ (1, 2, 3... 10, 11)
+  window.renderChapterCheckboxes = function() {
+    var subject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+    var grade = document.getElementById('cfg-class')?.value || '6';
+    var part = document.getElementById('cfg-part')?.value || 'all';
+    var container = document.getElementById('chapter-list-box');
+    var headerLabel = document.getElementById('chapters-header-label');
+    if (!container) return;
+
+    var cleanFormSubj = cleanMatchText(subject);
+
+    var matchedQuestions = (appState.qbank || []).filter(function(q) {
+      var isGradeOk = (String(q.grade) === String(grade) || parseInt(q.grade) === parseInt(grade));
+      var cleanQSubj = cleanMatchText(q.subject);
+      var isSubjOk = cleanQSubj.includes(cleanFormSubj) || cleanFormSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+      var isPartOk = (part === 'all' || q.part === part || !q.part);
+      return isGradeOk && isSubjOk && isPartOk;
+    });
+
+    var chapterMap = new Map();
+    matchedQuestions.forEach(function(q) {
+      if (q.chapter) {
+        var cleanChap = q.chapter.trim().replace(/\s+/g, ' ');
+        var uKey = cleanChap.toLowerCase().replace(/[^a-zA-Z0-9\u0C80-\u0CFF]/g, '');
+        if (!chapterMap.has(uKey)) {
+          chapterMap.set(uKey, cleanChap);
+        }
+      }
+    });
+
+    var uniqueChapters = Array.from(chapterMap.values());
+
+    // 🌟 ಏರಿಕೆ ಕ್ರಮದ ಸಾರ್ಟಿಂಗ್ (1, 2, 3... 10, 11)
+    uniqueChapters.sort(function(a, b) {
+      var nA = getSerialSortNum(a);
+      var nB = getSerialSortNum(b);
+      if (nA !== nB) return nA - nB;
+      return String(a).localeCompare(String(b), 'kn');
+    });
+
+    if (uniqueChapters.length === 0) {
+      if (headerLabel) headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full ml-1">ಖಾಲಿ ಭಂಡಾರ</span>`;
+      container.innerHTML = `<div class="col-span-2 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 font-bold text-center">⚠️ ಈ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ.</div>`;
+      return;
+    }
+
+    if (headerLabel) {
+      headerLabel.innerHTML = `ಪಾಠಗಳ ಆಯ್ಕೆ <span class="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2.5 py-0.5 rounded-full border border-emerald-300 ml-1"><i class="fa-solid fa-book"></i> ಭಂಡಾರದಲ್ಲಿರುವ ${uniqueChapters.length} ಪಾಠಗಳು</span>`;
+    }
+
+    container.innerHTML = uniqueChapters.map(function(chap) {
+      return `
+        <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:border-emerald-500 transition cursor-pointer text-xs">
+          <input type="checkbox" name="selected_chapter" value="${escapeHtml(chap)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+          <span class="font-bold text-slate-800">${escapeHtml(chap)}</span>
+        </label>
+      `;
+    }).join('');
+  };
+
+  // ೪. ಶುದ್ಧ ಹೆಡರ್ ಮೆನು (ಸಾಮಾನ್ಯ ಯೂಸರ್ಸ್‌ಗೆ ಕ್ಲೀನ್ & ಅಡ್ಮಿನ್‌ಗೆ ಅನ್‌ಲಾಕ್)
+  window.updateTopNavbarClean = function() {
+    var navContainer = document.querySelector('header .flex.items-center.space-x-1');
+    if (!navContainer) return;
+    document.getElementById('nav-btn-profile')?.remove();
+
+    var isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+
+    if (isOwnerAdmin) {
+      navContainer.innerHTML = `
+        <button id="header-ai-import-btn" type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+        </button>
+        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-house text-emerald-600"></i>
+          <span>Dashboard</span>
+        </button>
+        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-file-signature text-teal-600"></i>
+          <span>ಜನರೇಟರ್</span>
+        </button>
+        <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-database text-amber-600"></i>
+          <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+        </button>
+        <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-gear text-slate-700"></i>
+          <span>Admin</span>
+        </button>
+        <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow ml-1">Logout</button>
+      `;
+    } else {
+      navContainer.innerHTML = `
+        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-house text-emerald-600"></i>
+          <span>Dashboard</span>
+        </button>
+        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white/60 flex items-center gap-1.5 text-xs">
+          <i class="fa-solid fa-file-signature text-teal-600"></i>
+          <span>ಜನರೇಟರ್</span>
+        </button>
+        <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200">
+          <i class="fa-solid fa-lock"></i>
+          <span class="hidden sm:inline">Admin</span>
+        </button>
+      `;
+    }
+  };
+
+  // ೫. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್ ಇಂಜೆಕ್ಷನ್
+  window.injectCompactDashboardButtons = function() {
+    var dashView = document.getElementById('view-dashboard');
+    if (!dashView || document.getElementById('dash-compact-auth-bar')) return;
+    document.getElementById('dash-integrated-auth-box')?.remove();
+
+    var authBar = document.createElement('div');
+    authBar.id = 'dash-compact-auth-bar';
+    authBar.className = 'flex flex-wrap items-center justify-center gap-3 pt-2 pb-1';
+    authBar.innerHTML = `
+      <button onclick="openTeacherAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition flex items-center gap-2">
+        <i class="fa-solid fa-chalkboard-user text-sm"></i>
+        <span>ಶಿಕ್ಷಕರ ಲಾಗಿನ್ / ನೋಂದಣಿ (₹200/ವರ್ಷ)</span>
+      </button>
+      <button onclick="openSchoolAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md transition flex items-center gap-2">
+        <i class="fa-solid fa-school text-sm"></i>
+        <span>ಶಾಲಾ ಲಾಗಿನ್ / ನೋಂದಣಿ (₹500/ವರ್ಷ)</span>
+      </button>
+      <button onclick="launchDemoDirectly()" class="px-5 py-3 rounded-2xl font-black text-xs text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:from-amber-400 hover:to-amber-500 shadow-md transition flex items-center gap-2 border border-amber-500/30">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-800"></i>
+        <span>⭐ ಉಚಿತ ಡೆಮೋ (Free Demo)</span>
+      </button>
+    `;
+
+    var quickCards = dashView.querySelector('.grid.grid-cols-1');
+    if (quickCards) dashView.insertBefore(authBar, quickCards);
+    else dashView.appendChild(authBar);
+  };
+
+  // ತಕ್ಷಣವೇ ಲೋಡ್
+  updateTopNavbarClean();
+  injectCompactDashboardButtons();
+  renderChapterCheckboxes();
+
+})();
+</script>
+</html>
   
   </script>
 </body>
