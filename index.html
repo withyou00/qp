@@ -8388,6 +8388,214 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
   renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
   applyDemoWatermarkToOutput();
 }
+
+    /* ==========================================================================
+       👑 ADMIN-ONLY DYNAMIC CUSTOM QUESTION FORMATS (ಪ್ರಕಾರಗಳು) ADDER ENGINE
+       ========================================================================== */
+
+    // ೧. ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಲೋಡ್ ಮಾಡುವ & ಪಡೆಯುವ ಫಂಕ್ಷನ್
+    window.getCustomQuestionTypesList = function() {
+      return JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+    };
+
+    // ೨. ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಸೇರಿಸುವ / ನಿರ್ವಹಿಸುವ ಅಡ್ಮಿನ್ ಮಾಡಲ್
+    window.openAddCustomQTypeModal = function() {
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      if (!isOwnerAdmin) {
+        alert('🔒 ಈ ಸೌಲಭ್ಯವು ಕೇವಲ Admin ಗೆ ಮಾತ್ರ ಲಭ್ಯವಿದೆ. ದಯವಿಟ್ಟು Admin ಲಾಗಿನ್ ಆಗಿ.');
+        showAdminLoginModal();
+        return;
+      }
+
+      let modal = document.getElementById('add-custom-qtype-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'add-custom-qtype-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const customList = getCustomQuestionTypesList();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-shapes text-amber-300"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Add Question Format)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">👑 Admin Only &bull; ನಿಮಗೆ ಬೇಕಾದ ಪ್ರಶ್ನೆ ವಿನ್ಯಾಸವನ್ನು ರಚಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('add-custom-qtype-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+          </div>
+
+          <!-- Add Form -->
+          <form onsubmit="handleSaveNewCustomQType(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು (Format Label) *</label>
+              <input type="text" id="new-qtype-label" required placeholder="e.g. ೧೦. ಪ್ರಬಂಧ ಬರೆಯಿರಿ / ವ್ಯಾಕರಣ ಭಾಗ" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆ (Paper Heading Instruction) *</label>
+              <input type="text" id="new-qtype-heading" required placeholder="e.g. ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">೩. ನಿಗದಿತ ಅಂಕಗಳು (Marks) *</label>
+                <input type="number" id="new-qtype-marks" value="1" min="1" max="20" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-900 focus:outline-none" />
+              </div>
+              <div class="flex items-end">
+                <button type="submit" class="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-plus text-amber-300"></i>
+                  <span>ಪ್ರಕಾರ ಸೇರಿಸಿ</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- List of Added Custom Formats -->
+          <div class="space-y-2 pt-2 border-t">
+            <h4 class="font-black text-slate-800 text-xs uppercase flex items-center justify-between">
+              <span>ನೀವು ಸೇರಿಸಿರುವ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (${customList.length})</span>
+            </h4>
+            <div id="custom-qtypes-list-box" class="space-y-2 max-h-44 overflow-y-auto pr-1">
+              ${customList.length === 0 ? `
+                <div class="p-3 bg-white border border-dashed rounded-xl text-center text-slate-400 font-semibold">
+                  ಯಾವುದೇ ಹೆಚ್ಚುವರಿ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಿಲ್ಲ.
+                </div>
+              ` : customList.map((ct, idx) => `
+                <div class="p-2.5 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-between gap-2 shadow-sm">
+                  <div class="truncate">
+                    <b class="text-slate-900 text-xs block truncate">${escapeHtml(ct.label)}</b>
+                    <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(ct.heading)} (${ct.marks}M)</span>
+                  </div>
+                  <button onclick="deleteCustomQType('${ct.key}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] shrink-0" title="ಅಳಿಸಿ">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t">
+            <button type="button" onclick="document.getElementById('add-custom-qtype-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">
+              ಮುಚ್ಚಿ (Close)
+            </button>
+          </div>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೩. ಹೊಸ ಕಸ್ಟಮ್ ಪ್ರಕಾರವನ್ನು ಸೇವ್ ಮಾಡುವ ಹ್ಯಾಂಡ್ಲರ್
+    window.handleSaveNewCustomQType = function(e) {
+      e.preventDefault();
+      const label = document.getElementById('new-qtype-label')?.value.trim();
+      const heading = document.getElementById('new-qtype-heading')?.value.trim();
+      const marks = parseInt(document.getElementById('new-qtype-marks')?.value) || 1;
+
+      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+
+      const key = 'custom_' + Date.now();
+      let list = getCustomQuestionTypesList();
+      list.push({ key, label, heading, marks });
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      
+      showToast(`🎉 '${label}' ಪ್ರಕಾರವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!`, 'success');
+      openAddCustomQTypeModal(); // Modal Refresh
+      updateStep3CheckboxesDynamically(); // Step 3 Refresh
+    };
+
+    // ೪. ಕಸ್ಟಮ್ ಪ್ರಕಾರವನ್ನು ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    window.deleteCustomQType = function(key) {
+      if (confirm('ಈ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಅಳಿಸಬೇಕೇ?')) {
+        let list = getCustomQuestionTypesList().filter(x => x.key !== key);
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+        showToast('ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಅಳಿಸಲಾಗಿದೆ.', 'info');
+        openAddCustomQTypeModal();
+        updateStep3CheckboxesDynamically();
+      }
+    };
+
+    // ೫. Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) ಡೈನಾಮಿಕ್ ರೆಂಡರರ್ (Admin-Only ಬಟನ್ ಸಹಿತ ಅಪ್ಡೇಟ್)
+    const originalUpdateStep3CheckboxesDynamicallyForAdmin = window.updateStep3CheckboxesDynamically;
+    window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      const customTypes = getCustomQuestionTypesList();
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // ಡೀಫಾಲ್ಟ್ ೯ ಪ್ರಕಾರಗಳು
+      let html = `
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧. ಬಹು ಆಯ್ಕೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨. ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗ ಭರ್ತಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="true_false" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="analogy" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೫. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="vsa_1m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೬. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_2m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೭. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_3m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೮. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+          <input type="checkbox" name="qtype_opt" value="la_4m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೯. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</span>
+        </label>
+      `;
+
+      // ಬಳಕೆದಾರರು ಸೇರಿಸಿದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳು
+      customTypes.forEach(ct => {
+        html += `
+          <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+            <input type="checkbox" name="qtype_opt" value="${ct.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="font-extrabold text-purple-950 truncate">${escapeHtml(ct.label)}</span>
+          </label>
+        `;
+      });
+
+      // 👑 Admin ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ "+ ಪ್ರಕಾರ ಸೇರಿಸಿ" ಬಟನ್
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    updateStep3CheckboxesDynamically();
+    
   </script>
 </body>
 </html>
