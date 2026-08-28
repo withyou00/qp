@@ -4832,6 +4832,180 @@ window.renderRegisteredSchools = function() {
   updateGlobalUserValidityDisplayEverywhere();
 })();
 
+    /* ==========================================================================
+   OFFICIAL 3-BLUEPRINTS ENGINE & PRO/ADMIN WATERMARK REMOVER
+   ========================================================================== */
+
+// ೧. ಮೂರೂ ರೀತಿಯ (3 Types) ಅಧಿಕೃತ ನೀಲನಕ್ಷೆಗಳನ್ನು ರೆಂಡರ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.renderExactThreeBlueprints = function(questions, totalMarks) {
+  if (!questions || questions.length === 0) return;
+
+  const totalMarksSum = questions.reduce((a, b) => a + (b.marks || 1), 0) || totalMarks;
+  const totalQCount = questions.length;
+
+  // ೧. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪವಾರು ವಿಂಗಡಣೆ (Table 1 Data)
+  const qTypeRows = [
+    { name: "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: questions.filter(q => q.type === 'mcq').length, marks: questions.filter(q => q.type === 'mcq').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ", count: questions.filter(q => q.type === 'blanks').length, marks: questions.filter(q => q.type === 'blanks').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: questions.filter(q => q.type === 'match').length, marks: questions.filter(q => q.type === 'match').reduce((a, b) => a + (b.marks || 4), 0) },
+    { name: "ವ್ಯಾಕರಣ ಭಾಗ", count: questions.filter(q => q.type === 'grammar').length, marks: questions.filter(q => q.type === 'grammar').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: questions.filter(q => q.type === 'vsa' || ((q.marks === 1 || !q.marks) && q.type !== 'mcq' && q.type !== 'blanks' && q.type !== 'grammar')).length, marks: questions.filter(q => q.type === 'vsa' || ((q.marks === 1 || !q.marks) && q.type !== 'mcq' && q.type !== 'blanks' && q.type !== 'grammar')).reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಎರಡು ಮತ್ತು ಮೂರು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: questions.filter(q => (q.marks === 2 || q.marks === 3 || q.type === 'sa') && q.type !== 'match').length, marks: questions.filter(q => (q.marks === 2 || q.marks === 3 || q.type === 'sa') && q.type !== 'match').reduce((a, b) => a + (b.marks || 2), 0) },
+    { name: "ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳು / ಚಿತ್ರ / ನಕ್ಷೆ / ಪದ್ಯ", count: questions.filter(q => q.marks >= 4 || q.type === 'la' || q.type === 'map_diagram' || q.type === 'poem_4lines').length, marks: questions.filter(q => q.marks >= 4 || q.type === 'la' || q.type === 'map_diagram' || q.type === 'poem_4lines').reduce((a, b) => a + (b.marks || 4), 0) }
+  ].filter(r => r.count > 0);
+
+  // ೨. ಕಲಿಕೋದ್ದೇಶಗಳ ಲೆಕ್ಕಾಚಾರ (Table 2 Data)
+  let kMarks = questions.filter(q => q.obj === 'ಜ್ಞಾನ').reduce((a, b) => a + (b.marks || 1), 0);
+  let uMarks = questions.filter(q => q.obj === 'ತಿಳುವಳಿಕೆ').reduce((a, b) => a + (b.marks || 1), 0);
+  let aMarks = questions.filter(q => q.obj === 'ಅನ್ವಯ').reduce((a, b) => a + (b.marks || 1), 0);
+  let sMarks = questions.filter(q => q.obj === 'ಕೌಶಲ').reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (kMarks === 0 && uMarks === 0 && aMarks === 0) {
+    kMarks = Math.round(totalMarksSum * 0.4);
+    uMarks = Math.round(totalMarksSum * 0.4);
+    aMarks = totalMarksSum - (kMarks + uMarks);
+  }
+
+  // ೩. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಲೆಕ್ಕಾಚಾರ (Table 3 Data)
+  let easyMarks = questions.filter(q => q.diff === 'ಸುಲಭ').reduce((a, b) => a + (b.marks || 1), 0);
+  let avgMarks = questions.filter(q => q.diff === 'ಸಾಧಾರಣ').reduce((a, b) => a + (b.marks || 1), 0);
+  let diffMarks = questions.filter(q => q.diff === 'ಕಠಿಣ').reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (easyMarks === 0 && avgMarks === 0 && diffMarks === 0) {
+    easyMarks = Math.round(totalMarksSum * 0.3);
+    avgMarks = Math.round(totalMarksSum * 0.5);
+    diffMarks = totalMarksSum - (easyMarks + avgMarks);
+  }
+
+  const bpContainer = document.getElementById('rendered-blueprint');
+  if (!bpContainer) return;
+
+  // 🌟 ೩ ಸಂಪೂರ್ಣ ನೀಲನಕ್ಷೆಗಳ ಕೋಷ್ಟಕ HTML (ನಿಖರ ಬೋರ್ಡ್ ವಿನ್ಯಾಸ)
+  bpContainer.innerHTML = `
+    <div class="a4-sheet-container" style="line-height: 1.6; font-family: 'Anek Kannada', sans-serif;">
+      <h2 style="text-align: center; font-size: 22px; font-weight: 900; color: #000; margin-bottom: 22px;">
+        ನೀಲನಕ್ಷೆಗಳು (Blueprints)
+      </h2>
+
+      <!-- ೧. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 18%;">ಸಂಖ್ಯೆ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 18%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 19%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${qTypeRows.map(row => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">${row.name}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${row.count}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${row.marks}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((row.marks / totalMarksSum) * 100)}%</td>
+              </tr>
+            `).join('')}
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalQCount}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ೨. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          2. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಕಲಿಕೋದ್ದೇಶಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 25%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 30%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಜ್ಞಾನ (Knowledge)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${kMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((kMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ತಿಳುವಳಿಕೆ (Understanding)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${uMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((uMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಅನ್ವಯ (Application)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${aMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((aMarks / totalMarksSum) * 100)}%</td></tr>
+            ${sMarks > 0 ? `<tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಕೌಶಲ (Skill)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${sMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((sMarks / totalMarksSum) * 100)}%</td></tr>` : ''}
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ೩. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 16px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          3. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಮಟ್ಟ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 25%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 30%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಸುಲಭ (Easy)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${easyMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((easyMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಸಾಧಾರಣ (Average)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${avgMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((avgMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಕಠಿಣ (Difficult)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${diffMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((diffMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+// ೨. ವಾಟರ್‌ಮಾರ್ಕ್ ಕಂಟ್ರೋಲರ್: Admin & Pro ಬಳಕೆದಾರರಿಗೆ ವಾಟರ್‌ಮಾರ್ಕ್ ಸಂಪೂರ್ಣ ರದ್ದು
+window.applyDemoWatermarkToOutput = function() {
+  // ಹಳೆಯ ವಾಟರ್‌ಮಾರ್ಕ್ ಇದ್ದರೆ ಮೊದಲು ಸಂಪೂರ್ಣವಾಗಿ ಡಿಲೀಟ್ ಮಾಡುವುದು
+  document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+  const isTeacherPro = (sessionStorage.getItem('withyou_logged_teacher') !== null || appState.currentUserType === 'teacher');
+  const isSchoolPro = (sessionStorage.getItem('withyou_logged_school') !== null || appState.currentUserType === 'school');
+
+  // 👑 ಅಡ್ಮಿನ್, ಶಿಕ್ಷಕರು ಅಥವಾ ಶಾಲಾ ಲಾಗಿನ್ ಆಗಿದ್ದರೆ ಯಾವುದೇ ವಾಟರ್‌ಮಾರ್ಕ್ ಬರುವುದಿಲ್ಲ (100% Clean Pro Mode)
+  if (isOwnerAdmin || isTeacherPro || isSchoolPro) {
+    return;
+  }
+
+  // ⭐ ಕೇವಲ ಅನ್‌ಲಾಗಿನ್ಡ್ ಡೆಮೋ ಬಳಕೆದಾರರಿಗೆ ಮಾತ್ರ ವಾಟರ್‌ಮಾರ್ಕ್
+  if (appState.currentUserType === 'demo') {
+    const watermarkHtml = `
+      <div class="demo-watermark-overlay">
+        <div class="demo-watermark-text">
+          WITH YOU QP GENERATOR<br>
+          <span style="font-size: 19px; font-weight: 800; color: rgba(0,0,0,0.22);">DEMO VERSION • FOR KEY: 9902090911</span>
+        </div>
+      </div>
+    `;
+
+    document.querySelectorAll('#print-area .a4-sheet-container').forEach(sheet => {
+      sheet.insertAdjacentHTML('beforeend', watermarkHtml);
+    });
+  }
+};
   
     
   </script>
