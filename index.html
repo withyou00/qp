@@ -7015,6 +7015,243 @@ window.analyzeAndPreviewBulkText = function() {
     </div>
   `).join('');
 };
+
+    /* ==========================================================================
+   PERFECT QUESTION TEXT CLEANER: QUESTION-MARK ANCHOR & ZERO METADATA LEAKAGE
+   ========================================================================== */
+
+// ೧. ಪ್ರಶ್ನೆ ಪಠ್ಯವನ್ನು ೧೦೦% ಶುದ್ಧಗೊಳಿಸುವ ಮಾಸ್ಟರ್ ಹೆಲ್ಪರ್
+function strictlyCleanQuestionText(rawQStr) {
+  if (!rawQStr) return 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+  let s = String(rawQStr).replace(/[`´\*\#]/g, '').trim();
+
+  // A. ಪ್ರಶ್ನಾರ್ಥಕ ಚಿಹ್ನೆ (?) ನಂತರ ಮೆಟಾಡೇಟಾ ಇದ್ದರೆ, '?' ನಲ್ಲೇ ಪ್ರಶ್ನೆಯನ್ನು ಮುಕ್ತಾಯಗೊಳಿಸುವುದು
+  const qMarkIdx = s.indexOf('?');
+  if (qMarkIdx !== -1) {
+    const afterQMark = s.substring(qMarkIdx + 1);
+    if (/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ|ತಿಳುವಳಿಕೆ|ಜ್ಞಾನ|ಅನ್ವಯ|ಕೌಶಲ|\-\-\-)/i.test(afterQMark)) {
+      s = s.substring(0, qMarkIdx + 1); // '?' ನಲ್ಲೇ ಪ್ರಶ್ನೆ ಕಟ್
+    }
+  }
+
+  // B. ಒಂದು ವೇಳೆ '?' ಇಲ್ಲದಿದ್ದರೂ 'ಕ್ಲಿಷ್ಟತೆ' ಅಥವಾ 'ಕಲಿಕೋದ್ದೇಶ' ಕಂಡರೆ ಅಲ್ಲಿಂದ ಮುಂದಕ್ಕೆ ಕಟ್ ಮಾಡುವುದು
+  const metaCutIdx = s.search(/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ನೀಲನಕ್ಷೆ|\-\-\-)/i);
+  if (metaCutIdx !== -1) {
+    s = s.substring(0, metaCutIdx);
+  }
+
+  // C. ಆರಂಭದ "ಪ್ರಶ್ನೆ 1:", "1.", "Q1." ಸಂಖ್ಯೆಗಳನ್ನು ತೆಗೆಯುವುದು
+  s = s.replace(/^(?:ಪ್ರಶ್ನೆ\s*[\d೧-೯]+[\:\.]?|Q(?:uestion)?\s*[\d೧-೯]+[\:\.]?|[\d೧-೯]+[\.\)\:\-])\s*/i, '');
+
+  // D. ಕೊನೆಯಲ್ಲಿರುವ ಡ್ಯಾಶ್ ಅಥವಾ ಸ್ಪೇಸ್ ತೆಗೆಯುವುದು
+  s = s.replace(/[\s\-\–\—\.]+$/, '');
+
+  return s.trim() || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+}
+
+// ೨. ಸುಧಾರಿತ ಮಾಸ್ಟರ್ ಬ್ಲಾಕ್ ಪಾರ್ಸರ್
+function parseSingleBlock(blockText, meta) {
+  let text = blockText
+    .replace(/[\u200B-\u200D\uFEFF\u00A0\t]/g, ' ')
+    .replace(/[`´\*\#]/g, '')
+    .trim();
+
+  // 🌟 ಕ್ಲಿಷ್ಟತೆ ನಿಖರ ಗುರುತಿಸುವಿಕೆ
+  let diff = 'ಸಾಧಾರಣ';
+  if (text.includes('ಸುಲಭ') || text.includes('ಸರಳ') || text.toLowerCase().includes('easy')) {
+    diff = 'ಸುಲಭ';
+  } else if (text.includes('ಕಠಿಣ') || text.toLowerCase().includes('difficult')) {
+    diff = 'ಕಠಿಣ';
+  } else {
+    diff = 'ಸಾಧಾರಣ';
+  }
+
+  // 🌟 ಕಲಿಕೋದ್ದೇಶ ನಿಖರ ಗುರುತಿಸುವಿಕೆ
+  let obj = 'ತಿಳುವಳಿಕೆ';
+  if (text.includes('ಜ್ಞಾನ') || text.toLowerCase().includes('knowledge')) {
+    obj = 'ಜ್ಞಾನ';
+  } else if (text.includes('ಅನ್ವಯ') || text.toLowerCase().includes('application')) {
+    obj = 'ಅನ್ವಯ';
+  } else if (text.includes('ಕೌಶಲ') || text.toLowerCase().includes('skill')) {
+    obj = 'ಕೌಶಲ';
+  } else {
+    obj = 'ತಿಳುವಳಿಕೆ';
+  }
+
+  const rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (rawLines.length === 0) return null;
+
+  let qTextLines = [];
+  let optA = '', optB = '', optC = '', optD = '';
+  let finalAns = '';
+
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+
+    // ನೈಜ ಉತ್ತರ ಗುರುತಿಸುವಿಕೆ
+    const isRealAns = /^\s*(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)\s*[\:\.\-]\s*(.*)/i.exec(line);
+    if (isRealAns) {
+      let aPart = isRealAns[1].trim();
+      const cutA = aPart.search(/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ನೀಲನಕ್ಷೆ|\-\-\-)/i);
+      if (cutA !== -1) aPart = aPart.substring(0, cutA);
+      finalAns = aPart.replace(/[\s\d\-\–\—\.]+$/, '').trim();
+      continue;
+    }
+
+    // ಮೆಟಾಡೇಟಾ ಸಾಲುಗಳನ್ನು ಪ್ರಶ್ನೆಯಿಂದ ಸಂಪೂರ್ಣವಾಗಿ ಹೊರಗಿಡುವುದು
+    if (/^\s*(?:ಕಲಿಕೋದ್ದೇಶ|ಕ್ಲಿಷ್ಟತೆ|ಅಂಕ|ನೀಲನಕ್ಷೆ|ಭಾಗ\s*\d+)/i.test(line)) {
+      continue;
+    }
+
+    // ಆಪ್ಷನ್‌ಗಳು A, B, C, D
+    const isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+    const isOptD = /^[\(\[]?\s*(?:D|d|ಈ|ಡಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+
+    if (isOptA) { optA = strictlyCleanQuestionText(isOptA[1]); }
+    else if (isOptB) { optB = strictlyCleanQuestionText(isOptB[1]); }
+    else if (isOptC) { optC = strictlyCleanQuestionText(isOptC[1]); }
+    else if (isOptD) { optD = strictlyCleanQuestionText(isOptD[1]); }
+    else {
+      // ಪ್ರಶ್ನೆ ಪಠ್ಯದ ಸಾಲುಗಳು
+      qTextLines.push(line);
+    }
+  }
+
+  // 🌟 ಪ್ರಶ್ನೆ ಪಠ್ಯವನ್ನು ೧೦೦% ಶುದ್ಧಗೊಳಿಸುವುದು
+  let rawFullQ = qTextLines.join(' ').trim();
+  let cleanQ = strictlyCleanQuestionText(rawFullQ);
+
+  // ಇನ್‌ಲೈನ್ ಆಪ್ಷನ್‌ಗಳು ಒಂದೇ ಸಾಲಿನಲ್ಲಿದ್ದರೆ
+  if (cleanQ.includes('A)') && cleanQ.includes('B)')) {
+    const optIdx = cleanQ.search(/(?:^|\s|\?)[A|a|ಅ|ಎ]\)\s*/);
+    if (optIdx !== -1) {
+      const pureQ = cleanQ.substring(0, optIdx + (cleanQ[optIdx] === '?' ? 1 : 0)).trim();
+      const opts = cleanQ.substring(optIdx + (cleanQ[optIdx] === '?' ? 1 : 0)).trim();
+      cleanQ = strictlyCleanQuestionText(pureQ);
+
+      const rA = /A\)\s*([^B\)]+)/i.exec(opts), rB = /B\)\s*([^C\)]+)/i.exec(opts), rC = /C\)\s*([^D\)]+)/i.exec(opts), rD = /D\)\s*([^?\n\r]+)/i.exec(opts);
+      if (rA) optA = strictlyCleanQuestionText(rA[1]);
+      if (rB) optB = strictlyCleanQuestionText(rB[1]);
+      if (rC) optC = strictlyCleanQuestionText(rC[1]);
+      if (rD) optD = strictlyCleanQuestionText(rD[1]);
+    }
+  }
+
+  // ಪ್ರಕಾರ ಮತ್ತು ಅಂಕಗಳ ನಿರ್ಧಾರ
+  let type = meta.selectedType || 'auto';
+  let marks = 1;
+
+  if (type === 'auto') {
+    if (optA && optB) { type = 'mcq'; marks = 1; }
+    else if (cleanQ.includes('______') || cleanQ.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) { type = 'blanks'; marks = 1; }
+    else if (cleanQ.includes('ವಿರುದ್ಧ') || cleanQ.includes('ಸಮಾನಾರ್ಥಕ')) { type = 'grammar'; marks = 1; }
+    else if (finalAns.length > 40 || cleanQ.includes('ವಿವರಿಸಿ') || cleanQ.includes('೨ ಅಂಕ')) { type = 'sa'; marks = 2; }
+    else { type = 'vsa'; marks = 1; }
+  } else {
+    if (type === 'sa') marks = 2;
+    else if (type === 'la' || type === 'match' || type === 'poem_4lines') marks = 4;
+    else marks = 1;
+  }
+
+  if (meta.selectedDefaultMarks && meta.selectedDefaultMarks !== 'auto') {
+    marks = parseInt(meta.selectedDefaultMarks);
+  }
+
+  return {
+    id: 'q_' + Date.now() + Math.floor(Math.random() * 1000000),
+    grade: meta.grade,
+    subject: meta.subject,
+    part: meta.part,
+    chapter: meta.chapter,
+    medium: meta.medium,
+    type: type,
+    subType: 'opposite',
+    q: cleanQ,
+    a: optA, b: optB, c: optC, d: optD,
+    ans: finalAns || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+    marks: marks,
+    obj: obj,
+    diff: diff
+  };
+}
+
+// ೩. ಪ್ರಿವ್ಯೂ ಅನಾಲಿಸಿಸ್ ಎಂಜಿನ್ ಅಪ್ಡೇಟ್
+window.analyzeAndPreviewBulkText = function() {
+  const rawText = document.getElementById('bulk-import-text')?.value.trim() || '';
+  const grade = document.getElementById('bulk-import-class')?.value || '6';
+  const subject = document.getElementById('bulk-import-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('bulk-import-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('bulk-import-chapter')?.value.trim();
+  const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const selectedType = document.getElementById('bulk-import-qtype')?.value || 'auto';
+  const selectedDefaultMarks = document.getElementById('bulk-import-default-marks')?.value || 'auto';
+
+  if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (!rawText) return alert('ದಯವಿಟ್ಟು NotebookLM ನ ಪಠ್ಯವನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+
+  let parsedQuestions = [];
+  const rawBlocks = splitIntoExactQuestionBlocks(rawText);
+  
+  rawBlocks.forEach(blockText => {
+    const qObj = parseSingleBlock(blockText, { grade, subject, part, chapter, medium, selectedType, selectedDefaultMarks });
+    if (qObj && qObj.q && qObj.q.length > 1) {
+      parsedQuestions.push(qObj);
+    }
+  });
+
+  if (parsedQuestions.length === 0) {
+    return alert('ಕ್ಷಮಿಸಿ, ಪ್ರಶ್ನೆಗಳನ್ನು ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.');
+  }
+
+  stagedParsedQuestions = parsedQuestions;
+
+  document.getElementById('bulk-import-step-input')?.classList.add('hidden');
+  document.getElementById('bulk-import-step-preview')?.classList.remove('hidden');
+  document.getElementById('preview-total-count').innerText = parsedQuestions.length;
+
+  const previewContainer = document.getElementById('bulk-preview-list-container');
+  previewContainer.innerHTML = parsedQuestions.map((q, idx) => `
+    <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+        <div class="flex items-center space-x-2">
+          <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-black rounded-lg text-[10px] uppercase">
+            ${q.type === 'mcq' ? 'ಬಹು ಆಯ್ಕೆ (MCQ)' : (q.type === 'blanks' ? 'ಬಿಟ್ಟ ಸ್ಥಳ' : (q.marks >= 4 ? '೪ ಅಂಕ (LA)' : (q.marks >= 2 ? `${q.marks} ಅಂಕ (SA)` : '೧ ಅಂಕ (VSA)')))}
+          </span>
+          <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <span class="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">${q.obj} &bull; ${q.diff}</span>
+          <div class="flex items-center space-x-1">
+            <span class="text-[11px] font-bold text-slate-500">ಅಂಕ:</span>
+            <select onchange="updateStagedQuestionMarks(${idx}, this.value)" class="p-1 bg-white border border-slate-300 rounded font-black text-xs text-indigo-900">
+              <option value="1" ${q.marks===1?'selected':''}>1M</option>
+              <option value="2" ${q.marks===2?'selected':''}>2M</option>
+              <option value="3" ${q.marks===3?'selected':''}>3M</option>
+              <option value="4" ${q.marks===4?'selected':''}>4M</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🌟 ನೂರಕ್ಕೆ ನೂರು ಶುದ್ಧ ಪ್ರಶ್ನೆ ಪಠ್ಯ -->
+      <div class="font-black text-slate-900 text-[13.5px] leading-snug">${idx + 1}. ${escapeHtml(q.q)}</div>
+      
+      ${q.type === 'mcq' ? `
+        <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-700 pl-3 bg-white p-2.5 rounded-xl border border-slate-200 font-medium">
+          <div><b>(A)</b> ${escapeHtml(q.a || '-')}</div><div><b>(B)</b> ${escapeHtml(q.b || '-')}</div>
+          <div><b>(C)</b> ${escapeHtml(q.c || '-')}</div><div><b>(D)</b> ${escapeHtml(q.d || '-')}</div>
+        </div>
+      ` : ''}
+
+      <div class="text-emerald-800 text-[11px] font-bold bg-emerald-50/80 p-2 rounded-xl border border-emerald-200">
+        <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+      </div>
+    </div>
+  `).join('');
+};
     
   </script>
 </body>
