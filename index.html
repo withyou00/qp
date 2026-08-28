@@ -5379,6 +5379,186 @@ window.renderExactThreeBlueprints = function(questions, totalMarks) {
 
 // ತಕ್ಷಣವೇ ಲೈವ್ ಅಪ್ಡೇಟ್
 updateTopNavbarClean();
+
+    /* ==========================================================================
+   1-CLICK CHAPTER RENAME & EDIT TOOL ACROSS ENTIRE QUESTION BANK
+   ========================================================================== */
+
+// ೧. ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ ಮಾಡುವ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್ (Edit/Rename Chapter Modal)
+window.openChapterRenameModal = function(preSelectedChap = '') {
+  let modal = document.getElementById('chapter-rename-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'chapter-rename-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const subjects = getSystemSubjects();
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2.5 bg-blue-100 text-blue-900 rounded-2xl font-bold">
+            <i class="fa-solid fa-pen-to-square text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ (Rename Chapter)</h3>
+            <p class="text-[11px] text-slate-500">ಪಾಠದ ಹೆಸರನ್ನು ಬದಲಾಯಿಸಿ (ಆ ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಅನ್ವಯವಾಗುತ್ತದೆ)</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="form-rename-chapter" onsubmit="handleExecuteChapterRename(event)" class="space-y-3.5">
+        
+        <!-- ತರಗತಿ ಮತ್ತು ವಿಷಯ ಆಯ್ಕೆ -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+            <select id="rename-chap-class" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+              ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+            <select id="rename-chap-subject" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">
+              ${subjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- ಬದಲಾಯಿಸಬೇಕಾದ ಹಾಲಿ ಪಾಠ -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">೧. ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠವನ್ನು ಆರಿಸಿ (Select Chapter to Rename) *</label>
+          <select id="rename-chap-old-select" required onchange="autoFillNewRenameInput(this.value)" class="w-full p-2.5 bg-blue-50 border border-blue-300 rounded-xl font-bold text-blue-950 text-xs focus:outline-none shadow-sm">
+            <option value="">ಪಾಠ ಆಯ್ಕೆಮಾಡಿ...</option>
+          </select>
+        </div>
+
+        <!-- ಹೊಸ ಹೆಸರು -->
+        <div>
+          <label class="block font-bold text-emerald-950 mb-1">೨. ಹೊಸ ಸರಿಯಾದ ಪಾಠದ ಹೆಸರು (New Chapter Name) *</label>
+          <input type="text" id="rename-chap-new-input" required placeholder="e.g. 2. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-950 font-medium">
+          💡 <b>ಮಾಹಿತಿ:</b> ಇಲ್ಲಿ ಪಾಠದ ಹೆಸರು ಬದಲಾಯಿಸಿದಾಗ, ಭಂಡಾರದಲ್ಲಿ ಆ ಪಾಠಕ್ಕೆ ಸೇರಿದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಹೊಸ ಹೆಸರು ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಆಗುತ್ತದೆ.
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> <span>ಹೆಸರು ಬದಲಾಯಿಸಿ (Save Rename)</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  updateRenameModalDropdowns(preSelectedChap);
+};
+
+// ೨. ಡ್ರಾಪ್‌ಡೌನ್‌ಗೆ ಪಾಠಗಳನ್ನು ಲೋಡ್ ಮಾಡುವುದು
+window.updateRenameModalDropdowns = function(preSelect = '') {
+  const cls = document.getElementById('rename-chap-class')?.value || '6';
+  const subj = document.getElementById('rename-chap-subject')?.value || '';
+  const oldDropdown = document.getElementById('rename-chap-old-select');
+  const newNameInput = document.getElementById('rename-chap-new-input');
+  if (!oldDropdown) return;
+
+  const cleanSubj = cleanMatchText(subj);
+  const chaps = Array.from(new Set(
+    (appState.qbank || [])
+      .filter(q => String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj))
+      .map(q => q.chapter)
+      .filter(Boolean)
+  )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+  if (chaps.length === 0) {
+    oldDropdown.innerHTML = `<option value="">ಯಾವುದೇ ಪಾಠಗಳು ಲಭ್ಯವಿಲ್ಲ</option>`;
+    if (newNameInput) newNameInput.value = '';
+    return;
+  }
+
+  oldDropdown.innerHTML = `<option value="">-- ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠ ಆರಿಸಿ --</option>` + 
+    chaps.map(c => `<option value="${escapeHtml(c)}" ${c === preSelect ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+  if (preSelect && chaps.includes(preSelect)) {
+    if (newNameInput) newNameInput.value = preSelect;
+  }
+};
+
+window.autoFillNewRenameInput = function(val) {
+  const input = document.getElementById('rename-chap-new-input');
+  if (input && val) {
+    input.value = val.trim();
+    input.focus();
+  }
+};
+
+// ೩. ಹೆಸರು ಬದಲಾವಣೆ ಸಬ್ಮಿಶನ್ ಹ್ಯಾಂಡ್ಲರ್
+window.handleExecuteChapterRename = function(e) {
+  e.preventDefault();
+  const cls = document.getElementById('rename-chap-class')?.value || '6';
+  const subj = document.getElementById('rename-chap-subject')?.value || '';
+  const oldName = document.getElementById('rename-chap-old-select')?.value.trim();
+  const newName = document.getElementById('rename-chap-new-input')?.value.trim();
+
+  if (!oldName || !newName) return alert('ದಯವಿಟ್ಟು ಹಳೆಯ ಮತ್ತು ಹೊಸ ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (oldName === newName) return alert('ಹಳೆಯ ಮತ್ತು ಹೊಸ ಹೆಸರು ಒಂದೇ ಆಗಿದೆ. ದಯವಿಟ್ಟು ಹೊಸ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ.');
+
+  const cleanSubj = cleanMatchText(subj);
+  let updatedCount = 0;
+
+  (appState.qbank || []).forEach(q => {
+    if (String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj)) {
+      if (q.chapter === oldName || q.chapter.trim() === oldName) {
+        q.chapter = newName;
+        updatedCount++;
+      }
+    }
+  });
+
+  if (updatedCount > 0) {
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    pushToFirebaseCloud();
+    renderChapterCheckboxes();
+    renderCustomQuestionList();
+    document.getElementById('chapter-rename-modal')?.classList.add('hidden');
+    showToast(`🎉 '${oldName}' ಪಾಠದ ಒಟ್ಟು ${updatedCount} ಪ್ರಶ್ನೆಗಳನ್ನು '${newName}' ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ!`, 'success');
+  } else {
+    alert('ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಹೊಂದಿಕೆಯಾಗಲಿಲ್ಲ.');
+  }
+};
+
+// ೪. ಪ್ರಶ್ನೆ ಭಂಡಾರದ ಹೆಡರ್‌ನಲ್ಲಿ "✏️ ಪಾಠದ ಹೆಸರು ಬದಲಿಸಿ" ಬಟನ್ ಸೇರ್ಪಡೆ
+const originalRenderCustomQuestionListWithRename = window.renderCustomQuestionList;
+window.renderCustomQuestionList = function() {
+  if (typeof originalRenderCustomQuestionListWithRename === 'function') {
+    originalRenderCustomQuestionListWithRename();
+  }
+
+  // ಹೆಡರ್ ಬಾರ್‌ನಲ್ಲಿ ಬಟನ್ ಇಂಜೆಕ್ಟ್ ಮಾಡುವುದು
+  const actionsRow = document.querySelector('#admin-qbank-display-list .sticky .flex.items-center.space-x-2');
+  if (actionsRow && !document.getElementById('btn-qbank-rename-chapter')) {
+    const renameBtn = document.createElement('button');
+    renameBtn.id = 'btn-qbank-rename-chapter';
+    renameBtn.type = 'button';
+    renameBtn.className = 'py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow flex items-center gap-1.5 text-xs transition';
+    renameBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span>✏️ ಪಾಠದ ಹೆಸರು ಬದಲಿಸಿ</span>';
+    renameBtn.onclick = () => openChapterRenameModal();
+    actionsRow.insertBefore(renameBtn, actionsRow.firstChild);
+  }
+};
+
+// ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್
+renderCustomQuestionList();
     
   </script>
 </body>
