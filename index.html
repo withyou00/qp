@@ -8392,6 +8392,935 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
 
 // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
 updateStep3CheckboxesDynamically();
+
+/* ==========================================================================
+   WITH YOU QP GENERATOR - ULTIMATE UNIFIED MASTER ENGINE (100% ALL BUTTONS ACTIVE)
+   ========================================================================== */
+
+(function initUnifiedMasterSuite() {
+
+  // --------------------------------------------------------------------------
+  // ೧. ಕಾನ್‌ಸ್ಟಂಟ್‌ಗಳು ಮತ್ತು ಮೂಲ ಕಾನ್ಫಿಗರೇಶನ್
+  // --------------------------------------------------------------------------
+  var ADMIN_CREDENTIALS = { user: "WithYou2026", pass: "WithYoupassword2026" };
+  var ADMIN_PHONE_NUMBER = "9902090911";
+  var FIREBASE_REST_BASE = "https://withyouqp-default-rtdb.firebaseio.com";
+  var FEE_TEACHER_YEARLY = "₹200";
+  var FEE_SCHOOL_YEARLY = "₹500";
+
+  var ALL_CLASSES_LIST = [
+    { val: "1", label: "1 ನೇ ತರಗತಿ" }, { val: "2", label: "2 ನೇ ತರಗತಿ" },
+    { val: "3", label: "3 ನೇ ತರಗತಿ" }, { val: "4", label: "4 ನೇ ತರಗತಿ" },
+    { val: "5", label: "5 ನೇ ತರಗತಿ" }, { val: "6", label: "6 ನೇ ತರಗತಿ" },
+    { val: "7", label: "7 ನೇ ತರಗತಿ" }, { val: "8", label: "8 ನೇ ತರಗತಿ" },
+    { val: "9", label: "9 ನೇ ತರಗತಿ" }, { val: "10", label: "10 ನೇ ತರಗತಿ (SSLC)" }
+  ];
+
+  window.adminSelectedQIds = new Set();
+  window.activeAdminSubTab = 'qbank';
+  window.adminSearchQuery = '';
+  window.adminFilterGrade = 'all';
+  window.adminFilterSubject = 'all';
+  window.adminFilterChapter = 'all';
+  window.adminFilterType = 'all';
+  window.adminTeacherSearchQuery = '';
+  window.adminSchoolSearchQuery = '';
+  window.stagedParsedQuestions = [];
+
+  // --------------------------------------------------------------------------
+  // ೨. ಹೆಲ್ಪರ್ ಫಂಕ್ಷನ್‌ಗಳು (ದಿನಾಂಕ, ಸಾರ್ಟಿಂಗ್ ಮತ್ತು ಶುದ್ಧೀಕರಣ)
+  // --------------------------------------------------------------------------
+  window.cleanMatchText = function(str) {
+    return (str || '').toLowerCase().replace(/[\(\)\s\-\.\:\d\/\,]/g, '');
+  };
+
+  window.escapeHtml = function(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  };
+
+  window.showToast = function(msg, type = 'info') {
+    var c = document.getElementById('toast-container');
+    if (!c) return;
+    var el = document.createElement('div');
+    el.className = `px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-2xl ${type==='success'?'bg-emerald-700':'bg-slate-900'}`;
+    el.innerHTML = escapeHtml(msg);
+    c.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  };
+
+  window.getSerialSortNum = function(str) {
+    if (!str) return 9999;
+    var knMap = {'೦':'0','೧':'1','೨':'2','೩':'3','೪':'4','೫':'5','೬':'6','೭':'7','೮':'8','೯':'9'};
+    var norm = String(str).replace(/[೦-೯]/g, d => knMap[d]);
+    var m = norm.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : 9999;
+  };
+
+  window.cleanPhoneDigits = function(p) {
+    return String(p || '').replace(/\D/g, '').slice(-10);
+  };
+
+  window.cleanKeyString = function(k) {
+    return String(k || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().trim();
+  };
+
+  window.calculateOneFullYearExpiry = function(startDate) {
+    var d = startDate ? new Date(startDate) : new Date();
+    var target = new Date(d);
+    target.setFullYear(target.getFullYear() + 1);
+    var day = String(target.getDate()).padStart(2, '0');
+    var month = String(target.getMonth() + 1).padStart(2, '0');
+    var year = target.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  window.getRemainingDaysCount = function(expiryStr) {
+    if (!expiryStr || !expiryStr.includes('-')) return 365;
+    var parts = expiryStr.split('-');
+    if (parts.length === 3) {
+      var expDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
+      var diff = expDate - new Date();
+      return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    }
+    return 365;
+  };
+
+  window.getExactDynamicExpiryDate = function(userObj) {
+    if (userObj && userObj.expiryDate && userObj.expiryDate.includes('-')) {
+      return userObj.expiryDate;
+    }
+    return calculateOneFullYearExpiry();
+  };
+
+  window.getSystemMediums = function() {
+    return JSON.parse(localStorage.getItem('withyou_custom_mediums') || '["ಕನ್ನಡ (Kannada)", "English", "ಉರ್ದು (Urdu)", "ಮರಾಠಿ (Marathi)", "ಹಿಂದಿ (Hindi)"]');
+  };
+
+  window.getSystemSubjects = function() {
+    return JSON.parse(localStorage.getItem('withyou_custom_subjects') || '["ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)", "ವಿಜ್ಞಾನ (Science)", "ಗಣಿತ (Mathematics)", "English", "ಕನ್ನಡ (Kannada)", "ಹಿಂದಿ (Hindi)", "ಉರ್ದು (Urdu)"]');
+  };
+
+  window.getFreshTeachersList = function() {
+    var local = JSON.parse(localStorage.getItem('kar_qgen_teachers') || '[]');
+    appState.teachers = local;
+    return local;
+  };
+
+  window.getFreshSchoolsList = function() {
+    var local = JSON.parse(localStorage.getItem('kar_qgen_schools') || '[]');
+    appState.schools = local;
+    return local;
+  };
+
+  window.generateGuaranteedUniqueKey = function(prefix) {
+    var keys = new Set([...(appState.teachers||[]).map(t=>(t.accessKey||'').toUpperCase()), ...(appState.schools||[]).map(s=>(s.accessKey||'').toUpperCase())]);
+    var k = '';
+    do { k = `WY-${prefix}-${Math.floor(100000 + Math.random() * 900000)}`; } while (keys.has(k));
+    return k;
+  };
+
+  // --------------------------------------------------------------------------
+  // ೩. ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು & ಕ್ಯಾನಾನಿಕಲ್ ಮ್ಯಾಪಿಂಗ್
+  // --------------------------------------------------------------------------
+  window.getCanonicalQuestionType = function(q) {
+    if (!q) return 'vsa_1m';
+    if (q.type === 'mcq' || (q.a && q.b)) return 'mcq';
+    if (q.type === 'blanks') return 'blanks';
+    if (q.type === 'true_false') return 'true_false';
+    if (q.type === 'analogy') return 'analogy';
+    if (q.type === 'odd_one_out' || (q.q && q.q.includes('ಗುಂಪಿಗೆ ಸೇರದ'))) return 'odd_one_out';
+    if (q.type === 'match' || q.matchPairs) return 'match';
+    if (q.type === 'la_4m' || (q.marks && q.marks >= 4)) return 'la_4m';
+    if (q.type === 'sa_3m' || q.marks === 3) return 'sa_3m';
+    if (q.type === 'sa_2m' || q.marks === 2 || q.type === 'sa') return 'sa_2m';
+    return 'vsa_1m';
+  };
+
+  window.getExactQuestionMarks = function(q) {
+    if (!q) return 1;
+    var m = parseInt(q.marks);
+    if (!isNaN(m) && m > 0) return m;
+    var ct = getCanonicalQuestionType(q);
+    if (ct === 'match' || ct === 'la_4m') return 4;
+    if (ct === 'sa_3m') return 3;
+    if (ct === 'sa_2m') return 2;
+    return 1;
+  };
+
+  // --------------------------------------------------------------------------
+  // ೪. ರಹಸ್ಯ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ & ಯೂಸರ್ ಹೆಡರ್ ಕಂಟ್ರೋಲರ್
+  // --------------------------------------------------------------------------
+  var secretClickCount = 0;
+  var secretClickTimer = null;
+
+  window.handleSecretLogoClick = function() {
+    secretClickCount++;
+    clearTimeout(secretClickTimer);
+    secretClickTimer = setTimeout(() => { secretClickCount = 0; }, 1500);
+    if (secretClickCount >= 3) {
+      secretClickCount = 0;
+      showAdminLoginModal();
+      showToast('🔑 Secret Admin Portal Activated', 'info');
+    }
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) || (e.altKey && (e.key === 'A' || e.key === 'a'))) {
+      e.preventDefault();
+      showAdminLoginModal();
+      showToast('🔑 Secret Admin Portal Activated', 'info');
+    }
+  });
+
+  window.updateTopNavbarClean = function() {
+    var navContainer = document.getElementById('top-nav-actions-container') || document.querySelector('header .flex.items-center.space-x-1');
+    if (!navContainer) return;
+
+    var isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+    if (isOwnerAdmin) {
+      navContainer.innerHTML = `
+        <button type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+        </button>
+        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-house text-emerald-600"></i>
+          <span>Dashboard</span>
+        </button>
+        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-file-signature text-teal-600"></i>
+          <span>ಜನರೇಟರ್</span>
+        </button>
+        <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-database text-amber-600"></i>
+          <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+        </button>
+        <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-gear text-slate-700"></i>
+          <span>Admin (ನೋಂದಣಿ)</span>
+        </button>
+        <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs shadow ml-1 cursor-pointer">
+          Logout
+        </button>
+      `;
+    } else {
+      navContainer.innerHTML = `
+        <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-house text-emerald-600"></i>
+          <span>Dashboard</span>
+        </button>
+        <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+          <i class="fa-solid fa-file-signature text-teal-600"></i>
+          <span>ಜನರೇಟರ್</span>
+        </button>
+      `;
+    }
+  };
+
+  window.showAdminLoginModal = function() {
+    var modal = document.getElementById('admin-login-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'admin-login-modal';
+      modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border space-y-4 text-center text-xs font-sans">
+        <div class="h-14 w-14 bg-slate-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg"><i class="fa-solid fa-lock"></i></div>
+        <h3 class="font-extrabold text-base text-slate-900">Admin Security Login</h3>
+        <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-3 text-left">
+          <div><label class="font-bold">Username</label><input type="text" id="admin-login-user" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" /></div>
+          <div><label class="font-bold">Password</label><input type="password" id="admin-login-pass" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" /></div>
+          <div id="admin-login-error" class="hidden text-xs text-red-600 font-bold bg-red-50 p-2 rounded-xl text-center">❌ ತಪ್ಪಾದ Username ಅಥವಾ Password!</div>
+          <div class="pt-1 flex items-center space-x-2">
+            <button type="button" onclick="document.getElementById('admin-login-modal').classList.add('hidden')" class="w-1/3 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+            <button type="submit" class="w-2/3 btn-primary-gradient text-white font-extrabold py-2.5 rounded-xl shadow-lg">Login</button>
+          </div>
+        </form>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+  };
+
+  window.handleAdminLoginSubmit = function(e) {
+    e.preventDefault();
+    var u = document.getElementById('admin-login-user').value.trim();
+    var p = document.getElementById('admin-login-pass').value.trim();
+    if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+      isAdminLoggedIn = true;
+      sessionStorage.setItem('withyou_admin_auth_token', 'true');
+      sessionStorage.setItem('withyou_active_role', 'admin');
+      appState.currentUserType = 'admin';
+      appState.currentUserId = 'master_admin';
+      document.getElementById('admin-login-modal')?.classList.add('hidden');
+      updateTopNavbarClean();
+      showToast('👑 Admin Master Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+      navigateToSection('qbank');
+    } else {
+      document.getElementById('admin-login-error')?.classList.remove('hidden');
+    }
+  };
+
+  window.logoutAdmin = function() {
+    isAdminLoggedIn = false;
+    sessionStorage.removeItem('withyou_admin_auth_token');
+    sessionStorage.removeItem('withyou_active_role');
+    sessionStorage.removeItem('withyou_logged_teacher');
+    sessionStorage.removeItem('withyou_logged_school');
+    appState.currentUserType = 'demo';
+    appState.currentUserId = 'guest';
+
+    ['admin', 'generator'].forEach(v => document.getElementById('view-' + v)?.classList.add('hidden'));
+    document.getElementById('view-dashboard')?.classList.remove('hidden');
+    updateTopNavbarClean();
+    showToast('🔒 Admin ನಿಂದ ಯಶಸ್ವಿಯಾಗಿ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.navigateToSection = function(section) {
+    var isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+    if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
+      showAdminLoginModal();
+      return;
+    }
+
+    ['dashboard', 'generator', 'admin'].forEach(v => document.getElementById('view-' + v)?.classList.add('hidden'));
+
+    var targetViewId = (section === 'qbank' || section === 'admin') ? 'view-admin' : ('view-' + section);
+    var activeEl = document.getElementById(targetViewId);
+    if (activeEl) activeEl.classList.remove('hidden');
+
+    if (section === 'dashboard') {
+      renderDashboardUserStatusBanner();
+    } else if (section === 'generator') {
+      syncSubjectAndChapters();
+    } else if (section === 'qbank') {
+      activeAdminSubTab = 'qbank';
+      renderAdminMasterUnifiedView();
+    } else if (section === 'admin') {
+      activeAdminSubTab = 'registration';
+      renderAdminMasterUnifiedView();
+    }
+
+    updateTopNavbarClean();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --------------------------------------------------------------------------
+  // ೫. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಲೈವ್ ವ್ಯಾಲಿಡಿಟಿ ಕಾರ್ಡ್ & ಕಾಂಪ್ಯಾಕ್ಟ್ ಬಟನ್‌ಗಳು
+  // --------------------------------------------------------------------------
+  window.renderDashboardUserStatusBanner = function() {
+    var dashView = document.getElementById('view-dashboard');
+    if (!dashView) return;
+
+    var oldCard = document.getElementById('dash-active-validity-card');
+    if (oldCard) oldCard.remove();
+
+    var isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn);
+    var teacher = JSON.parse(sessionStorage.getItem('withyou_logged_teacher') || 'null');
+    var school = JSON.parse(sessionStorage.getItem('withyou_logged_school') || 'null');
+
+    if (!isOwnerAdmin && !teacher && !school) return;
+
+    var card = document.createElement('div');
+    card.id = 'dash-active-validity-card';
+    card.className = 'w-full mb-4 transition-all duration-300';
+
+    if (isOwnerAdmin) {
+      card.innerHTML = `
+        <div class="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-purple-400 rounded-3xl text-white shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center space-x-3">
+            <div class="h-12 w-12 rounded-2xl bg-purple-500 text-slate-950 flex items-center justify-center font-bold text-2xl shadow"><i class="fa-solid fa-crown text-amber-300"></i></div>
+            <div>
+              <div class="flex items-center gap-2"><b class="text-sm sm:text-base font-black">👑 Admin Master ಸಕ್ರಿಯವಾಗಿದೆ</b></div>
+              <p class="text-slate-300 text-xs mt-0.5">ವ್ಯಾಲಿಡಿಟಿ: <b>ಜೀವಿತಾವಧಿ (Lifetime Access)</b> &bull; ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚನೆ</p>
+            </div>
+          </div>
+          <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl shadow-md text-xs">🚀 ಜನರೇಟರ್ ತೆರೆಯಿರಿ ➔</button>
+        </div>
+      `;
+    } else if (teacher) {
+      var expDate = getExactDynamicExpiryDate(teacher);
+      var daysLeft = getRemainingDaysCount(expDate);
+      card.innerHTML = `
+        <div class="p-4 sm:p-5 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-400 text-emerald-950 rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center space-x-3">
+            <div class="h-12 w-12 rounded-2xl bg-emerald-200 text-emerald-900 flex items-center justify-center font-bold text-2xl shadow-sm"><i class="fa-solid fa-chalkboard-user"></i></div>
+            <div>
+              <div class="flex items-center gap-2"><b class="text-sm sm:text-base font-black text-slate-900">${escapeHtml(teacher.name)}</b><span class="font-mono text-xs bg-emerald-200 text-emerald-950 px-2 py-0.5 rounded-lg font-black">${teacher.accessKey}</span></div>
+              <p class="text-slate-600 text-xs mt-1"><b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; 🗓️ <b>ವ್ಯಾಲಿಡಿಟಿ: <span class="text-emerald-900 font-black">${expDate}</span> ರವರೆಗೆ</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</p>
+            </div>
+          </div>
+          <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-3 btn-emerald-gradient text-white font-extrabold rounded-2xl shadow-lg text-xs flex items-center justify-center gap-2"><span>🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ</span><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      `;
+    } else if (school) {
+      var expDate = getExactDynamicExpiryDate(school);
+      var daysLeft = getRemainingDaysCount(expDate);
+      card.innerHTML = `
+        <div class="p-4 sm:p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-400 text-indigo-950 rounded-3xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div class="flex items-center space-x-3">
+            <div class="h-12 w-12 rounded-2xl bg-indigo-200 text-indigo-900 flex items-center justify-center font-bold text-2xl shadow-sm"><i class="fa-solid fa-school"></i></div>
+            <div>
+              <div class="flex items-center gap-2"><b class="text-sm sm:text-base font-black text-slate-900">${escapeHtml(school.name)}</b><span class="font-mono text-xs bg-indigo-200 text-indigo-950 px-2 py-0.5 rounded-lg font-black">${school.accessKey}</span></div>
+              <p class="text-slate-600 text-xs mt-1">DISE: ${school.dise} &bull; 🗓️ <b>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <span class="text-indigo-950 font-black">${expDate}</span> ರವರೆಗೆ</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</p>
+            </div>
+          </div>
+          <button onclick="navigateToSection('generator')" class="w-full sm:w-auto px-6 py-3 btn-primary-gradient text-white font-extrabold rounded-2xl shadow-lg text-xs flex items-center justify-center gap-2"><span>🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಿ</span><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+      `;
+    }
+
+    var heroBox = dashView.querySelector('div.relative.overflow-hidden');
+    if (heroBox) heroBox.insertAdjacentElement('afterend', card);
+    else dashView.insertBefore(card, dashView.firstChild);
+  };
+
+  // --------------------------------------------------------------------------
+  // ೬. NotebookLM ಸ್ಮಾರ್ಟ್ ಪಾರ್ಸರ್ & AI ಇಂಪೋರ್ಟರ್ (ಕ್ಲೀನ್ ಪ್ರಶ್ನೆ, ನೈಜ ಉತ್ತರ & ಸುಲಭ ಟ್ಯಾಗ್)
+  // --------------------------------------------------------------------------
+  function strictlyCleanQuestionText(rawQStr) {
+    if (!rawQStr) return 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+    var s = String(rawQStr).replace(/[`´\*\#]/g, '').trim();
+
+    var qMarkIdx = s.indexOf('?');
+    if (qMarkIdx !== -1) {
+      var afterQMark = s.substring(qMarkIdx + 1);
+      if (/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ|ತಿಳುವಳಿಕೆ|ಜ್ಞಾನ|ಅನ್ವಯ|ಕೌಶಲ|\-\-\-)/i.test(afterQMark)) {
+        s = s.substring(0, qMarkIdx + 1);
+      }
+    }
+
+    var metaCutIdx = s.search(/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ನೀಲನಕ್ಷೆ|\-\-\-)/i);
+    if (metaCutIdx !== -1) s = s.substring(0, metaCutIdx);
+
+    s = s.replace(/^(?:ಪ್ರಶ್ನೆ\s*[\d೧-೯]+[\:\.]?|Q(?:uestion)?\s*[\d೧-೯]+[\:\.]?|[\d೧-೯]+[\.\)\:\-])\s*/i, '');
+    s = s.replace(/[\s\-\–\—\.]+$/, '');
+    return s.trim() || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+  }
+
+  window.splitIntoExactQuestionBlocks = function(rawText) {
+    var text = rawText.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, ' ').replace(/\*\*/g, '').trim();
+    var qMarkerRegex = /(?:^|\n)\s*(?:ಪ್ರಶ್ನೆ\s*[\d೧-೯]+[\:\.]?|[\d೧-೯]+[\.\)\:\-])\s*/gi;
+    var matches = [], match;
+    while ((match = qMarkerRegex.exec(text)) !== null) matches.push({ index: match.index });
+    if (matches.length === 0) return text.split(/\n\s*\n/).filter(b => b.trim().length > 5);
+    var blocks = [];
+    for (var i = 0; i < matches.length; i++) {
+      var start = matches[i].index;
+      var end = (i + 1 < matches.length) ? matches[i + 1].index : text.length;
+      var b = text.substring(start, end).trim();
+      if (b.length > 3) blocks.push(b);
+    }
+    return blocks;
+  };
+
+  window.parseSingleBlock = function(blockText, meta) {
+    var text = blockText.replace(/[\u200B-\u200D\uFEFF\u00A0\t]/g, ' ').replace(/[`´\*\#]/g, '').trim();
+
+    var diff = 'ಸಾಧಾರಣ';
+    if (text.includes('ಸುಲಭ') || text.includes('ಸರಳ') || text.toLowerCase().includes('easy')) diff = 'ಸುಲಭ';
+    else if (text.includes('ಕಠಿಣ') || text.toLowerCase().includes('difficult')) diff = 'ಕಠಿಣ';
+
+    var obj = 'ತಿಳುವಳಿಕೆ';
+    if (text.includes('ಜ್ಞಾನ') || text.toLowerCase().includes('knowledge')) obj = 'ಜ್ಞಾನ';
+    else if (text.includes('ಅನ್ವಯ') || text.toLowerCase().includes('application')) obj = 'ಅನ್ವಯ';
+    else if (text.includes('ಕೌಶಲ') || text.toLowerCase().includes('skill')) obj = 'ಕೌಶಲ';
+
+    var rawLines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    if (rawLines.length === 0) return null;
+
+    var qTextLines = [], optA = '', optB = '', optC = '', optD = '', finalAns = '';
+
+    for (var i = 0; i < rawLines.length; i++) {
+      var line = rawLines[i];
+
+      var isRealAns = /^\s*(?:ಸರಿಯಾದ\s*)?(?:ಉತ್ತರ|Ans(?:wer)?|Key)\s*[\:\.\-]\s*(.*)/i.exec(line);
+      if (isRealAns) {
+        var aPart = isRealAns[1].trim();
+        var cutA = aPart.search(/(?:ಕ್ಲಿಷ್ಟತೆ|ಕಲಿಕೋದ್ದೇಶ|ಅಂಕ|ನೀಲನಕ್ಷೆ|\-\-\-)/i);
+        if (cutA !== -1) aPart = aPart.substring(0, cutA);
+        finalAns = aPart.replace(/[\s\d\-\–\—\.]+$/, '').trim();
+        continue;
+      }
+
+      if (/^\s*(?:ಕಲಿಕೋದ್ದೇಶ|ಕ್ಲಿಷ್ಟತೆ|ಅಂಕ|ನೀಲನಕ್ಷೆ|ಭಾಗ\s*\d+)/i.test(line)) continue;
+
+      var isOptA = /^[\(\[]?\s*(?:A|a|ಅ|ಎ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+      var isOptB = /^[\(\[]?\s*(?:B|b|ಆ|ಬಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+      var isOptC = /^[\(\[]?\s*(?:C|c|ಇ|ಸಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+      var isOptD = /^[\(\[]?\s*(?:D|d|ಈ|ಡಿ)\s*[\)\]\.\:\-]\s*(.*)/i.exec(line);
+
+      if (isOptA) { optA = strictlyCleanQuestionText(isOptA[1]); }
+      else if (isOptB) { optB = strictlyCleanQuestionText(isOptB[1]); }
+      else if (isOptC) { optC = strictlyCleanQuestionText(isOptC[1]); }
+      else if (isOptD) { optD = strictlyCleanQuestionText(isOptD[1]); }
+      else {
+        qTextLines.push(line);
+      }
+    }
+
+    var rawFullQ = qTextLines.join(' ').trim();
+    var cleanQ = strictlyCleanQuestionText(rawFullQ);
+
+    var type = meta.selectedType || 'auto';
+    var marks = 1;
+
+    if (type === 'auto') {
+      if (optA && optB) { type = 'mcq'; marks = 1; }
+      else if (cleanQ.includes('______') || cleanQ.includes('ಬಿಟ್ಟ ಸ್ಥಳ')) { type = 'blanks'; marks = 1; }
+      else if (cleanQ.includes('ಸರಿ') && cleanQ.includes('ತಪ್ಪು')) { type = 'true_false'; marks = 1; }
+      else if (cleanQ.includes('ಸಂಬಂಧ')) { type = 'analogy'; marks = 1; }
+      else if (cleanQ.includes('ಗುಂಪಿಗೆ ಸೇರದ')) { type = 'odd_one_out'; marks = 1; }
+      else if (finalAns.length > 50 || cleanQ.includes('ವಿವರಿಸಿ') || cleanQ.includes('೩ ಅಂಕ')) { type = 'sa_3m'; marks = 3; }
+      else if (finalAns.length > 25 || cleanQ.includes('೨ ಅಂಕ')) { type = 'sa_2m'; marks = 2; }
+      else { type = 'vsa_1m'; marks = 1; }
+    } else {
+      type = meta.selectedType;
+      marks = getExactQuestionMarks({ type: type, marks: meta.selectedDefaultMarks });
+    }
+
+    if (meta.selectedDefaultMarks && meta.selectedDefaultMarks !== 'auto') {
+      marks = parseInt(meta.selectedDefaultMarks);
+    }
+
+    return {
+      id: 'q_' + Date.now() + Math.floor(Math.random() * 1000000),
+      grade: meta.grade,
+      subject: meta.subject,
+      part: meta.part,
+      chapter: meta.chapter,
+      medium: meta.medium,
+      type: type,
+      q: cleanQ,
+      a: optA, b: optB, c: optC, d: optD,
+      ans: finalAns || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+      marks: marks,
+      obj: obj,
+      diff: diff
+    };
+  };
+
+  // --------------------------------------------------------------------------
+  // ೭. ಮ್ಯಾನ್ಯುವಲ್ ಪ್ರಶ್ನೆ ಸೇರ್ಪಡೆ (ಹೊಂದಿಸಿ ಬರೆಯಿರಿ & ಎಲ್ಲಾ ೧೦ ಪ್ರಕಾರಗಳು ಸೇವ್)
+  // --------------------------------------------------------------------------
+  window.handleSaveCustomQuestion = function(e) {
+    e.preventDefault();
+
+    var medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+    var grade = document.getElementById('qadd-class')?.value || '6';
+    var subject = document.getElementById('qadd-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+    var part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+    var chapter = document.getElementById('qadd-chapter')?.value.trim();
+    var type = document.getElementById('qadd-type')?.value || 'mcq';
+    var obj = document.getElementById('qadd-obj')?.value || 'ತಿಳುವಳಿಕೆ';
+    var diff = document.getElementById('qadd-diff')?.value || 'ಸಾಧಾರಣ';
+
+    if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+
+    var newQ = {
+      id: 'q_' + Date.now() + Math.floor(Math.random() * 1000),
+      medium, grade, subject, part, chapter, type, obj, diff
+    };
+
+    if (type === 'match') {
+      var a1 = document.getElementById('match-a-1')?.value.trim() || 'ಅಂಶ 1';
+      var b1 = document.getElementById('match-b-1')?.value.trim() || 'ಉತ್ತರ 1';
+      var a2 = document.getElementById('match-a-2')?.value.trim() || 'ಅಂಶ 2';
+      var b2 = document.getElementById('match-b-2')?.value.trim() || 'ಉತ್ತರ 2';
+      var a3 = document.getElementById('match-a-3')?.value.trim() || 'ಅಂಶ 3';
+      var b3 = document.getElementById('match-b-3')?.value.trim() || 'ಉತ್ತರ 3';
+      var a4 = document.getElementById('match-a-4')?.value.trim() || 'ಅಂಶ 4';
+      var b4 = document.getElementById('match-b-4')?.value.trim() || 'ಉತ್ತರ 4';
+
+      newQ.q = "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ";
+      newQ.marks = 4;
+      newQ.matchPairs = [{ a: a1, b: b1 }, { a: a2, b: b2 }, { a: a3, b: b3 }, { a: a4, b: b4 }];
+      newQ.ans = `(1) ${a1} ➔ ${b1}, (2) ${a2} ➔ ${b2}, (3) ${a3} ➔ ${b3}, (4) ${a4} ➔ ${b4}`;
+    } else if (type === 'mcq') {
+      newQ.q = document.getElementById('qadd-text')?.value.trim() || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+      newQ.a = document.getElementById('qadd-opt-a')?.value.trim() || '';
+      newQ.b = document.getElementById('qadd-opt-b')?.value.trim() || '';
+      newQ.c = document.getElementById('qadd-opt-c')?.value.trim() || '';
+      newQ.d = document.getElementById('qadd-opt-d')?.value.trim() || '';
+      var correctOpt = document.getElementById('qadd-correct-opt')?.value || 'A';
+      newQ.ans = `(${correctOpt}) ${newQ[correctOpt.toLowerCase()] || ''}`;
+      newQ.marks = 1;
+    } else {
+      newQ.q = document.getElementById('qadd-text')?.value.trim() || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+      newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+      newQ.marks = getExactQuestionMarks({ type: type, marks: document.getElementById('qadd-marks')?.value });
+    }
+
+    appState.qbank.unshift(newQ);
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+    pushToFirebaseCloud();
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+    handleQuestionTypeChangeInAdmin(type);
+    showToast('🎉 ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿದೆ!', 'success');
+  };
+
+  // --------------------------------------------------------------------------
+  // ೮. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ ಆಟೋ-ಮಿಕ್ಸ್ & ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್
+  // --------------------------------------------------------------------------
+  window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+    var allQuestions = appState.activeGeneratedQuestions || [];
+    var actualCalculatedMarks = allQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+
+    var selMcq = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+    var selBlanks = allQuestions.filter(q => getCanonicalQuestionType(q) === 'blanks');
+    var selTrueFalse = allQuestions.filter(q => getCanonicalQuestionType(q) === 'true_false');
+    var selAnalogy = allQuestions.filter(q => getCanonicalQuestionType(q) === 'analogy');
+    var selOddOneOut = allQuestions.filter(q => getCanonicalQuestionType(q) === 'odd_one_out');
+    var selMatch = allQuestions.filter(q => getCanonicalQuestionType(q) === 'match');
+    var selVsa1M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'vsa_1m');
+    var selSa2M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'sa_2m');
+    var selSa3M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'sa_3m');
+    var selLa4M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'la_4m');
+
+    var paperSectionsHtml = [];
+    var keySectionsHtml = [];
+    var qNum = 1, kNum = 1, romanIndex = 1;
+    var romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
+    // ೧. ಬಹು ಆಯ್ಕೆ
+    if (selMcq.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ನೀಡಲಾಗಿರುವ ನಾಲ್ಕು ಆಯ್ಕೆಗಳಲ್ಲಿ ಸರಿಯಾದದ್ದನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span>1x${selMcq.length}=${selMcq.length}</span>
+          </div>
+          <div>${selMcq.map(m => {
+            var idx = allQuestions.indexOf(m);
+            return `
+              <div style="margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(m.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>
+                <div class="mcq-grid-layout" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 8px; font-size: 13px; padding-left: 10px; margin-top: 2px;">
+                  <div>(A) ${escapeHtml(m.a||'')}</div><div>(B) ${escapeHtml(m.b||'')}</div>
+                  <div>(C) ${escapeHtml(m.c||'')}</div><div>(D) ${escapeHtml(m.d||'')}</div>
+                </div>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selMcq.map(m => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(m.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೨. ಬಿಟ್ಟ ಸ್ಥಳ
+    if (selBlanks.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
+            <span>1x${selBlanks.length}=${selBlanks.length}</span>
+          </div>
+          <div>${selBlanks.map(b => {
+            var idx = allQuestions.indexOf(b);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(b.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selBlanks.map(b => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(b.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೩. ಸರಿ ಅಥವಾ ತಪ್ಪು
+    if (selTrueFalse.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ 'ಸರಿ' ತಪ್ಪು ಇದ್ದರೆ 'ತಪ್ಪು' ಎಂದು ಗುರುತಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span>1x${selTrueFalse.length}=${selTrueFalse.length}</span>
+          </div>
+          <div>${selTrueFalse.map(tf => {
+            var idx = allQuestions.indexOf(tf);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(tf.q)} &nbsp; [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಸರಿ ಅಥವಾ ತಪ್ಪು ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selTrueFalse.map(tf => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(tf.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ
+    if (selAnalogy.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಮೊದಲೆರೆಡು ಪದಗಳಿಗಿರುವ ಸಂಬಂಧದಂತೆ ಮೂರನೇ ಪದಕ್ಕೆ ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span>1x${selAnalogy.length}=${selAnalogy.length}</span>
+          </div>
+          <div>${selAnalogy.map(an => {
+            var idx = allQuestions.indexOf(an);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(an.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆದ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selAnalogy.map(an => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(an.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದಗಳು
+    if (selOddOneOut.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+            <span>1x${selOddOneOut.length}=${selOddOneOut.length}</span>
+          </div>
+          <div>${selOddOneOut.map(od => {
+            var idx = allQuestions.indexOf(od);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(od.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಗುಂಪಿಗೆ ಸೇರದ ಪದಗಳ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selOddOneOut.map(od => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(od.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (ಆಟೋ-ಮಿಕ್ಸ್ & ಕೀ ಮ್ಯಾಪಿಂಗ್)
+    if (selMatch.length > 0) {
+      selMatch.forEach(mItem => {
+        var idx = allQuestions.indexOf(mItem);
+        var originalPairs = mItem.matchPairs || [
+          { a: 'ಅಂಶ 1', b: 'ಉತ್ತರ 1' }, { a: 'ಅಂಶ 2', b: 'ಉತ್ತರ 2' },
+          { a: 'ಅಂಶ 3', b: 'ಉತ್ತರ 3' }, { a: 'ಅಂಶ 4', b: 'ಉತ್ತರ 4' }
+        ];
+
+        var colA = originalPairs.map((p, i) => ({ text: p.a, origIdx: i }));
+        var colB = originalPairs.map((p, i) => ({ text: p.b, origIdx: i }));
+
+        for (var i = colB.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var temp = colB[i]; colB[i] = colB[j]; colB[j] = temp;
+        }
+
+        var r = romanNumerals[romanIndex++ - 1];
+        var matchQNum = qNum++;
+        var matchKNum = kNum++;
+
+        paperSectionsHtml.push(`
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+              <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+              <span>1x4=4</span>
+            </div>
+            <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+              <span>${matchQNum}. 'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 2px 12px; font-weight: 600; font-size: 13px;">
+              <div><div style="text-decoration: underline; font-weight: bold; margin-bottom: 2px;">'ಅ' ಗುಂಪು</div>${colA.map((aItem, i) => `<div>(${i + 1}) ${escapeHtml(aItem.text)}</div>`).join('')}</div>
+              <div><div style="text-decoration: underline; font-weight: bold; margin-bottom: 2px;">'ಬ' ಗುಂಪು</div>${colB.map((bItem, i) => `<div>(${String.fromCharCode(65 + i)}) ${escapeHtml(bItem.text)}</div>`).join('')}</div>
+            </div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 10px;">
+            <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+            <div style="padding-left: 10px; font-size: 13px;">
+              <div style="font-weight: bold; margin-bottom: 2px;">${matchKNum}.</div>
+              <table style="border-collapse: collapse; border: none; font-size: 13px;">
+                <tbody>
+                  ${colA.map((aItem, i) => {
+                    var bIdx = colB.findIndex(b => b.origIdx === aItem.origIdx);
+                    return `
+                      <tr style="border: none;">
+                        <td style="padding: 1px 6px 1px 0; border: none; font-weight: bold;">(${i + 1})</td>
+                        <td style="padding: 1px 10px 1px 0; border: none;">${escapeHtml(aItem.text)}</td>
+                        <td style="padding: 1px 8px 1px 0; border: none; color: #16a34a; font-weight: bold;">➔</td>
+                        <td style="padding: 1px 0; border: none; font-weight: bold;">(${String.fromCharCode(65 + bIdx)}) ${escapeHtml(colB[bIdx].text)}</td>
+                      </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    // ೭. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (selVsa1M.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span>1x${selVsa1M.length}=${selVsa1M.length}</span>
+          </div>
+          <div>${selVsa1M.map(v => {
+            var idx = allQuestions.indexOf(v);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(v.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selVsa1M.map(v => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(v.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೮. ೨ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (selSa2M.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಅಥವಾ ಎರಡು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span>2x${selSa2M.length}=${selSa2M.length * 2}</span>
+          </div>
+          <div>${selSa2M.map(s => {
+            var idx = allQuestions.indexOf(s);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(s.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಎರಡು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selSa2M.map(s => `<div style="margin-bottom: 3px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(s.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೯. ೩ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (selSa3M.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span>3x${selSa3M.length}=${selSa3M.length * 3}</span>
+          </div>
+          <div>${selSa3M.map(s => {
+            var idx = allQuestions.indexOf(s);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(s.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>`;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ಮೂರು ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selSa3M.map(s => `<div style="margin-bottom: 3px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(s.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    // ೧೦. ೪ ಅಂಕದ ಪ್ರಶ್ನೆ
+    if (selLa4M.length > 0) {
+      var r = romanNumerals[romanIndex++ - 1];
+      paperSectionsHtml.push(`
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 4px;">
+            <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮೂರು ಅಥವಾ ನಾಲ್ಕು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+            <span>4x${selLa4M.length}=${selLa4M.length * 4}</span>
+          </div>
+          <div>${selLa4M.map(d => {
+            var idx = allQuestions.indexOf(d);
+            return `
+              <div style="margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 700; font-size: 13px; line-height: 1.35;">${qNum++}. ${escapeHtml(d.q)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+              ${d.image ? `<div class="my-1.5"><img src="${d.image}" class="max-h-40 mx-auto rounded border shadow" /></div>` : ''}
+              ${d.items ? `<div style="padding-left: 12px; font-size: 12.5px;">${escapeHtml(d.items)}</div>` : ''}
+            `;
+          }).join('')}</div>
+        </div>
+      `);
+      keySectionsHtml.push(`
+        <div style="margin-bottom: 10px;">
+          <div style="font-weight: 800; font-size: 13.5px; margin-bottom: 3px;">${r}. ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+          <div style="padding-left: 10px;">${selLa4M.map(d => `<div style="margin-bottom: 2px; font-size: 13px;"><b>${kNum++}.</b> ${escapeHtml(d.ans||'')}</div>`).join('')}</div>
+        </div>
+      `);
+    }
+
+    document.getElementById('rendered-paper').innerHTML = `<div class="a4-sheet-container">${headerHtml}<div>${paperSectionsHtml.join('')}</div></div>`;
+    document.getElementById('rendered-key').innerHTML = `<div class="a4-sheet-container">${headerHtml}<div style="text-align: center; margin-bottom: 10px;"><h3 style="font-size: 15px; font-weight: 900; text-decoration: underline; margin: 0 0 8px 0;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3></div><div>${keySectionsHtml.join('')}</div></div>`;
+
+    renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
+    applyDemoWatermarkToOutput();
+  };
+
+  // --------------------------------------------------------------------------
+  // ೯. ಮಾಸ್ಟರ್ ಇನಿಶಿಯಲೈಸೇಶನ್
+  // --------------------------------------------------------------------------
+  updateTopNavbarClean();
+  renderDashboardUserStatusBanner();
+  updateStep3CheckboxesDynamically();
+  renderChapterCheckboxes();
+
+})();
+    
   </script>
 </body>
 </html>
