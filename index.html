@@ -7924,6 +7924,116 @@ window.analyzeAndPreviewBulkText = function() {
     }).join('');
   }
 };
+
+    /* ==========================================================================
+   FLAWLESS MANUAL QUESTION SAVER (MATCH THE FOLLOWING & ALL 9 TYPES FIXED)
+   ========================================================================== */
+
+window.handleSaveCustomQuestion = function(e) {
+  e.preventDefault();
+
+  const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+  const grade = document.getElementById('qadd-class')?.value || '6';
+  const subject = document.getElementById('qadd-subject')?.value || 'ವಿಜ್ಞಾನ (Science)';
+  const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+  const chapter = document.getElementById('qadd-chapter')?.value.trim();
+  const type = document.getElementById('qadd-type')?.value || 'match';
+  const obj = document.getElementById('qadd-obj')?.value || 'ತಿಳುವಳಿಕೆ';
+  const diff = document.getElementById('qadd-diff')?.value || 'ಸುಲಭ';
+
+  if (!chapter) {
+    return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (Chapter Name is required).');
+  }
+
+  let newQ = {
+    id: 'q_' + Date.now() + Math.floor(Math.random() * 1000),
+    medium: medium,
+    grade: grade,
+    subject: subject,
+    part: part,
+    chapter: chapter,
+    type: type,
+    obj: obj,
+    diff: diff
+  };
+
+  // 🌟 ೧. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (MATCH THE FOLLOWING) ೪ ಜೋಡಿಗಳ ನಿಖರ ಸೇರ್ಪಡೆ
+  if (type === 'match') {
+    const a1 = document.getElementById('match-a-1')?.value.trim() || 'ಅಂಶ 1';
+    const b1 = document.getElementById('match-b-1')?.value.trim() || 'ಉತ್ತರ 1';
+    const a2 = document.getElementById('match-a-2')?.value.trim() || 'ಅಂಶ 2';
+    const b2 = document.getElementById('match-b-2')?.value.trim() || 'ಉತ್ತರ 2';
+    const a3 = document.getElementById('match-a-3')?.value.trim() || 'ಅಂಶ 3';
+    const b3 = document.getElementById('match-b-3')?.value.trim() || 'ಉತ್ತರ 3';
+    const a4 = document.getElementById('match-a-4')?.value.trim() || 'ಅಂಶ 4';
+    const b4 = document.getElementById('match-b-4')?.value.trim() || 'ಉತ್ತರ 4';
+
+    newQ.q = "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ";
+    newQ.marks = 4;
+    newQ.matchPairs = [
+      { a: a1, b: b1 },
+      { a: a2, b: b2 },
+      { a: a3, b: b3 },
+      { a: a4, b: b4 }
+    ];
+    newQ.ans = `(a) ${a1} ➔ ${b1}, (b) ${a2} ➔ ${b2}, (c) ${a3} ➔ ${b3}, (d) ${a4} ➔ ${b4}`;
+
+  // 🌟 ೨. ಬಹು ಆಯ್ಕೆ (MCQ)
+  } else if (type === 'mcq') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ';
+    newQ.a = document.getElementById('qadd-opt-a')?.value.trim() || '';
+    newQ.b = document.getElementById('qadd-opt-b')?.value.trim() || '';
+    newQ.c = document.getElementById('qadd-opt-c')?.value.trim() || '';
+    newQ.d = document.getElementById('qadd-opt-d')?.value.trim() || '';
+    const correctOpt = document.getElementById('qadd-correct-opt')?.value || 'A';
+    newQ.ans = `(${correctOpt}) ${newQ[correctOpt.toLowerCase()] || ''}`;
+    newQ.marks = 1;
+
+  // 🌟 ೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (TRUE/FALSE)
+  } else if (type === 'true_false') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+    newQ.ans = document.getElementById('qadd-ans')?.value.trim() || 'ಸರಿ';
+    newQ.marks = 1;
+
+  // 🌟 ೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆ (ANALOGY) / ಬಿಟ್ಟ ಸ್ಥಳ (BLANKS) / ೧ ಅಂಕ (VSA)
+  } else if (type === 'blanks' || type === 'analogy' || type === 'vsa_1m') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+    newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+    newQ.marks = 1;
+
+  // 🌟 ೫. ೨ ಅಂಕದ ಪ್ರಶ್ನೆ (SA 2M)
+  } else if (type === 'sa_2m') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+    newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+    newQ.marks = 2;
+
+  // 🌟 ೬. ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (SA 3M)
+  } else if (type === 'sa_3m') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+    newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+    newQ.marks = 3;
+
+  // 🌟 ೭. ೪ ಅಂಕದ ದೀರ್ಘ ಪ್ರಶ್ನೆ (LA 4M) / ಚಿತ್ರ / ನಕ್ಷೆ
+  } else if (type === 'la_4m' || type === 'map_diagram') {
+    newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+    newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+    newQ.marks = 4;
+  }
+
+  // ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆ
+  appState.qbank.unshift(newQ);
+  localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+  // ಕ್ಲೌಡ್ ಸಿಂಕ್ ಮತ್ತು ಲಿಸ್ಟ್ ರಿಫ್ರೆಶ್
+  pushToFirebaseCloud();
+  renderCustomQuestionList();
+  renderChapterCheckboxes();
+
+  // ಫಾರ್ಮ್ ಕ್ಲಿಯರ್ ಮಾಡಿ ಮುಂದಿನ ಪ್ರಶ್ನೆಗೆ ಸಿದ್ಧಪಡಿಸುವುದು
+  handleQuestionTypeChangeInAdmin(type);
+
+  showToast(`🎉 '${newQ.q.substring(0, 20)}...' ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿದೆ!`, 'success');
+};
     
   </script>
 </body>
