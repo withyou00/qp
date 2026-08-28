@@ -5006,7 +5006,379 @@ window.applyDemoWatermarkToOutput = function() {
     });
   }
 };
+
+    /* ==========================================================================
+   INSTANT ZERO-REFRESH LOGIN/LOGOUT & 100% ADMIN UNRESTRICTED GENERATOR
+   ========================================================================== */
+
+// ೧. ಮಾಸ್ಟರ್ ಹೆಡರ್ ಮೆನು ಪೇಂಟರ್ (ತಕ್ಷಣವೇ ಲೈವ್ ರಿ-ರೆಂಡರ್)
+window.updateTopNavbarClean = function() {
+  const navContainer = document.getElementById('top-nav-actions-container') || document.querySelector('header .flex.items-center.space-x-1');
+  if (!navContainer) return;
+
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+  if (isOwnerAdmin) {
+    // 👑 ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಆದ ತಕ್ಷಣ ೫ ಮೆನುಗಳು + Logout
+    navContainer.innerHTML = `
+      <button type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+        <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+      </button>
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-database text-amber-600"></i>
+        <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+      </button>
+      <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3.5 py-1.5 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-gear text-slate-700"></i>
+        <span>Admin (ನೋಂದಣಿ)</span>
+      </button>
+      <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs shadow ml-1 cursor-pointer">
+        Logout
+      </button>
+    `;
+  } else {
+    // 👤 ಸಾಮಾನ್ಯ ಬಳಕೆದಾರರಿಗೆ ಕೇವಲ Dashboard & ಜನರೇಟರ್
+    navContainer.innerHTML = `
+      <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-house text-emerald-600"></i>
+        <span>Dashboard</span>
+      </button>
+      <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold transition text-slate-700 hover:text-slate-900 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+        <i class="fa-solid fa-file-signature text-teal-600"></i>
+        <span>ಜನರೇಟರ್</span>
+      </button>
+      <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition flex items-center gap-1 text-xs border border-slate-200 cursor-pointer">
+        <i class="fa-solid fa-lock"></i>
+        <span class="hidden sm:inline">Admin</span>
+      </button>
+    `;
+  }
+};
+
+// ೨. 👑 ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಸಬ್ಮಿಷನ್ (ತಕ್ಷಣವೇ ಅನ್‌ಲಾಕ್ & ನೋ-ರಿಫ್ರೆಶ್)
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('admin-login-user').value.trim();
+  const p = document.getElementById('admin-login-pass').value.trim();
+
+  if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+    isAdminLoggedIn = true;
+    sessionStorage.setItem('withyou_admin_auth_token', 'true');
+    sessionStorage.setItem('withyou_active_role', 'admin');
+    appState.currentUserType = 'admin';
+    appState.currentUserId = 'master_admin';
+
+    document.getElementById('admin-login-modal')?.classList.add('hidden');
+    
+    // 🌟 ತಕ್ಷಣವೇ ಮೆನು ಅನ್‌ಲಾಕ್ ಮಾಡುವುದು (No Refresh Required)
+    updateTopNavbarClean();
+    showToast('👑 Admin Master Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+    navigateToSection('qbank');
+  } else {
+    document.getElementById('admin-login-error')?.classList.remove('hidden');
+  }
+};
+
+// ೩. 🚪 ಅಡ್ಮಿನ್ LOGOUT (ತಕ್ಷಣವೇ Dashboard ಗೆ ಶಿಫ್ಟ್ & ನೋ-ರಿಫ್ರೆಶ್)
+window.logoutAdmin = function() {
+  isAdminLoggedIn = false;
+  sessionStorage.removeItem('withyou_admin_auth_token');
+  sessionStorage.removeItem('withyou_active_role');
+  sessionStorage.removeItem('withyou_logged_teacher');
+  sessionStorage.removeItem('withyou_logged_school');
+  appState.currentUserType = 'demo';
+  appState.currentUserId = 'guest';
+
+  // 🌟 ಅಡ್ಮಿನ್ ವೀವ್ ತಕ್ಷಣ ಹೈಡ್ ಮಾಡಿ Dashboard ಓಪನ್ ಮಾಡುವುದು
+  const adminView = document.getElementById('view-admin');
+  const genView = document.getElementById('view-generator');
+  const dashView = document.getElementById('view-dashboard');
+
+  if (adminView) adminView.classList.add('hidden');
+  if (genView) genView.classList.add('hidden');
+  if (dashView) dashView.classList.remove('hidden');
+
+  // 🌟 ಮೆನು ತಕ್ಷಣ ಲಾಕ್ ಮಾಡುವುದು (Only Dashboard & Generator)
+  updateTopNavbarClean();
   
+  showToast('🔒 Admin ನಿಂದ ಯಶಸ್ವಿಯಾಗಿ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ೪. ಅನ್‌ರೆಸ್ಟ್ರಿಕ್ಟೆಡ್ ಮಾಸ್ಟರ್ ಜನರೇಟರ್ (ಅಡ್ಮಿನ್‌ಗೆ ಡೆಮೋ ಲಾಕ್ ಸಂಪೂರ್ಣ ಬ್ಲಾಕ್)
+window.generateExamPackageFromBank = window.generateExamPackage = function() {
+  const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+  const isTeacherPro = (sessionStorage.getItem('withyou_logged_teacher') !== null || appState.currentUserType === 'teacher');
+  const isSchoolPro = (sessionStorage.getItem('withyou_logged_school') !== null || appState.currentUserType === 'school');
+  
+  // ಕೇವಲ ಅನ್‌ಲಾಗಿನ್ಡ್ ಪಬ್ಲಿಕ್ ಯೂಸರ್‌ಗೆ ಮಾತ್ರ ಡೆಮೋ ಚೆಕ್
+  const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+  if (isDemo) {
+    let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+    if (dCount >= 1) {
+      showDemoLimitReachedModal();
+      return;
+    }
+    sessionStorage.setItem('wy_demo_gen_count', '1');
+  }
+
+  const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const part = document.getElementById('cfg-part')?.value || 'all';
+  let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
+  const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+  const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || (targetTotalMarks <= 20 ? 15 : 24);
+  const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+  let cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+  if (cleanExamType.includes('LBA') || cleanExamType.includes('ಘಟಕ')) cleanExamType = 'ಘಟಕ ಪರೀಕ್ಷೆ';
+  const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+  const isLBAExam = cleanExamType.includes('ಘಟಕ ಪರೀಕ್ಷೆ');
+
+  const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+  const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+  if (selectedTypes.length === 0) {
+    alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+    return;
+  }
+
+  let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+  let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+  const selectedChapterNamesString = selectedChapters.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+
+  const cleanSelectedSubj = cleanMatchText(rawSubject);
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+  let pool = qbank.filter(q => {
+    const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+    const cleanQSubj = cleanMatchText(q.subject);
+    const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+    const isPartOk = (part === 'all' || q.part === part || !q.part);
+    const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+    const canonicalType = getCanonicalQuestionType(q);
+    const isTypeOk = selectedTypes.includes(canonicalType);
+    return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+  });
+
+  if (pool.length === 0) {
+    alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+    return;
+  }
+
+  function preparePool(arr) {
+    if (isDemo) return [...arr].sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+    let a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let pool1M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 1));
+  let pool2M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 2));
+  let pool3M = preparePool(pool.filter(q => getExactQuestionMarks(q) === 3));
+  let pool4M = preparePool(pool.filter(q => getExactQuestionMarks(q) >= 4));
+
+  const bestCombo = findBestQuestionCombination(pool1M, pool2M, pool3M, pool4M, targetTotalMarks, targetTotalQuestions);
+
+  let chosenQuestions = [];
+  if (bestCombo) {
+    for (let i = 0; i < bestCombo.c4; i++) chosenQuestions.push(pool4M.pop());
+    for (let i = 0; i < bestCombo.c3; i++) chosenQuestions.push(pool3M.pop());
+    for (let i = 0; i < bestCombo.c2; i++) chosenQuestions.push(pool2M.pop());
+    for (let i = 0; i < bestCombo.c1; i++) chosenQuestions.push(pool1M.pop());
+  } else {
+    let curM = 0;
+    while (curM < targetTotalMarks && pool2M.length > 0 && curM + 2 <= targetTotalMarks) { chosenQuestions.push(pool2M.pop()); curM += 2; }
+    while (curM < targetTotalMarks && pool1M.length > 0 && curM + 1 <= targetTotalMarks) { chosenQuestions.push(pool1M.pop()); curM += 1; }
+    while (curM < targetTotalMarks && pool3M.length > 0 && curM + 3 <= targetTotalMarks) { chosenQuestions.push(pool3M.pop()); curM += 3; }
+    while (curM < targetTotalMarks && pool4M.length > 0 && curM + 4 <= targetTotalMarks) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+  }
+
+  appState.activeGeneratedQuestions = chosenQuestions;
+  const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+
+  const professionalHeaderHtml = `
+    <div style="width: 100%; margin: 0 0 10px 0; padding: 0; box-sizing: border-box;">
+      <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+        <h1 style="font-size: 24px; font-weight: 900; color: #000; margin: 0;">${escapeHtml(schoolName)}</h1>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 15px; font-weight: 900; color: #000; line-height: 1.8;">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;"><span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span><span>ಅಂಕ : ${actualCalculatedMarks}</span></div>
+        <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;"><span style="font-size: 16px;">${escapeHtml(cleanExamType)}</span></div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;"><span>ತರಗತಿ : ${escapeHtml(grade)}</span><span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span></div>
+      </div>
+      ${isLBAExam ? `<div style="width: 100%; text-align: center; font-size: 14.5px; font-weight: 900; border-top: 1px dashed #64748b; margin-top: 4px;"><span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span></div>` : ''}
+      <hr style="border: none; border-top: 2.5px solid #000; margin: 6px 0 14px 0;" />
+    </div>
+  `;
+
+  renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+
+  // 🌟 ೩ ನೀಲನಕ್ಷೆಗಳನ್ನು ಕಡ್ಡಾಯವಾಗಿ ರೆಂಡರ್ ಮಾಡುವುದು
+  renderExactThreeBlueprints(chosenQuestions, actualCalculatedMarks);
+
+  const outSec = document.getElementById('output-section');
+  if (outSec) {
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  showToast(`✅ ${cleanExamType} (${actualCalculatedMarks} ಅಂಕಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+};
+
+// ೫. ೩ ಸಂಪೂರ್ಣ ಅಧಿಕೃತ ನೀಲನಕ್ಷೆಗಳ ಮಾಸ್ಟರ್ ರೆಂಡರರ್ (Table 1, Table 2, Table 3)
+window.renderExactThreeBlueprints = function(questions, totalMarks) {
+  if (!questions || questions.length === 0) return;
+
+  const totalMarksSum = questions.reduce((a, b) => a + (b.marks || 1), 0) || totalMarks;
+  const totalQCount = questions.length;
+
+  const qTypeRows = [
+    { name: "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: questions.filter(q => q.type === 'mcq').length, marks: questions.filter(q => q.type === 'mcq').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಬಿಟ್ಟ ಸ್ಥಳ ತುಂಬಿರಿ", count: questions.filter(q => q.type === 'blanks').length, marks: questions.filter(q => q.type === 'blanks').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: questions.filter(q => q.type === 'match').length, marks: questions.filter(q => q.type === 'match').reduce((a, b) => a + (b.marks || 4), 0) },
+    { name: "ವ್ಯಾಕರಣ ಭಾಗ", count: questions.filter(q => q.type === 'grammar').length, marks: questions.filter(q => q.type === 'grammar').reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: questions.filter(q => q.type === 'vsa' || ((q.marks === 1 || !q.marks) && q.type !== 'mcq' && q.type !== 'blanks' && q.type !== 'grammar')).length, marks: questions.filter(q => q.type === 'vsa' || ((q.marks === 1 || !q.marks) && q.type !== 'mcq' && q.type !== 'blanks' && q.type !== 'grammar')).reduce((a, b) => a + (b.marks || 1), 0) },
+    { name: "ಎರಡು ಮತ್ತು ಮೂರು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: questions.filter(q => (q.marks === 2 || q.marks === 3 || q.type === 'sa') && q.type !== 'match').length, marks: questions.filter(q => (q.marks === 2 || q.marks === 3 || q.type === 'sa') && q.type !== 'match').reduce((a, b) => a + (b.marks || 2), 0) },
+    { name: "ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳು / ಚಿತ್ರ / ನಕ್ಷೆ / ಪದ್ಯ", count: questions.filter(q => q.marks >= 4 || q.type === 'la' || q.type === 'map_diagram' || q.type === 'poem_4lines').length, marks: questions.filter(q => q.marks >= 4 || q.type === 'la' || q.type === 'map_diagram' || q.type === 'poem_4lines').reduce((a, b) => a + (b.marks || 4), 0) }
+  ].filter(r => r.count > 0);
+
+  let kMarks = questions.filter(q => q.obj === 'ಜ್ಞಾನ').reduce((a, b) => a + (b.marks || 1), 0);
+  let uMarks = questions.filter(q => q.obj === 'ತಿಳುವಳಿಕೆ').reduce((a, b) => a + (b.marks || 1), 0);
+  let aMarks = questions.filter(q => q.obj === 'ಅನ್ವಯ').reduce((a, b) => a + (b.marks || 1), 0);
+  let sMarks = questions.filter(q => q.obj === 'ಕೌಶಲ').reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (kMarks === 0 && uMarks === 0 && aMarks === 0) {
+    kMarks = Math.round(totalMarksSum * 0.4);
+    uMarks = Math.round(totalMarksSum * 0.4);
+    aMarks = totalMarksSum - (kMarks + uMarks);
+  }
+
+  let easyMarks = questions.filter(q => q.diff === 'ಸುಲಭ').reduce((a, b) => a + (b.marks || 1), 0);
+  let avgMarks = questions.filter(q => q.diff === 'ಸಾಧಾರಣ').reduce((a, b) => a + (b.marks || 1), 0);
+  let diffMarks = questions.filter(q => q.diff === 'ಕಠಿಣ').reduce((a, b) => a + (b.marks || 1), 0);
+
+  if (easyMarks === 0 && avgMarks === 0 && diffMarks === 0) {
+    easyMarks = Math.round(totalMarksSum * 0.3);
+    avgMarks = Math.round(totalMarksSum * 0.5);
+    diffMarks = totalMarksSum - (easyMarks + avgMarks);
+  }
+
+  const bpContainer = document.getElementById('rendered-blueprint');
+  if (!bpContainer) return;
+
+  bpContainer.innerHTML = `
+    <div class="a4-sheet-container" style="line-height: 1.6; font-family: 'Anek Kannada', sans-serif;">
+      <h2 style="text-align: center; font-size: 22px; font-weight: 900; color: #000; margin-bottom: 22px;">
+        ನೀಲನಕ್ಷೆಗಳು (Blueprints)
+      </h2>
+
+      <!-- ೧. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 18%;">ಸಂಖ್ಯೆ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 18%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 19%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${qTypeRows.map(row => `
+              <tr>
+                <td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">${row.name}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${row.count}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${row.marks}</td>
+                <td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((row.marks / totalMarksSum) * 100)}%</td>
+              </tr>
+            `).join('')}
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalQCount}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ೨. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 24px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          2. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಕಲಿಕೋದ್ದೇಶಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 25%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 30%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಜ್ಞಾನ (Knowledge)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${kMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((kMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ತಿಳುವಳಿಕೆ (Understanding)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${uMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((uMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಅನ್ವಯ (Application)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${aMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((aMarks / totalMarksSum) * 100)}%</td></tr>
+            ${sMarks > 0 ? `<tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಕೌಶಲ (Skill)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${sMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((sMarks / totalMarksSum) * 100)}%</td></tr>` : ''}
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ೩. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ -->
+      <div style="margin-bottom: 16px;">
+        <h4 style="font-weight: 900; font-size: 15px; margin-bottom: 6px; color: #000;">
+          3. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 13.5px; border: 1.5px solid #000;">
+          <thead>
+            <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+              <th style="border: 1.5px solid #000; padding: 7px 10px; text-align: left; width: 45%;">ಮಟ್ಟ</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 25%;">ಅಂಕಗಳು</th>
+              <th style="border: 1.5px solid #000; padding: 7px; width: 30%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಸುಲಭ (Easy)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${easyMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((easyMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಸಾಧಾರಣ (Average)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${avgMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((avgMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr><td style="border: 1px solid #000; padding: 5px 10px; text-align: left; font-weight: 600;">ಕಠಿಣ (Difficult)</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${diffMarks}</td><td style="border: 1px solid #000; padding: 5px; font-weight: bold;">${Math.round((diffMarks / totalMarksSum) * 100)}%</td></tr>
+            <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+              <td style="border: 1.5px solid #000; padding: 6px 10px; text-align: left;">ಒಟ್ಟು</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">${totalMarksSum}</td>
+              <td style="border: 1.5px solid #000; padding: 6px;">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+// ತಕ್ಷಣವೇ ಲೈವ್ ಅಪ್ಡೇಟ್
+updateTopNavbarClean();
     
   </script>
 </body>
