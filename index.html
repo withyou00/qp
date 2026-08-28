@@ -5559,6 +5559,329 @@ window.renderCustomQuestionList = function() {
 
 // ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್
 renderCustomQuestionList();
+
+    /* ==========================================================================
+   DIRECT HARDCODED CHAPTER RENAME & EDIT BUTTON ENGINE (100% VISIBLE)
+   ========================================================================== */
+
+// ೧. ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ ಮಾಡುವ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್ (Edit / Rename Chapter Modal)
+window.openChapterRenameModal = function(preSelectedChap = '') {
+  let modal = document.getElementById('chapter-rename-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'chapter-rename-modal';
+    modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const subjects = getSystemSubjects();
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+      
+      <!-- Header -->
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <div class="p-2.5 bg-blue-100 text-blue-900 rounded-2xl font-bold">
+            <i class="fa-solid fa-pen-to-square text-base"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-900">ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ (Rename Chapter)</h3>
+            <p class="text-[11px] text-slate-500">ಪಾಠದ ಹೆಸರನ್ನು ಬದಲಾಯಿಸಿ (ಆ ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಅನ್ವಯವಾಗುತ್ತದೆ)</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+      </div>
+
+      <form id="form-rename-chapter" onsubmit="handleExecuteChapterRename(event)" class="space-y-3.5">
+        
+        <!-- ತರಗತಿ ಮತ್ತು ವಿಷಯ ಆಯ್ಕೆ -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+            <select id="rename-chap-class" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+              ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+            <select id="rename-chap-subject" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">
+              ${subjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <!-- ಬದಲಾಯಿಸಬೇಕಾದ ಹಾಲಿ ಪಾಠ -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">೧. ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠವನ್ನು ಆರಿಸಿ (Select Chapter) *</label>
+          <select id="rename-chap-old-select" required onchange="autoFillNewRenameInput(this.value)" class="w-full p-2.5 bg-blue-50 border border-blue-300 rounded-xl font-bold text-blue-950 text-xs focus:outline-none shadow-sm">
+            <option value="">ಪಾಠ ಆಯ್ಕೆಮಾಡಿ...</option>
+          </select>
+        </div>
+
+        <!-- ಹೊಸ ಹೆಸರು -->
+        <div>
+          <label class="block font-bold text-emerald-950 mb-1">೨. ಹೊಸ ಸರಿಯಾದ ಪಾಠದ ಹೆಸರು (New Chapter Name) *</label>
+          <input type="text" id="rename-chap-new-input" required placeholder="e.g. 2. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-950 font-medium">
+          💡 <b>ಮಾಹಿತಿ:</b> ಇಲ್ಲಿ ಪಾಠದ ಹೆಸರು ಬದಲಾಯಿಸಿದಾಗ, ಭಂಡಾರದಲ್ಲಿ ಆ ಪಾಠಕ್ಕೆ ಸೇರಿದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಹೊಸ ಹೆಸರು ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಆಗುತ್ತದೆ.
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100">ರದ್ದು</button>
+          <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-1.5">
+            <i class="fa-solid fa-floppy-disk"></i> <span>ಹೆಸರು ಬದಲಾಯಿಸಿ (Save Rename)</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  updateRenameModalDropdowns(preSelectedChap);
+};
+
+// ೨. ಡ್ರಾಪ್‌ಡೌನ್‌ಗೆ ಪಾಠಗಳನ್ನು ಲೋಡ್ ಮಾಡುವುದು
+window.updateRenameModalDropdowns = function(preSelect = '') {
+  const cls = document.getElementById('rename-chap-class')?.value || '6';
+  const subj = document.getElementById('rename-chap-subject')?.value || '';
+  const oldDropdown = document.getElementById('rename-chap-old-select');
+  const newNameInput = document.getElementById('rename-chap-new-input');
+  if (!oldDropdown) return;
+
+  const cleanSubj = cleanMatchText(subj);
+  const chaps = Array.from(new Set(
+    (appState.qbank || [])
+      .filter(q => String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj))
+      .map(q => q.chapter)
+      .filter(Boolean)
+  )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+  if (chaps.length === 0) {
+    oldDropdown.innerHTML = `<option value="">ಯಾವುದೇ ಪಾಠಗಳು ಲಭ್ಯವಿಲ್ಲ</option>`;
+    if (newNameInput) newNameInput.value = '';
+    return;
+  }
+
+  oldDropdown.innerHTML = `<option value="">-- ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠ ಆರಿಸಿ --</option>` + 
+    chaps.map(c => `<option value="${escapeHtml(c)}" ${c === preSelect ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+  if (preSelect && chaps.includes(preSelect)) {
+    if (newNameInput) newNameInput.value = preSelect;
+  }
+};
+
+window.autoFillNewRenameInput = function(val) {
+  const input = document.getElementById('rename-chap-new-input');
+  if (input && val) {
+    input.value = val.trim();
+    input.focus();
+  }
+};
+
+// ೩. ಹೆಸರು ಬದಲಾವಣೆ ಸಬ್ಮಿಶನ್ ಹ್ಯಾಂಡ್ಲರ್
+window.handleExecuteChapterRename = function(e) {
+  e.preventDefault();
+  const cls = document.getElementById('rename-chap-class')?.value || '6';
+  const subj = document.getElementById('rename-chap-subject')?.value || '';
+  const oldName = document.getElementById('rename-chap-old-select')?.value.trim();
+  const newName = document.getElementById('rename-chap-new-input')?.value.trim();
+
+  if (!oldName || !newName) return alert('ದಯವಿಟ್ಟು ಹಳೆಯ ಮತ್ತು ಹೊಸ ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+  if (oldName === newName) return alert('ಹಳೆಯ ಮತ್ತು ಹೊಸ ಹೆಸರು ಒಂದೇ ಆಗಿದೆ. ದಯವಿಟ್ಟು ಹೊಸ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ.');
+
+  const cleanSubj = cleanMatchText(subj);
+  let updatedCount = 0;
+
+  (appState.qbank || []).forEach(q => {
+    if (String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj)) {
+      if (q.chapter === oldName || q.chapter.trim() === oldName) {
+        q.chapter = newName;
+        updatedCount++;
+      }
+    }
+  });
+
+  if (updatedCount > 0) {
+    localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    pushToFirebaseCloud();
+    renderChapterCheckboxes();
+    renderCustomQuestionList();
+    document.getElementById('chapter-rename-modal')?.classList.add('hidden');
+    showToast(`🎉 '${oldName}' ಪಾಠದ ಒಟ್ಟು ${updatedCount} ಪ್ರಶ್ನೆಗಳನ್ನು '${newName}' ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ!`, 'success');
+  } else {
+    alert('ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಹೊಂದಿಕೆಯಾಗಲಿಲ್ಲ.');
+  }
+};
+
+// ೪. ಪ್ರಶ್ನೆ ಭಂಡಾರ ರೆಂಡರರ್ (ಎದ್ದು ಕಾಣುವ ನೀಲಿ ಬಟನ್‌ನೊಂದಿಗೆ ನೇರ ಇಂಜೆಕ್ಷನ್)
+window.renderCustomQuestionList = function() {
+  const container = document.getElementById('admin-qbank-display-list');
+  const countEl = document.getElementById('admin-qbank-total-count');
+  if (!container) return;
+
+  const allSubjects = getSystemSubjects();
+  const rawQBank = appState.qbank || [];
+  const availableChapters = Array.from(new Set(
+    rawQBank
+      .filter(q => (adminFilterGrade === 'all' || String(q.grade) === String(adminFilterGrade)) && 
+                   (adminFilterSubject === 'all' || q.subject === adminFilterSubject))
+      .map(q => q.chapter)
+      .filter(Boolean)
+  )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+  let filteredList = rawQBank.filter(q => {
+    const isG = (adminFilterGrade === 'all' || String(q.grade) === String(adminFilterGrade));
+    const isS = (adminFilterSubject === 'all' || q.subject === adminFilterSubject);
+    const isC = (adminFilterChapter === 'all' || q.chapter === adminFilterChapter);
+    let isT = true;
+    if (adminFilterType !== 'all') {
+      if (adminFilterType === '4m') isT = (q.marks === 4);
+      else if (adminFilterType === '2m') isT = (q.marks === 2 || q.type === 'sa');
+      else isT = (q.type === adminFilterType);
+    }
+    let isQ = true;
+    if (adminSearchQuery.trim() !== '') {
+      const s = adminSearchQuery.toLowerCase();
+      isQ = `${q.q} ${q.ans} ${q.chapter} ${q.a||''} ${q.b||''} ${q.c||''} ${q.d||''}`.toLowerCase().includes(s);
+    }
+    return isG && isS && isC && isT && isQ;
+  });
+
+  if (countEl) countEl.innerText = `${filteredList.length} / ಒಟ್ಟು ${rawQBank.length}`;
+
+  // 🌟 ನೇರ ನೀಲಿ ಬಟನ್‌ನೊಂದಿಗೆ ಫ್ರೀಜ್ ಆದ ಹೆಡರ್ (Sticky Frozen Control Bar)
+  const stickyControlBarHtml = `
+    <div style="position: sticky !important; top: 0 !important; z-index: 40 !important; background: rgba(255, 255, 255, 0.98) !important; backdrop-filter: blur(8px) !important;" class="p-3.5 rounded-2xl border-2 border-indigo-300 space-y-2.5 mb-3 text-xs shadow-md">
+      
+      <!-- ಲೈವ್ ಸರ್ಚ್ ಬಾಕ್ಸ್ -->
+      <div class="relative">
+        <input type="text" id="admin-live-search-input" value="${escapeHtml(adminSearchQuery)}" oninput="adminSearchQuery=this.value; renderCustomQuestionList();" placeholder="🔍 ಪ್ರಶ್ನೆ, ಉತ್ತರ ಅಥವಾ ಪಾಠದ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ ಹುಡುಕಿ..." class="w-full pl-4 pr-8 py-2 bg-slate-50 border border-indigo-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        ${adminSearchQuery ? `<button onclick="adminSearchQuery=''; renderCustomQuestionList();" class="absolute inset-y-0 right-0 pr-3 font-bold text-slate-400 hover:text-red-600 text-base">&times;</button>` : ''}
+      </div>
+
+      <!-- ೪ ಫಿಲ್ಟರ್‌ಗಳು -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ತರಗತಿ:</label>
+          <select onchange="adminFilterGrade=this.value; adminFilterChapter='all'; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold">
+            <option value="all" ${adminFilterGrade==='all'?'selected':''}>ಎಲ್ಲಾ ತರಗತಿ</option>
+            ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${adminFilterGrade===c.val?'selected':''}>${c.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ವಿಷಯ:</label>
+          <select onchange="adminFilterSubject=this.value; adminFilterChapter='all'; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold">
+            <option value="all" ${adminFilterSubject==='all'?'selected':''}>ಎಲ್ಲಾ ವಿಷಯ</option>
+            ${allSubjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ಪಾಠ (Chapter):</label>
+          <select onchange="adminFilterChapter=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-950">
+            <option value="all" ${adminFilterChapter==='all'?'selected':''}>ಎಲ್ಲಾ ಪಾಠಗಳು (${availableChapters.length})</option>
+            ${availableChapters.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-0.5">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ:</label>
+          <select onchange="adminFilterType=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold">
+            <option value="all" ${adminFilterType==='all'?'selected':''}>ಎಲ್ಲಾ ಪ್ರಕಾರಗಳು</option>
+            <option value="mcq">ಬಹು ಆಯ್ಕೆ</option>
+            <option value="blanks">ಬಿಟ್ಟ ಸ್ಥಳ</option>
+            <option value="match">ಹೊಂದಿಸಿ</option>
+            <option value="grammar">ವ್ಯಾಕರಣ</option>
+            <option value="vsa">೧ ಅಂಕ</option>
+            <option value="2m">೨ ಅಂಕ</option>
+            <option value="4m">೪ ಅಂಕ</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 🌟 ಆಕ್ಷನ್ ಬಟನ್‌ಗಳು (ಬದಲಾವಣೆ, ವಿಲೀನ ಮತ್ತು ಡಿಲೀಟ್) -->
+      <div class="flex flex-wrap items-center justify-between pt-2 border-t border-indigo-100 gap-2">
+        <label class="flex items-center space-x-2 font-extrabold text-slate-800 cursor-pointer">
+          <input type="checkbox" id="admin-select-all-cb" onchange="toggleSelectAllAdminQuestions(this.checked)" class="w-4 h-4 text-emerald-600 rounded" />
+          <span>ಫಿಲ್ಟರ್ ಆದ ಎಲ್ಲಾ (${filteredList.length}) ಪ್ರಶ್ನೆಗಳು</span>
+        </label>
+        
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- 🌟 ೧. ಪಾಠದ ಹೆಸರು ಬದಲಾವಣೆ ಬಟನ್ (ಎದ್ದು ಕಾಣುವ ನೀಲಿ ಬಟನ್) -->
+          <button type="button" onclick="openChapterRenameModal()" class="py-1.5 px-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>✏️ ಪಾಠದ ಹೆಸರು ಬದಲಿಸಿ (Rename)</span>
+          </button>
+
+          <!-- 🌟 ೨. ಪಾಠಗಳ ವಿಲೀನ ಬಟನ್ -->
+          <button type="button" onclick="openChapterMergeModal()" class="py-1.5 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black rounded-xl shadow-md flex items-center gap-1.5 text-xs transition cursor-pointer">
+            <i class="fa-solid fa-code-merge text-amber-300"></i>
+            <span>📑 ಪಾಠಗಳ ವಿಲೀನ (Merge)</span>
+          </button>
+
+          <!-- 🌟 ೩. ಬಲ್ಕ್ ಡಿಲೀಟ್ -->
+          <button type="button" onclick="bulkDeleteSelectedQuestions()" class="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow flex items-center gap-1 text-xs transition cursor-pointer">
+            <i class="fa-solid fa-trash-can"></i>
+            <span>ಅಳಿಸಿ (${adminSelectedQIds.size})</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  if (filteredList.length === 0) {
+    container.innerHTML = stickyControlBarHtml + `<div class="p-8 bg-slate-50 border rounded-2xl text-center font-bold text-slate-500">ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</div>`;
+    return;
+  }
+
+  const listHtml = filteredList.map((q, idx) => {
+    const isChecked = adminSelectedQIds.has(q.id);
+    let typeBadge = q.type ? q.type.toUpperCase() : 'Q';
+    if (q.type === 'grammar') typeBadge = `ವ್ಯಾಕರಣ (${q.subType || 'Grammar'})`;
+    else if (q.type === 'poem_4lines') typeBadge = '೪ ಸಾಲುಗಳ ಪದ್ಯ';
+    else if (q.marks === 4) typeBadge = '೪ ಅಂಕ (LA)';
+    else if (q.marks === 2) typeBadge = '೨ ಅಂಕ (SA)';
+
+    return `
+      <div class="p-3.5 bg-white border-2 ${isChecked?'border-red-400 bg-red-50/20':'border-slate-200'} rounded-2xl text-xs space-y-2 hover:border-indigo-400 transition shadow-sm mb-2">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+          <div class="flex items-center space-x-2">
+            <input type="checkbox" onchange="toggleSingleAdminQuestionSelection('${q.id}', this.checked)" ${isChecked?'checked':''} class="w-4 h-4 text-red-600 rounded cursor-pointer" />
+            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${typeBadge} &bull; ${q.marks||1}M</span>
+            <span class="font-bold text-slate-900">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</span>
+            <span class="text-indigo-800 font-extrabold bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">&bull; ${q.chapter}</span>
+          </div>
+          
+          <div class="flex items-center space-x-1.5">
+            <button onclick="openAdminQuestionEditModal('${q.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[11px] shadow flex items-center gap-1"><i class="fa-solid fa-pen-to-square"></i><span>Edit</span></button>
+            <button onclick="deleteQuestionFromBank('${q.id}')" class="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <div class="font-black text-slate-900 text-[13.5px] leading-snug whitespace-pre-line pl-6">${idx+1}. ${escapeHtml(q.q)}</div>
+        
+        ${q.type === 'mcq' ? `
+          <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-700 pl-6 bg-slate-50 p-2.5 rounded-xl border font-medium">
+            <div><b>(A)</b> ${escapeHtml(q.a||'-')}</div><div><b>(B)</b> ${escapeHtml(q.b||'-')}</div>
+            <div><b>(C)</b> ${escapeHtml(q.c||'-')}</div><div><b>(D)</b> ${escapeHtml(q.d||'-')}</div>
+          </div>
+        ` : ''}
+
+        <div class="text-emerald-800 text-[11px] whitespace-pre-line pl-6 font-bold bg-emerald-50/70 p-2 rounded-xl border border-emerald-200">
+          <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = stickyControlBarHtml + listHtml;
+};
+
+// ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ರಿಫ್ರೆಶ್
+renderCustomQuestionList();
     
   </script>
 </body>
