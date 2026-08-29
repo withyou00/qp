@@ -11318,6 +11318,618 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
       renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
       applyDemoWatermarkToOutput();
     }
+
+    /* ==========================================================================
+       👑 PERMANENT SESSION PERSISTENCE + ZERO-LOGOUT ON REFRESH + HANGING INDENT
+       ========================================================================== */
+
+    // =========================================================================
+    // ೧. ಕಾಯಂ ಸೆಷನ್ ನಿರ್ವಹಣೆ (REFRESH ಮಾಡಿದರೂ LOGOUT ಆಗುವುದಿಲ್ಲ!)
+    // =========================================================================
+    function restoreUserSessionOnLoad() {
+      // A. ಅಡ್ಮಿನ್ ಸೆಷನ್ ಚೆಕ್
+      if (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || localStorage.getItem('withyou_admin_auth_token') === 'true') {
+        isAdminLoggedIn = true;
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+        return;
+      }
+
+      // B. ಶಿಕ್ಷಕರ ಸೆಷನ್ ಚೆಕ್ (localStorage ನಿಂದ ಕಾಯಂ ರಿಕವರಿ)
+      const savedTeacher = JSON.parse(localStorage.getItem('withyou_logged_teacher') || sessionStorage.getItem('withyou_logged_teacher') || 'null');
+      if (savedTeacher && savedTeacher.id) {
+        appState.currentUserType = 'teacher';
+        appState.currentUserId = savedTeacher.id;
+        localStorage.setItem('withyou_logged_teacher', JSON.stringify(savedTeacher));
+        return;
+      }
+
+      // C. ಶಾಲಾ ಸೆಷನ್ ಚೆಕ್ (localStorage ನಿಂದ ಕಾಯಂ ರಿಕವರಿ)
+      const savedSchool = JSON.parse(localStorage.getItem('withyou_logged_school') || sessionStorage.getItem('withyou_logged_school') || 'null');
+      if (savedSchool && savedSchool.id) {
+        appState.currentUserType = 'school';
+        appState.currentUserId = savedSchool.id;
+        localStorage.setItem('withyou_logged_school', JSON.stringify(savedSchool));
+        return;
+      }
+
+      // D. ಅನ್-ಲಾಗಿನ್ಡ್ ಡೆಮೋ
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+    }
+
+    // ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆದಾಗ ಕಾಯಂ ಮೆಮೊರಿಯಲ್ಲಿ ಸೇವ್
+    window.handleTeacherModalLogin = function(e) {
+      e.preventDefault();
+      const p = cleanPhoneDigits(document.getElementById('modal-tch-phone')?.value);
+      const k = cleanKeyString(document.getElementById('modal-tch-key')?.value);
+      const teachers = appState.teachers || JSON.parse(localStorage.getItem('kar_qgen_teachers') || '[]');
+
+      const match = teachers.find(t => cleanPhoneDigits(t.phone) === p && cleanKeyString(t.accessKey) === k);
+      if (match) {
+        appState.currentUserType = 'teacher';
+        appState.currentUserId = match.id;
+        localStorage.setItem('withyou_logged_teacher', JSON.stringify(match));
+        sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(match));
+        
+        document.getElementById('teacher-auth-modal')?.classList.add('hidden');
+        showToast(`🎉 ಸ್ವಾಗತ ${match.name} ಸರ್/ಮೇಡಂ!`, 'success');
+        
+        navigateToSection('generator');
+        updateGlobalUserValidityDisplayEverywhere();
+        renderDashboardUserStatusBanner();
+        window.renderMaster10QuestionFormats();
+      } else {
+        document.getElementById('modal-tch-login-err')?.classList.remove('hidden');
+      }
+    };
+
+    // ಶಾಲಾ ಲಾಗಿನ್ ಆದಾಗ ಕಾಯಂ ಮೆಮೊರಿಯಲ್ಲಿ ಸೇವ್
+    window.handleSchoolModalLogin = function(e) {
+      e.preventDefault();
+      const d = cleanKeyString(document.getElementById('modal-sch-dise')?.value);
+      const k = cleanKeyString(document.getElementById('modal-sch-key')?.value);
+      const schools = appState.schools || JSON.parse(localStorage.getItem('kar_qgen_schools') || '[]');
+
+      const match = schools.find(s => cleanKeyString(s.dise) === d && cleanKeyString(s.accessKey) === k);
+      if (match) {
+        appState.currentUserType = 'school';
+        appState.currentUserId = match.id;
+        localStorage.setItem('withyou_logged_school', JSON.stringify(match));
+        sessionStorage.setItem('withyou_logged_school', JSON.stringify(match));
+
+        document.getElementById('school-auth-modal')?.classList.add('hidden');
+        showToast(`🎉 ಶಾಲೆ: ${match.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+
+        navigateToSection('generator');
+        updateGlobalUserValidityDisplayEverywhere();
+        renderDashboardUserStatusBanner();
+        window.renderMaster10QuestionFormats();
+      } else {
+        document.getElementById('modal-sch-login-err')?.classList.remove('hidden');
+      }
+    };
+
+    // ಯೂಸರ್ ಲಾಗ್‌ಔಟ್ ಫಂಕ್ಷನ್ (ಕಾಯಂ ಮೆಮೊರಿ ಕ್ಲಿಯರ್)
+    window.logoutActiveUser = function() {
+      localStorage.removeItem('withyou_logged_teacher');
+      localStorage.removeItem('withyou_logged_school');
+      sessionStorage.removeItem('withyou_logged_teacher');
+      sessionStorage.removeItem('withyou_logged_school');
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+
+      updateGlobalUserValidityDisplayEverywhere();
+      renderDashboardUserStatusBanner();
+      window.renderMaster10QuestionFormats();
+      showToast('🔒 ಲಾಗ್‌ಔಟ್ ಯಶಸ್ವಿಯಾಗಿದೆ.', 'info');
+      navigateToSection('dashboard');
+    };
+
+
+    // =========================================================================
+    // ೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ & ಉತ್ತರ ಪತ್ರಿಕೆ ಎರಡರಲ್ಲೂ ಹ್ಯಾಂಗಿಂಗ್ ಇಂಡೆಂಟ್ (NO WRAPPING UNDER NUMBER)
+    // =========================================================================
+    (function injectHangingIndentCSS() {
+      const styleId = 'hanging-indent-master-css';
+      let st = document.getElementById(styleId);
+      if (!st) {
+        st = document.createElement('style');
+        st.id = styleId;
+        document.head.appendChild(st);
+      }
+      st.innerHTML = `
+        /* ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಸಾಲುಗಳು ಸಂಖ್ಯೆಯ ಕೆಳಗೆ ಜಾರದಂತೆ ಹ್ಯಾಂಗಿಂಗ್ ಇಂಡೆಂಟ್ */
+        .q-paper-item-row {
+          display: flex !important;
+          align-items: flex-start !important;
+          gap: 6px !important;
+          margin-bottom: 4px !important;
+          line-height: 1.35 !important;
+        }
+        .q-paper-num {
+          font-weight: 900 !important;
+          font-size: 13px !important;
+          min-width: 26px !important;
+          flex-shrink: 0 !important;
+          color: #000 !important;
+        }
+        .q-paper-text {
+          flex: 1 !important;
+          font-weight: 700 !important;
+          font-size: 12.8px !important;
+          color: #000 !important;
+          text-align: justify !important;
+          line-height: 1.35 !important;
+        }
+
+        /* ಉತ್ತರ ಪತ್ರಿಕೆಯ ಸಾಲುಗಳು */
+        .key-answer-row {
+          display: flex !important;
+          align-items: flex-start !important;
+          gap: 6px !important;
+          margin-bottom: 3.5px !important;
+          font-size: 12.5px !important;
+          line-height: 1.35 !important;
+        }
+        .key-qnum {
+          font-weight: 900 !important;
+          min-width: 26px !important;
+          flex-shrink: 0 !important;
+          color: #000 !important;
+        }
+        .key-text {
+          flex: 1 !important;
+          color: #0f172a !important;
+          text-align: justify !important;
+        }
+      `;
+    })();
+
+
+    // =========================================================================
+    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (ಸಂಖ್ಯೆಯ ಕೆಳಗೆ ಅಕ್ಷರ ಬರದಂತೆ ಪರಿಪೂರ್ಣ ಜೋಡಣೆ)
+    // =========================================================================
+    function renderFullExamPaperWithCustomHeader(headerHtml) {
+      const allQuestions = appState.activeGeneratedQuestions || [];
+      const actualCalculatedMarks = allQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+      const customTypeList = (typeof getCustomQuestionTypesList === 'function') ? getCustomQuestionTypesList() : [];
+
+      const selMcq = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+      const selBlanks = allQuestions.filter(q => getCanonicalQuestionType(q) === 'blanks');
+      const selTrueFalse = allQuestions.filter(q => getCanonicalQuestionType(q) === 'true_false');
+      const selAnalogy = allQuestions.filter(q => getCanonicalQuestionType(q) === 'analogy');
+      const selMatch = allQuestions.filter(q => getCanonicalQuestionType(q) === 'match');
+      const selVsa1M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'vsa_1m');
+      const selSa2M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'sa_2m');
+      const selSa3M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'sa_3m');
+      const selLa4M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'la_4m');
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      allQuestions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      let paperSectionsHtml = [];
+      let keySectionsHtml = [];
+      let qNum = 1, kNum = 1, romanIndex = 1;
+      const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+
+      // I. ಬಹು ಆಯ್ಕೆ (1M)
+      if (selMcq.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:</span>
+              <span>1x${selMcq.length}=${selMcq.length}</span>
+            </div>
+            <div>${selMcq.map(m => {
+              const idx = allQuestions.indexOf(m);
+              return `
+                <div style="margin-bottom: 4px;">
+                  <div class="q-paper-item-row">
+                    <span class="q-paper-num">${qNum++}.</span>
+                    <span class="q-paper-text">${escapeHtml(m.q)}</span>
+                    <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  </div>
+                  <div class="mcq-grid-layout" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 6px; font-size: 12px; padding-left: 28px; margin-top: 1px;">
+                    <div>(A) ${escapeHtml(m.a||'')}</div><div>(B) ${escapeHtml(m.b||'')}</div>
+                    <div>(C) ${escapeHtml(m.c||'')}</div><div>(D) ${escapeHtml(m.d||'')}</div>
+                  </div>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+            <div>${selMcq.map(m => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(m.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // II. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)
+      if (selBlanks.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:</span>
+              <span>1x${selBlanks.length}=${selBlanks.length}</span>
+            </div>
+            <div>${selBlanks.map(b => {
+              const idx = allQuestions.indexOf(b);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(b.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಬಿಟ್ಟ ಸ್ಥಳಗಳ ಉತ್ತರಗಳು:</div>
+            <div>${selBlanks.map(b => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(b.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // III. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)
+      if (selTrueFalse.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ 'ಸರಿ' ತಪ್ಪು ಇದ್ದರೆ 'ತಪ್ಪು' ಎಂದು ಬರೆಯಿರಿ:</span>
+              <span>1x${selTrueFalse.length}=${selTrueFalse.length}</span>
+            </div>
+            <div>${selTrueFalse.map(tf => {
+              const idx = allQuestions.indexOf(tf);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(tf.q)} &nbsp; [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಸರಿ ಅಥವಾ ತಪ್ಪು ಉತ್ತರಗಳು:</div>
+            <div>${selTrueFalse.map(tf => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(tf.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // IV. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆ (1M)
+      if (selAnalogy.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಮೊದಲೆರೆಡು ಪದಗಳಿಗಿರುವ ಸಂಬಂಧದಂತೆ ಮೂರನೇ ಪದಕ್ಕೆ ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:</span>
+              <span>1x${selAnalogy.length}=${selAnalogy.length}</span>
+            </div>
+            <div>${selAnalogy.map(an => {
+              const idx = allQuestions.indexOf(an);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(an.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆದ ಉತ್ತರಗಳು:</div>
+            <div>${selAnalogy.map(an => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(an.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // V. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)
+      if (selMatch.length > 0) {
+        const mItem = selMatch[0];
+        const idx = allQuestions.indexOf(mItem);
+        const originalPairs = mItem.matchPairs || [
+          { a: 'ಅಂಶ 1', b: 'ಉತ್ತರ 1' }, { a: 'ಅಂಶ 2', b: 'ಉತ್ತರ 2' },
+          { a: 'ಅಂಶ 3', b: 'ಉತ್ತರ 3' }, { a: 'ಅಂಶ 4', b: 'ಉತ್ತರ 4' }
+        ];
+
+        const colA = originalPairs.map((p, i) => ({ text: (p.a || '').replace(/^[\(\[]?\d+[\)\]\.\s]+/, '').trim(), origIdx: i }));
+        let colB = originalPairs.map((p, i) => ({ text: (p.b || '').replace(/^[\(\[]?[A-Za-z\u0C80-\u0CFF][\)\]\.\s]+/, '').trim(), origIdx: i }));
+        
+        for (let i = colB.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [colB[i], colB[j]] = [colB[j], colB[i]];
+        }
+
+        const r = romanNumerals[romanIndex++ - 1];
+        const matchQNum = qNum++;
+        const matchKNum = kNum++;
+
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+              <span>1x4=4</span>
+            </div>
+            <div class="q-paper-item-row" style="margin-bottom: 2px;">
+              <span class="q-paper-num">${matchQNum}.</span>
+              <span class="q-paper-text">'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:</span>
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 1px 28px; font-weight: 600; font-size: 12.5px;">
+              <div>
+                <div style="text-decoration: underline; font-weight: bold; margin-bottom: 1px;">'ಅ' ಗುಂಪು</div>
+                ${colA.map((aItem, i) => `<div>(${i + 1}) ${escapeHtml(aItem.text)}</div>`).join('')}
+              </div>
+              <div>
+                <div style="text-decoration: underline; font-weight: bold; margin-bottom: 1px;">'ಬ' ಗುಂಪು</div>
+                ${colB.map((bItem, i) => `<div>(${String.fromCharCode(65 + i)}) ${escapeHtml(bItem.text)}</div>`).join('')}
+              </div>
+            </div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+            <div class="key-answer-row">
+              <span class="key-qnum">${matchKNum}.</span>
+              <div class="key-text" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px 10px;">
+                ${colA.map((aItem, i) => {
+                  const bIdx = colB.findIndex(b => b.origIdx === aItem.origIdx);
+                  const bLetter = String.fromCharCode(65 + bIdx);
+                  const bText = colB[bIdx].text;
+                  return `<div>(${i + 1}) ${escapeHtml(aItem.text)} ➔ <b>(${bLetter}) ${escapeHtml(bText)}</b></div>`;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      // VI. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (ಗುಂಪಿಗೆ ಸೇರದ ಪದ ಇತ್ಯಾದಿ)
+      customQuestionsMap.forEach((qList, typeKey) => {
+        if (qList.length === 0) return;
+        const r = romanNumerals[romanIndex++ - 1];
+        const customDef = customTypeList.find(c => c.key === typeKey);
+        
+        let headingText = customDef ? customDef.heading : (typeKey.includes('ಗುಂಪು') || typeKey === 'odd_one_out' ? 'ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:' : `${typeKey}:`);
+        let marksPerQ = customDef ? (customDef.marks || 1) : (qList[0].marks || 1);
+        let totalSectionMarks = marksPerQ * qList.length;
+
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ${escapeHtml(headingText)}</span>
+              <span>${marksPerQ}x${qList.length}=${totalSectionMarks}</span>
+            </div>
+            <div>${qList.map(item => {
+              const idx = allQuestions.indexOf(item);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(item.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ${escapeHtml(headingText)} ಉತ್ತರಗಳು:</div>
+            <div>${qList.map(item => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(item.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      });
+
+      // VII. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (1M)
+      if (selVsa1M.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+              <span>1x${selVsa1M.length}=${selVsa1M.length}</span>
+            </div>
+            <div>${selVsa1M.map(v => {
+              const idx = allQuestions.indexOf(v);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(v.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
+            <div>${selVsa1M.map(v => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(v.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // VIII. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)
+      if (selSa2M.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಅಥವಾ ಎರಡು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+              <span>2x${selSa2M.length}=${selSa2M.length * 2}</span>
+            </div>
+            <div>${selSa2M.map(s => {
+              const idx = allQuestions.indexOf(s);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(s.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಎರಡು ವಾಕ್ಯಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+            <div>${selSa2M.map(s => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(s.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // IX. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)
+      if (selSa3M.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+              <span>3x${selSa3M.length}=${selSa3M.length * 3}</span>
+            </div>
+            <div>${selSa3M.map(s => {
+              const idx = allQuestions.indexOf(s);
+              return `
+                <div class="q-paper-item-row">
+                  <span class="q-paper-num">${qNum++}.</span>
+                  <span class="q-paper-text">${escapeHtml(s.q)}</span>
+                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಮೂರು ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+            <div>${selSa3M.map(s => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(s.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      // X. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)
+      if (selLa4M.length > 0) {
+        const r = romanNumerals[romanIndex++ - 1];
+        paperSectionsHtml.push(`
+          <div class="compact-section-header">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
+              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮೂರು ಅಥವಾ ನಾಲ್ಕು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
+              <span>4x${selLa4M.length}=${selLa4M.length * 4}</span>
+            </div>
+            <div>${selLa4M.map(d => {
+              const idx = allQuestions.indexOf(d);
+              return `
+                <div style="margin-bottom: 4px;">
+                  <div class="q-paper-item-row">
+                    <span class="q-paper-num">${qNum++}.</span>
+                    <span class="q-paper-text">${escapeHtml(d.q)}</span>
+                    <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  </div>
+                  ${d.image ? `<div class="my-1"><img src="${d.image}" class="max-h-36 mx-auto rounded border shadow-sm" /></div>` : ''}
+                  ${d.items ? `<div style="padding-left: 28px; font-size: 12px;">${escapeHtml(d.items)}</div>` : ''}
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಮಾದರಿ ಉತ್ತರಗಳು:</div>
+            <div>${selLa4M.map(d => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(d.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+
+      document.getElementById('rendered-paper').innerHTML = `
+        <div class="a4-sheet-container">
+          ${headerHtml}
+          <div>${paperSectionsHtml.join('')}</div>
+        </div>
+      `;
+
+      document.getElementById('rendered-key').innerHTML = `
+        <div class="a4-sheet-container">
+          ${headerHtml}
+          <div style="text-align: center; margin-bottom: 8px;">
+            <h3 style="font-size: 15px; font-weight: 900; text-decoration: underline; margin: 0 0 6px 0;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+          </div>
+          <div>${keySectionsHtml.join('')}</div>
+        </div>
+      `;
+
+      renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
+      applyDemoWatermarkToOutput();
+    }
+
+    // =========================================================================
+    // ೪. ಪುಟ ಲೋಡ್ ಆದ ತಕ್ಷಣ ಕಾಯಂ ಸೆಷನ್ ಮತ್ತು 10 ಪ್ರಕಾರಗಳ ಸ್ಥಿರತೆ ಆಕ್ಟಿವೇಶನ್
+    // =========================================================================
+    restoreUserSessionOnLoad();
+    updateGlobalUserValidityDisplayEverywhere();
+    renderDashboardUserStatusBanner();
+    if (typeof renderMaster10QuestionFormats === 'function') {
+      renderMaster10QuestionFormats();
+    }
     
   </script>
 </body>
