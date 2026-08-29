@@ -9461,6 +9461,146 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
       renderExactThreeBlueprints(allQuestions, actualCalculatedMarks);
       applyDemoWatermarkToOutput();
     }
+
+    /* ==========================================================================
+       📱 MOBILE & LAPTOP 100% UNIFIED QUESTION TYPES & CLOUD SYNC ENGINE
+       ========================================================================== */
+
+    // ೧. ಎಲ್ಲಾ ಮೊಬೈಲ್ & ಕಂಪ್ಯೂಟರ್‌ಗಳಲ್ಲಿ ಲಭ್ಯವಿರುವ ಪ್ರಕಾರಗಳ ಮಾಸ್ಟರ್ ಲಿಸ್ಟ್
+    window.getCustomQuestionTypesList = function() {
+      let saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      
+      // "ಗುಂಪಿಗೆ ಸೇರದ ಪದ" ಡೀಫಾಲ್ಟ್ ಆಗಿ ಸದಾ ಇರುವಂತೆ ಲಾಕ್ ಮಾಡಲಾಗಿದೆ
+      const defaultOddOne = { 
+        key: 'odd_one_out', 
+        label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', 
+        heading: 'ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:', 
+        marks: 1 
+      };
+
+      if (!saved.some(s => s.key === 'odd_one_out' || (s.label && s.label.includes('ಗುಂಪಿಗೆ ಸೇರದ')))) {
+        saved.unshift(defaultOddOne);
+      }
+
+      // ಭಂಡಾರದಲ್ಲಿ (qbank) ಇರುವ ಯಾವುದೇ ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಆಟೋ-ಗುರುತಿಸುವುದು
+      (appState.qbank || []).forEach(q => {
+        const t = q.type;
+        const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m', 'vsa', 'sa', 'la', 'odd_one_out'];
+        if (t && !standardKeys.includes(t) && !saved.some(s => s.key === t)) {
+          saved.push({
+            key: t,
+            label: `${t} (${q.marks || 1}M)`,
+            heading: `${t}:`,
+            marks: q.marks || 1
+          });
+        }
+      });
+
+      return saved;
+    };
+
+    // ೨. ಜನರೇಟರ್ Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) ಮೊಬೈಲ್ ರೆಸ್ಪಾನ್ಸಿವ್ ರೆಂಡರರ್
+    window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      const customTypes = getCustomQuestionTypesList();
+
+      // ಮೊಬೈಲ್ ಮತ್ತು ಲ್ಯಾಪ್ಟಾಪ್ ಎರಡರಲ್ಲೂ ಸುಂದರವಾಗಿ ಕಾಣಲು ಗ್ರಿಡ್ ಲೇಔಟ್
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      let html = `
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧. ಬಹು ಆಯ್ಕೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="true_false" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="analogy" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-purple-50/90 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+          <input type="checkbox" name="qtype_opt" value="odd_one_out" checked class="rounded text-purple-600 w-4 h-4"><span class="font-black text-purple-950">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="vsa_1m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_2m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_3m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+          <input type="checkbox" name="qtype_opt" value="la_4m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</span>
+        </label>
+      `;
+
+      // ಇತರ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಿದ್ದಲ್ಲಿ ಅವುಗಳ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳು
+      customTypes.filter(ct => ct.key !== 'odd_one_out').forEach(ct => {
+        html += `
+          <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+            <input type="checkbox" name="qtype_opt" value="${ct.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="font-extrabold text-purple-950 truncate">${escapeHtml(ct.label)}</span>
+          </label>
+        `;
+      });
+
+      // 👑 Admin ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಬಟನ್
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೩. ಕ್ಲೌಡ್‌ನಿಂದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಮೊಬೈಲ್‌ಗೆ ಸಿಂಕ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    async function syncCustomTypesWithFirebaseCloud() {
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`);
+        if (res.ok) {
+          const cloudData = await res.json();
+          if (cloudData && Array.isArray(cloudData)) {
+            localStorage.setItem('withyou_custom_qtypes', JSON.stringify(cloudData));
+            updateStep3CheckboxesDynamically();
+          }
+        }
+      } catch (e) {}
+    }
+
+    // ೪. ಕಸ್ಟಮ್ ಪ್ರಕಾರ ಸೇವ್ ಆದಾಗ ಕ್ಲೌಡ್‌ಗೆ ಕಳುಹಿಸುವುದು
+    const origHandleSaveNewCustomQType = window.handleSaveNewCustomQType;
+    window.handleSaveNewCustomQType = function(e) {
+      if (typeof origHandleSaveNewCustomQType === 'function') {
+        origHandleSaveNewCustomQType(e);
+      }
+      try {
+        const list = getCustomQuestionTypesList();
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+    };
+
+    // ತಕ್ಷಣವೇ ಮೊಬೈಲ್ ಮತ್ತು ಪಿಸಿಯಲ್ಲಿ Step 3 ರಿಫ್ರೆಶ್ ಮಾಡಿ ಸಿಂಕ್ ಮಾಡುವುದು
+    updateStep3CheckboxesDynamically();
+    syncCustomTypesWithFirebaseCloud();
     
   </script>
 </body>
