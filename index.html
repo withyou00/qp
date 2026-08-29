@@ -9739,6 +9739,130 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡಿ ಕ್ಲೀನ್ ಮಾಡುವುದು
     updateStep3CheckboxesDynamically();
+
+/* ==========================================================================
+       🔒 MASTER FIX: 100% FIXED 10 QUESTION FORMATS (NO RESET TO 7 TYPES ON MOBILE)
+       ========================================================================== */
+
+    // ೧. ಹಳೆಯ ಅನಗತ್ಯ custom_178... ಐಡಿಗಳನ್ನು localStorage ನಿಂದ ಶಾಶ್ವತವಾಗಿ ಡಿಲೀಟ್ ಮಾಡುವುದು
+    (function cleanCorruptedCustomStorage() {
+      try {
+        let saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+        // ಕೇವಲ ಶುದ್ಧ ಹೆಸರುಳ್ಳ ಪ್ರಕಾರಗಳನ್ನು ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳುವುದು
+        let validTypes = saved.filter(item => {
+          let lbl = item.label || '';
+          return lbl && !lbl.startsWith('custom_') && !lbl.includes('1787') && !lbl.includes('ಗುಂಪಿಗೆ ಸೇರದ');
+        });
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(validTypes));
+      } catch (e) {}
+    })();
+
+    // ೨. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಲಿಸ್ಟ್ ಪಡೆಯುವುದು (ಯಾವುದೇ ಗಾರ್ಬೇಜ್ ಐಡಿ ಇರುವುದಿಲ್ಲ)
+    window.getCustomQuestionTypesList = function() {
+      let saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      return saved.filter(item => item.label && !item.label.startsWith('custom_'));
+    };
+
+    // ೩. Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) - ಮೊಬೈಲ್ & ಪಿಸಿಯಲ್ಲಿ ಕಡ್ಡಾಯವಾಗಿ ಪೂರ್ಣ 10 ಪ್ರಕಾರಗಳ ಪ್ರದರ್ಶನ
+    window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      const extraCustomTypes = getCustomQuestionTypesList();
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // 🌟 ಕಡ್ಡಾಯವಾಗಿ ಬರುವ ಪೂರ್ಣ 10 ಅಧಿಕೃತ ಪ್ರಕಾರಗಳು (ಯಾವಾಗಲೂ 10 ಇರುತ್ತವೆ)
+      let html = `
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧. ಬಹು ಆಯ್ಕೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="true_false" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="analogy" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-purple-50/90 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+          <input type="checkbox" name="qtype_opt" value="odd_one_out" checked class="rounded text-purple-600 w-4 h-4"><span class="font-black text-purple-950">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="vsa_1m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_2m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_3m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+          <input type="checkbox" name="qtype_opt" value="la_4m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</span>
+        </label>
+      `;
+
+      // Admin ಹೊಸದಾಗಿ ಸೇರಿಸಿದ ಹೆಚ್ಚುವರಿ ಪ್ರಕಾರಗಳಿದ್ದರೆ ಮಾತ್ರ ಇಲ್ಲಿ ಬರುತ್ತವೆ
+      extraCustomTypes.forEach((ct) => {
+        html += `
+          <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+            <input type="checkbox" name="qtype_opt" value="${ct.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="font-extrabold text-purple-950 truncate">${escapeHtml(ct.label)}</span>
+          </label>
+        `;
+      });
+
+      // 👑 Admin ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಬಟನ್
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೪. ತರಗತಿ/ವಿಷಯ ಬದಲಾದಾಗ ಹಳೆಯ 7 ಪ್ರಕಾರಗಳಿಗೆ ರೀಸೆಟ್ ಆಗದಂತೆ ತಡೆಹಿಡಿಯುವುದು
+    window.handleClassOrSubjectChange = function() {
+      if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+      updateStep3CheckboxesDynamically(); // ಸದಾ 10 ಪ್ರಕಾರಗಳನ್ನೇ ಲೋಡ್ ಮಾಡುತ್ತದೆ
+    };
+
+    // ೫. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್‌ನಲ್ಲಿ "ಗುಂಪಿಗೆ ಸೇರದ ಪದ" ನಿಖರ ಮ್ಯಾಪಿಂಗ್
+    const originalGetCanonicalQuestionTypeFix = window.getCanonicalQuestionType;
+    window.getCanonicalQuestionType = function(q) {
+      if (!q) return 'vsa_1m';
+      const t = (q.type || '').toLowerCase();
+
+      if (t.includes('ಗುಂಪು') || t === 'odd_one_out' || t.startsWith('custom_')) {
+        return 'odd_one_out';
+      }
+
+      if (t === 'mcq' || (q.a && q.b)) return 'mcq';
+      if (t === 'blanks') return 'blanks';
+      if (t === 'true_false') return 'true_false';
+      if (t === 'analogy') return 'analogy';
+      if (t === 'match' || q.matchPairs) return 'match';
+      if (t === 'la_4m' || q.marks === 4) return 'la_4m';
+      if (t === 'sa_3m' || q.marks === 3) return 'sa_3m';
+      if (t === 'sa_2m' || q.marks === 2 || t === 'sa') return 'sa_2m';
+      if (t === 'vsa_1m' || t === 'vsa' || q.marks === 1) return 'vsa_1m';
+
+      return t;
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    updateStep3CheckboxesDynamically();
     
   </script>
 </body>
