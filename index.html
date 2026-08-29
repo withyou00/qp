@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="kn">
 <head>
@@ -190,12 +188,10 @@
   <!-- MAIN CONTENT WRAPPER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
 
-    <!-- ======================================================= -->
-    <!-- 1. DASHBOARD VIEW                                       -->
-    <!-- ======================================================= -->
+    <!-- 1. DASHBOARD VIEW -->
     <section id="view-dashboard" class="space-y-6">
       
-      <!-- Centered Hero Banner -->
+      <!-- Hero Banner -->
       <div class="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-800">
         <div class="relative z-10 max-w-4xl mx-auto text-center space-y-4 flex flex-col items-center justify-center py-2">
           <div class="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-1.5 rounded-full text-xs font-bold text-emerald-300 shadow-sm mx-auto">
@@ -213,7 +209,7 @@
         </div>
       </div>
 
-      <!-- Compact Dashboard Action Bar -->
+      <!-- Action Bar -->
       <div id="dash-compact-auth-bar" class="flex flex-wrap items-center justify-center gap-3 pt-2 pb-1">
         <button onclick="openTeacherAuthModal()" class="px-5 py-3 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition flex items-center gap-2 cursor-pointer">
           <i class="fa-solid fa-chalkboard-user text-sm"></i>
@@ -259,9 +255,7 @@
       </div>
     </section>
 
-    <!-- ======================================================= -->
-    <!-- 2. GENERATOR WORKSPACE VIEW                             -->
-    <!-- ======================================================= -->
+    <!-- 2. GENERATOR WORKSPACE VIEW -->
     <section id="view-generator" class="hidden space-y-6">
       
       <!-- Top Profile Banner -->
@@ -364,7 +358,7 @@
             <div id="chapter-list-box" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1"></div>
           </div>
 
-          <!-- STEP 3: FORMATS (All 10 Formats For Everyone) -->
+          <!-- STEP 3: FORMATS (10 Formats For Everyone) -->
           <div class="card-modern p-5 space-y-3">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div class="flex items-center space-x-2">
@@ -413,9 +407,7 @@
 
     </section>
 
-    <!-- ======================================================= -->
-    <!-- 3. ADMIN & QUESTION BANK VIEW                           -->
-    <!-- ======================================================= -->
+    <!-- 3. ADMIN & QUESTION BANK VIEW -->
     <section id="view-admin" class="hidden space-y-6"></section>
 
   </main>
@@ -423,7 +415,7 @@
   <!-- TOAST CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  <!-- JAVASCRIPT MASTER APPLICATION ENGINE -->
+  <!-- JAVASCRIPT MASTER APPLICATION ENGINE PART 1 -->
   <script>
     const ADMIN_CREDENTIALS = { user: "WithYou2026", pass: "WithYoupassword2026" };
     const ADMIN_PHONE_NUMBER = "9902090911";
@@ -486,7 +478,7 @@
       return `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
     }
 
-    // 🌟 ನಿಖರವಾಗಿ ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕದಿಂದ +1 ವರ್ಷದ ಡೈನಾಮಿಕ್ ಎಕ್ಸ್‌ಪೈರಿ ಲೆಕ್ಕಾಚಾರ
+    // 🌟 ನಿಖರ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ
     function calculateDynamic1YearExpiry(regDateStr) {
       let baseDate = new Date();
       if (regDateStr && typeof regDateStr === 'string' && regDateStr.includes('-')) {
@@ -505,11 +497,15 @@
       if (userObj.expiryDate && userObj.expiryDate !== '31-03-2027') {
         return userObj.expiryDate;
       }
-      const reg = userObj.registeredDate || getTodayFormattedDate();
-      const dynamicExp = calculateDynamic1YearExpiry(reg);
-      userObj.registeredDate = reg;
-      userObj.expiryDate = dynamicExp;
-      return dynamicExp;
+      if (userObj.registeredDate) {
+        const calculated = calculateDynamic1YearExpiry(userObj.registeredDate);
+        userObj.expiryDate = calculated;
+        return calculated;
+      }
+      const today = getTodayFormattedDate();
+      userObj.registeredDate = today;
+      userObj.expiryDate = calculateDynamic1YearExpiry(today);
+      return userObj.expiryDate;
     }
 
     function calculateRealRemainingDays(expiryStr) {
@@ -524,9 +520,6 @@
       return 365;
     }
 
-    // =========================================================================
-    // ೧. ZERO-LOGOUT & SESSION RESTORE
-    // =========================================================================
     function restoreUserSession() {
       if (localStorage.getItem('withyou_admin_auth_token') === 'true' || sessionStorage.getItem('withyou_admin_auth_token') === 'true') {
         isAdminLoggedIn = true;
@@ -576,6 +569,7 @@
       navigateToSection('dashboard');
     });
 
+    
     // =========================================================================
     // ೨. NAVBAR & ROUTER CONTROLLER
     // =========================================================================
@@ -672,7 +666,7 @@
     };
 
     // =========================================================================
-    // ೩. DYNAMIC VALIDITY & PROFILE BANNER
+    // ೩. USER PROFILE & DYNAMIC VALIDITY BANNER
     // =========================================================================
     function updateGlobalUserValidityDisplayEverywhere() {
       const genProfileBox = document.getElementById('gen-top-profile-container');
@@ -725,7 +719,7 @@
                   <i class="fa-solid fa-circle-check text-emerald-600"></i>
                   <span>ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
                 </span>
-                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್‌ಔಟ್</button>
+                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್ಔಟ್</button>
               </div>
             </div>
           `;
@@ -759,7 +753,7 @@
                   <i class="fa-solid fa-building-circle-check text-indigo-600"></i>
                   <span>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
                 </span>
-                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್‌ಔಟ್</button>
+                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್ಔಟ್</button>
               </div>
             </div>
           `;
@@ -776,7 +770,7 @@
             <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl shadow-sm shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
             <div>
               <h3 class="text-sm font-black text-amber-950">⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್</h3>
-              <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ</p>
+              <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್ಮಾರ್ಕ್ ಸಹಿತ</p>
             </div>
           </div>
           <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
@@ -882,7 +876,7 @@
     };
 
     // =========================================================================
-    // ೪. STEP 3: MASTER 10 QUESTION FORMATS FOR EVERYONE
+    // ೪. STEP 3: MASTER 10 QUESTION FORMATS + DYNAMIC FORMATS
     // =========================================================================
     window.getCustomQuestionTypesList = function() {
       let saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
@@ -1100,7 +1094,7 @@
                 ${subjects.map(s => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}><span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span></label>`).join('')}
               </div>
             </div>
-            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
           </form>
         </div>
       `;
@@ -1181,7 +1175,7 @@
             <div><label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label><input type="text" id="reg-sch-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label><input type="text" id="reg-sch-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ (WhatsApp) *</label><input type="tel" id="reg-sch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
-            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
           </form>
         </div>
       `;
@@ -1294,7 +1288,7 @@
       updateGlobalUserValidityDisplayEverywhere();
       renderDashboardUserStatusBanner();
       renderMaster10QuestionFormats();
-      showToast('🔒 ಲಾಗ್‌ಔಟ್ ಯಶಸ್ವಿಯಾಗಿದೆ.', 'info');
+      showToast('🔒 ಲಾಗ್ಔಟ್ ಯಶಸ್ವಿಯಾಗಿದೆ.', 'info');
       navigateToSection('dashboard');
     };
 
@@ -1330,7 +1324,7 @@
     };
 
     // =========================================================================
-    // ೭. 👑 AI IMPORT MODAL & PARSER (100% WORKING FIX)
+    // ೭. 👑 AI IMPORT MODAL & PARSER (100% WORKING + ADD TYPE BUTTON)
     // =========================================================================
     window.openBulkAIImportModal = function() {
       const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin' || localStorage.getItem('withyou_admin_auth_token') === 'true');
@@ -1399,21 +1393,16 @@
               <input type="text" id="bulk-import-chapter" required placeholder="ಪಾಠದ ಹೆಸರು ನಮೂದಿಸಿ..." class="w-full p-1.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
             </div>
 
-            <div>
-              <label class="block font-extrabold text-indigo-950 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
-              <select id="bulk-import-qtype" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-extrabold text-indigo-950 text-[11px] focus:outline-none shadow-sm">
-                <option value="auto" selected>✨ ಆಟೋ (Auto Detect)</option>
-                <option value="mcq">೧. ಬಹು ಆಯ್ಕೆ (1M)</option>
-                <option value="blanks">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</option>
-                <option value="true_false">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</option>
-                <option value="analogy">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</option>
-                <option value="odd_one_out">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</option>
-                <option value="match">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</option>
-                <option value="vsa_1m">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</option>
-                <option value="sa_2m">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</option>
-                <option value="sa_3m">೮. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</option>
-                <option value="la_4m">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</option>
-              </select>
+            <!-- 🌟 ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಕಾಲಂ + ನೇರ "+ ಸೇರಿಸಿ" ಬಟನ್ -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <label class="font-extrabold text-indigo-950">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
+                <button type="button" onclick="openAddCustomQTypeModal()" title="ಹೊಸ ಪ್ರಕಾರ ಸೇರಿಸಿ" class="text-[10px] bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-1.5 py-0.5 rounded-lg font-black flex items-center gap-1 shadow-sm cursor-pointer">
+                  <i class="fa-solid fa-circle-plus text-purple-700"></i>
+                  <span>+ ಸೇರಿಸಿ</span>
+                </button>
+              </div>
+              <select id="bulk-import-qtype" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-extrabold text-indigo-950 text-[11px] focus:outline-none shadow-sm"></select>
             </div>
 
             <div>
@@ -1465,6 +1454,7 @@
       `;
       modal.classList.remove('hidden');
       refreshBulkImportExistingChaptersDropdown();
+      refreshBulkImportQTypeDropdown();
     };
 
     window.refreshBulkImportExistingChaptersDropdown = function() {
@@ -1598,7 +1588,7 @@
     };
 
     // =========================================================================
-    // ೮. ADMIN PANEL UNIFIED MODULES (QUESTION BANK & REGISTRATION)
+    // ೮. ADMIN PANEL UNIFIED MODULES (LIVE STATS & RENEWAL RESTORED)
     // =========================================================================
     window.renderAdminMasterUnifiedView = function() {
       const adminView = document.getElementById('view-admin');
@@ -1606,9 +1596,14 @@
 
       const mediums = getSystemMediums();
       const subjects = getSystemSubjects();
-      const teachersCount = (appState.teachers || []).length;
-      const schoolsCount = (appState.schools || []).length;
+      
+      const allTeachers = appState.teachers || [];
+      const allSchools = appState.schools || [];
       const qbankCount = (appState.qbank || []).length;
+
+      const activeTeachersCount = allTeachers.filter(t => calculateRealRemainingDays(getUserExactDynamicExpiry(t)) > 0).length;
+      const activeSchoolsCount = allSchools.filter(s => calculateRealRemainingDays(getUserExactDynamicExpiry(s)) > 0).length;
+      const totalLiveActiveUsers = activeTeachersCount + activeSchoolsCount;
 
       adminView.innerHTML = `
         <div class="flex flex-wrap items-center justify-between bg-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-xl text-xs gap-3">
@@ -1619,7 +1614,7 @@
             </button>
             <button type="button" onclick="switchAdminSubModuleTab('registration')" id="sub-tab-btn-reg" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
               <i class="fa-solid fa-users"></i>
-              <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${teachersCount + schoolsCount})</span>
+              <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${allTeachers.length + allSchools.length})</span>
             </button>
           </div>
 
@@ -1682,6 +1677,46 @@
         </div>
 
         <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
+          
+          <!-- 🌟 ಲೈವ್ ಅಂಕಿಅಂಶಗಳ ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಕಾರ್ಡ್ಗಳು -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="card-modern p-4 border border-emerald-200 bg-emerald-50/40 flex items-center space-x-3">
+              <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-chalkboard-user"></i></div>
+              <div>
+                <span class="text-[11px] text-slate-500 font-bold block">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು</span>
+                <b class="text-xl font-black text-slate-900">${allTeachers.length}</b>
+                <span class="text-[10px] text-emerald-700 font-bold block">(${activeTeachersCount} ಸಕ್ರಿಯ)</span>
+              </div>
+            </div>
+
+            <div class="card-modern p-4 border border-indigo-200 bg-indigo-50/40 flex items-center space-x-3">
+              <div class="p-3 bg-indigo-100 text-indigo-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-school"></i></div>
+              <div>
+                <span class="text-[11px] text-slate-500 font-bold block">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು</span>
+                <b class="text-xl font-black text-slate-900">${allSchools.length}</b>
+                <span class="text-[10px] text-indigo-700 font-bold block">(${activeSchoolsCount} ಸಕ್ರಿಯ)</span>
+              </div>
+            </div>
+
+            <div class="card-modern p-4 border border-teal-200 bg-teal-50/40 flex items-center space-x-3">
+              <div class="p-3 bg-teal-100 text-teal-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-users-viewfinder"></i></div>
+              <div>
+                <span class="text-[11px] text-slate-500 font-bold block">ಒಟ್ಟು ಸಕ್ರಿಯ ಬಳಕೆದಾರರು</span>
+                <b class="text-xl font-black text-teal-900">${totalLiveActiveUsers}</b>
+                <span class="text-[10px] text-teal-700 font-bold block">Live Active Users</span>
+              </div>
+            </div>
+
+            <div class="card-modern p-4 border border-amber-200 bg-amber-50/40 flex items-center space-x-3">
+              <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-database"></i></div>
+              <div>
+                <span class="text-[11px] text-slate-500 font-bold block">ಭಂಡಾರದಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳು</span>
+                <b class="text-xl font-black text-amber-900">${qbankCount}</b>
+                <span class="text-[10px] text-amber-700 font-bold block">Total Questions</span>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <div class="card-modern p-6 space-y-4">
@@ -1696,7 +1731,7 @@
                 <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ರಚಿಸಿ</button>
               </form>
               <div class="pt-3 border-t space-y-2">
-                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು</h4>
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">${allTeachers.length}</span>)</h4>
                 <div id="list-registered-teachers" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
               </div>
             </div>
@@ -1713,7 +1748,7 @@
                 <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ರಚಿಸಿ</button>
               </form>
               <div class="pt-3 border-t space-y-2">
-                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು</h4>
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">${allSchools.length}</span>)</h4>
                 <div id="list-registered-schools" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
               </div>
             </div>
@@ -1992,7 +2027,7 @@
     };
 
     // =========================================================================
-    // ೯. ADMIN REGISTRATION MODULES
+    // ೯. ADMIN REGISTRATION MODULES (RENEWAL & WHATSAPP BUTTONS RESTORED)
     // =========================================================================
     window.handleTeacherRegister = function(e) {
       e.preventDefault();
@@ -2056,13 +2091,30 @@
 
       container.innerHTML = allTeachers.map(t => {
         const expDate = getUserExactDynamicExpiry(t);
+        const daysLeft = calculateRealRemainingDays(expDate);
+        const isExpired = daysLeft <= 0;
+
         return `
-          <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm">
+          <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-emerald-400 transition">
             <div class="flex items-center justify-between">
               <span class="font-black text-slate-900">${escapeHtml(t.name)} <span class="bg-emerald-100 text-emerald-900 font-mono px-2 py-0.5 rounded font-black ml-1">${t.accessKey}</span></span>
-              <button onclick="deleteTeacher('${t.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+              <div class="flex items-center space-x-1">
+                <!-- 🌟 ರಿನೀವಲ್ ಬಟನ್ -->
+                <button onclick="renewTeacherAccount('${t.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್ (+1 ವರ್ಷ)</span>
+                </button>
+                <button onclick="deleteTeacher('${t.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
             </div>
-            <div class="text-[11px] text-slate-600">${t.school} &bull; 📱 ${t.phone} &bull; 🗓️ <b>${expDate}</b></div>
+            <div class="text-[11px] text-slate-600 font-semibold">${escapeHtml(t.school)} &bull; 📱 ${t.phone}</div>
+            <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+              <span class="text-[10px] ${isExpired ? 'bg-red-100 text-red-800' : 'bg-emerald-50 text-emerald-800'} font-bold px-2 py-0.5 rounded border">
+                🗓️ ನೋಂದಣಿ: <b>${t.registeredDate || '-'}</b> &bull; ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
+              </span>
+              <button onclick="sendKeyToTeacherWhatsApp('${t.phone}', '${t.name}', '${t.accessKey}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
+                <i class="fa-brands fa-whatsapp"></i> <span>Key ಕಳುಹಿಸಿ</span>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -2077,16 +2129,117 @@
 
       container.innerHTML = allSchools.map(s => {
         const expDate = getUserExactDynamicExpiry(s);
+        const daysLeft = calculateRealRemainingDays(expDate);
+        const isExpired = daysLeft <= 0;
+
         return `
-          <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm">
+          <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-2 shadow-sm hover:border-indigo-400 transition">
             <div class="flex items-center justify-between">
               <span class="font-black text-slate-900">${escapeHtml(s.name)} <span class="bg-indigo-100 text-indigo-950 font-mono px-2 py-0.5 rounded font-black ml-1">${s.accessKey}</span></span>
-              <button onclick="deleteSchool('${s.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+              <div class="flex items-center space-x-1">
+                <!-- 🌟 ರಿನೀವಲ್ ಬಟನ್ -->
+                <button onclick="renewSchoolAccount('${s.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್ (+1 ವರ್ಷ)</span>
+                </button>
+                <button onclick="deleteSchool('${s.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
             </div>
-            <div class="text-[11px] text-slate-600">DISE: ${s.dise} &bull; HM: ${s.hm} (📱 ${s.hmPhone}) &bull; 🗓️ <b>${expDate}</b></div>
+            <div class="text-[11px] text-slate-600 font-semibold">DISE: ${s.dise} &bull; HM: ${escapeHtml(s.hm)} (📱 ${s.hmPhone})</div>
+            <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
+              <span class="text-[10px] ${isExpired ? 'bg-red-100 text-red-800' : 'bg-indigo-50 text-indigo-800'} font-bold px-2 py-0.5 rounded border">
+                🗓️ ನೋಂದಣಿ: <b>${s.registeredDate || '-'}</b> &bull; ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
+              </span>
+              <button onclick="sendKeyToSchoolWhatsApp('${s.hmPhone}', '${s.name}', '${s.accessKey}')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
+                <i class="fa-brands fa-whatsapp"></i> <span>Master Key ಕಳುಹಿಸಿ</span>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
+    };
+
+    // 🌟 ರಿನೀವಲ್ ಹ್ಯಾಂಡ್ಲರ್ (+1 ವರ್ಷ ವಿಸ್ತರಣೆ)
+    window.renewTeacherAccount = function(id) {
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      const curExp = t.expiryDate || getTodayFormattedDate();
+      let baseDate = new Date();
+      if (curExp && curExp.includes('-')) {
+        const p = curExp.split('-');
+        if (p.length === 3) {
+          const parsed = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+          if (parsed > baseDate) baseDate = parsed;
+        }
+      }
+      baseDate.setFullYear(baseDate.getFullYear() + 1);
+      const newExpiry = `${String(baseDate.getDate()).padStart(2, '0')}-${String(baseDate.getMonth() + 1).padStart(2, '0')}-${baseDate.getFullYear()}`;
+
+      if (confirm(`ಶಿಕ್ಷಕ ${t.name} ಅವರ ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ (${newExpiry} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?`)) {
+        t.expiryDate = newExpiry;
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        pushAuthDataToFirebase();
+        renderRegisteredTeachers();
+        showToast(`🎉 ${t.name} ಖಾತೆ ರಿನೀವಲ್ ಆಗಿದೆ! (${newExpiry} ರವರೆಗೆ)`, 'success');
+        sendKeyToTeacherWhatsApp(t.phone, t.name, t.accessKey);
+      }
+    };
+
+    window.renewSchoolAccount = function(id) {
+      const s = (appState.schools || []).find(x => x.id === id);
+      if (!s) return;
+
+      const curExp = s.expiryDate || getTodayFormattedDate();
+      let baseDate = new Date();
+      if (curExp && curExp.includes('-')) {
+        const p = curExp.split('-');
+        if (p.length === 3) {
+          const parsed = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+          if (parsed > baseDate) baseDate = parsed;
+        }
+      }
+      baseDate.setFullYear(baseDate.getFullYear() + 1);
+      const newExpiry = `${String(baseDate.getDate()).padStart(2, '0')}-${String(baseDate.getMonth() + 1).padStart(2, '0')}-${baseDate.getFullYear()}`;
+
+      if (confirm(`ಶಾಲೆ: ${s.name} ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ (${newExpiry} ರವರೆಗೆ) ರಿನೀವಲ್ ಮಾಡಬೇಕೇ?`)) {
+        s.expiryDate = newExpiry;
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+        pushAuthDataToFirebase();
+        renderRegisteredSchools();
+        showToast(`🎉 ${s.name} ಶಾಲೆ ರಿನೀವಲ್ ಆಗಿದೆ! (${newExpiry} ರವರೆಗೆ)`, 'success');
+        sendKeyToSchoolWhatsApp(s.hmPhone, s.name, s.accessKey);
+      }
+    };
+
+    window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
+      const cleanPhone = cleanPhoneDigits(phone);
+      const t = (appState.teachers || []).find(item => item.accessKey === key);
+      const expDate = t ? getUserExactDynamicExpiry(t) : calculateDynamic1YearExpiry();
+
+      const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
+                  `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+                  `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+                  `🔑 *Teacher Access Key:* *${key}*\n` +
+                  `📱 *ಲಾಗಿನ್ ಮೊಬೈಲ್:* ${cleanPhone}\n` +
+                  `🗓️ *ವ್ಯಾಲಿಡಿಟಿ:* *${expDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)*\n\n` +
+                  `ಧನ್ಯವಾದಗಳು!`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.sendKeyToSchoolWhatsApp = function(phone, schoolName, key) {
+      const cleanPhone = cleanPhoneDigits(phone);
+      const s = (appState.schools || []).find(item => item.accessKey === key);
+      const expDate = s ? getUserExactDynamicExpiry(s) : calculateDynamic1YearExpiry();
+
+      const msg = `*With You QP Generator - ಶಾಲಾ Master Access Key*\n\n` +
+                  `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
+                  `*${schoolName}* ಶಾಲೆಯ ವಾರ್ಷಿಕ ಚಂದಾದಾರಿಕೆ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+                  `🔑 *ಶಾಲಾ Master Key:* *${key}*\n` +
+                  `🗓️ *ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ:* *${expDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)*\n\n` +
+                  `ಧನ್ಯವಾದಗಳು!`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
     };
 
     window.deleteTeacher = function(id) {
@@ -2371,7 +2524,6 @@
       let qNum = 1, kNum = 1, romanIndex = 1;
       const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
 
-      // I. MCQ
       if (selMcq.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2410,7 +2562,6 @@
         `);
       }
 
-      // II. BLANKS
       if (selBlanks.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2443,7 +2594,6 @@
         `);
       }
 
-      // III. TRUE/FALSE
       if (selTrueFalse.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2476,7 +2626,6 @@
         `);
       }
 
-      // IV. ANALOGY
       if (selAnalogy.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2509,7 +2658,6 @@
         `);
       }
 
-      // V. MATCH
       if (selMatch.length > 0) {
         const mItem = selMatch[0];
         const idx = allQuestions.indexOf(mItem);
@@ -2572,7 +2720,6 @@
         `);
       }
 
-      // VI. CUSTOM TYPES
       customQuestionsMap.forEach((qList, typeKey) => {
         if (qList.length === 0) return;
         const r = romanNumerals[romanIndex++ - 1];
@@ -2613,7 +2760,6 @@
         `);
       });
 
-      // VII. VSA 1M
       if (selVsa1M.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2646,7 +2792,6 @@
         `);
       }
 
-      // VIII. SA 2M
       if (selSa2M.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2679,7 +2824,6 @@
         `);
       }
 
-      // IX. SA 3M
       if (selSa3M.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2712,7 +2856,6 @@
         `);
       }
 
-      // X. LA 4M
       if (selLa4M.length > 0) {
         const r = romanNumerals[romanIndex++ - 1];
         paperSectionsHtml.push(`
@@ -2889,7 +3032,7 @@
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ಜ್ಞಾನ (Knowledge)</td><td style="border: 1px solid #000; padding: 4px;">${kMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((kMarks / totalMarksSum) * 100)}%</td></tr>
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ತಿಳುವಳಿಕೆ (Understanding)</td><td style="border: 1px solid #000; padding: 4px;">${uMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((uMarks / totalMarksSum) * 100)}%</td></tr>
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ಅನ್ವಯ (Application)</td><td style="border: 1px solid #000; padding: 4px;">${aMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((aMarks / totalMarksSum) * 100)}%</td></tr>
-                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 5px 8px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000; padding: 5px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 5px;">100%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1px solid #000; padding: 5px 8px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1px solid #000; padding: 5px;">${totalMarksSum}</td><td style="border: 1px solid #000; padding: 5px;">100%</td></tr>
               </tbody>
             </table>
           </div>
@@ -2908,7 +3051,7 @@
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ಸುಲಭ (Easy)</td><td style="border: 1px solid #000; padding: 4px;">${easyMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((easyMarks / totalMarksSum) * 100)}%</td></tr>
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ಸಾಧಾರಣ (Average)</td><td style="border: 1px solid #000; padding: 4px;">${avgMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((avgMarks / totalMarksSum) * 100)}%</td></tr>
                 <tr><td style="border: 1px solid #000; padding: 4px 8px; text-align: left;">ಕಠಿಣ (Difficult)</td><td style="border: 1px solid #000; padding: 4px;">${diffMarks}</td><td style="border: 1px solid #000; padding: 4px;">${Math.round((diffMarks / totalMarksSum) * 100)}%</td></tr>
-                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 5px 8px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1.5px solid #000; padding: 5px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 5px;">100%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1px solid #000; padding: 5px 8px; text-align: left;">ಒಟ್ಟು</td><td style="border: 1px solid #000; padding: 5px;">${totalMarksSum}</td><td style="border: 1px solid #000; padding: 5px;">100%</td></tr>
               </tbody>
             </table>
           </div>
@@ -3069,7 +3212,7 @@
           <div class="space-y-1">
             <h3 class="font-black text-lg text-slate-900">⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮುಕ್ತಾಯವಾಗಿದೆ!</h3>
             <p class="text-xs text-slate-600 leading-relaxed font-semibold">
-              ನೀವು ಡೆಮೋ ಮೋಡ್‌ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
+              ನೀವು ಡೆಮೋ ಮೋಡ್ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
             </p>
           </div>
           <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-900 font-bold text-left space-y-1 text-[11px]">
@@ -3089,7 +3232,7 @@
     }
 
     window.requestKeyFromWhatsAppDirect = function() {
-      const msg = `*With You QP Generator - Access Key ಕೋರಿಕೆ*\n\nನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್‌ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
+      const msg = `*With You QP Generator - Access Key ಕೋರಿಕೆ*\n\nನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನಗೆ ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ *Access Key* ನೀಡಿ.`;
       window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
       document.getElementById('demo-limit-modal')?.classList.add('hidden');
     };
@@ -3137,4 +3280,3 @@
   </script>
 </body>
 </html>
-
