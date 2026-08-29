@@ -478,46 +478,59 @@
       return `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
     }
 
-    function calculateDynamic1YearExpiry(regDateStr) {
-      let baseDate = new Date();
-      if (regDateStr && typeof regDateStr === 'string' && regDateStr.includes('-')) {
-        const p = regDateStr.split('-');
-        if (p.length === 3) {
-          baseDate = new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
-        }
-      }
-      const exp = new Date(baseDate);
-      exp.setFullYear(exp.getFullYear() + 1);
-      return `${String(exp.getDate()).padStart(2, '0')}-${String(exp.getMonth() + 1).padStart(2, '0')}-${exp.getFullYear()}`;
+    // 🌟 ನಿಖರ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ: ಮೂಲ ದಿನಾಂಕಕ್ಕೆ +1 ವರ್ಷ
+    function calculateExact1YearExpiry(regDateStr) {
+      const baseDate = parseDDMMYYYY(regDateStr) || new Date();
+      const target = new Date(baseDate);
+      target.setFullYear(target.getFullYear() + 1);
+      
+      const day = String(target.getDate()).padStart(2, '0');
+      const month = String(target.getMonth() + 1).padStart(2, '0');
+      const year = target.getFullYear();
+      return `${day}-${month}-${year}`; // e.g. 28-08-2026 -> 28-08-2027
     }
 
-    // 🌟 ನೋಂದಾಯಿತ ನೈಜ ದಿನಾಂಕ ಮತ್ತು ಎಕ್ಸ್‌ಪೈರಿ ದಿನಾಂಕವನ್ನು ರಕ್ಷಿಸುವುದು (ಸ್ಥಿರವಾಗಿ ಉಳಿಯುತ್ತದೆ)
+    function parseDDMMYYYY(dStr) {
+      if (!dStr || typeof dStr !== 'string') return null;
+      const clean = dStr.trim().split(/[-/]/);
+      if (clean.length === 3) {
+        let day = parseInt(clean[0], 10);
+        let month = parseInt(clean[1], 10) - 1;
+        let year = parseInt(clean[2], 10);
+        if (clean[0].length === 4) { // YYYY-MM-DD
+          year = parseInt(clean[0], 10);
+          month = parseInt(clean[1], 10) - 1;
+          day = parseInt(clean[2], 10);
+        }
+        return new Date(year, month, day, 12, 0, 0);
+      }
+      return null;
+    }
+
     function getUserExactDynamicExpiry(userObj) {
-      if (!userObj) return calculateDynamic1YearExpiry();
+      if (!userObj) return calculateExact1YearExpiry(getTodayFormattedDate());
       if (userObj.expiryDate && userObj.expiryDate !== '31-03-2027') {
         return userObj.expiryDate;
       }
       if (userObj.registeredDate) {
-        const calculated = calculateDynamic1YearExpiry(userObj.registeredDate);
+        const calculated = calculateExact1YearExpiry(userObj.registeredDate);
         userObj.expiryDate = calculated;
         return calculated;
       }
       const today = getTodayFormattedDate();
       userObj.registeredDate = today;
-      userObj.expiryDate = calculateDynamic1YearExpiry(today);
+      userObj.expiryDate = calculateExact1YearExpiry(today);
       return userObj.expiryDate;
     }
 
     function calculateRealRemainingDays(expiryStr) {
-      if (!expiryStr || !expiryStr.includes('-')) return 365;
-      const parts = expiryStr.split('-');
-      if (parts.length === 3) {
-        const expDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]), 23, 59, 59);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return Math.max(0, Math.ceil((expDate - today) / (1000 * 60 * 60 * 24)));
-      }
-      return 365;
+      const expDate = parseDDMMYYYY(expiryStr);
+      if (!expDate) return 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expDate.setHours(23, 59, 59, 999);
+      const diffMs = expDate.getTime() - today.getTime();
+      return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     }
 
     function restoreUserSession() {
@@ -568,7 +581,7 @@
       fetchAuthDataFromFirebase();
       navigateToSection('dashboard');
     });
-    
+
     // =========================================================================
     // ೨. NAVBAR & ROUTER CONTROLLER
     // =========================================================================
@@ -718,7 +731,7 @@
                   <i class="fa-solid fa-circle-check text-emerald-600"></i>
                   <span>ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
                 </span>
-                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್ಔಟ್</button>
+                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್‌ಔಟ್</button>
               </div>
             </div>
           `;
@@ -752,7 +765,7 @@
                   <i class="fa-solid fa-building-circle-check text-indigo-600"></i>
                   <span>ಶಾಲಾ ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)</span>
                 </span>
-                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್ಔಟ್</button>
+                <button onclick="logoutActiveUser()" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 font-bold px-3 py-1.5 rounded-xl border border-red-200 cursor-pointer">ಲಾಗ್‌ಔಟ್</button>
               </div>
             </div>
           `;
@@ -769,7 +782,7 @@
             <div class="h-11 w-11 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xl shadow-sm shrink-0"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
             <div>
               <h3 class="text-sm font-black text-amber-950">⭐ ಉಚಿತ ಡೆಮೋ ಪ್ರೊಫೈಲ್</h3>
-              <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್ಮಾರ್ಕ್ ಸಹಿತ</p>
+              <p class="text-[11px] text-amber-800">೧ ಬಾರಿಯ ಪರೀಕ್ಷಾರ್ಥ ಆವೃತ್ತಿ &bull; ವಾಟರ್‌ಮಾರ್ಕ್ ಸಹಿತ</p>
             </div>
           </div>
           <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
@@ -952,7 +965,7 @@
       renderMaster10QuestionFormats();
     };
 
-    // 🌟 ಶಿಕ್ಷಕರಿಗೆ ಅವರ ನೋಂದಾಯಿತ ವಿಷಯ ಮತ್ತು ತರಗತಿ ಮಾತ್ರ ಜನರೇಟರ್ನಲ್ಲಿ ಲಾಕ್ ಆಗಿ ಬರುವುದು!
+    // 🌟 ಶಿಕ್ಷಕರಿಗೆ ಅವರ ನೋಂದಾಯಿತ ವಿಷಯ ಮತ್ತು ತರಗತಿ ಮಾತ್ರ ಜನರೇಟರ್‌ನಲ್ಲಿ ಲಾಕ್ ಆಗಿ ಬರುವುದು!
     window.syncSubjectAndChapters = function() {
       const mediumSelect = document.getElementById('cfg-medium');
       const classSelect = document.getElementById('cfg-class');
@@ -993,7 +1006,7 @@
       return JSON.parse(localStorage.getItem('withyou_custom_subjects') || '["ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)", "ವಿಜ್ಞಾನ (Science)", "ಗಣಿತ (Mathematics)", "English", "ಕನ್ನಡ (Kannada)", "ಹಿಂದಿ (Hindi)", "ಉರ್ದು (Urdu)"]');
     };
 
-    // 🌟 ಹೊಸ ವಿಷಯವನ್ನು ಸಿಸ್ಟಮ್ಗೆ ಸೇರಿಸುವ ಬಟನ್ ಫಂಕ್ಷನ್
+    // 🌟 ಹೊಸ ವಿಷಯವನ್ನು ಸಿಸ್ಟಮ್‌ಗೆ ಸೇರಿಸುವ ಬಟನ್ ಫಂಕ್ಷನ್
     window.addNewSubjectToSystem = function() {
       const newSub = prompt("ಹೊಸ ವಿಷಯದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ (e.g. ದೈಹಿಕ ಶಿಕ್ಷಣ (Physical Education)):");
       if (!newSub || newSub.trim() === '') return;
@@ -1136,7 +1149,7 @@
                 ${subjects.map(s => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}><span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span></label>`).join('')}
               </div>
             </div>
-            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (${FEE_TEACHER_YEARLY})</button>
           </form>
         </div>
       `;
@@ -1217,7 +1230,7 @@
             <div><label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label><input type="text" id="reg-sch-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label><input type="text" id="reg-sch-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
             <div><label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ (WhatsApp) *</label><input type="tel" id="reg-sch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
-            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
+            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
           </form>
         </div>
       `;
@@ -1330,7 +1343,7 @@
       updateGlobalUserValidityDisplayEverywhere();
       renderDashboardUserStatusBanner();
       renderMaster10QuestionFormats();
-      showToast('🔒 ಲಾಗ್ಔಟ್ ಯಶಸ್ವಿಯಾಗಿದೆ.', 'info');
+      showToast('🔒 ಲಾಗ್‌ಔಟ್ ಯಶಸ್ವಿಯಾಗಿದೆ.', 'info');
       navigateToSection('dashboard');
     };
 
@@ -1364,7 +1377,7 @@
       showToast('⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
       navigateToSection('generator');
     };
-
+    
     // =========================================================================
     // ೭. 👑 AI IMPORT MODAL & PARSER (100% FIXED & DYNAMIC DROPDOWN)
     // =========================================================================
@@ -1542,7 +1555,6 @@
       if (selectKey) drop.value = selectKey;
     };
 
-    // 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರ ಸೇರಿಸುವ ಮಾಡಲ್
     window.openAddCustomQTypeModal = function() {
       let modal = document.getElementById('add-custom-qtype-modal');
       if (!modal) {
@@ -2286,7 +2298,7 @@
         subjects: subjects,
         accessKey,
         registeredDate: regDate,
-        expiryDate: calculateDynamic1YearExpiry(regDate),
+        expiryDate: calculateExact1YearExpiry(regDate),
         fee: FEE_TEACHER_YEARLY
       };
 
@@ -2312,7 +2324,7 @@
         name, dise, hm, hmPhone,
         accessKey,
         registeredDate: regDate,
-        expiryDate: calculateDynamic1YearExpiry(regDate),
+        expiryDate: calculateExact1YearExpiry(regDate),
         fee: FEE_SCHOOL_YEARLY
       };
 
@@ -2459,7 +2471,7 @@
               </div>
               <div>
                 <label class="block font-bold text-amber-950 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ (DD-MM-YYYY) *</label>
-                <input type="text" id="edit-tch-expdate" value="${t.expiryDate || calculateDynamic1YearExpiry(t.registeredDate)}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-amber-300 rounded-lg font-bold text-xs text-emerald-800" />
+                <input type="text" id="edit-tch-expdate" value="${t.expiryDate || calculateExact1YearExpiry(t.registeredDate)}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-amber-300 rounded-lg font-bold text-xs text-emerald-800" />
               </div>
             </div>
 
@@ -2594,7 +2606,7 @@
               </div>
               <div>
                 <label class="block font-bold text-indigo-950 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ *</label>
-                <input type="text" id="edit-sch-expdate" value="${s.expiryDate || calculateDynamic1YearExpiry(s.registeredDate)}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-indigo-300 rounded-lg font-bold text-xs text-indigo-900" />
+                <input type="text" id="edit-sch-expdate" value="${s.expiryDate || calculateExact1YearExpiry(s.registeredDate)}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-indigo-300 rounded-lg font-bold text-xs text-indigo-900" />
               </div>
             </div>
 
@@ -2692,7 +2704,7 @@
     window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
       const cleanPhone = cleanPhoneDigits(phone);
       const t = (appState.teachers || []).find(item => item.accessKey === key);
-      const expDate = t ? getUserExactDynamicExpiry(t) : calculateDynamic1YearExpiry();
+      const expDate = t ? getUserExactDynamicExpiry(t) : calculateExact1YearExpiry(getTodayFormattedDate());
 
       const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
                   `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
@@ -2708,7 +2720,7 @@
     window.sendKeyToSchoolWhatsApp = function(phone, schoolName, key) {
       const cleanPhone = cleanPhoneDigits(phone);
       const s = (appState.schools || []).find(item => item.accessKey === key);
-      const expDate = s ? getUserExactDynamicExpiry(s) : calculateDynamic1YearExpiry();
+      const expDate = s ? getUserExactDynamicExpiry(s) : calculateExact1YearExpiry(getTodayFormattedDate());
 
       const msg = `*With You QP Generator - ಶಾಲಾ Master Access Key*\n\n` +
                   `ನಮಸ್ಕಾರ ಮುಖ್ಯಶಿಕ್ಷಕರೇ,\n` +
@@ -2739,7 +2751,71 @@
     };
 
     // =========================================================================
-    // ೧೦. QUESTION PAPER GENERATOR & MATH SOLVER
+    // 🔒 ಅವಧಿ ಮುಗಿದಾಗ (EXPIRED ACCOUNT) ರಿನೀವಲ್ ಮಾಡಿಸಿಕೊಳ್ಳುವ ಪಾಪ್ಅಪ್ ಮಾಡಲ್
+    // =========================================================================
+    function showAccountExpiredRenewalModal(user) {
+      let modal = document.getElementById('account-expired-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'account-expired-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const userName = user.name || 'ಬಳಕೆದಾರರೇ';
+      const userKey = user.accessKey || '-';
+      const userPhone = user.phone || user.hmPhone || '';
+      const regDate = user.registeredDate || '-';
+      const expDate = user.expiryDate || '-';
+      const isTeacher = (appState.currentUserType === 'teacher');
+      const fee = isTeacher ? FEE_TEACHER_YEARLY : FEE_SCHOOL_YEARLY;
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-red-500 space-y-4 text-center text-xs font-sans">
+          <div class="w-16 h-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto text-3xl font-bold shadow-inner animate-bounce">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+
+          <div class="space-y-1.5">
+            <h3 class="font-black text-lg text-slate-900">⚠️ ನಿಮ್ಮ ಖಾತೆಯ ಅವಧಿ ಮುಕ್ತಾಯಗೊಂಡಿದೆ!</h3>
+            <p class="text-xs text-slate-600 leading-relaxed font-semibold">
+              ನಮಸ್ಕಾರ <b>${escapeHtml(userName)}</b>, ನಿಮ್ಮ ೧ ವರ್ಷದ ಸದಸ್ಯತ್ವದ ಅವಧಿಯು (<b>${expDate}</b>) ಮುಕ್ತಾಯಗೊಂಡಿದೆ. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಖಾತೆಯನ್ನು ನವೀಕರಿಸಿ (Renew).
+            </p>
+          </div>
+
+          <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-950 font-bold text-left space-y-1 text-[11px]">
+            <div>• ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ: <b>${regDate}</b></div>
+            <div>• ಮುಕ್ತಾಯಗೊಂಡ ದಿನಾಂಕ: <b class="text-red-700">${expDate} (0 ದಿನಗಳು ಬಾಕಿ)</b></div>
+            <div>• Access Key: <b class="font-mono">${userKey}</b></div>
+            <div>• ವಾರ್ಷಿಕ ನವೀಕರಣ ಶುಲ್ಕ: <b>${fee}/ವರ್ಷ</b></div>
+          </div>
+
+          <div class="space-y-2 pt-2">
+            <button onclick="requestAccountRenewalWhatsApp('${userPhone}', '${escapeHtml(userName)}', '${userKey}', '${fee}')" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fa-brands fa-whatsapp text-lg"></i>
+              <span>WhatsApp ನಲ್ಲಿ ರಿನೀವಲ್ ಮಾಡಿಕೊಳ್ಳಿ (9902090911)</span>
+            </button>
+            <button onclick="document.getElementById('account-expired-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">ಮುಚ್ಚಿ</button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    window.requestAccountRenewalWhatsApp = function(phone, name, key, fee) {
+      const msg = `*With You QP Generator - ಸದಸ್ಯತ್ವ ನವೀಕರಣ (Renewal Request)*\n\n` +
+                  `👤 *ಹೆಸರು:* ${name}\n` +
+                  `🔑 *Access Key:* ${key}\n` +
+                  `📱 *ಮೊಬೈಲ್:* ${phone}\n` +
+                  `💰 *ಶುಲ್ಕ:* ${fee}/ವರ್ಷ\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ನನ್ನ ೧ ವರ್ಷದ ಅವಧಿ ಮುಕ್ತಾಯಗೊಂಡಿದೆ. ದಯವಿಟ್ಟು ನನ್ನ ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ ನವೀಕರಿಸಿ (Renew) ಕೊಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('account-expired-modal')?.classList.add('hidden');
+    };
+
+    // =========================================================================
+    // ೧೦. QUESTION PAPER GENERATOR & MATH ENGINE (WITH EXPIRY GUARD)
     // =========================================================================
     function getExactQuestionMarks(q) {
       if (!q) return 1;
@@ -2816,6 +2892,23 @@
       const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
       const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
       const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+      // 🌟 ಅವಧಿ ಮುಗಿದಿದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ (Block if Expired)
+      if (isTeacherPro || isSchoolPro) {
+        const activeUser = isTeacherPro 
+          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+        if (activeUser) {
+          const expStr = getUserExactDynamicExpiry(activeUser);
+          const daysLeft = calculateRealRemainingDays(expStr);
+
+          if (daysLeft <= 0) {
+            showAccountExpiredRenewalModal(activeUser);
+            return;
+          }
+        }
+      }
 
       if (isDemo) {
         let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
@@ -3719,7 +3812,7 @@
               ನೀವು ಡೆಮೋ ಮೋಡ್ನ ೧ ಬಾರಿಯ ಉಚಿತ ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿದ್ದೀರಿ. ವಾಟರ್ಮಾರ್ಕ್ ಇಲ್ಲದ ಪೂರ್ಣ ಆವೃತ್ತಿಯ ಅನಿಯಮಿತ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ಪಡೆಯಲು ನಿಮ್ಮ <b>Access Key</b> ಸಕ್ರಿಯಗೊಳಿಸಿ.
             </p>
           </div>
-          <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-900 font-bold text-left space-y-1 text-[11px]">
+          <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-950 font-bold text-left space-y-1 text-[11px]">
             <div>• ಶಿಕ್ಷಕರ ನೋಂದಣಿ: ${FEE_TEACHER_YEARLY} / ವರ್ಷಕ್ಕೆ</div>
             <div>• ಶಾಲಾ ಮಾಸ್ಟರ್ ನೋಂದಣಿ: ${FEE_SCHOOL_YEARLY} / ವರ್ಷಕ್ಕೆ</div>
           </div>
@@ -3781,322 +3874,8 @@
       `;
       modal.classList.remove('hidden');
     };
-
-    // =========================================================================
-    // 🌟 ನಿಖರ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ & ೧ ವರ್ಷದ ಡೈನಾಮಿಕ್ ಎಕ್ಸ್‌ಪೈರಿ ಎಂಜಿನ್ (EXACT 365 DAYS)
-    // =========================================================================
-    function parseDDMMYYYY(dStr) {
-      if (!dStr || typeof dStr !== 'string') return null;
-      const clean = dStr.trim().split(/[-/]/);
-      if (clean.length === 3) {
-        let day = parseInt(clean[0], 10);
-        let month = parseInt(clean[1], 10) - 1; // 0-indexed month
-        let year = parseInt(clean[2], 10);
-        if (clean[0].length === 4) { // YYYY-MM-DD
-          year = parseInt(clean[0], 10);
-          month = parseInt(clean[1], 10) - 1;
-          day = parseInt(clean[2], 10);
-        }
-        return new Date(year, month, day, 12, 0, 0); // Noon avoids DST/midnight boundary issues
-      }
-      return null;
-    }
-
-    function getTodayFormattedDate() {
-      const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      return `${day}-${month}-${year}`;
-    }
-
-    // 🌟 ನಿಖರವಾಗಿ ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕದಿಂದ ಅದೇ ದಿನಕ್ಕೆ ಮುಂದಿನ ವರ್ಷದ ವ್ಯಾಲಿಡಿಟಿ (+1 Year Exact)
-    function calculateExact1YearExpiry(regDateStr) {
-      const baseDate = parseDDMMYYYY(regDateStr) || new Date();
-      const target = new Date(baseDate);
-      target.setFullYear(target.getFullYear() + 1);
-      
-      const day = String(target.getDate()).padStart(2, '0');
-      const month = String(target.getMonth() + 1).padStart(2, '0');
-      const year = target.getFullYear();
-      return `${day}-${month}-${year}`; // e.g. 28-08-2026 -> 28-08-2027
-    }
-
-    // ಬಳಕೆದಾರರ ಸ್ಥಿರ ನೋಂದಣಿ ಮತ್ತು ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ ಪಡೆಯುವುದು
-    function getUserExactDynamicExpiry(userObj) {
-      if (!userObj) return calculateExact1YearExpiry(getTodayFormattedDate());
-      
-      // ಮೂಲ ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕವಿದ್ದರೆ ಅದನ್ನೇ ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ
-      if (userObj.expiryDate && userObj.expiryDate.includes('-') && userObj.expiryDate !== '31-03-2027') {
-        return userObj.expiryDate;
-      }
-      
-      // ನೋಂದಣಿ ದಿನಾಂಕದಿಂದ ನಿಖರ ೧ ವರ್ಷ ಲೆಕ್ಕಾಚಾರ
-      const reg = userObj.registeredDate || getTodayFormattedDate();
-      const exp = calculateExact1YearExpiry(reg);
-      userObj.registeredDate = reg;
-      userObj.expiryDate = exp;
-      return exp;
-    }
-
-    // ನೈಜವಾಗಿ ಉಳಿದಿರುವ ದಿನಗಳ ಕೌಂಟ್‌ಡೌನ್ (ದಿನದಿಂದ ದಿನಕ್ಕೆ ಕಡಿಮೆಯಾಗುತ್ತದೆ)
-    function calculateRealRemainingDays(expiryStr) {
-      const expDate = parseDDMMYYYY(expiryStr);
-      if (!expDate) return 0;
-      
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      expDate.setHours(23, 59, 59, 999);
-      
-      const diffMs = expDate.getTime() - today.getTime();
-      return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-    }
-
-    // =========================================================================
-    // 🔒 ಅವಧಿ ಮುಗಿದಾಗ (EXPIRED ACCOUNT) ರಿನೀವಲ್ ಮಾಡಿಸಿಕೊಳ್ಳುವ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್
-    // =========================================================================
-    function showAccountExpiredRenewalModal(user) {
-      let modal = document.getElementById('account-expired-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'account-expired-modal';
-        modal.className = 'fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4';
-        document.body.appendChild(modal);
-      }
-
-      const userName = user.name || 'ಬಳಕೆದಾರರೇ';
-      const userKey = user.accessKey || '-';
-      const userPhone = user.phone || user.hmPhone || '';
-      const regDate = user.registeredDate || '-';
-      const expDate = user.expiryDate || '-';
-      const isTeacher = (appState.currentUserType === 'teacher');
-      const fee = isTeacher ? FEE_TEACHER_YEARLY : FEE_SCHOOL_YEARLY;
-
-      modal.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border-2 border-red-500 space-y-4 text-center text-xs font-sans">
-          <div class="w-16 h-16 bg-red-100 text-red-600 rounded-3xl flex items-center justify-center mx-auto text-3xl font-bold shadow-inner animate-bounce">
-            <i class="fa-solid fa-lock"></i>
-          </div>
-
-          <div class="space-y-1.5">
-            <h3 class="font-black text-lg text-slate-900">⚠️ ನಿಮ್ಮ ಖಾತೆಯ ಅವಧಿ ಮುಕ್ತಾಯಗೊಂಡಿದೆ!</h3>
-            <p class="text-xs text-slate-600 leading-relaxed font-semibold">
-              ನಮಸ್ಕಾರ <b>${escapeHtml(userName)}</b>, ನಿಮ್ಮ ೧ ವರ್ಷದ ಸದಸ್ಯತ್ವದ ಅವಧಿಯು (<b>${expDate}</b>) ಮುಕ್ತಾಯಗೊಂಡಿದೆ. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಖಾತೆಯನ್ನು ನವೀಕರಿಸಿ (Renew).
-            </p>
-          </div>
-
-          <div class="p-3 bg-red-50 rounded-2xl border border-red-200 text-red-950 font-bold text-left space-y-1 text-[11px]">
-            <div>• ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ: <b>${regDate}</b></div>
-            <div>• ಮುಕ್ತಾಯಗೊಂಡ ದಿನಾಂಕ: <b class="text-red-700">${expDate} (0 ದಿನಗಳು ಬಾಕಿ)</b></div>
-            <div>• Access Key: <b class="font-mono">${userKey}</b></div>
-            <div>• ವಾರ್ಷಿಕ ನವೀಕರಣ ಶುಲ್ಕ: <b>${fee}/ವರ್ಷ</b></div>
-          </div>
-
-          <div class="space-y-2 pt-2">
-            <button onclick="requestAccountRenewalWhatsApp('${userPhone}', '${escapeHtml(userName)}', '${userKey}', '${fee}')" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">
-              <i class="fa-brands fa-whatsapp text-lg"></i>
-              <span>WhatsApp ನಲ್ಲಿ ರಿನೀವಲ್ ಮಾಡಿಕೊಳ್ಳಿ (9902090911)</span>
-            </button>
-            <button onclick="document.getElementById('account-expired-modal').classList.add('hidden')" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">ಮುಚ್ಚಿ</button>
-          </div>
-        </div>
-      `;
-      modal.classList.remove('hidden');
-    }
-
-    window.requestAccountRenewalWhatsApp = function(phone, name, key, fee) {
-      const msg = `*With You QP Generator - ಸದಸ್ಯತ್ವ ನವೀಕರಣ (Renewal Request)*\n\n` +
-                  `👤 *ಹೆಸರು:* ${name}\n` +
-                  `🔑 *Access Key:* ${key}\n` +
-                  `📱 *ಮೊಬೈಲ್:* ${phone}\n` +
-                  `💰 *ಶುಲ್ಕ:* ${fee}/ವರ್ಷ\n\n` +
-                  `ನಮಸ್ಕಾರ ಸರ್, ನನ್ನ ೧ ವರ್ಷದ ಅವಧಿ ಮುಕ್ತಾಯಗೊಂಡಿದೆ. ದಯವಿಟ್ಟು ನನ್ನ ಖಾತೆಯನ್ನು ಮತ್ತೊಂದು ವರ್ಷಕ್ಕೆ ನವೀಕರಿಸಿ (Renew) ಕೊಡಿ.`;
-
-      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
-      document.getElementById('account-expired-modal')?.classList.add('hidden');
-    };
-
-    // =========================================================================
-    // 🚀 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚನೆಗೆ ಮುನ್ನ EXPIRY ಪರಿಶೀಲಿಸುವ ಮಾಸ್ಟರ್ ಜನರೇಟರ್
-    // =========================================================================
-    window.generateExamPackageFromBank = function() {
-      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
-      const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
-      const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
-      const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
-
-      // 🌟 ೧. ಅವಧಿ ಮುಗಿದಿದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ (Block if Expired)
-      if (isTeacherPro || isSchoolPro) {
-        const activeUser = isTeacherPro 
-          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
-          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
-
-        if (activeUser) {
-          const expStr = getUserExactDynamicExpiry(activeUser);
-          const daysLeft = calculateRealRemainingDays(expStr);
-
-          if (daysLeft <= 0) {
-            showAccountExpiredRenewalModal(activeUser);
-            return; // ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟ್ ಆಗದಂತೆ ತಡೆಹಿಡಿಯುವುದು
-          }
-        }
-      }
-
-      // ೨. ಡೆಮೋ ಪರಿಶೀಲನೆ
-      if (isDemo) {
-        let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
-        if (dCount >= 1) {
-          showDemoLimitReachedModal();
-          return;
-        }
-        sessionStorage.setItem('wy_demo_gen_count', '1');
-      }
-
-      const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
-      const grade = document.getElementById('cfg-class')?.value || '6';
-      let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
-      const part = document.getElementById('cfg-part')?.value || 'all';
-      let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
-      const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
-      const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 15;
-      const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
-
-      let cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
-      if (cleanExamType.includes('LBA') || cleanExamType.includes('ಘಟಕ')) cleanExamType = 'ಘಟಕ ಪರೀಕ್ಷೆ';
-      const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
-      const isLBAExam = cleanExamType.includes('ಘಟಕ ಪರೀಕ್ಷೆ');
-
-      const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
-      const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
-
-      if (selectedTypes.length === 0) {
-        alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
-        return;
-      }
-
-      let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
-      let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
-      const selectedChapterNamesString = selectedChapters.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
-
-      const cleanSelectedSubj = cleanMatchText(rawSubject);
-      const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
-
-      let pool = qbank.filter(q => {
-        const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
-        const cleanQSubj = cleanMatchText(q.subject);
-        const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
-        const isPartOk = (part === 'all' || q.part === part || !q.part);
-        const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
-        const canonicalType = getCanonicalQuestionType(q);
-        const isTypeOk = selectedTypes.includes(canonicalType) || selectedTypes.includes(q.type);
-        return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
-      });
-
-      if (pool.length === 0) {
-        alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
-        return;
-      }
-
-      function shufflePool(arr) {
-        let a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [a[i], a[j]] = [a[j], a[i]];
-        }
-        return a;
-      }
-
-      const hasMatchInSelection = selectedTypes.includes('match');
-      let matchQuestions = shufflePool(pool.filter(q => getCanonicalQuestionType(q) === 'match'));
-      let nonMatchPool = pool.filter(q => getCanonicalQuestionType(q) !== 'match');
-
-      let pool1M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 1));
-      let pool2M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 2));
-      let pool3M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 3));
-      let pool4M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) >= 4));
-
-      const canIncludeMatch = hasMatchInSelection && matchQuestions.length > 0 && (targetTotalMarks >= 4);
-      let avail4MCount = pool4M.length + (canIncludeMatch ? 1 : 0);
-
-      const solution = solveExactDiophantineCombo(
-        targetTotalMarks, 
-        targetTotalQuestions, 
-        pool1M.length, 
-        pool2M.length, 
-        pool3M.length, 
-        avail4MCount, 
-        canIncludeMatch
-      );
-
-      let chosenQuestions = [];
-
-      if (solution) {
-        let needed4M = solution.c4;
-        if (canIncludeMatch && needed4M > 0) {
-          chosenQuestions.push(matchQuestions.pop());
-          needed4M--;
-        }
-        while (needed4M > 0 && pool4M.length > 0) {
-          chosenQuestions.push(pool4M.pop());
-          needed4M--;
-        }
-        for (let i = 0; i < solution.c3 && pool3M.length > 0; i++) chosenQuestions.push(pool3M.pop());
-        for (let i = 0; i < solution.c2 && pool2M.length > 0; i++) chosenQuestions.push(pool2M.pop());
-        for (let i = 0; i < solution.c1 && pool1M.length > 0; i++) chosenQuestions.push(pool1M.pop());
-      } else {
-        let curM = 0;
-        if (canIncludeMatch && curM + 4 <= targetTotalMarks) { chosenQuestions.push(matchQuestions.pop()); curM += 4; }
-        while (curM + 2 <= targetTotalMarks && pool2M.length > 0) { chosenQuestions.push(pool2M.pop()); curM += 2; }
-        while (curM + 1 <= targetTotalMarks && pool1M.length > 0) { chosenQuestions.push(pool1M.pop()); curM += 1; }
-        while (curM + 3 <= targetTotalMarks && pool3M.length > 0) { chosenQuestions.push(pool3M.pop()); curM += 3; }
-        while (curM + 4 <= targetTotalMarks && pool4M.length > 0) { chosenQuestions.push(pool4M.pop()); curM += 4; }
-      }
-
-      appState.activeGeneratedQuestions = chosenQuestions;
-      const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
-
-      const professionalHeaderHtml = `
-        <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
-          <div style="width: 100%; text-align: center; margin-bottom: 6px;">
-            <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
-              ${escapeHtml(schoolName)}
-            </h1>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
-              <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
-              <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
-            </div>
-            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
-              <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
-              <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
-              <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
-            </div>
-          </div>
-          ${isLBAExam ? `
-            <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
-              <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span>
-            </div>
-          ` : ''}
-          <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
-        </div>
-      `;
-
-      renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
-      renderExactThreeBlueprints(chosenQuestions, actualCalculatedMarks);
-
-      const outSec = document.getElementById('output-section');
-      if (outSec) {
-        outSec.classList.remove('hidden');
-        switchOutputTab('paper');
-        outSec.scrollIntoView({ behavior: 'smooth' });
-      }
-
-      showToast(`✅ ${cleanExamType} (${actualCalculatedMarks} ಅಂಕಗಳು & ${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
-    };
-    
   </script>
 </body>
 </html>
+
+
