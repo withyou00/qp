@@ -9601,6 +9601,144 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
     // ತಕ್ಷಣವೇ ಮೊಬೈಲ್ ಮತ್ತು ಪಿಸಿಯಲ್ಲಿ Step 3 ರಿಫ್ರೆಶ್ ಮಾಡಿ ಸಿಂಕ್ ಮಾಡುವುದು
     updateStep3CheckboxesDynamically();
     syncCustomTypesWithFirebaseCloud();
+
+/* ==========================================================================
+       ✨ CLEAN CUSTOM TYPES ENGINE: NO MORE RAW "custom_178..." IDs IN STEP 3
+       ========================================================================== */
+
+    // ೧. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಶುದ್ಧೀಕರಣ ಹೆಲ್ಪರ್ (ಅನಗತ್ಯ Timestamp IDs ತೆಗೆದು ಕನ್ನಡ ಹೆಸರು ನೀಡುವುದು)
+    window.getCustomQuestionTypesList = function() {
+      let saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      
+      // ಡೀಫಾಲ್ಟ್ "ಗುಂಪಿಗೆ ಸೇರದ ಪದ"
+      const defaultOddOne = { 
+        key: 'odd_one_out', 
+        label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', 
+        heading: 'ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:', 
+        marks: 1 
+      };
+
+      let cleanList = [];
+      let seenKeys = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m', 'vsa', 'sa', 'la', 'odd_one_out']);
+
+      // ಸೇವ್ ಆಗಿರುವ ಕಸ್ಟಮ್ ಲಿಸ್ಟ್ ಕ್ಲೀನಿಂಗ್
+      saved.forEach(item => {
+        let label = item.label || '';
+        // ಒಂದು ವೇಳೆ ಲೇಬಲ್ custom_178... ಆಗಿದ್ದರೆ, ಅದರ ಹೆಡಿಂಗ್ ಅಥವಾ ಶುದ್ಧ ಹೆಸರು ಕೊಡುವುದು
+        if (!label || label.startsWith('custom_')) {
+          label = item.heading ? item.heading.replace(/[\:\.]/g, '').trim() : 'ಗುಂಪಿಗೆ ಸೇರದ ಪದ';
+        }
+        
+        // "ಗುಂಪಿಗೆ ಸೇರದ ಪದ" ಆಗಿದ್ದರೆ standard key ಗೆ ಮ್ಯಾಪ್ ಮಾಡುವುದು
+        if (label.includes('ಗುಂಪಿಗೆ ಸೇರದ') || (item.heading && item.heading.includes('ಗುಂಪಿಗೆ ಸೇರದ'))) {
+          item.key = 'odd_one_out';
+          return;
+        }
+
+        if (!seenKeys.has(item.key) && !seenKeys.has(label)) {
+          seenKeys.add(item.key);
+          seenKeys.add(label);
+          cleanList.push({
+            key: item.key,
+            label: label.includes('(') ? label : `${label} (${item.marks || 1}M)`,
+            heading: item.heading || `${label}:`,
+            marks: item.marks || 1
+          });
+        }
+      });
+
+      return cleanList;
+    };
+
+    // ೨. ಜನರೇಟರ್ Step 3 (ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು) ಅಚ್ಚುಕಟ್ಟಾದ ರೆಂಡರರ್
+    window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      const customTypes = getCustomQuestionTypesList();
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // 🌟 ನಿಖರವಾದ ಕನ್ನಡ ಪಟ್ಟಿ (ಯಾವುದೇ ನಂಬರ್/ಐಡಿ ಇರುವುದಿಲ್ಲ)
+      let html = `
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧. ಬಹು ಆಯ್ಕೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="true_false" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="analogy" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-purple-50/90 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+          <input type="checkbox" name="qtype_opt" value="odd_one_out" checked class="rounded text-purple-600 w-4 h-4"><span class="font-black text-purple-950">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="vsa_1m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_2m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_3m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+          <input type="checkbox" name="qtype_opt" value="la_4m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</span>
+        </label>
+      `;
+
+      // ಇತರ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಿದ್ದರೆ ಮಾತ್ರ ಸುಂದರವಾಗಿ ಸೇರಿಸುವುದು (custom_178... ಬರುವುದಿಲ್ಲ)
+      customTypes.forEach((ct, i) => {
+        html += `
+          <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+            <input type="checkbox" name="qtype_opt" value="${ct.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="font-extrabold text-purple-950 truncate">${escapeHtml(ct.label)}</span>
+          </label>
+        `;
+      });
+
+      // 👑 Admin ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಬಟನ್
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟರ್‌ನಲ್ಲಿ "custom_..." ಅನ್ನು ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ "ಗುಂಪಿಗೆ ಸೇರದ ಪದ" ಎಂದು ಗುರುತಿಸುವುದು
+    const origGetCanonicalQuestionType = window.getCanonicalQuestionType;
+    window.getCanonicalQuestionType = function(q) {
+      if (!q) return 'vsa_1m';
+      const t = (q.type || '').toLowerCase();
+
+      // custom_1787... ಅಥವಾ ಗುಂಪಿಗೆ ಸೇರದ ಪದಗಳಿದ್ದರೆ 'odd_one_out' ಎಂದು ಕನ್ವರ್ಟ್
+      if (t.startsWith('custom_') || t.includes('ಗುಂಪು') || t === 'odd_one_out') {
+        return 'odd_one_out';
+      }
+
+      if (typeof origGetCanonicalQuestionType === 'function') {
+        return origGetCanonicalQuestionType(q);
+      }
+
+      return t;
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡಿ ಕ್ಲೀನ್ ಮಾಡುವುದು
+    updateStep3CheckboxesDynamically();
     
   </script>
 </body>
