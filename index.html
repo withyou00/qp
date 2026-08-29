@@ -10158,6 +10158,298 @@ function renderFullExamPaperWithCustomHeader(headerHtml) {
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     updateStep3CheckboxesDynamically();
+
+    /* ==========================================================================
+       🔥 PERMANENT MASTER LOCK: 10 QUESTION FORMATS FOR ALL LOGGED-IN USERS
+       ========================================================================== */
+
+    // ೧. ನಿಖರ 10 ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಮಾಸ್ಟರ್ HTML ಜನರೇಟರ್ (ಎಲ್ಲಾ ಯೂಸರ್‌ಗಳಿಗೂ)
+    window.renderMaster10QuestionFormats = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಕ್ಲೀನಿಂಗ್
+      let savedCustom = [];
+      try {
+        savedCustom = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]').filter(item => {
+          let lbl = item.label || '';
+          return lbl && !lbl.startsWith('custom_') && !lbl.includes('1787') && !lbl.includes('ಗುಂಪಿಗೆ ಸೇರದ');
+        });
+      } catch (e) {}
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // 🌟 ಎಲ್ಲಾ ಲಾಗಿನ್ ಯೂಸರ್‌ಗಳಿಗೂ (ಶಿಕ್ಷಕರು/ಶಾಲೆ/ಡೆಮೋ) ಕಡ್ಡಾಯ 10 ಪ್ರಕಾರಗಳು
+      let html = `
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="mcq" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೧. ಬಹು ಆಯ್ಕೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="blanks" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="true_false" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="analogy" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-purple-50/90 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+          <input type="checkbox" name="qtype_opt" value="odd_one_out" checked class="rounded text-purple-600 w-4 h-4"><span class="font-black text-purple-950">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="match" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="vsa_1m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_2m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer hover:border-emerald-400">
+          <input type="checkbox" name="qtype_opt" value="sa_3m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-bold">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</span>
+        </label>
+        <label class="flex items-center space-x-2 p-2.5 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl cursor-pointer hover:border-emerald-500">
+          <input type="checkbox" name="qtype_opt" value="la_4m" checked class="rounded text-emerald-600 w-4 h-4"><span class="font-extrabold text-emerald-950">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</span>
+        </label>
+      `;
+
+      // ಅಡ್ಮಿನ್ ರಚಿಸಿದ ಹೊಸ ಪ್ರಕಾರಗಳಿದ್ದರೆ ಮಾತ್ರ ಇಲ್ಲಿ ಸೇರ್ಪಡೆ
+      savedCustom.forEach((ct) => {
+        html += `
+          <label class="flex items-center space-x-2 p-2.5 bg-purple-50/80 border-2 border-purple-300 rounded-2xl cursor-pointer hover:border-purple-500">
+            <input type="checkbox" name="qtype_opt" value="${ct.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="font-extrabold text-purple-950 truncate">${escapeHtml(ct.label)}</span>
+          </label>
+        `;
+      });
+
+      // 👑 Admin ಗೆ ಮಾತ್ರ ಕಾಣಿಸುವ ಬಟನ್
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೨. ಎಲ್ಲಾ ಹಳೆಯ ಫಂಕ್ಷನ್‌ಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಓವರ್‌ರೈಡ್ ಮಾಡುವುದು
+    window.updateStep3CheckboxesDynamically = window.renderMaster10QuestionFormats;
+
+    window.handleClassOrSubjectChange = function() {
+      if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+      window.renderMaster10QuestionFormats();
+    };
+
+    // ೩. ಶಿಕ್ಷಕರ & ಶಾಲಾ ಲಾಗಿನ್ ಆದಾಗ 10 ಪ್ರಕಾರಗಳನ್ನೇ ಕಡ್ಡಾಯವಾಗಿ ಕಾಲಿಂಗ್
+    const origTeacherLoginMaster = window.handleTeacherModalLogin;
+    window.handleTeacherModalLogin = function(e) {
+      if (typeof origTeacherLoginMaster === 'function') origTeacherLoginMaster(e);
+      setTimeout(() => window.renderMaster10QuestionFormats(), 50);
+    };
+
+    const origSchoolLoginMaster = window.handleSchoolModalLogin;
+    window.handleSchoolModalLogin = function(e) {
+      if (typeof origSchoolLoginMaster === 'function') origSchoolLoginMaster(e);
+      setTimeout(() => window.renderMaster10QuestionFormats(), 50);
+    };
+
+    const origNavSectionMaster = window.navigateToSection;
+    window.navigateToSection = function(section) {
+      if (typeof origNavSectionMaster === 'function') origNavSectionMaster(section);
+      if (section === 'generator') {
+        setTimeout(() => window.renderMaster10QuestionFormats(), 50);
+      }
+    };
+
+    // ೪. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ & ಅಂಕಗಳ ಮ್ಯಾಪರ್ (20 ಅಂಕಗಳ ನಿಖರ ಲೆಕ್ಕಾಚಾರಕ್ಕೆ)
+    window.getExactQuestionMarks = function(q) {
+      if (!q) return 1;
+      const m = parseInt(q.marks);
+      if (!isNaN(m) && m > 0) return m;
+      const t = (q.type || '').toLowerCase();
+      if (t === 'match' || t === 'la_4m' || t === 'la' || t === 'poem_4lines') return 4;
+      if (t === 'sa_3m') return 3;
+      if (t === 'sa_2m' || t === 'sa') return 2;
+      return 1;
+    };
+
+    window.getCanonicalQuestionType = function(q) {
+      if (!q) return 'vsa_1m';
+      const t = (q.type || '').toLowerCase();
+
+      if (t === 'mcq' || (q.a && q.b)) return 'mcq';
+      if (t === 'blanks') return 'blanks';
+      if (t === 'true_false') return 'true_false';
+      if (t === 'analogy') return 'analogy';
+      if (t.includes('ಗುಂಪು') || t === 'odd_one_out' || t.startsWith('custom_')) return 'odd_one_out';
+      if (t === 'match' || q.matchPairs) return 'match';
+      if (t === 'la_4m' || t === 'la' || q.marks === 4) return 'la_4m';
+      if (t === 'sa_3m' || q.marks === 3) return 'sa_3m';
+      if (t === 'sa_2m' || t === 'sa' || q.marks === 2) return 'sa_2m';
+      if (t === 'vsa_1m' || t === 'vsa' || q.marks === 1) return 'vsa_1m';
+
+      return t;
+    };
+
+    // ೫. 🎯 ನಿಖರ 20 ಅಂಕ & 15 ಪ್ರಶ್ನೆಗಳ ಗ್ಯಾರಂಟಿ ಜನರೇಟರ್ (16 ಅಂಕಕ್ಕೆ ನಿಲ್ಲುವುದಿಲ್ಲ!)
+    window.generateExamPackageFromBank = window.generateExamPackage = function() {
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+      const isTeacherPro = (sessionStorage.getItem('withyou_logged_teacher') !== null || appState.currentUserType === 'teacher');
+      const isSchoolPro = (sessionStorage.getItem('withyou_logged_school') !== null || appState.currentUserType === 'school');
+      const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+      if (isDemo) {
+        let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+        if (dCount >= 1) {
+          showDemoLimitReachedModal();
+          return;
+        }
+        sessionStorage.setItem('wy_demo_gen_count', '1');
+      }
+
+      const schoolName = isDemo ? 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)' : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
+      const grade = document.getElementById('cfg-class')?.value || '6';
+      let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+      const part = document.getElementById('cfg-part')?.value || 'all';
+      let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
+      const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+      const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 15;
+      const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+      let cleanExamType = rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+      if (cleanExamType.includes('LBA') || cleanExamType.includes('ಘಟಕ')) cleanExamType = 'ಘಟಕ ಪರೀಕ್ಷೆ';
+      const cleanSubject = rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+      const isLBAExam = cleanExamType.includes('ಘಟಕ ಪರೀಕ್ಷೆ');
+
+      const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+      const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+      if (selectedTypes.length === 0) {
+        alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+        return;
+      }
+
+      let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+      let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+      const selectedChapterNamesString = selectedChapters.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+
+      const cleanSelectedSubj = cleanMatchText(rawSubject);
+      const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+      // ಪ್ರಶ್ನೆಗಳ ಪೂಲ್ ಫಿಲ್ಟರಿಂಗ್
+      let pool = qbank.filter(q => {
+        const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+        const cleanQSubj = cleanMatchText(q.subject);
+        const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+        const isPartOk = (part === 'all' || q.part === part || !q.part);
+        const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+        const canonicalType = getCanonicalQuestionType(q);
+        const isTypeOk = selectedTypes.includes(canonicalType) || selectedTypes.includes(q.type);
+        return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+      });
+
+      if (pool.length === 0) {
+        alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+        return;
+      }
+
+      function shufflePool(arr) {
+        let a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      let matchPool = shufflePool(pool.filter(q => getCanonicalQuestionType(q) === 'match'));
+      let nonMatchPool = pool.filter(q => getCanonicalQuestionType(q) !== 'match');
+
+      let pool1M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 1));
+      let pool2M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 2));
+      let pool3M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 3));
+      let pool4M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) >= 4));
+
+      let chosenQuestions = [];
+      let currentMarks = 0;
+
+      // ೧. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ ಆಯ್ಕೆಮಾಡಿದ್ದರೆ ಕೇವಲ ೧ ಪ್ರಶ್ನೆ (4M) ಮಾತ್ರ ಸೇರ್ಪಡೆ
+      if (selectedTypes.includes('match') && matchPool.length > 0 && (currentMarks + 4 <= targetTotalMarks)) {
+        chosenQuestions.push(matchPool.pop());
+        currentMarks += 4;
+      }
+
+      // ೨. ೨೦ ಅಂಕ ಮತ್ತು ೧೫ ಪ್ರಶ್ನೆಗಳ ನಿಖರ ಭರ್ತಿ
+      const needed2M = Math.max(0, targetTotalMarks - targetTotalQuestions);
+      for (let i = 0; i < needed2M && pool2M.length > 0 && (currentMarks + 2 <= targetTotalMarks); i++) {
+        chosenQuestions.push(pool2M.pop());
+        currentMarks += 2;
+      }
+
+      while (pool1M.length > 0 && (currentMarks + 1 <= targetTotalMarks)) {
+        chosenQuestions.push(pool1M.pop());
+        currentMarks += 1;
+      }
+
+      // ೩. ಒಂದು ವೇಳೆ ೧ ಅಂಕದ ಪ್ರಶ್ನೆಗಳು ಕಡಿಮೆಯಿದ್ದರೆ ೨, ೩, ೪ ಅಂಕದ ಪ್ರಶ್ನೆಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ ೨೦ ಅಂಕ ತಲುಪುವುದು
+      while (currentMarks + 2 <= targetTotalMarks && pool2M.length > 0) {
+        chosenQuestions.push(pool2M.pop());
+        currentMarks += 2;
+      }
+      while (currentMarks + 3 <= targetTotalMarks && pool3M.length > 0) {
+        chosenQuestions.push(pool3M.pop());
+        currentMarks += 3;
+      }
+      while (currentMarks + 4 <= targetTotalMarks && pool4M.length > 0) {
+        chosenQuestions.push(pool4M.pop());
+        currentMarks += 4;
+      }
+      while (currentMarks + 1 <= targetTotalMarks && pool1M.length > 0) {
+        chosenQuestions.push(pool1M.pop());
+        currentMarks += 1;
+      }
+
+      appState.activeGeneratedQuestions = chosenQuestions;
+      const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+
+      const professionalHeaderHtml = `
+        <div style="width: 100%; margin: 0 0 10px 0; padding: 0; box-sizing: border-box;">
+          <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+            <h1 style="font-size: 24px; font-weight: 900; color: #000; margin: 0;">${escapeHtml(schoolName)}</h1>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 15px; font-weight: 900; color: #000; line-height: 1.8;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;"><span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span><span>ಅಂಕ : ${actualCalculatedMarks}</span></div>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;"><span style="font-size: 16px;">${escapeHtml(cleanExamType)}</span></div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;"><span>ತರಗತಿ : ${escapeHtml(grade)}</span><span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span></div>
+          </div>
+          ${isLBAExam ? `<div style="width: 100%; text-align: center; font-size: 14.5px; font-weight: 900; border-top: 1px dashed #64748b; margin-top: 4px;"><span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span></div>` : ''}
+          <hr style="border: none; border-top: 2.5px solid #000; margin: 6px 0 14px 0;" />
+        </div>
+      `;
+
+      renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+      renderExactThreeBlueprints(chosenQuestions, actualCalculatedMarks);
+
+      const outSec = document.getElementById('output-section');
+      if (outSec) {
+        outSec.classList.remove('hidden');
+        switchOutputTab('paper');
+        outSec.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      showToast(`✅ ${cleanExamType} (${actualCalculatedMarks} ಅಂಕಗಳು & ${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳು) ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+    };
+
+    // ತಕ್ಷಣವೇ 10 ಪ್ರಕಾರಗಳನ್ನು ಸ್ಕ್ರೀನ್‌ಗೆ ಅನ್ವಯಿಸುವುದು
+    window.renderMaster10QuestionFormats();
     
   </script>
 </body>
