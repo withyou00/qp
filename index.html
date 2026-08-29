@@ -478,7 +478,6 @@
       return `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
     }
 
-    // 🌟 ನಿಖರ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ
     function calculateDynamic1YearExpiry(regDateStr) {
       let baseDate = new Date();
       if (regDateStr && typeof regDateStr === 'string' && regDateStr.includes('-')) {
@@ -666,7 +665,7 @@
     };
 
     // =========================================================================
-    // ೩. USER PROFILE & DYNAMIC VALIDITY BANNER
+    // ೩. DYNAMIC VALIDITY & USER DISPLAY
     // =========================================================================
     function updateGlobalUserValidityDisplayEverywhere() {
       const genProfileBox = document.getElementById('gen-top-profile-container');
@@ -711,7 +710,7 @@
                     <span>${escapeHtml(tObj.name)}</span>
                     <span class="font-mono text-[11px] bg-emerald-100 text-emerald-950 px-2.5 py-0.5 rounded-lg font-black border border-emerald-300">${tObj.accessKey}</span>
                   </div>
-                  <p class="text-[11px] text-slate-600 font-semibold">${escapeHtml(tObj.school)} &bull; 📱 ${tObj.phone}</p>
+                  <p class="text-[11px] text-slate-600 font-semibold">${escapeHtml(tObj.school)} &bull; 📱 ${tObj.phone} &bull; ವಿಷಯ: <b>${(tObj.subjects || []).join(', ') || 'ಸಮಾಜ ವಿಜ್ಞಾನ'}</b></p>
                 </div>
               </div>
               <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
@@ -829,7 +828,7 @@
                   <span class="bg-emerald-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black">ಸಕ್ರಿಯ (Active Pro)</span>
                 </div>
                 <p class="text-slate-600 text-xs mt-1">
-                  <b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; 
+                  <b>ಶಾಲೆ:</b> ${escapeHtml(teacher.school)} &bull; <b>ವಿಷಯ:</b> ${(teacher.subjects || []).join(', ') || 'ಸಮಾಜ ವಿಜ್ಞಾನ'} &bull; 
                   🗓️ <b>ವ್ಯಾಲಿಡಿಟಿ: <span class="text-emerald-900 font-black">${expDateStr}</span> ರವರೆಗೆ</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
                 </p>
               </div>
@@ -953,14 +952,33 @@
       renderMaster10QuestionFormats();
     };
 
+    // 🌟 ಶಿಕ್ಷಕರು ಲಾಗಿನ್ ಆದಾಗ ಅವರ ನೋಂದಾಯಿತ ವಿಷಯ ಮತ್ತು ತರಗತಿ ಮಾತ್ರ ಜನರೇಟರ್ನಲ್ಲಿ ಲಾಕ್ ಆಗಿ ಬರುವುದು!
     window.syncSubjectAndChapters = function() {
       const mediumSelect = document.getElementById('cfg-medium');
       const classSelect = document.getElementById('cfg-class');
       const subjectSelect = document.getElementById('cfg-subject');
 
-      if (mediumSelect) mediumSelect.innerHTML = getSystemMediums().map(m => `<option value="${m}">${m}</option>`).join('');
-      if (classSelect) classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
-      if (subjectSelect) subjectSelect.innerHTML = getSystemSubjects().map(s => `<option value="${s}">${s}</option>`).join('');
+      const allMediums = getSystemMediums();
+      let availableClasses = ALL_CLASSES_LIST;
+      let availableSubjects = getSystemSubjects();
+
+      if (appState.currentUserType === 'teacher') {
+        const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+        if (tObj) {
+          if (tObj.grades && tObj.grades.length > 0) {
+            availableClasses = ALL_CLASSES_LIST.filter(c => tObj.grades.includes(c.val));
+          }
+          if (tObj.subjects && tObj.subjects.length > 0) {
+            availableSubjects = getSystemSubjects().filter(s => {
+              return tObj.subjects.some(ts => cleanMatchText(s).includes(cleanMatchText(ts)) || cleanMatchText(ts).includes(cleanMatchText(s)));
+            });
+          }
+        }
+      }
+
+      if (mediumSelect) mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+      if (classSelect) classSelect.innerHTML = (availableClasses.length > 0 ? availableClasses : ALL_CLASSES_LIST).map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+      if (subjectSelect) subjectSelect.innerHTML = (availableSubjects.length > 0 ? availableSubjects : getSystemSubjects()).map(s => `<option value="${s}">${s}</option>`).join('');
 
       updateGlobalUserValidityDisplayEverywhere();
       renderChapterCheckboxes();
@@ -1324,7 +1342,7 @@
     };
 
     // =========================================================================
-    // ೭. 👑 AI IMPORT MODAL & PARSER (100% WORKING + ADD TYPE BUTTON)
+    // ೭. 👑 AI IMPORT MODAL & PARSER (100% FIXED DROPDOWN)
     // =========================================================================
     window.openBulkAIImportModal = function() {
       const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin' || localStorage.getItem('withyou_admin_auth_token') === 'true');
@@ -1393,7 +1411,7 @@
               <input type="text" id="bulk-import-chapter" required placeholder="ಪಾಠದ ಹೆಸರು ನಮೂದಿಸಿ..." class="w-full p-1.5 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
             </div>
 
-            <!-- 🌟 ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಕಾಲಂ + ನೇರ "+ ಸೇರಿಸಿ" ಬಟನ್ -->
+            <!-- 🌟 ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಕಾಲಂ (HARDCODED OPTIONS + DYNAMIC CUSTOM TYPES) -->
             <div class="space-y-1">
               <div class="flex items-center justify-between">
                 <label class="font-extrabold text-indigo-950">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
@@ -1402,7 +1420,19 @@
                   <span>+ ಸೇರಿಸಿ</span>
                 </button>
               </div>
-              <select id="bulk-import-qtype" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-extrabold text-indigo-950 text-[11px] focus:outline-none shadow-sm"></select>
+              <select id="bulk-import-qtype" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-extrabold text-indigo-950 text-[11px] focus:outline-none shadow-sm">
+                <option value="auto" selected>✨ ಆಟೋ (Auto Detect)</option>
+                <option value="mcq">೧. ಬಹು ಆಯ್ಕೆ (1M)</option>
+                <option value="blanks">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</option>
+                <option value="true_false">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</option>
+                <option value="analogy">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</option>
+                <option value="odd_one_out">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</option>
+                <option value="match">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</option>
+                <option value="vsa_1m">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</option>
+                <option value="sa_2m">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</option>
+                <option value="sa_3m">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</option>
+                <option value="la_4m">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</option>
+              </select>
             </div>
 
             <div>
@@ -1455,6 +1485,167 @@
       modal.classList.remove('hidden');
       refreshBulkImportExistingChaptersDropdown();
       refreshBulkImportQTypeDropdown();
+    };
+
+    window.refreshBulkImportQTypeDropdown = function(selectKey = '') {
+      const drop = document.getElementById('bulk-import-qtype');
+      if (!drop) return;
+      const customList = getCustomQuestionTypesList();
+
+      let optionsHtml = `
+        <option value="auto">✨ ಆಟೋ (Auto Detect)</option>
+        <option value="mcq">೧. ಬಹು ಆಯ್ಕೆ (1M)</option>
+        <option value="blanks">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</option>
+        <option value="true_false">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</option>
+        <option value="analogy">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ (1M)</option>
+        <option value="odd_one_out">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</option>
+        <option value="match">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</option>
+        <option value="vsa_1m">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</option>
+        <option value="sa_2m">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</option>
+        <option value="sa_3m">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</option>
+        <option value="la_4m">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</option>
+      `;
+
+      if (customList.length > 0) {
+        optionsHtml += `<optgroup label="── 👑 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ──">`;
+        customList.forEach(ct => {
+          optionsHtml += `<option value="${ct.key}" ${ct.key === selectKey ? 'selected' : ''}>${escapeHtml(ct.label)} (${ct.marks}M)</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      }
+
+      drop.innerHTML = optionsHtml;
+      if (selectKey) drop.value = selectKey;
+    };
+
+    window.openAddCustomQTypeModal = function() {
+      let modal = document.getElementById('add-custom-qtype-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'add-custom-qtype-modal';
+        modal.className = 'fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const customList = getCustomQuestionTypesList();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-shapes text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Add Question Format)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">👑 Admin Only &bull; ನಿಮಗಿಷ್ಟವಾದ ಪ್ರಕಾರ ರಚಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('add-custom-qtype-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveNewCustomQType(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">೧. ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು *</label>
+              <input type="text" id="new-qtype-label" required placeholder="e.g. ೧೧. ಪ್ರಬಂಧ ರಚನೆ (5M)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆ *</label>
+              <input type="text" id="new-qtype-heading" required placeholder="e.g. ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">೩. ನಿಗದಿತ ಅಂಕಗಳು *</label>
+                <input type="number" id="new-qtype-marks" value="1" min="1" max="20" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-900 focus:outline-none" />
+              </div>
+              <div class="flex items-end">
+                <button type="submit" class="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-plus text-amber-300"></i>
+                  <span>ಪ್ರಕಾರ ಸೇರಿಸಿ</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div class="space-y-2 pt-2 border-t">
+            <h4 class="font-black text-slate-800 text-xs uppercase flex items-center justify-between">
+              <span>ಸೇರಿಸಲಾದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (${customList.length})</span>
+            </h4>
+            <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+              ${customList.length === 0 ? `
+                <div class="p-3 bg-white border border-dashed rounded-xl text-center text-slate-400 font-semibold">
+                  ಯಾವುದೇ ಹೆಚ್ಚುವರಿ ಪ್ರಕಾರಗಳಿಲ್ಲ.
+                </div>
+              ` : customList.map((ct) => `
+                <div class="p-2 bg-white border rounded-xl flex items-center justify-between gap-2 shadow-sm">
+                  <div class="truncate">
+                    <b class="text-slate-900 text-xs block truncate">${escapeHtml(ct.label)}</b>
+                    <span class="text-[10px] text-slate-500 truncate block">${escapeHtml(ct.heading)} (${ct.marks}M)</span>
+                  </div>
+                  <button onclick="deleteCustomQType('${ct.key}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer" title="ಅಳಿಸಿ">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t">
+            <button type="button" onclick="document.getElementById('add-custom-qtype-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">
+              ಮುಚ್ಚಿ
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleSaveNewCustomQType = function(e) {
+      e.preventDefault();
+      const label = document.getElementById('new-qtype-label')?.value.trim();
+      const heading = document.getElementById('new-qtype-heading')?.value.trim();
+      const marks = parseInt(document.getElementById('new-qtype-marks')?.value) || 1;
+
+      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+
+      const key = 'custom_' + Date.now();
+      let list = getCustomQuestionTypesList();
+      list.push({ key, label, heading, marks });
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+
+      showToast(`🎉 '${label}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
+      document.getElementById('add-custom-qtype-modal')?.classList.add('hidden');
+      
+      refreshBulkImportQTypeDropdown(key);
+      renderMaster10QuestionFormats();
+    };
+
+    window.deleteCustomQType = function(key) {
+      if (confirm('ಈ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಅಳಿಸಬೇಕೇ?')) {
+        let list = getCustomQuestionTypesList().filter(x => x.key !== key);
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+        try {
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(list)
+          });
+        } catch (err) {}
+        showToast('ಪ್ರಕಾರವನ್ನು ಅಳಿಸಲಾಗಿದೆ.', 'info');
+        openAddCustomQTypeModal();
+        refreshBulkImportQTypeDropdown();
+        renderMaster10QuestionFormats();
+      }
     };
 
     window.refreshBulkImportExistingChaptersDropdown = function() {
@@ -1588,7 +1779,7 @@
     };
 
     // =========================================================================
-    // ೮. ADMIN PANEL UNIFIED MODULES (LIVE STATS & RENEWAL RESTORED)
+    // ೮. ADMIN PANEL UNIFIED MODULES (TEACHER FORM WITH SUBJECTS RESTORED)
     // =========================================================================
     window.renderAdminMasterUnifiedView = function() {
       const adminView = document.getElementById('view-admin');
@@ -1678,7 +1869,6 @@
 
         <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
           
-          <!-- 🌟 ಲೈವ್ ಅಂಕಿಅಂಶಗಳ ಡ್ಯಾಶ್ಬೋರ್ಡ್ ಕಾರ್ಡ್ಗಳು -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="card-modern p-4 border border-emerald-200 bg-emerald-50/40 flex items-center space-x-3">
               <div class="p-3 bg-emerald-100 text-emerald-700 rounded-2xl text-xl font-bold"><i class="fa-solid fa-chalkboard-user"></i></div>
@@ -1719,6 +1909,7 @@
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
+            <!-- 🌟 TEACHER REGISTRATION FORM (WITH SUBJECTS CHECKBOXES) -->
             <div class="card-modern p-6 space-y-4">
               <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-600"></i> <span>೧. ಶಿಕ್ಷಕರ ನೋಂದಣಿ (${FEE_TEACHER_YEARLY})</span></h3>
               <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3 text-xs">
@@ -1727,7 +1918,23 @@
                   <div><label class="font-bold">ಶಾಲೆಯ ಹೆಸರು *</label><input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
                   <div><label class="font-bold">WhatsApp ಮೊಬೈಲ್ *</label><input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
                 </div>
-                <div><label class="font-bold">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label><div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">${ALL_CLASSES_LIST.map(c=>`<label class="flex items-center space-x-1"><input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}</div></div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+                  <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                    ${ALL_CLASSES_LIST.map(c=>`<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}
+                  </div>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ವಿಷಯಗಳು *</label>
+                  <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                    ${subjects.map(s => `
+                      <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" name="teacher_reg_subj" value="${s}" class="rounded text-emerald-600" ${s.includes('ಸಮಾಜ')||s.includes('ಕನ್ನಡ')?'checked':''}>
+                        <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
                 <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ರಚಿಸಿ</button>
               </form>
               <div class="pt-3 border-t space-y-2">
@@ -1736,6 +1943,7 @@
               </div>
             </div>
 
+            <!-- School Reg Form -->
             <div class="card-modern p-6 space-y-4">
               <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-building-columns text-indigo-600"></i> <span>೨. ಶಾಲಾ ನೋಂದಣಿ (${FEE_SCHOOL_YEARLY})</span></h3>
               <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3 text-xs">
@@ -2027,7 +2235,7 @@
     };
 
     // =========================================================================
-    // ೯. ADMIN REGISTRATION MODULES (RENEWAL & WHATSAPP BUTTONS RESTORED)
+    // ೯. ADMIN REGISTRATION MODULES (TEACHER FORM WITH SUBJECTS RESTORED)
     // =========================================================================
     window.handleTeacherRegister = function(e) {
       e.preventDefault();
@@ -2035,13 +2243,19 @@
       const school = document.getElementById('reg-teacher-school').value.trim();
       const phone = document.getElementById('reg-teacher-phone').value.trim();
       const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
       const accessKey = generateGuaranteedUniqueKey('TCH');
       const regDate = getTodayFormattedDate();
+
+      if (subjects.length === 0) {
+        return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+      }
 
       const newTeacher = {
         id: 'T_' + Date.now(),
         name, school, phone,
         grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
         accessKey,
         registeredDate: regDate,
         expiryDate: calculateDynamic1YearExpiry(regDate),
@@ -2053,7 +2267,7 @@
       pushAuthDataToFirebase();
       renderRegisteredTeachers();
       document.getElementById('form-register-teacher').reset();
-      alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nವ್ಯಾಲಿಡಿಟಿ: ${newTeacher.expiryDate} (1 ವರ್ಷ)`);
+      alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nವಿಷಯಗಳು: ${subjects.join(', ')}\nವ್ಯಾಲಿಡಿಟಿ: ${newTeacher.expiryDate} (1 ವರ್ಷ)`);
     };
 
     window.handleSchoolRegister = function(e) {
@@ -2099,14 +2313,13 @@
             <div class="flex items-center justify-between">
               <span class="font-black text-slate-900">${escapeHtml(t.name)} <span class="bg-emerald-100 text-emerald-900 font-mono px-2 py-0.5 rounded font-black ml-1">${t.accessKey}</span></span>
               <div class="flex items-center space-x-1">
-                <!-- 🌟 ರಿನೀವಲ್ ಬಟನ್ -->
                 <button onclick="renewTeacherAccount('${t.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
                   <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್ (+1 ವರ್ಷ)</span>
                 </button>
                 <button onclick="deleteTeacher('${t.id}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
               </div>
             </div>
-            <div class="text-[11px] text-slate-600 font-semibold">${escapeHtml(t.school)} &bull; 📱 ${t.phone}</div>
+            <div class="text-[11px] text-slate-600 font-semibold">${escapeHtml(t.school)} &bull; 📱 ${t.phone} &bull; ವಿಷಯ: <b>${(t.subjects||[]).join(', ') || 'ಸಮಾಜ ವಿಜ್ಞಾನ'}</b></div>
             <div class="pt-1.5 flex items-center justify-between border-t border-slate-100">
               <span class="text-[10px] ${isExpired ? 'bg-red-100 text-red-800' : 'bg-emerald-50 text-emerald-800'} font-bold px-2 py-0.5 rounded border">
                 🗓️ ನೋಂದಣಿ: <b>${t.registeredDate || '-'}</b> &bull; ವ್ಯಾಲಿಡಿಟಿ: <b>${expDate}</b> (${daysLeft} ದಿನಗಳು ಬಾಕಿ)
@@ -2137,7 +2350,6 @@
             <div class="flex items-center justify-between">
               <span class="font-black text-slate-900">${escapeHtml(s.name)} <span class="bg-indigo-100 text-indigo-950 font-mono px-2 py-0.5 rounded font-black ml-1">${s.accessKey}</span></span>
               <div class="flex items-center space-x-1">
-                <!-- 🌟 ರಿನೀವಲ್ ಬಟನ್ -->
                 <button onclick="renewSchoolAccount('${s.id}')" title="ವಾರ್ಷಿಕ ರಿನೀವಲ್" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[10px] shadow flex items-center gap-1 cursor-pointer">
                   <i class="fa-solid fa-arrows-rotate"></i> <span>ರಿನೀವಲ್ (+1 ವರ್ಷ)</span>
                 </button>
@@ -2158,7 +2370,6 @@
       }).join('');
     };
 
-    // 🌟 ರಿನೀವಲ್ ಹ್ಯಾಂಡ್ಲರ್ (+1 ವರ್ಷ ವಿಸ್ತರಣೆ)
     window.renewTeacherAccount = function(id) {
       const t = (appState.teachers || []).find(x => x.id === id);
       if (!t) return;
@@ -3133,7 +3344,7 @@
     };
 
     // =========================================================================
-    // ೧೨. POPUP DIALOGS & UTILITIES
+    // ೧೨. FIREBASE CLOUD SYNC & UTILITIES
     // =========================================================================
     async function fetchFromFirebaseCloud() {
       try {
@@ -3280,3 +3491,4 @@
   </script>
 </body>
 </html>
+
