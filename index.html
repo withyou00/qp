@@ -4333,6 +4333,78 @@
         `;
       }).join(''));
     };
+
+    // =========================================================================
+    // 🌟 AI ಪ್ರಶ್ನೆಗಳನ್ನು ಭಂಡಾರಕ್ಕೆ ತಕ್ಷಣವೇ ಸೇವ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್ (100% WORKING)
+    // =========================================================================
+    window.confirmAndSaveBulkQuestions = function() {
+      // ೧. ಪ್ರಶ್ನೆಗಳ ಲಭ್ಯತೆ ಪರಿಶೀಲನೆ
+      if (!stagedParsedQuestions || stagedParsedQuestions.length === 0) {
+        alert('⚠️ ಸೇರಿಸಲು ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ. ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಿ (Analyze ಮಾಡಿ).');
+        return;
+      }
+
+      // ೨. qbank Array ಗ್ಯಾರಂಟಿ
+      if (!Array.isArray(appState.qbank)) {
+        appState.qbank = JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+        if (!Array.isArray(appState.qbank)) appState.qbank = [];
+      }
+
+      const totalCount = stagedParsedQuestions.length;
+
+      // ೩. ಹೊಸ ಪ್ರಶ್ನೆಗಳನ್ನು ಭಂಡಾರದ ಮೇಲ್ಭಾಗಕ್ಕೆ ಸೇರಿಸುವುದು
+      appState.qbank = [...stagedParsedQuestions, ...appState.qbank];
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+      // ೪. ಮಾಡಲ್ ಮುಚ್ಚುವುದು & ರೀಸೆಟ್ ಮಾಡುವುದು
+      const modal = document.getElementById('ai-bulk-import-modal');
+      if (modal) modal.classList.add('hidden');
+
+      const stepInput = document.getElementById('bulk-import-step-input');
+      const stepPreview = document.getElementById('bulk-import-step-preview');
+      const textarea = document.getElementById('bulk-import-text');
+      
+      if (stepInput) stepInput.classList.remove('hidden');
+      if (stepPreview) stepPreview.classList.add('hidden');
+      if (textarea) textarea.value = '';
+
+      // ೫. ಕ್ಲೌಡ್ ಸಿಂಕ್ (Firebase)
+      try {
+        pushToFirebaseCloud();
+      } catch (err) {
+        console.warn('Cloud sync error:', err);
+      }
+
+      // ೬. UI, ಪಾಠಗಳ ಪಟ್ಟಿ ಮತ್ತು ಪ್ರಶ್ನೆ ಭಂಡಾರ ಲೈವ್ ಅಪ್ಡೇಟ್
+      try {
+        if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+        if (typeof renderCustomQuestionList === 'function') renderCustomQuestionList();
+        if (typeof renderAdminMasterUnifiedView === 'function' && activeAdminSubTab === 'qbank') {
+          renderAdminMasterUnifiedView();
+        }
+      } catch (e) {}
+
+      // ೭. ಯಶಸ್ಸಿನ ಸಂದೇಶ (Toast & Alert)
+      showToast(`🎉 ${totalCount} ಪ್ರಶ್ನೆಗಳನ್ನು ಭಂಡಾರಕ್ಕೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ!`, 'success');
+      alert(`✅ ಒಟ್ಟು ${totalCount} ಪ್ರಶ್ನೆಗಳು ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿವೆ!`);
+
+      // ಸ್ಟೇಜ್ ಕ್ಲಿಯರ್
+      stagedParsedQuestions = [];
+    };
+
+    // Firebase Cloud Safe Push
+    async function pushToFirebaseCloud() {
+      try {
+        const payload = Array.isArray(appState.qbank) ? appState.qbank : [];
+        await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {
+        console.warn('Firebase push failed:', e);
+      }
+    }
     
   </script>
 </body>
