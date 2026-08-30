@@ -5679,6 +5679,199 @@
     if (typeof handleQuestionTypeChangeInAdmin === 'function') {
       handleQuestionTypeChangeInAdmin('mcq');
     }
+
+    // =========================================================================
+    // 🌟 ಜನರೇಟ್ ಆದ ಪತ್ರಿಕೆಯಲ್ಲಿ LIVE ಚಿತ್ರ ಬದಲಾವಣೆ / ಸೇರ್ಪಡೆ (SESSION ONLY)
+    // =========================================================================
+    window.openPopupQuestionEditor = function(qIndex) {
+      const q = appState.activeGeneratedQuestions[qIndex];
+      if (!q) return;
+
+      let modal = document.getElementById('popup-q-editor-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'popup-q-editor-modal';
+        modal.className = 'fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-pen-to-square text-amber-600 text-base"></i>
+              <div>
+                <h3 class="font-black text-sm text-slate-900">ಪ್ರಶ್ನೆ, ಚಿತ್ರ & ಉತ್ತರ ಲೈವ್ ತಿದ್ದುಪಡಿ</h3>
+                <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  💡 ಈ ಬದಲಾವಣೆ ಪ್ರಸ್ತುತ ಪತ್ರಿಕೆಗೆ ಮಾತ್ರ ಅನ್ವಯವಾಗುತ್ತದೆ
+                </span>
+              </div>
+            </div>
+            <button onclick="document.getElementById('popup-q-editor-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="savePopupQuestionEdit(event, ${qIndex})" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1 text-slate-800">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+              <textarea id="pop-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 leading-relaxed">${escapeHtml(q.q)}</textarea>
+            </div>
+
+            <!-- 📷 ಚಿತ್ರ ಸೇರ್ಪಡೆ / ಬದಲಾವಣೆ / ತೆಗೆದುಹಾಕುವಿಕೆ (ಈ ಪತ್ರಿಕೆಗೆ ಮಾತ್ರ) -->
+            <div class="p-3 bg-indigo-50/70 border-2 border-dashed border-indigo-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-indigo-950 flex items-center gap-1.5">
+                  <i class="fa-solid fa-image text-indigo-600"></i>
+                  <span>📷 ಈ ಪ್ರಶ್ನೆಗೆ ಚಿತ್ರ ಸೇರಿಸಿ / ಬದಲಿಸಿ:</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <span class="text-[10px] font-bold text-slate-700">ಜೋಡಣೆ:</span>
+                  <select id="pop-q-image-pos" class="p-1 bg-white border border-indigo-300 rounded-lg font-bold text-[10px] text-indigo-950">
+                    <option value="auto" ${(!q.imagePosition || q.imagePosition === 'auto') ? 'selected' : ''}>✨ ಆಟೋ (Auto)</option>
+                    <option value="side" ${q.imagePosition === 'side' ? 'selected' : ''}>👉 ಬಲಭಾಗದಲ್ಲಿ (Side)</option>
+                    <option value="center" ${q.imagePosition === 'center' ? 'selected' : ''}>🔽 ಮಧ್ಯದಲ್ಲಿ (Center)</option>
+                  </select>
+                </div>
+              </div>
+              <input type="file" id="pop-q-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-q-image-preview', 'pop-q-image-base64')" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input type="hidden" id="pop-q-image-base64" value="${q.image || ''}" />
+              
+              <!-- ಇಮೇಜ್ ಪ್ರಿವ್ಯೂ ಮತ್ತು ತೆಗೆದುಹಾಕುವ ಬಟನ್ -->
+              <div id="pop-q-image-preview" class="${q.image ? '' : 'hidden'} text-center">
+                ${q.image ? `
+                  <div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1">
+                    <img src="${q.image}" class="max-h-28 rounded-lg mx-auto" />
+                    <button type="button" onclick="removeQuestionImage('pop-q-image-preview', 'pop-q-image-base64', 'pop-q-image-file')" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer" title="ಚಿತ್ರ ಬೇಡವೆಂದರೆ ತೆಗೆದುಹಾಕಿ">&times;</button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            ${q.type === 'mcq' || (q.a && q.b) ? `
+              <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border rounded-xl">
+                <div>(A) <input type="text" id="pop-opt-a" value="${escapeHtml(q.a||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(B) <input type="text" id="pop-opt-b" value="${escapeHtml(q.b||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(C) <input type="text" id="pop-opt-c" value="${escapeHtml(q.c||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(D) <input type="text" id="pop-opt-d" value="${escapeHtml(q.d||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಅಂಕಗಳು</label>
+                <input type="number" id="pop-q-marks" value="${q.marks || 1}" min="1" max="10" class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+                <select id="pop-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+                <select id="pop-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ *</label>
+              <textarea id="pop-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('popup-q-editor-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ (Update Paper)</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // 🌟 ಕೇವಲ ಪತ್ರಿಕೆಯಲ್ಲಿ ಮಾತ್ರ ಬದಲಾಗುವಂತೆ ಸೇವ್ ಮಾಡುವಿಕೆ (QBank ಬದಲಾಗುವುದಿಲ್ಲ)
+    window.savePopupQuestionEdit = function(e, qIndex) {
+      e.preventDefault();
+      
+      // ಮೂಲ ಪ್ರಶ್ನೆಯಿಂದ ಕ್ಲೋನ್ ಮಾಡಿ ಪ್ರತ್ಯೇಕ ಆಬ್ಜೆಕ್ಟ್ ಸೃಷ್ಟಿಸುವುದು
+      const currentQ = appState.activeGeneratedQuestions[qIndex];
+      if (!currentQ) return;
+
+      const updatedQ = {
+        ...currentQ,
+        q: document.getElementById('pop-q-text').value.trim(),
+        image: document.getElementById('pop-q-image-base64')?.value || '', // 🌟 ಹೊಸ ಚಿತ್ರ ಅಥವಾ ಖಾಲಿ ಚಿತ್ರ
+        imagePosition: document.getElementById('pop-q-image-pos')?.value || 'auto',
+        marks: parseInt(document.getElementById('pop-q-marks')?.value) || 1,
+        obj: document.getElementById('pop-q-obj')?.value || 'ತಿಳುವಳಿಕೆ',
+        diff: document.getElementById('pop-q-diff')?.value || 'ಸುಲಭ',
+        ans: document.getElementById('pop-q-ans')?.value.trim()
+      };
+
+      if (updatedQ.type === 'mcq' || (updatedQ.a && updatedQ.b)) {
+        if (document.getElementById('pop-opt-a')) updatedQ.a = document.getElementById('pop-opt-a').value.trim();
+        if (document.getElementById('pop-opt-b')) updatedQ.b = document.getElementById('pop-opt-b').value.trim();
+        if (document.getElementById('pop-opt-c')) updatedQ.c = document.getElementById('pop-opt-c').value.trim();
+        if (document.getElementById('pop-opt-d')) updatedQ.d = document.getElementById('pop-opt-d').value.trim();
+      }
+
+      // ಕೇವಲ ಜನರೇಟ್ ಆದ ಆಕ್ಟಿವ್ ಪತ್ರಿಕೆಯಲ್ಲಿ ಮಾತ್ರ ಅಪ್ಡೇಟ್ (Q-Bank ಮುಟ್ಟುವುದಿಲ್ಲ!)
+      appState.activeGeneratedQuestions[qIndex] = updatedQ;
+
+      document.getElementById('popup-q-editor-modal')?.classList.add('hidden');
+      
+      const schoolName = (document.getElementById('cfg-school-name')?.value || 'ಸರ್ಕಾರಿ ಶಾಲೆ').trim();
+      const cleanSubject = (document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ').replace(/\s*\([^)]*\)/g, '').trim();
+      const cleanExamType = (document.getElementById('cfg-exam-type')?.value || 'ಪರೀಕ್ಷೆ').replace(/\s*\([^)]*\)/g, '').trim();
+      const grade = document.getElementById('cfg-class')?.value || '6';
+      const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+      const isLBA = cleanExamType.includes('LBA') || cleanExamType.includes('ಘಟಕ');
+      let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+      const chaps = Array.from(selectedBoxes).map(b => b.value).join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+      const actualCalculatedMarks = appState.activeGeneratedQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+
+      const headerHtml = `
+        <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+          <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+            <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+              ${escapeHtml(schoolName)}
+            </h1>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+              <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+              <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+              <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+              <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+              <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+            </div>
+          </div>
+          ${isLBA ? `
+            <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+              <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(chaps)}</span>
+            </div>
+          ` : ''}
+          <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+        </div>
+      `;
+
+      // ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಮತ್ತು ನೀಲನಕ್ಷೆ ಮರು-ರೆಂಡರ್
+      renderFullExamPaperWithCustomHeader(headerHtml);
+      renderExactThreeBlueprints(appState.activeGeneratedQuestions, actualCalculatedMarks);
+      
+      showToast('✅ ಈ ಪತ್ರಿಕೆಗೆ ಮಾತ್ರ ಪ್ರಶ್ನೆ ಮತ್ತು ಚಿತ್ರ ಅಪ್ಡೇಟ್ ಆಗಿದೆ!', 'success');
+    };
     
   </script>
 </body>
