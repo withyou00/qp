@@ -8385,6 +8385,282 @@
         `;
       }
     };
+
+    /* ==========================================================================
+       🌐 100% ENGLISH HEADER FIX: SUBJECT & CHAPTERS TRANSLATION & DE-DUPLICATION
+       ========================================================================== */
+
+    // ೧. ವಿಷಯದ ಹೆಸರನ್ನು ಕಡ್ಡಾಯವಾಗಿ ಇಂಗ್ಲಿಷ್‌ಗೆ ಬದಲಿಸುವ ನಿಖರ ಡಿಕ್ಷನರಿ
+    function getStandardEnglishSubjectName(rawSubj) {
+      if (!rawSubj) return 'Science';
+
+      const s = rawSubj.toLowerCase();
+      if (s.includes('ಸಮಾಜ') || s.includes('social')) return 'Social Science';
+      if (s.includes('ವಿಜ್ಞಾನ') || s.includes('science')) return 'Science';
+      if (s.includes('ಗಣಿತ') || s.includes('math')) return 'Mathematics';
+      if (s.includes('ಇಂಗ್ಲಿಷ್') || s.includes('english')) return 'English';
+      if (s.includes('ಕನ್ನಡ') || s.includes('kannada')) return 'Kannada';
+      if (s.includes('ಹಿಂದಿ') || s.includes('hindi')) return 'Hindi';
+      if (s.includes('ಉರ್ದು') || s.includes('urdu')) return 'Urdu';
+      if (s.includes('ದೈಹಿಕ') || s.includes('physical')) return 'Physical Education';
+
+      const bracketMatch = rawSubj.match(/\(([^)]+)\)/);
+      if (bracketMatch && !containsKannadaText(bracketMatch[1])) {
+        return bracketMatch[1].trim();
+      }
+
+      return rawSubj.replace(/\s*\([^)]*\)/g, '').trim();
+    }
+
+    // ೨. ಪಾಠಗಳ ಹೆಸರನ್ನು ಡೂಪ್ಲಿಕೇಟ್ ತೆಗೆದು ಇಂಗ್ಲಿಷ್‌ಗೆ ಭಾಷಾಂತರಿಸುವ ಹೆಲ್ಪರ್
+    async function getEnglishChapterNamesString(selectedChapters) {
+      if (!selectedChapters || selectedChapters.length === 0) return 'Selected Chapters';
+
+      // ಡೂಪ್ಲಿಕೇಟ್ ಪಾಠಗಳನ್ನು ತೆಗೆದುಹಾಕುವುದು
+      const uniqueMap = new Map();
+      selectedChapters.forEach(ch => {
+        const norm = ch.trim().toLowerCase().replace(/[^a-zA-Z0-9\u0C80-\u0CFF]/g, '');
+        if (!uniqueMap.has(norm)) {
+          uniqueMap.set(norm, ch.trim());
+        }
+      });
+      const uniqueList = Array.from(uniqueMap.values());
+
+      // ಪ್ರತಿಯೊಂದು ಪಾಠವನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಭಾಷಾಂತರಿಸುವುದು
+      const translatedList = await Promise.all(uniqueList.map(async ch => {
+        if (containsKannadaText(ch)) {
+          return await translateKannadaTextToEnglish(ch);
+        }
+        return ch;
+      }));
+
+      return translatedList.join(', ');
+    }
+
+    // ೩. ಜನರೇಟರ್ ಎಂಜಿನ್ (English Header & Chapters Translator)
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+      const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
+      const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
+      const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+      const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+
+      // ಅವಧಿ ಪರಿಶೀಲನೆ
+      if (isTeacherPro || isSchoolPro) {
+        const activeUser = isTeacherPro 
+          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+        if (activeUser) {
+          const expStr = getUserExactDynamicExpiry(activeUser);
+          const daysLeft = calculateRealRemainingDays(expStr);
+
+          if (daysLeft <= 0) {
+            showAccountExpiredRenewalModal(activeUser);
+            return;
+          }
+        }
+      }
+
+      if (isDemo) {
+        let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+        if (dCount >= 1) {
+          showDemoLimitReachedModal();
+          return;
+        }
+        sessionStorage.setItem('wy_demo_gen_count', '1');
+      }
+
+      const schoolName = isDemo ? (isEnglishMedium ? 'Govt. Higher Primary School (Demo Sample)' : 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)') : (document.getElementById('cfg-school-name')?.value.trim() || 'Government School');
+      const grade = document.getElementById('cfg-class')?.value || '6';
+      let rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಜ್ಞಾನ';
+      const part = document.getElementById('cfg-part')?.value || 'all';
+      let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
+      const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+      const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 15;
+      const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+      // 🌟 ವಿಷಯ & ಪರೀಕ್ಷಾ ವಿಧಾನದ ಹೆಸರು 100% ಇಂಗ್ಲಿಷ್
+      let cleanExamType = isEnglishMedium ? getStandardEnglishExamTypeName(rawExamType) : rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+      let cleanSubject = isEnglishMedium ? getStandardEnglishSubjectName(rawSubject) : rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+      
+      const isLBAExam = cleanExamType.includes('ಘಟಕ') || cleanExamType.includes('Unit Test') || cleanExamType.includes('LBA');
+
+      const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+      const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+      if (selectedTypes.length === 0) {
+        alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+        return;
+      }
+
+      let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+      let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+
+      // 🌟 ಪಾಠಗಳ ಹೆಸರನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಭಾಷಾಂತರಿಸುವುದು (ಡೂಪ್ಲಿಕೇಟ್ ತೆಗೆದುಹಾಕಿ)
+      let selectedChapterNamesString = '';
+      if (isEnglishMedium) {
+        selectedChapterNamesString = await getEnglishChapterNamesString(selectedChapters);
+      } else {
+        // ಕನ್ನಡ ಮಾಧ್ಯಮದಲ್ಲಿ ಡೂಪ್ಲಿಕೇಟ್ ತೆಗೆಯುವುದು
+        const uniqueKChaps = Array.from(new Set(selectedChapters.map(c => c.trim())));
+        selectedChapterNamesString = uniqueKChaps.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+      }
+
+      const cleanSelectedSubj = cleanMatchText(rawSubject);
+      const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+      let pool = qbank.filter(q => {
+        const isGradeOk = (parseInt(q.grade) === parseInt(grade) || q.grade === grade);
+        const cleanQSubj = cleanMatchText(q.subject);
+        const isSubjOk = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0,4) === cleanSelectedSubj.slice(0,4);
+        const isPartOk = (part === 'all' || q.part === part || !q.part);
+        const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+        const canonicalType = getCanonicalQuestionType(q);
+        const isTypeOk = selectedTypes.includes(canonicalType) || selectedTypes.includes(q.type);
+        return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+      });
+
+      if (pool.length === 0) {
+        alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+        return;
+      }
+
+      function shufflePool(arr) {
+        let a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      const hasMatchInSelection = selectedTypes.includes('match');
+      let matchQuestions = shufflePool(pool.filter(q => getCanonicalQuestionType(q) === 'match'));
+      let nonMatchPool = pool.filter(q => getCanonicalQuestionType(q) !== 'match');
+
+      let pool1M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 1));
+      let pool2M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 2));
+      let pool3M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 3));
+      let pool4M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) >= 4));
+
+      const canIncludeMatch = hasMatchInSelection && matchQuestions.length > 0 && (targetTotalMarks >= 4);
+      let avail4MCount = pool4M.length + (canIncludeMatch ? 1 : 0);
+
+      const solution = solveExactDiophantineCombo(
+        targetTotalMarks, 
+        targetTotalQuestions, 
+        pool1M.length, 
+        pool2M.length, 
+        pool3M.length, 
+        avail4MCount, 
+        canIncludeMatch
+      );
+
+      let chosenQuestions = [];
+
+      if (solution) {
+        let needed4M = solution.c4;
+        if (canIncludeMatch && needed4M > 0) {
+          chosenQuestions.push(matchQuestions.pop());
+          needed4M--;
+        }
+        while (needed4M > 0 && pool4M.length > 0) {
+          chosenQuestions.push(pool4M.pop());
+          needed4M--;
+        }
+        for (let i = 0; i < solution.c3 && pool3M.length > 0; i++) chosenQuestions.push(pool3M.pop());
+        for (let i = 0; i < solution.c2 && pool2M.length > 0; i++) chosenQuestions.push(pool2M.pop());
+        for (let i = 0; i < solution.c1 && pool1M.length > 0; i++) chosenQuestions.push(pool1M.pop());
+      } else {
+        let curM = 0;
+        if (canIncludeMatch && curM + 4 <= targetTotalMarks) { chosenQuestions.push(matchQuestions.pop()); curM += 4; }
+        while (curM + 2 <= targetTotalMarks && pool2M.length > 0) { chosenQuestions.push(pool2M.pop()); curM += 2; }
+        while (curM + 1 <= targetTotalMarks && pool1M.length > 0) { chosenQuestions.push(pool1M.pop()); curM += 1; }
+        while (curM + 3 <= targetTotalMarks && pool3M.length > 0) { chosenQuestions.push(pool3M.pop()); curM += 3; }
+        while (curM + 4 <= targetTotalMarks && pool4M.length > 0) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+      }
+
+      // ಇಂಗ್ಲಿಷ್ ಮಾಧ್ಯಮವಾಗಿದ್ದರೆ ಪ್ರಶ್ನೆಗಳ ಆಟೋ-ಟ್ರಾನ್ಸ್‌ಲೇಟ್
+      if (isEnglishMedium) {
+        showToast('🌐 ಪ್ರಶ್ನೆ ಮತ್ತು ಪಾಠಗಳನ್ನು English ಗೆ ಬದಲಿಸಲಾಗುತ್ತಿದೆ...', 'info');
+        chosenQuestions = await Promise.all(chosenQuestions.map(q => translateSingleQuestionObjectToEnglish(q)));
+      }
+
+      appState.activeGeneratedQuestions = chosenQuestions;
+      const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+
+      // 🌟 ನಿಖರ ಇಂಗ್ಲಿಷ್ ಹೆಡರ್ (Subject & Chapter 100% English)
+      const professionalHeaderHtml = isEnglishMedium ? `
+        <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+          <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+            <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+              ${escapeHtml(schoolName)}
+            </h1>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+              <span>Subject : ${escapeHtml(cleanSubject)}</span>
+              <span>Marks &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+              <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+              <span>Class : ${escapeHtml(grade)}th Standard</span>
+              <span>Date &nbsp;: ${escapeHtml(examDate)}</span>
+            </div>
+          </div>
+          ${isLBAExam ? `
+            <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+              <span>Chapter : ${escapeHtml(selectedChapterNamesString)}</span>
+            </div>
+          ` : ''}
+          <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+        </div>
+      ` : `
+        <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+          <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+            <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+              ${escapeHtml(schoolName)}
+            </h1>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+              <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+              <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+              <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+              <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+              <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+            </div>
+          </div>
+          ${isLBAExam ? `
+            <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+              <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span>
+            </div>
+          ` : ''}
+          <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+        </div>
+      `;
+
+      renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+      renderExactThreeBlueprints(chosenQuestions, actualCalculatedMarks);
+
+      const outSec = document.getElementById('output-section');
+      if (outSec) {
+        outSec.classList.remove('hidden');
+        switchOutputTab('paper');
+        outSec.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      showToast(`✅ ${isEnglishMedium ? 'English Medium Paper Ready!' : `${cleanExamType} ಸಿದ್ಧವಾಗಿದೆ!`}`, 'success');
+    };
     
   </script>
 </body>
