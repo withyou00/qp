@@ -7942,6 +7942,449 @@
       renderRegisteredTeachers();
       renderRegisteredSchools();
     };
+
+    /* ==========================================================================
+       👑 ADMIN TOOLS: SUBJECT MANAGER (ADD/DELETE) + CHAPTER RENAME & MERGE ENGINE
+       ========================================================================== */
+
+    // =========================================================================
+    // ೧. ವಿಷಯಗಳ ನಿರ್ವಹಣೆ (ADD & DELETE SUBJECTS MODAL)
+    // =========================================================================
+    window.openManageSubjectsModal = function() {
+      let modal = document.getElementById('manage-subjects-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'manage-subjects-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const currentSubjects = getSystemSubjects();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl font-bold">
+                <i class="fa-solid fa-book-bookmark text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ವಿಷಯಗಳ ನಿರ್ವಹಣೆ (Subject Manager)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ಹೊಸ ವಿಷಯ ಸೇರಿಸಿ ಅಥವಾ ಬೇಡದ ವಿಷಯಗಳನ್ನು ಅಳಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('manage-subjects-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <!-- Add Subject Form -->
+          <form onsubmit="handleAddNewSubject(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಹೊಸ ವಿಷಯದ ಹೆಸರು (ಕನ್ನಡ ಮತ್ತು English ಕಂಸಗಳಲ್ಲಿ) *</label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="new-custom-subject-input" required placeholder="e.g. ದೈಹಿಕ ಶಿಕ್ಷಣ (Physical Education)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                <button type="submit" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow shrink-0 cursor-pointer">
+                  + ಸೇರಿಸಿ
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- List of Existing Subjects with Delete Button -->
+          <div class="space-y-2 pt-2 border-t">
+            <h4 class="font-black text-slate-800 text-xs uppercase flex items-center justify-between">
+              <span>ಲಭ್ಯವಿರುವ ವಿಷಯಗಳು (${currentSubjects.length})</span>
+            </h4>
+            <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+              ${currentSubjects.map((subj, idx) => `
+                <div class="p-2.5 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-between gap-2 shadow-sm hover:border-emerald-300 transition">
+                  <span class="font-black text-slate-900 text-xs">${idx + 1}. ${escapeHtml(subj)}</span>
+                  <button type="button" onclick="deleteSubjectFromSystem('${escapeHtml(subj)}')" class="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer flex items-center gap-1" title="ವಿಷಯ ಅಳಿಸಿ">
+                    <i class="fa-solid fa-trash-can"></i> <span>ಅಳಿಸಿ</span>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t">
+            <button type="button" onclick="document.getElementById('manage-subjects-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">
+              ಮುಚ್ಚಿ (Close)
+            </button>
+          </div>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ಹೊಸ ವಿಷಯ ಸೇರಿಸುವಿಕೆ
+    window.handleAddNewSubject = function(e) {
+      e.preventDefault();
+      const input = document.getElementById('new-custom-subject-input');
+      const val = input?.value.trim();
+      if (!val) return;
+
+      let subjects = getSystemSubjects();
+      if (subjects.some(s => s.toLowerCase() === val.toLowerCase())) {
+        return alert('ಈ ವಿಷಯ ಈಗಾಗಲೇ ಲಭ್ಯವಿದೆ.');
+      }
+
+      subjects.push(val);
+      localStorage.setItem('withyou_custom_subjects', JSON.stringify(subjects));
+      
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_subjects.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subjects)
+        });
+      } catch (err) {}
+
+      showToast(`🎉 ವಿಷಯ: '${val}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿದೆ!`, 'success');
+      input.value = '';
+      
+      openManageSubjectsModal(); // Refresh modal list
+      syncSubjectAndChapters();
+      if (activeAdminSubTab === 'registration') renderAdminMasterUnifiedView();
+    };
+
+    // ವಿಷಯವನ್ನು ಡಿಲೀಟ್ ಮಾಡುವಿಕೆ
+    window.deleteSubjectFromSystem = function(subjName) {
+      let subjects = getSystemSubjects();
+      if (subjects.length <= 1) {
+        return alert('ಕನಿಷ್ಠ ಒಂದು ವಿಷಯ ಸಿಸ್ಟಮ್‌ನಲ್ಲಿ ಇರಲೇಬೇಕು.');
+      }
+
+      if (confirm(`ಖಚಿತವಾಗಿ '${subjName}' ವಿಷಯವನ್ನು ಅಳಿಸಬೇಕೇ?`)) {
+        subjects = subjects.filter(s => s !== subjName);
+        localStorage.setItem('withyou_custom_subjects', JSON.stringify(subjects));
+
+        try {
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_subjects.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(subjects)
+          });
+        } catch (err) {}
+
+        showToast(`🗑️ ವಿಷಯ: '${subjName}' ಅಳಿಸಲಾಗಿದೆ.`, 'info');
+        openManageSubjectsModal();
+        syncSubjectAndChapters();
+        if (activeAdminSubTab === 'registration') renderAdminMasterUnifiedView();
+      }
+    };
+
+
+    // =========================================================================
+    // ೨. ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ (RENAME CHAPTER MODAL)
+    // =========================================================================
+    window.openChapterRenameModal = function(preSelectedChap = '') {
+      let modal = document.getElementById('chapter-rename-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'chapter-rename-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-blue-100 text-blue-900 rounded-2xl font-bold">
+                <i class="fa-solid fa-pen-to-square text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪಾಠದ ಹೆಸರು ತಿದ್ದುಪಡಿ (Rename Chapter)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ಪಾಠದ ಹೆಸರು ಬದಲಾಯಿಸಿ (ಆ ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಅನ್ವಯವಾಗುತ್ತದೆ)</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form id="form-rename-chapter" onsubmit="handleExecuteChapterRename(event)" class="space-y-3.5">
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+                <select id="rename-chap-class" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+                  ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+                <select id="rename-chap-subject" onchange="updateRenameModalDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">
+                  ${subjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">೧. ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠವನ್ನು ಆರಿಸಿ *</label>
+              <select id="rename-chap-old-select" required onchange="autoFillNewRenameInput(this.value)" class="w-full p-2.5 bg-blue-50 border border-blue-300 rounded-xl font-bold text-blue-950 text-xs focus:outline-none shadow-sm">
+                <option value="">ಪಾಠ ಆಯ್ಕೆಮಾಡಿ...</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">೨. ಹೊಸ ಸರಿಯಾದ ಪಾಠದ ಹೆಸರು *</label>
+              <input type="text" id="rename-chap-new-input" required placeholder="e.g. 2. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-[11px] text-amber-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> ಇಲ್ಲಿ ಪಾಠದ ಹೆಸರು ಬದಲಾಯಿಸಿದಾಗ, ಭಂಡಾರದಲ್ಲಿ ಆ ಪಾಠಕ್ಕೆ ಸೇರಿದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳಿಗೂ ಹೊಸ ಹೆಸರು ತಕ್ಷಣ ಅಪ್ಡೇಟ್ ಆಗುತ್ತದೆ.
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('chapter-rename-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-floppy-disk"></i> <span>ಹೆಸರು ಬದಲಾಯಿಸಿ (Save)</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      updateRenameModalDropdowns(preSelectedChap);
+    };
+
+    window.updateRenameModalDropdowns = function(preSelect = '') {
+      const cls = document.getElementById('rename-chap-class')?.value || '6';
+      const subj = document.getElementById('rename-chap-subject')?.value || '';
+      const oldDropdown = document.getElementById('rename-chap-old-select');
+      const newNameInput = document.getElementById('rename-chap-new-input');
+      if (!oldDropdown) return;
+
+      const cleanSubj = cleanMatchText(subj);
+      const chaps = Array.from(new Set(
+        (appState.qbank || [])
+          .filter(q => String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj))
+          .map(q => q.chapter)
+          .filter(Boolean)
+      )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+      if (chaps.length === 0) {
+        oldDropdown.innerHTML = `<option value="">ಯಾವುದೇ ಪಾಠಗಳು ಲಭ್ಯವಿಲ್ಲ</option>`;
+        if (newNameInput) newNameInput.value = '';
+        return;
+      }
+
+      oldDropdown.innerHTML = `<option value="">-- ಬದಲಾಯಿಸಬೇಕಾದ ಪಾಠ ಆರಿಸಿ --</option>` + 
+        chaps.map(c => `<option value="${escapeHtml(c)}" ${c === preSelect ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+      if (preSelect && chaps.includes(preSelect)) {
+        if (newNameInput) newNameInput.value = preSelect;
+      }
+    };
+
+    window.autoFillNewRenameInput = function(val) {
+      const input = document.getElementById('rename-chap-new-input');
+      if (input && val) {
+        input.value = val.trim();
+        input.focus();
+      }
+    };
+
+    window.handleExecuteChapterRename = function(e) {
+      e.preventDefault();
+      const cls = document.getElementById('rename-chap-class')?.value || '6';
+      const subj = document.getElementById('rename-chap-subject')?.value || '';
+      const oldName = document.getElementById('rename-chap-old-select')?.value.trim();
+      const newName = document.getElementById('rename-chap-new-input')?.value.trim();
+
+      if (!oldName || !newName) return alert('ದಯವಿಟ್ಟು ಹಳೆಯ ಮತ್ತು ಹೊಸ ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+      if (oldName === newName) return alert('ಹಳೆಯ ಮತ್ತು ಹೊಸ ಹೆಸರು ಒಂದೇ ಆಗಿದೆ.');
+
+      const cleanSubj = cleanMatchText(subj);
+      let updatedCount = 0;
+
+      (appState.qbank || []).forEach(q => {
+        if (String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj)) {
+          if (q.chapter === oldName || q.chapter.trim() === oldName) {
+            q.chapter = newName;
+            updatedCount++;
+          }
+        }
+      });
+
+      if (updatedCount > 0) {
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+        pushToFirebaseCloud();
+        renderChapterCheckboxes();
+        renderCustomQuestionList();
+        document.getElementById('chapter-rename-modal')?.classList.add('hidden');
+        showToast(`🎉 '${oldName}' ಪಾಠದ ${updatedCount} ಪ್ರಶ್ನೆಗಳನ್ನು '${newName}' ಗೆ ಬದಲಾಯಿಸಲಾಗಿದೆ!`, 'success');
+      } else {
+        alert('ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಹೊಂದಿಕೆಯಾಗಲಿಲ್ಲ.');
+      }
+    };
+
+
+    // =========================================================================
+    // ೩. ಪಾಠಗಳ ವಿಲೀನ (MERGE DUPLICATE CHAPTERS MODAL)
+    // =========================================================================
+    window.openChapterMergeModal = function() {
+      let modal = document.getElementById('chapter-merge-tool-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'chapter-merge-tool-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div class="p-2.5 bg-purple-100 text-purple-900 rounded-2xl font-bold">
+                <i class="fa-solid fa-code-merge text-base text-purple-700"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪಾಠಗಳ ವಿಲೀನ (Merge Duplicate Chapters)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">೨ ಬಾರಿ ಬಂದಿರುವ ಪಾಠಗಳನ್ನು ಒಂದೇ ಸರಿಯಾದ ಪಾಠಕ್ಕೆ ವಿಲೀನಗೊಳಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('chapter-merge-tool-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleExecuteChapterMerge(event)" class="space-y-3.5">
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ತರಗತಿ</label>
+                <select id="merge-chap-class" onchange="updateMergeModalChapterDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">
+                  ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${c.val==='6'?'selected':''}>${c.label}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ವಿಷಯ</label>
+                <select id="merge-chap-subject" onchange="updateMergeModalChapterDropdowns()" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">
+                  ${subjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-red-900 mb-1">೧. ತಪ್ಪಾದ / ವಿಲೀನಗೊಳಿಸಬೇಕಾದ ಪಾಠ (Source Chapter) *</label>
+              <select id="merge-chap-old-dropdown" required class="w-full p-2.5 bg-red-50 border border-red-300 rounded-xl font-bold text-red-950 text-xs focus:outline-none">
+                <option value="">ಆಯ್ಕೆಮಾಡಿ...</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">೨. ಸೇರಬೇಕಾದ ಸರಿಯಾದ ಮುಖ್ಯ ಪಾಠ (Target Chapter) *</label>
+              <input type="text" id="merge-chap-new-name" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl text-[11px] text-purple-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> ಮೊದಲನೇ ಬಾಕ್ಸ್‌ನಲ್ಲಿರುವ ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು, ಎರಡನೇ ಬಾಕ್ಸ್‌ನಲ್ಲಿರುವ ಮುಖ್ಯ ಪಾಠಕ್ಕೆ ವಿಲೀನಗೊಂಡು ಒಂದಾಗುತ್ತವೆ.
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('chapter-merge-tool-modal').classList.add('hidden')" class="px-4 py-2.5 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-code-merge"></i> <span>ವಿಲೀನಗೊಳಿಸಿ (Merge)</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      updateMergeModalChapterDropdowns();
+    };
+
+    window.updateMergeModalChapterDropdowns = function() {
+      const cls = document.getElementById('merge-chap-class')?.value || '6';
+      const subj = document.getElementById('merge-chap-subject')?.value || '';
+      const oldDrop = document.getElementById('merge-chap-old-dropdown');
+      const newName = document.getElementById('merge-chap-new-name');
+      if (!oldDrop) return;
+
+      const cleanSubj = cleanMatchText(subj);
+      const chaps = Array.from(new Set(
+        (appState.qbank || [])
+          .filter(q => String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanSubj))
+          .map(q => q.chapter)
+          .filter(Boolean)
+      )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+      oldDrop.innerHTML = `<option value="">-- ವಿಲೀನಗೊಳಿಸಬೇಕಾದ ಪಾಠ ಆರಿಸಿ --</option>` + 
+        chaps.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+      oldDrop.onchange = function() {
+        if (newName && this.value) newName.value = this.value.trim();
+      };
+    };
+
+    window.handleExecuteChapterMerge = function(e) {
+      e.preventDefault();
+      const cls = document.getElementById('merge-chap-class')?.value || '6';
+      const subj = document.getElementById('merge-chap-subject')?.value || '';
+      const oldCh = document.getElementById('merge-chap-old-dropdown')?.value.trim();
+      const newCh = document.getElementById('merge-chap-new-name')?.value.trim();
+
+      if (!oldCh || !newCh) return alert('ದಯವಿಟ್ಟು ಪಾಠಗಳನ್ನು ಆರಿಸಿ.');
+
+      let cnt = 0;
+      (appState.qbank || []).forEach(q => {
+        if (String(q.grade) === String(cls) && cleanMatchText(q.subject).includes(cleanMatchText(subj))) {
+          if (q.chapter === oldCh || q.chapter.trim() === oldCh) {
+            q.chapter = newCh;
+            cnt++;
+          }
+        }
+      });
+
+      if (cnt > 0) {
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+        pushToFirebaseCloud();
+        renderChapterCheckboxes();
+        renderCustomQuestionList();
+        document.getElementById('chapter-merge-tool-modal')?.classList.add('hidden');
+        showToast(`🎉 ${cnt} ಪ್ರಶ್ನೆಗಳನ್ನು '${newCh}' ಪಾಠಕ್ಕೆ ವಿಲೀನಗೊಳಿಸಲಾಗಿದೆ!`, 'success');
+      } else {
+        alert('ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಹೊಂದಿಕೆಯಾಗಲಿಲ್ಲ.');
+      }
+    };
+
+
+    // =========================================================================
+    // ೪. ಅಡ್ಮಿನ್ ಕಂಟ್ರೋಲ್ ಬಾರ್‌ನಲ್ಲಿ ಎಲ್ಲಾ ಟೂಲ್ ಬಟನ್‌ಗಳ ಪ್ರಮುಖ ಪ್ರದರ್ಶನ
+    // =========================================================================
+    const originalRenderAdminMasterUnifiedViewForTools = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof originalRenderAdminMasterUnifiedViewForTools === 'function') {
+        originalRenderAdminMasterUnifiedViewForTools();
+      }
+
+      // ಪ್ರಶ್ನೆ ಭಂಡಾರದ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ ಬಟನ್‌ಗಳ ಇಂಜೆಕ್ಷನ್
+      const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2');
+      if (qbHeaderRow && !document.getElementById('btn-admin-manage-subjects')) {
+        qbHeaderRow.innerHTML = `
+          <button type="button" id="btn-admin-manage-subjects" onclick="openManageSubjectsModal()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-black px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-book-bookmark text-emerald-600"></i> <span>📚 ವಿಷಯಗಳ ನಿರ್ವಹಣೆ</span>
+          </button>
+          <button type="button" onclick="openChapterRenameModal()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-900 font-black px-3 py-1.5 rounded-xl border border-blue-300 flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-pen-to-square text-blue-600"></i> <span>✏️ ಪಾಠದ ಹೆಸರು ಬದಲಿಸಿ</span>
+          </button>
+          <button type="button" onclick="openChapterMergeModal()" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-900 font-black px-3 py-1.5 rounded-xl border border-purple-300 flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-code-merge text-purple-600"></i> <span>📑 ಪಾಠಗಳ ವಿಲೀನ</span>
+          </button>
+          <button type="button" onclick="openBatchTranslateToEnglishModal()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-900 font-black px-3 py-1.5 rounded-xl border border-indigo-300 flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-language text-indigo-600"></i> <span>ಕನ್ನಡ ➔ English</span>
+          </button>
+          <button type="button" onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border cursor-pointer">
+            <i class="fa-solid fa-arrows-rotate"></i> <span>Sync</span>
+          </button>
+        `;
+      }
+    };
     
   </script>
 </body>
