@@ -5872,6 +5872,256 @@
       
       showToast('✅ ಈ ಪತ್ರಿಕೆಗೆ ಮಾತ್ರ ಪ್ರಶ್ನೆ ಮತ್ತು ಚಿತ್ರ ಅಪ್ಡೇಟ್ ಆಗಿದೆ!', 'success');
     };
+
+/* ==========================================================================
+       🔒 SUBJECT-WISE PRICING (₹100/SUBJECT) & TEACHER SCHOOL NAME PERMANENT LOCK
+       ========================================================================== */
+
+    // ೧. ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಬಟನ್‌ಗಳಲ್ಲಿ ₹100/ವಿಷಯ ಲೇಬಲ್ ಅಪ್ಡೇಟ್
+    (function updatePricingLabelsOnDashboard() {
+      const tchBtn = document.querySelector('#dash-compact-auth-bar button:first-child span');
+      if (tchBtn) {
+        tchBtn.innerText = "ಶಿಕ್ಷಕರ ಲಾಗಿನ್ / ನೋಂದಣಿ (₹100/ವಿಷಯ)";
+      }
+    })();
+
+    // ೨. ನೋಂದಣಿ ಮಾಡಲ್‌ನಲ್ಲಿ ವಿಷಯ ಆಯ್ಕೆಮಾಡಿದಂತೆ ಫೀಸ್ ಲೈವ್ ಕ್ಯಾಲ್ಕುಲೇಶನ್
+    window.updateTeacherModalFeeLive = function() {
+      const checkedSubjs = document.querySelectorAll('input[name="modal_tch_subj"]:checked');
+      const count = checkedSubjs.length;
+      const totalFee = count > 0 ? (count * 100) : 100;
+      
+      const feeBadge = document.getElementById('modal-tch-fee-badge');
+      const submitBtn = document.getElementById('modal-tch-submit-btn');
+      
+      if (feeBadge) feeBadge.innerText = `₹${totalFee}/ವರ್ಷ (${count || 1} ವಿಷಯಕ್ಕೆ)`;
+      if (submitBtn) submitBtn.innerText = `ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (₹${totalFee})`;
+    };
+
+    // ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಫೀಸ್ ಲೈವ್ ಕ್ಯಾಲ್ಕುಲೇಶನ್
+    window.updateAdminTeacherFeeLive = function() {
+      const checkedSubjs = document.querySelectorAll('input[name="teacher_reg_subj"]:checked');
+      const count = checkedSubjs.length;
+      const totalFee = count > 0 ? (count * 100) : 100;
+      
+      const feeBadge = document.getElementById('admin-tch-fee-badge');
+      if (feeBadge) feeBadge.innerText = `₹${totalFee}/ವರ್ಷ (${count || 1} ವಿಷಯಕ್ಕೆ)`;
+    };
+
+    // ೩. ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಮಾಡಲ್ UI (₹100/ವಿಷಯ ಲೈವ್ ಕ್ಯಾಲ್ಕುಲೇಟರ್ ಸಹಿತ)
+    window.openTeacherAuthModal = function() {
+      let modal = document.getElementById('teacher-auth-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teacher-auth-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl font-bold"><i class="fa-solid fa-chalkboard-user text-base"></i></div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ಪೋರ್ಟಲ್ (Teacher Portal)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ವಾರ್ಷಿಕ ಶುಲ್ಕ: <b id="modal-tch-fee-badge" class="text-emerald-800 font-black">₹100/ವರ್ಷ (1 ವಿಷಯಕ್ಕೆ)</b></p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('teacher-auth-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl font-bold">
+            <button type="button" id="tab-btn-tch-login" onclick="switchTeacherModalTab('login')" class="flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm cursor-pointer">೧. ಲಾಗಿನ್ (Login)</button>
+            <button type="button" id="tab-btn-tch-reg" onclick="switchTeacherModalTab('reg')" class="flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer">೨. ಹೊಸ ನೋಂದಣಿ (Register)</button>
+          </div>
+
+          <form id="form-tch-modal-login" onsubmit="handleTeacherModalLogin(event)" class="space-y-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+              <input type="tel" id="modal-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ Access Key *</label>
+              <input type="text" id="modal-tch-key" required placeholder="e.g. WY-TCH-7492" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none" />
+            </div>
+            <div id="modal-tch-login-err" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center font-bold">❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!</div>
+            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರ ಲಾಗಿನ್</button>
+          </form>
+
+          <form id="form-tch-modal-reg" onsubmit="handleTeacherModalRegister(event)" class="space-y-3 hidden">
+            <div><label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಪೂರ್ಣ ಹೆಸರು *</label><input type="text" id="reg-tch-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            <div><label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು (ಇದು ಶಾಶ್ವತವಾಗಿ ಲಾಕ್ ಆಗಿರುತ್ತದೆ) *</label><input type="text" id="reg-tch-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full px-3 py-2 bg-slate-50 border border-emerald-300 rounded-xl font-bold text-slate-900" /></div>
+            <div><label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label><input type="tel" id="reg-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label>
+              <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                ${ALL_CLASSES_LIST.map(c => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="modal_tch_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು (೧ ವಿಷಯಕ್ಕೆ ₹100) *</label>
+                <span class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-black">₹100/ವಿಷಯ</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                ${subjects.map((s, idx) => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" onchange="updateTeacherModalFeeLive()" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600" ${idx===0?'checked':''}><span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span></label>`).join('')}
+              </div>
+            </div>
+            <button type="submit" id="modal-tch-submit-btn" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (₹100)</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      updateTeacherModalFeeLive();
+    };
+
+    // ವಾಟ್ಸಾಪ್ ನೋಂದಣಿ ಕೋರಿಕೆಯಲ್ಲಿ ವಿಷಯವಾರು ಫೀಸ್ ಕಳುಹಿಸುವುದು
+    window.handleTeacherModalRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-tch-name').value.trim();
+      const school = document.getElementById('reg-tch-school').value.trim();
+      const phone = document.getElementById('reg-tch-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="modal_tch_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="modal_tch_subj"]:checked')).map(cb => cb.value);
+
+      if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+      const totalFee = subjects.length * 100;
+      const cleanSubjNames = subjects.map(s => s.split('(')[0].trim()).join(', ');
+
+      const msg = `*With You QP Generator - ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+                  `👤 *ಶಿಕ್ಷಕರ ಹೆಸರು:* ${name}\n` +
+                  `🏫 *ಶಾಲೆಯ ಹೆಸರು:* ${school}\n` +
+                  `📱 *ಮೊಬೈಲ್ ನಂಬರ್:* ${phone}\n` +
+                  `📚 *ತರಗತಿಗಳು:* ${grades.join(', ') || '6, 7, 8'}\n` +
+                  `📖 *ಆಯ್ಕೆಮಾಡಿದ ವಿಷಯಗಳು (${subjects.length}):* ${cleanSubjNames}\n` +
+                  `💰 *ನಿಗದಿತ ವಾರ್ಷಿಕ ಶುಲ್ಕ:* *₹${totalFee}* (₹100 x ${subjects.length} ವಿಷಯ)\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ನನ್ನ ನೋಂದಾಯಿತ ವಿಷಯಗಳಿಗೆ ಪ್ರತ್ಯೇಕ *Access Key* ನೀಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('teacher-auth-modal').classList.add('hidden');
+      alert(`✅ ವಿವರಗಳನ್ನು ಅಡ್ಮಿನ್ WhatsApp ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ. ಶುಲ್ಕ: ₹${totalFee} (${subjects.length} ವಿಷಯಗಳಿಗೆ).`);
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಶಿಕ್ಷಕರ ನೋಂದಣಿ (₹100/ವಿಷಯ ಲೆಕ್ಕಾಚಾರ ಸಹಿತ)
+    window.handleTeacherRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-teacher-name').value.trim();
+      const school = document.getElementById('reg-teacher-school').value.trim();
+      const phone = document.getElementById('reg-teacher-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+      const accessKey = generateGuaranteedUniqueKey('TCH');
+      const regDate = getTodayFormattedDate();
+
+      if (subjects.length === 0) {
+        return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+      }
+
+      const totalFee = `₹${subjects.length * 100}`;
+
+      const newTeacher = {
+        id: 'T_' + Date.now(),
+        name, school, phone,
+        grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
+        accessKey,
+        registeredDate: regDate,
+        expiryDate: calculateExact1YearExpiry(regDate),
+        fee: totalFee
+      };
+
+      appState.teachers.unshift(newTeacher);
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      pushAuthDataToFirebase();
+      renderRegisteredTeachers();
+      document.getElementById('form-register-teacher').reset();
+      updateAdminTeacherFeeLive();
+      
+      alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nವಿಷಯಗಳು: ${subjects.map(s=>s.split('(')[0]).join(', ')}\nಶುಲ್ಕ: ${totalFee} (${subjects.length} ವಿಷಯಕ್ಕೆ)\nವ್ಯಾಲಿಡಿಟಿ: ${newTeacher.expiryDate}`);
+    };
+
+    // ೫. 🌟 ಜನರೇಟರ್‌ನಲ್ಲಿ ವಿಷಯ ಲಾಕಿಂಗ್ ಮತ್ತು ಶಾಲೆಯ ಹೆಸರು ಕಡ್ಡಾಯ ಲಾಕ್ (PERMANENT LOCK)
+    window.syncSubjectAndChapters = function() {
+      const mediumSelect = document.getElementById('cfg-medium');
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      const schoolInput = document.getElementById('cfg-school-name');
+
+      const allMediums = getSystemMediums();
+      let availableClasses = ALL_CLASSES_LIST;
+      let availableSubjects = getSystemSubjects();
+
+      // 👨🏫 ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆಗಿದ್ದರೆ: ಶಾಲೆಯ ಹೆಸರು & ವಿಷಯ ಕಡ್ಡಾಯ ಲಾಕ್
+      if (appState.currentUserType === 'teacher') {
+        const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+        if (tObj) {
+          // A. ಶಾಲೆಯ ಹೆಸರು ಕಡ್ಡಾಯ ಲಾಕ್ (Readonly)
+          if (schoolInput) {
+            schoolInput.value = tObj.school || '';
+            schoolInput.readOnly = true;
+            schoolInput.classList.add('bg-slate-200', 'cursor-not-allowed', 'border-slate-400');
+            schoolInput.classList.remove('bg-slate-50');
+            schoolInput.title = "🔒 ಶಾಲೆಯ ಹೆಸರು ಲಾಕ್ ಆಗಿದೆ (ಬದಲಾಯಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ)";
+          }
+
+          // B. ಬೋಧಿಸುವ ತರಗತಿಗಳ ಲಾಕ್
+          if (tObj.grades && tObj.grades.length > 0) {
+            availableClasses = ALL_CLASSES_LIST.filter(c => tObj.grades.includes(c.val));
+          }
+
+          // C. ಖರೀದಿಸಿದ ವಿಷಯಗಳ ಮಾತ್ರ ಲಾಕ್ (Strict Subject Lock)
+          if (tObj.subjects && tObj.subjects.length > 0) {
+            availableSubjects = getSystemSubjects().filter(s => {
+              return tObj.subjects.some(ts => cleanMatchText(s).includes(cleanMatchText(ts)) || cleanMatchText(ts).includes(cleanMatchText(s)));
+            });
+          }
+        }
+      } else {
+        // ಶಾಲಾ Master & Admin ಗೆ ಶಾಲೆಯ ಹೆಸರು ಎಡಿಟ್ ಮಾಡಲು ಮುಕ್ತವಾಗಿರುತ್ತದೆ
+        if (schoolInput) {
+          schoolInput.readOnly = false;
+          schoolInput.classList.remove('bg-slate-200', 'cursor-not-allowed', 'border-slate-400');
+          schoolInput.classList.add('bg-slate-50');
+          schoolInput.title = "";
+        }
+      }
+
+      if (mediumSelect) mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+      if (classSelect) classSelect.innerHTML = (availableClasses.length > 0 ? availableClasses : ALL_CLASSES_LIST).map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+      if (subjectSelect) subjectSelect.innerHTML = (availableSubjects.length > 0 ? availableSubjects : getSystemSubjects()).map(s => `<option value="${s}">${s}</option>`).join('');
+
+      updateGlobalUserValidityDisplayEverywhere();
+      renderChapterCheckboxes();
+      renderMaster10QuestionFormats();
+    };
+
+    // ೬. ವಾಟ್ಸಾಪ್ ಕೀ ಕಳುಹಿಸುವ ಸಂದೇಶದಲ್ಲಿ ವಿಷಯವಾರು ಶುಲ್ಕ ಪ್ರದರ್ಶನ
+    window.sendKeyToTeacherWhatsApp = function(phone, name, key) {
+      const cleanPhone = cleanPhoneDigits(phone);
+      const t = (appState.teachers || []).find(item => item.accessKey === key);
+      const expDate = t ? getUserExactDynamicExpiry(t) : calculateExact1YearExpiry(getTodayFormattedDate());
+      const feeText = t && t.fee ? t.fee : `₹${(t && t.subjects ? t.subjects.length : 1) * 100}`;
+      const subjectsText = t && t.subjects ? t.subjects.map(s => s.split('(')[0].trim()).join(', ') : 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+
+      const msg = `*With You QP Generator - ಅಧಿಕೃತ Access Key*\n\n` +
+                  `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+                  `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಸದಸ್ಯತ್ವ ಖಾತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ.\n\n` +
+                  `🔑 *Teacher Access Key:* *${key}*\n` +
+                  `🏫 *ಶಾಲೆ:* ${t ? t.school : '-'}\n` +
+                  `📖 *ಅನುಮೋದಿತ ವಿಷಯಗಳು:* *${subjectsText}*\n` +
+                  `💰 *ಪಾವತಿಸಿದ ಶುಲ್ಕ:* ${feeText} (ವಾರ್ಷಿಕ)\n` +
+                  `🗓️ *ವ್ಯಾಲಿಡಿಟಿ:* *${expDate} ರವರೆಗೆ (1 ಪೂರ್ಣ ವರ್ಷ)*\n\n` +
+                  `ಧನ್ಯವಾದಗಳು!`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಹೊಸ ನಿಯಮಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+    syncSubjectAndChapters();
     
   </script>
 </body>
