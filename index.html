@@ -6122,6 +6122,327 @@
 
     // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಹೊಸ ನಿಯಮಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
     syncSubjectAndChapters();
+
+    /* ==========================================================================
+       🔔 AUTOMATIC PENDING REGISTRATION QUEUE & 1-CLICK ADMIN APPROVAL SYSTEM
+       ========================================================================== */
+
+    // ೧. ಬಾಕಿ ಇರುವ ಕೋರಿಕೆಗಳ ಲಿಸ್ಟ್ ಪಡೆಯುವುದು & ಕ್ಲೌಡ್ ಸಿಂಕ್
+    window.fetchPendingRequestsFromCloud = async function() {
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_pending_requests.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data) {
+            appState.pendingRequests = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+            localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+            renderPendingRequestsInAdmin();
+          } else {
+            appState.pendingRequests = [];
+            localStorage.setItem('withyou_pending_requests', '[]');
+            renderPendingRequestsInAdmin();
+          }
+        }
+      } catch (e) {}
+    };
+
+    window.pushPendingRequestsToCloud = async function() {
+      try {
+        const payload = Array.isArray(appState.pendingRequests) ? appState.pendingRequests : [];
+        await fetch(`${FIREBASE_REST_BASE}/withyou_pending_requests.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    };
+
+    // ೨. ಶಿಕ್ಷಕರು ನೋಂದಾಯಿಸಿದಾಗ ನೇರವಾಗಿ Firebase ಕ್ಲೌಡ್‌ಗೆ ಕೋರಿಕೆ ಕಳುಹಿಸುವುದು
+    const origHandleTeacherModalRegister = window.handleTeacherModalRegister;
+    window.handleTeacherModalRegister = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-tch-name').value.trim();
+      const school = document.getElementById('reg-tch-school').value.trim();
+      const phone = document.getElementById('reg-tch-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="modal_tch_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="modal_tch_subj"]:checked')).map(cb => cb.value);
+
+      if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+      const totalFee = `₹${subjects.length * 100}`;
+      const regDate = getTodayFormattedDate();
+
+      const newRequest = {
+        id: 'REQ_TCH_' + Date.now(),
+        type: 'teacher',
+        name,
+        school,
+        phone,
+        grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
+        fee: totalFee,
+        requestedDate: regDate,
+        status: 'pending'
+      };
+
+      // ಸ್ಥಳೀಯವಾಗಿ ಮತ್ತು Firebase ಗೆ ಸೇವ್ ಮಾಡುವುದು
+      if (!Array.isArray(appState.pendingRequests)) appState.pendingRequests = [];
+      appState.pendingRequests.unshift(newRequest);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      
+      await pushPendingRequestsToCloud();
+
+      // ವಾಟ್ಸಾಪ್ ಮೆಸೇಜ್ ಕಳುಹಿಸುವುದು
+      const cleanSubjNames = subjects.map(s => s.split('(')[0].trim()).join(', ');
+      const msg = `*With You QP Generator - ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+                  `👤 *ಶಿಕ್ಷಕರ ಹೆಸರು:* ${name}\n` +
+                  `🏫 *ಶಾಲೆಯ ಹೆಸರು:* ${school}\n` +
+                  `📱 *ಮೊಬೈಲ್ ನಂಬರ್:* ${phone}\n` +
+                  `📚 *ತರಗತಿಗಳು:* ${grades.join(', ') || '6, 7, 8'}\n` +
+                  `📖 *ಆಯ್ಕೆಮಾಡಿದ ವಿಷಯಗಳು (${subjects.length}):* ${cleanSubjNames}\n` +
+                  `💰 *ನಿಗದಿತ ಶುಲ್ಕ:* *${totalFee}* (₹100 x ${subjects.length})\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ನಾನು ನೋಂದಣಿ ಫಾರ್ಮ್ ಭರ್ತಿ ಮಾಡಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ನನ್ನ *Access Key* ನೀಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('teacher-auth-modal')?.classList.add('hidden');
+      alert(`✅ ನಿಮ್ಮ ವಿವರಗಳು ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ತಲುಪಿವೆ!\nಶುಲ್ಕ: ${totalFee} (${subjects.length} ವಿಷಯಗಳಿಗೆ).\nಪರಿಶೀಲನೆಯ ನಂತರ ಅಡ್ಮಿನ್ ನಿಮ್ಮ WhatsApp ಗೆ Access Key ಕಳುಹಿಸುತ್ತಾರೆ.`);
+    };
+
+    // ೩. ಶಾಲೆ ನೋಂದಾಯಿಸಿದಾಗ ನೇರವಾಗಿ ಕ್ಲೌಡ್‌ಗೆ ಕೋರಿಕೆ ಕಳುಹಿಸುವುದು
+    const origHandleSchoolModalRegister = window.handleSchoolModalRegister;
+    window.handleSchoolModalRegister = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-sch-name').value.trim();
+      const dise = document.getElementById('reg-sch-dise').value.trim();
+      const hm = document.getElementById('reg-sch-hm').value.trim();
+      const hmPhone = document.getElementById('reg-sch-phone').value.trim();
+      const regDate = getTodayFormattedDate();
+
+      const newRequest = {
+        id: 'REQ_SCH_' + Date.now(),
+        type: 'school',
+        name,
+        dise,
+        hm,
+        hmPhone,
+        fee: FEE_SCHOOL_YEARLY,
+        requestedDate: regDate,
+        status: 'pending'
+      };
+
+      if (!Array.isArray(appState.pendingRequests)) appState.pendingRequests = [];
+      appState.pendingRequests.unshift(newRequest);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+
+      await pushPendingRequestsToCloud();
+
+      const msg = `*With You QP Generator - ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+                  `🏫 *ಶಾಲೆಯ ಹೆಸರು:* ${name}\n` +
+                  `🔢 *DISE ಕೋಡ್:* ${dise}\n` +
+                  `👤 *HM ಹೆಸರು:* ${hm}\n` +
+                  `📱 *HM ಮೊಬೈಲ್:* ${hmPhone}\n` +
+                  `💰 *ಶಾಲಾ ವಾರ್ಷಿಕ ಶುಲ್ಕ:* ${FEE_SCHOOL_YEARLY}\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ನಮ್ಮ ಶಾಲೆಯ ನೋಂದಣಿ ಕೋರಿಕೆಯನ್ನು ಅನುಮೋದಿಸಿ *School Master Key* ನೀಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('school-auth-modal')?.classList.add('hidden');
+      alert(`✅ ಶಾಲೆಯ ವಿವರಗಳು ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ತಲುಪಿವೆ! ಪರಿಶೀಲನೆಯ ನಂತರ Master Key ಸಿಗುತ್ತದೆ.`);
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಬಾಕಿ ಇರುವ ಕೋರಿಕೆಗಳ ಲೈವ್ ರೆಂಡರರ್
+    window.renderPendingRequestsInAdmin = function() {
+      const container = document.getElementById('admin-pending-requests-list');
+      const badgeCount = document.getElementById('admin-pending-badge-count');
+      const boxWrapper = document.getElementById('admin-pending-requests-wrapper');
+      
+      const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+
+      if (badgeCount) badgeCount.innerText = reqList.length;
+      if (!container) return;
+
+      if (reqList.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center text-emerald-900 font-bold text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
+            <span>ಯಾವುದೇ ಹೊಸ ನೋಂದಣಿ ಕೋರಿಕೆಗಳು ಬಾಕಿ ಇಲ್ಲ (All Cleared)!</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = reqList.map(req => {
+        const isTeacher = (req.type === 'teacher');
+
+        return `
+          <div class="p-4 bg-white border-2 border-amber-300 rounded-2xl text-xs space-y-2.5 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between border-b pb-2">
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 ${isTeacher ? 'bg-emerald-100 text-emerald-900' : 'bg-indigo-100 text-indigo-900'} font-black rounded-lg text-[10px] uppercase">
+                  ${isTeacher ? '👨‍🏫 ಶಿಕ್ಷಕರ ಕೋರಿಕೆ' : '🏫 ಶಾಲಾ ಕೋರಿಕೆ'}
+                </span>
+                <span class="font-black text-slate-900 text-sm">${escapeHtml(req.name)}</span>
+              </div>
+              <span class="text-[11px] font-black text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300">
+                ಶುಲ್ಕ: ${req.fee}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-600 font-medium">
+              <div><b>ಶಾಲೆ:</b> ${escapeHtml(req.school || req.name)}</div>
+              <div><b>ಮೊಬೈಲ್:</b> 📱 ${req.phone || req.hmPhone}</div>
+              ${isTeacher ? `
+                <div class="col-span-2"><b>ತರಗತಿಗಳು:</b> ${(req.grades || []).join(', ')} ನೇ ತರಗತಿ</div>
+                <div class="col-span-2 text-indigo-950 font-bold"><b>ಆಯ್ಕೆಮಾಡಿದ ವಿಷಯಗಳು:</b> ${(req.subjects || []).map(s => s.split('(')[0]).join(', ')} (${(req.subjects || []).length} ವಿಷಯ)</div>
+              ` : `
+                <div><b>DISE ಕೋಡ್:</b> ${req.dise}</div>
+                <div><b>HM ಹೆಸರು:</b> ${escapeHtml(req.hm)}</div>
+              `}
+              <div class="text-[10px] text-slate-400">🗓️ ಕೋರಿಕೆ ಬಂದ ದಿನಾಂಕ: ${req.requestedDate || '-'}</div>
+            </div>
+
+            <div class="pt-2 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100">
+              <!-- 1-Click WhatsApp Chat -->
+              <button type="button" onclick="window.open('https://api.whatsapp.com/send?phone=91${cleanPhoneDigits(req.phone || req.hmPhone)}', '_blank')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-brands fa-whatsapp text-emerald-600"></i> <span>Chat</span>
+              </button>
+
+              <!-- 1-Click Reject -->
+              <button type="button" onclick="rejectPendingRequest('${req.id}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl text-xs flex items-center gap-1 border border-red-200 cursor-pointer">
+                <i class="fa-solid fa-xmark"></i> <span>ತಿರಸ್ಕರಿಸಿ</span>
+              </button>
+
+              <!-- 🌟 1-CLICK APPROVE & GENERATE KEY -->
+              <button type="button" onclick="approvePendingRequest('${req.id}')" class="px-4 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl text-xs shadow flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-circle-check text-amber-300"></i>
+                <span>✅ 1-Click Approve (ಖಾತೆ ರಚಿಸಿ & Key ಕಳುಹಿಸಿ)</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    // ೫. 🌟 1-CLICK APPROVAL ENGINE (ಸ್ವಯಂಚಾಲಿತ ಖಾತೆ ಸೃಷ್ಟಿ & ವಾಟ್ಸಾಪ್ ಸಂದೇಶ)
+    window.approvePendingRequest = async function(reqId) {
+      const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+      const req = reqList.find(r => r.id === reqId);
+      if (!req) return;
+
+      const isTeacher = (req.type === 'teacher');
+      const regDate = getTodayFormattedDate();
+      const expDate = calculateExact1YearExpiry(regDate);
+
+      if (isTeacher) {
+        const accessKey = generateGuaranteedUniqueKey('TCH');
+        const newTeacher = {
+          id: 'T_' + Date.now(),
+          name: req.name,
+          school: req.school,
+          phone: req.phone,
+          grades: req.grades || ['6', '7', '8'],
+          subjects: req.subjects || ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'],
+          accessKey: accessKey,
+          registeredDate: regDate,
+          expiryDate: expDate,
+          fee: req.fee || `₹${(req.subjects || []).length * 100}`
+        };
+
+        appState.teachers.unshift(newTeacher);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        await pushAuthDataToFirebase();
+        renderRegisteredTeachers();
+
+        // ವಾಟ್ಸಾಪ್‌ಗೆ ಕೀ ಸಂದೇಶ ಕಳುಹಿಸುವುದು
+        sendKeyToTeacherWhatsApp(req.phone, req.name, accessKey);
+
+      } else {
+        const accessKey = generateGuaranteedUniqueKey('SCH');
+        const newSchool = {
+          id: 'SCH_' + Date.now(),
+          name: req.name,
+          dise: req.dise,
+          hm: req.hm,
+          hmPhone: req.hmPhone,
+          accessKey: accessKey,
+          registeredDate: regDate,
+          expiryDate: expDate,
+          fee: req.fee || FEE_SCHOOL_YEARLY
+        };
+
+        appState.schools.unshift(newSchool);
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+        await pushAuthDataToFirebase();
+        renderRegisteredSchools();
+
+        sendKeyToSchoolWhatsApp(req.hmPhone, req.name, accessKey);
+      }
+
+      // ಬಾಕಿ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕುವುದು
+      appState.pendingRequests = reqList.filter(r => r.id !== reqId);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      await pushPendingRequestsToCloud();
+
+      renderPendingRequestsInAdmin();
+      showToast(`🎉 ${req.name} ಅವರ ನೋಂದಣಿ ಯಶಸ್ವಿಯಾಗಿ ಅನುಮೋದನೆಗೊಂಡಿದೆ!`, 'success');
+    };
+
+    // ೬. ಕೋರಿಕೆ ತಿರಸ್ಕರಿಸುವಿಕೆ
+    window.rejectPendingRequest = async function(reqId) {
+      if (confirm('ಈ ನೋಂದಣಿ ಕೋರಿಕೆಯನ್ನು ಖಚಿತವಾಗಿ ತಿರಸ್ಕರಿಸಬೇಕೇ?')) {
+        const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+        appState.pendingRequests = reqList.filter(r => r.id !== reqId);
+        localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+        await pushPendingRequestsToCloud();
+        renderPendingRequestsInAdmin();
+        showToast('ಕೋರಿಕೆಯನ್ನು ತಿರಸ್ಕರಿಸಲಾಗಿದೆ.', 'info');
+      }
+    };
+
+    // ೭. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನ UI ನಲ್ಲಿ "ಬಾಕಿ ಕೋರಿಕೆಗಳ" ಬಾಕ್ಸ್ ಅನ್ನು ಸೇರಿಸುವುದು
+    const origRenderAdminMasterUnifiedView = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof origRenderAdminMasterUnifiedView === 'function') {
+        origRenderAdminMasterUnifiedView();
+      }
+
+      const regSubView = document.getElementById('admin-subview-registration');
+      if (!regSubView) return;
+
+      // ಈಗಾಗಲೇ Pending Box ಇಲ್ಲದಿದ್ದರೆ ಸೇರಿಸುವುದು
+      if (!document.getElementById('admin-pending-requests-wrapper')) {
+        const pendingBoxHtml = `
+          <div id="admin-pending-requests-wrapper" class="card-modern p-5 space-y-3 border-2 border-amber-400 bg-amber-50/20 shadow-md">
+            <div class="flex items-center justify-between border-b border-amber-200 pb-2.5">
+              <div class="flex items-center space-x-2.5">
+                <div class="p-2 bg-amber-500 text-slate-950 rounded-xl font-black text-sm shadow">
+                  <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                  <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+                    <span>ಹೊಸ ನೋಂದಣಿ ಕೋರಿಕೆಗಳು (Live Registration Requests)</span>
+                    <span id="admin-pending-badge-count" class="bg-red-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-sm">0</span>
+                  </h3>
+                  <p class="text-[11px] text-slate-500 font-semibold">ಶಿಕ್ಷಕರು/ಶಾಲೆಗಳು ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಕಳುಹಿಸಿದ ಕೋರಿಕೆಗಳು</p>
+                </div>
+              </div>
+              <button onclick="fetchPendingRequestsFromCloud()" class="text-xs bg-white hover:bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-xl border border-slate-300 shadow-sm flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate text-amber-600"></i> <span>Sync Requests</span>
+              </button>
+            </div>
+            
+            <div id="admin-pending-requests-list" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+        `;
+
+        regSubView.insertAdjacentHTML('afterbegin', pendingBoxHtml);
+      }
+
+      renderPendingRequestsInAdmin();
+      fetchPendingRequestsFromCloud();
+    };
+
+    // ತಕ್ಷಣವೇ ಲೋಡ್ ಮಾಡುವುದು
+    fetchPendingRequestsFromCloud();
     
   </script>
 </body>
