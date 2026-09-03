@@ -8661,6 +8661,112 @@
 
       showToast(`✅ ${isEnglishMedium ? 'English Medium Paper Ready!' : `${cleanExamType} ಸಿದ್ಧವಾಗಿದೆ!`}`, 'success');
     };
+
+/* ==========================================================================
+       🏫 SMART BILINGUAL SCHOOL NAME AUTO-CONVERTER (LOCKED & SECURE)
+       ========================================================================== */
+
+    // ೧. ಕರ್ನಾಟಕ ಶಾಲಾ ಹೆಸರುಗಳನ್ನು ಅಧಿಕೃತ ಇಂಗ್ಲಿಷ್‌ಗೆ ಪರಿವರ್ತಿಸುವ ಸ್ಮಾರ್ಟ್ ಹೆಲ್ಪರ್
+    async function getStandardEnglishSchoolName(kannadaSchoolName) {
+      if (!kannadaSchoolName || !kannadaSchoolName.trim()) {
+        return 'Government School';
+      }
+
+      let s = kannadaSchoolName.trim();
+
+      // ಒಂದು ವೇಳೆ ಮೊದಲೇ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿದ್ದರೆ ಹಾಗೆಯೇ ಇಡುವುದು
+      if (!containsKannadaText(s)) {
+        return s;
+      }
+
+      // ಕರ್ನಾಟಕ ಶಿಕ್ಷಣ ಇಲಾಖೆಯ ಅಧಿಕೃತ ಶಾಲಾ ಪದಗಳ ನಿಖರ ಇಂಗ್ಲಿಷ್ ಮ್ಯಾಪಿಂಗ್
+      let prefix = 'Govt. Higher Primary School';
+      let placePart = s;
+
+      if (/ಸ\.ಹಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಹಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
+        prefix = 'Govt. Higher Primary School (GHPS)';
+        placePart = s.replace(/ಸ\.ಹಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಹಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
+      } else if (/ಸ\.ಕಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಕಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
+        prefix = 'Govt. Lower Primary School (GLPS)';
+        placePart = s.replace(/ಸ\.ಕಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಕಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
+      } else if (/ಸ\.ಪ್ರೌ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢ\s*ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢಶಾಲೆ/i.test(s)) {
+        prefix = 'Govt. High School (GHS)';
+        placePart = s.replace(/ಸ\.ಪ್ರೌ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢ\s*ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢಶಾಲೆ/gi, '').trim();
+      } else if (/ಕರ್ನಾಟಕ\s*ಪಬ್ಲಿಕ್\s*ಶಾಲೆ|ಕೆ\.ಪಿ\.ಎಸ್/i.test(s)) {
+        prefix = 'Karnataka Public School (KPS)';
+        placePart = s.replace(/ಕರ್ನಾಟಕ\s*ಪಬ್ಲಿಕ್\s*ಶಾಲೆ|ಕೆ\.ಪಿ\.ಎಸ್/gi, '').trim();
+      } else if (/ಮಾದರಿ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
+        prefix = 'Govt. Model Primary School';
+        placePart = s.replace(/ಮಾದರಿ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
+      } else if (/ಸಹಾಯಕ\s*ಅನುದಾನಿತ/i.test(s)) {
+        prefix = 'Aided School';
+        placePart = s.replace(/ಸಹಾಯಕ\s*ಅನುದಾನಿತ/gi, '').trim();
+      }
+
+      // ಊರಿನ ಹೆಸರು ಅಥವಾ ಸ್ಥಳವನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಭಾಷಾಂತರಿಸುವುದು (e.g. "ತುಮ್ಮರಗುದ್ದಿ" -> "Tummaraguddi")
+      let cleanPlace = placePart.replace(/^[\s\,\-\.\:]+/, '').trim();
+      if (cleanPlace && containsKannadaText(cleanPlace)) {
+        cleanPlace = await translateKannadaTextToEnglish(cleanPlace);
+      }
+
+      return cleanPlace ? `${prefix}, ${cleanPlace}` : prefix;
+    }
+
+    // ೨. ಮೀಡಿಯಂ ಬದಲಾಯಿಸಿದಾಗ ಲಾಕ್ ಆಗಿರುವ ಶಾಲೆಯ ಹೆಸರನ್ನು ಆಟೋ-ಸ್ವಿಚ್ ಮಾಡುವುದು
+    const originalHandleClassOrSubjectChangeForSchoolName = window.handleClassOrSubjectChange;
+    window.handleClassOrSubjectChange = async function() {
+      if (typeof originalHandleClassOrSubjectChangeForSchoolName === 'function') {
+        originalHandleClassOrSubjectChangeForSchoolName();
+      }
+
+      const mediumSelect = document.getElementById('cfg-medium');
+      const schoolInput = document.getElementById('cfg-school-name');
+      const isEnglish = (mediumSelect?.value || '').toLowerCase().includes('english');
+
+      if (schoolInput && appState.currentUserType === 'teacher') {
+        const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+        if (tObj && tObj.school) {
+          if (isEnglish) {
+            schoolInput.value = await getStandardEnglishSchoolName(tObj.school);
+          } else {
+            schoolInput.value = tObj.school;
+          }
+        }
+      }
+    };
+
+    // ೩. ಜನರೇಟರ್ ಎಂಜಿನ್‌ನಲ್ಲಿ ಇಂಗ್ಲಿಷ್ ಶಾಲಾ ಹೆಸರು ಅಳವಡಿಕೆ
+    const origGenerateExamPackageFromBankForSchoolName = window.generateExamPackageFromBank;
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+      const schoolInput = document.getElementById('cfg-school-name');
+
+      // 🌟 ಇಂಗ್ಲಿಷ್ ಮಾಧ್ಯಮವಾಗಿದ್ದಾಗ ಶಾಲೆಯ ಹೆಸರನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಖಚಿತಪಡಿಸುವುದು
+      if (isEnglishMedium) {
+        if (appState.currentUserType === 'teacher') {
+          const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+          if (tObj && tObj.school && schoolInput) {
+            schoolInput.value = await getStandardEnglishSchoolName(tObj.school);
+          }
+        } else if (schoolInput && containsKannadaText(schoolInput.value)) {
+          schoolInput.value = await getStandardEnglishSchoolName(schoolInput.value);
+        }
+      } else {
+        // ಕನ್ನಡ ಮಾಧ್ಯಮಕ್ಕೆ ಮರಳಿದಾಗ ಮೂಲ ಹೆಸರು ಮರುಸ್ಥಾಪನೆ
+        if (appState.currentUserType === 'teacher') {
+          const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+          if (tObj && tObj.school && schoolInput) {
+            schoolInput.value = tObj.school;
+          }
+        }
+      }
+
+      // ಮೂಲ ಜನರೇಟರ್ ಚಾಲನೆ
+      if (typeof origGenerateExamPackageFromBankForSchoolName === 'function') {
+        await origGenerateExamPackageFromBankForSchoolName();
+      }
+    };
     
   </script>
 </body>
