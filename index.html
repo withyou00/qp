@@ -9289,6 +9289,136 @@
       document.getElementById('edit-school-modal')?.classList.add('hidden');
       showToast('✅ ಶಾಲಾ ವಿವರಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
     };
+
+    /* ==========================================================================
+       ⚡ DIRECT JSON BULK IMPORTER (FOR DSERT QUESTION BANKS - 1-CLICK UPLOAD)
+       ========================================================================== */
+
+    // ೧. ಡೈರೆಕ್ಟ್ JSON ಅಪ್ಲೋಡ್ ಮಾಡಲ್
+    window.openDirectJSONUploadModal = function() {
+      let modal = document.getElementById('direct-json-upload-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'direct-json-upload-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-3xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 rounded-2xl font-black text-base shadow">
+                <i class="fa-solid fa-bolt text-slate-950"></i>
+              </div>
+              <div>
+                <h3 class="font-black text-sm sm:text-base text-slate-900">⚡ DSERT / AI ನೇರ JSON ಬಲ್ಕ್ ಅಪ್ಲೋಡರ್</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">Gemini / ChatGPT ನೀಡಿದ JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ ೧ ಸೆಕೆಂಡ್‌ನಲ್ಲಿ ಸೇರಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('direct-json-upload-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> DSERT ಪುಸ್ತಕದ ಪ್ರಶ್ನೆಗಳನ್ನು Gemini/ChatGPT ಗೆ ಹಾಕಿ ಪಡೆದ <b>JSON ಕೋಡ್</b> ಅನ್ನು ಕೆಳಗಿನ ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ. ಇದು MCQ, 1M, 2M, Match ಸೇರಿದಂತೆ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸೇವ್ ಮಾಡುತ್ತದೆ.
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ:</label>
+              <textarea id="direct-json-textarea" rows="12" placeholder="[ { 'grade': '6', 'subject': 'ವಿಜ್ಞಾನ', 'chapter': '1. ನಮ್ಮ ಆಹಾರ', ... } ]" class="w-full p-3.5 bg-slate-50 border-2 border-amber-400 rounded-2xl font-mono text-xs text-slate-900 focus:outline-none focus:border-amber-600 leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('direct-json-upload-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 cursor-pointer">ರದ್ದು</button>
+              <button type="button" onclick="handleExecuteDirectJSONUpload()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-amber-300"></i>
+                <span>ಭಂಡಾರಕ್ಕೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ (Upload to Bank)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. JSON ವ್ಯಾಲಿಡೇಟ್ ಮಾಡಿ ಭಂಡಾರ & Firebase ಗೆ ಸೇವ್ ಮಾಡುವ ಎಂಜಿನ್
+    window.handleExecuteDirectJSONUpload = async function() {
+      const textarea = document.getElementById('direct-json-textarea');
+      let rawVal = textarea?.value.trim();
+
+      if (!rawVal) {
+        return alert('⚠️ ದಯವಿಟ್ಟು AI ನೀಡಿದ JSON ಕೋಡ್ ಅನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      // ಮಾರ್ಕ್‌ಡೌನ್ ಕೋಡ್ ಬ್ಲಾಕ್ ಚಿಹ್ನೆಗಳನ್ನು (```json ... ```) ತೆಗೆದುಹಾಕುವುದು
+      rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+      let parsedQuestions = [];
+      try {
+        parsedQuestions = JSON.parse(rawVal);
+      } catch (err) {
+        return alert('❌ JSON ಕೋಡ್‌ನಲ್ಲಿ ದೋಷವಿದೆ (Invalid JSON format). ದಯವಿಟ್ಟು AI ನೀಡಿದ ಪೂರ್ಣ ಕೋಡ್ ಅನ್ನು ಬ್ರಾಕೆಟ್ [ ] ಸಮೇತ ಕಾಪಿ ಮಾಡಿ ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      if (!Array.isArray(parsedQuestions) || parsedQuestions.length === 0) {
+        return alert('⚠️ JSON ನಲ್ಲಿ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      // ಪ್ರತಿ ಪ್ರಶ್ನೆಗೂ ಐಡಿ & ಡೀಫಾಲ್ಟ್ ಫೀಲ್ಡ್ ಗ್ಯಾರಂಟಿ
+      const sanitized = parsedQuestions.map((q, idx) => ({
+        id: q.id || ('q_dsert_' + Date.now() + '_' + idx),
+        grade: String(q.grade || '6'),
+        subject: q.subject || 'ವಿಜ್ಞಾನ (Science)',
+        part: q.part || 'ಭಾಗ 1',
+        chapter: q.chapter || 'ಸಾಮಾನ್ಯ ಘಟಕ',
+        type: q.type || 'vsa_1m',
+        q: q.q || 'ಪ್ರಶ್ನೆ',
+        a: q.a || '',
+        b: q.b || '',
+        c: q.c || '',
+        d: q.d || '',
+        matchPairs: q.matchPairs || null,
+        ans: q.ans || 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ',
+        marks: parseInt(q.marks) || (q.type === 'match' || q.type === 'la_4m' ? 4 : (q.type === 'sa_2m' ? 2 : (q.type === 'sa_3m' ? 3 : 1))),
+        obj: q.obj || 'ತಿಳುವಳಿಕೆ',
+        diff: q.diff || 'ಸುಲಭ',
+        image: q.image || ''
+      }));
+
+      // ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆ
+      appState.qbank = [...sanitized, ...(appState.qbank || [])];
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+      await pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+
+      document.getElementById('direct-json-upload-modal')?.classList.add('hidden');
+      alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${sanitized.length} ಪ್ರಶ್ನೆಗಳು (MCQ, 1M, 2M, Match ಇತ್ಯಾದಿ) ಯಾವುದೇ ದೋಷವಿಲ್ಲದೆ ನೇರವಾಗಿ ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆಯಾಗಿವೆ!`);
+      showToast(`✅ ${sanitized.length} ಪ್ರಶ್ನೆಗಳು ಭಂಡಾರಕ್ಕೆ ಸೇರಿವೆ!`, 'success');
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ "⚡ Direct JSON Upload" ಬಟನ್ ಸೇರ್ಪಡೆ
+    const origRenderAdminMasterUnifiedViewForJSON = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof origRenderAdminMasterUnifiedViewForJSON === 'function') {
+        origRenderAdminMasterUnifiedViewForJSON();
+      }
+
+      const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2');
+      if (qbHeaderRow && !document.getElementById('btn-admin-direct-json')) {
+        const jsonBtn = document.createElement('button');
+        jsonBtn.id = 'btn-admin-direct-json';
+        jsonBtn.type = 'button';
+        jsonBtn.className = 'text-xs bg-amber-100 hover:bg-amber-200 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400 flex items-center gap-1 cursor-pointer shadow-sm';
+        jsonBtn.innerHTML = '<i class="fa-solid fa-bolt text-amber-600"></i> <span>⚡ Direct JSON Upload</span>';
+        jsonBtn.onclick = () => openDirectJSONUploadModal();
+        qbHeaderRow.insertBefore(jsonBtn, qbHeaderRow.firstChild);
+      }
+    };
     
   </script>
 </body>
