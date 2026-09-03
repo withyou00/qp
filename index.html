@@ -9419,6 +9419,283 @@
         qbHeaderRow.insertBefore(jsonBtn, qbHeaderRow.firstChild);
       }
     };
+
+/* ==========================================================================
+       📊 ADVANCED JSON VALIDATOR, TYPE DETECTOR & LIVE PREVIEW DASHBOARD
+       ========================================================================== */
+
+    let stagedValidatedJSONQuestions = [];
+
+    // ೧. JSON ಅಪ್ಲೋಡರ್ ಮಾಡಲ್ (Input Screen + Live Verification Preview)
+    window.openDirectJSONUploadModal = function() {
+      let modal = document.getElementById('direct-json-upload-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'direct-json-upload-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      stagedValidatedJSONQuestions = [];
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-4xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 rounded-2xl font-black text-base shadow">
+                <i class="fa-solid fa-bolt text-slate-950"></i>
+              </div>
+              <div>
+                <h3 class="font-black text-sm sm:text-base text-slate-900">⚡ DSERT / AI ನೇರ JSON ತಪಾಸಣೆ & ಅಪ್ಲೋಡರ್</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">JSON ಪೇಸ್ಟ್ ಮಾಡಿದ ತಕ್ಷಣ ಪ್ರಕಾರಗಳು & ಸರಿ-ತಪ್ಪುಗಳನ್ನು ಪರಿಶೀಲಿಸಿ ಸೇರಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('direct-json-upload-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <!-- Step 1: Input Box -->
+          <div id="direct-json-step-input" class="space-y-3">
+            <div class="p-3 bg-amber-50 border border-amber-300 rounded-2xl text-[11px] text-amber-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> Gemini / ChatGPT ನೀಡಿದ <b>[ ... ]</b> JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ ಕೆಳಗಿನ ಹಸಿರು ಬಟನ್ ಒತ್ತಿ. ಸಿಸ್ಟಂ ತಾನಾಗಿಯೇ ಎಲ್ಲಾ ಪ್ರಕಾರಗಳು & ಉತ್ತರಗಳನ್ನು ತಪಾಸಣೆ ಮಾಡಿ ತೋರಿಸುತ್ತದೆ.
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">AI ನೀಡಿದ JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ:</label>
+              <textarea id="direct-json-textarea" rows="11" placeholder="[ { 'grade': '6', 'subject': 'ವಿಜ್ಞಾನ', 'chapter': '1. ನಮ್ಮ ಆಹಾರ', ... } ]" class="w-full p-3.5 bg-slate-50 border-2 border-amber-400 rounded-2xl font-mono text-xs text-slate-900 focus:outline-none focus:border-amber-600 leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('direct-json-upload-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 cursor-pointer">ರದ್ದು</button>
+              <button type="button" onclick="analyzeAndValidatePastedJSON()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-magnifying-glass-chart text-amber-300"></i>
+                <span>ವಿಶ್ಲೇಷಿಸಿ & ಪ್ರಕಾರಗಳನ್ನು ಪರಿಶೀಲಿಸಿ (Analyze JSON)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Live Verification Screen -->
+          <div id="direct-json-step-preview" class="hidden space-y-4">
+            <!-- Dynamic Stats Cards & Validation Status -->
+            <div id="json-validation-summary-box"></div>
+
+            <!-- Scrollable Verified Question Cards List -->
+            <div id="json-verified-cards-container" class="max-h-[380px] overflow-y-auto space-y-2.5 pr-1"></div>
+
+            <div class="flex items-center justify-between pt-3 border-t">
+              <button type="button" onclick="document.getElementById('direct-json-step-input').classList.remove('hidden'); document.getElementById('direct-json-step-preview').classList.add('hidden');" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-arrow-left"></i> <span>ಮರಳಿ ಎಡಿಟ್ ಮಾಡಿ</span>
+              </button>
+
+              <button type="button" onclick="confirmAndSaveValidatedJSONQuestions()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow-lg flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-circle-check text-amber-300"></i>
+                <span>ಖಚಿತವಾಗಿದೆ, ಭಂಡಾರಕ್ಕೆ ಸೇರಿಸಿ (Confirm & Upload)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. JSON ನ ಪ್ರತಿಯೊಂದು ಪ್ರಶ್ನೆಯನ್ನು ತಪಾಸಣೆ ಮಾಡಿ ವಿಂಗಡಿಸುವ ಮಾಸ್ಟರ್ ಎಂಜಿನ್
+    window.analyzeAndValidatePastedJSON = function() {
+      const textarea = document.getElementById('direct-json-textarea');
+      let rawVal = textarea?.value.trim();
+
+      if (!rawVal) {
+        return alert('⚠️ ದಯವಿಟ್ಟು AI ನೀಡಿದ JSON ಕೋಡ್ ಅನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      // ಮಾರ್ಕ್‌ಡೌನ್ ಕೋಡ್ ಬ್ಲಾಕ್ ಚಿಹ್ನೆಗಳ ಶುದ್ಧೀಕರಣ
+      rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+      let parsed = [];
+      try {
+        parsed = JSON.parse(rawVal);
+      } catch (err) {
+        return alert('❌ JSON ಫಾರ್ಮ್ಯಾಟ್ ತಪ್ಪಾಗಿದೆ (Syntax Error)!\n\nದಯವಿಟ್ಟು AI ನೀಡಿದ ಪೂರ್ಣ ಕೋಡ್ ಅನ್ನು ಮೊದಲಿನ ಬ್ರಾಕೆಟ್ [ ರಿಂದ ಕೊನೆಯ ಬ್ರಾಕೆಟ್ ] ವರೆಗೆ ಸರಿಯಾಗಿ ಕಾಪಿ ಮಾಡಿ ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return alert('⚠️ JSON ನಲ್ಲಿ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      // ಪ್ರಕಾರಗಳ ಕೌಂಟರ್
+      const counts = {
+        mcq: 0,
+        blanks: 0,
+        true_false: 0,
+        analogy: 0,
+        odd_one_out: 0,
+        match: 0,
+        vsa_1m: 0,
+        sa_2m: 0,
+        sa_3m: 0,
+        la_4m: 0,
+        custom: 0
+      };
+
+      let errorsCount = 0;
+      let chapterNames = new Set();
+      let grade = parsed[0].grade || '6';
+      let subject = parsed[0].subject || 'ವಿಜ್ಞಾನ';
+
+      const sanitized = parsed.map((q, idx) => {
+        const cType = getCanonicalQuestionType(q);
+        if (counts[cType] !== undefined) counts[cType]++;
+        else counts.custom++;
+
+        if (q.chapter) chapterNames.add(q.chapter.trim());
+
+        // ಸರಿ-ತಪ್ಪು ದೋಷ ತಪಾಸಣೆ (Validation check)
+        const hasQuestion = Boolean(q.q && q.q.trim().length > 1);
+        const hasAnswer = Boolean(q.ans && q.ans.trim().length > 0 && q.ans !== 'ಉತ್ತರ ಪರಿಶೀಲಿಸಿ');
+        const hasMcqOptions = (cType !== 'mcq') || (Boolean(q.a) && Boolean(q.b));
+        const hasMatchPairs = (cType !== 'match') || (q.matchPairs && Array.isArray(q.matchPairs) && q.matchPairs.length >= 2);
+
+        const isValid = hasQuestion && hasAnswer && hasMcqOptions && hasMatchPairs;
+        if (!isValid) errorsCount++;
+
+        return {
+          id: q.id || ('q_dsert_' + Date.now() + '_' + idx),
+          grade: String(q.grade || grade),
+          subject: q.subject || subject,
+          part: q.part || 'ಭಾಗ 1',
+          chapter: q.chapter || (Array.from(chapterNames)[0] || 'ಸಾಮಾನ್ಯ ಘಟಕ'),
+          type: cType,
+          q: q.q || 'ಪ್ರಶ್ನೆ ಪಠ್ಯ ಇಲ್ಲ',
+          a: q.a || '',
+          b: q.b || '',
+          c: q.c || '',
+          d: q.d || '',
+          matchPairs: q.matchPairs || null,
+          ans: q.ans || 'ಉತ್ತರ ಇಲ್ಲ',
+          marks: parseInt(q.marks) || (cType === 'match' || cType === 'la_4m' ? 4 : (cType === 'sa_2m' ? 2 : (cType === 'sa_3m' ? 3 : 1))),
+          obj: q.obj || 'ತಿಳುವಳಿಕೆ',
+          diff: q.diff || 'ಸುಲಭ',
+          image: q.image || '',
+          isValid: isValid
+        };
+      });
+
+      stagedValidatedJSONQuestions = sanitized;
+
+      // Step 1 ಹೈಡ್ ಮಾಡಿ Step 2 ಪ್ರಿವ್ಯೂ ತೋರಿಸುವುದು
+      document.getElementById('direct-json-step-input')?.classList.add('hidden');
+      document.getElementById('direct-json-step-preview')?.classList.remove('hidden');
+
+      // ೧. ಸಾರಾಂಶ ಮತ್ತು ಪ್ರಕಾರಗಳ ಲೈವ್ ವಿಂಗಡಣಾ ಕಾರ್ಡ್ ನಿರ್ಮಾಣ
+      const summaryBox = document.getElementById('json-validation-summary-box');
+      const allChapsString = Array.from(chapterNames).join(', ') || 'ಸಾಮಾನ್ಯ ಘಟಕ';
+
+      summaryBox.innerHTML = `
+        <div class="p-4 bg-slate-900 text-white rounded-2xl shadow-md space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="p-2 bg-emerald-500 text-slate-950 rounded-xl font-black text-sm"><i class="fa-solid fa-list-check"></i></span>
+              <div>
+                <h4 class="font-black text-sm text-white">ಒಟ್ಟು ಪತ್ತೆಯಾದ ಪ್ರಶ್ನೆಗಳು: <span class="text-emerald-400 text-base font-black">${sanitized.length}</span></h4>
+                <p class="text-[11px] text-slate-300 font-semibold">${grade}ನೇ ತರಗತಿ &bull; ${subject} &bull; ಪಾಠ: <b>${escapeHtml(allChapsString)}</b></p>
+              </div>
+            </div>
+
+            <!-- ದೋಷ ತಪಾಸಣಾ ಸ್ಟೇಟಸ್ -->
+            <div>
+              ${errorsCount === 0 ? `
+                <span class="px-3 py-1 bg-emerald-500/20 border border-emerald-400 text-emerald-300 rounded-full font-black text-xs flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i> <span>100% ನಿಖರವಾಗಿದೆ (Zero Errors)</span>
+                </span>
+              ` : `
+                <span class="px-3 py-1 bg-red-500/20 border border-red-400 text-red-300 rounded-full font-black text-xs flex items-center gap-1.5">
+                  <i class="fa-solid fa-triangle-exclamation text-red-400"></i> <span>${errorsCount} ಪ್ರಶ್ನೆಗಳಲ್ಲಿ ಅಪೂರ್ಣ ಮಾಹಿತಿ ಇದೆ!</span>
+                </span>
+              `}
+            </div>
+          </div>
+
+          <!-- ಪ್ರಕಾರವಾರು ವಿಂಗಡಣೆ ಟ್ಯಾಗ್‌ಗಳು -->
+          <div>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1.5">ಗುರುತಿಸಲಾದ ಪ್ರಕಾರಗಳ ವಿವರ:</span>
+            <div class="flex flex-wrap gap-1.5 text-[11px] font-extrabold">
+              ${counts.mcq > 0 ? `<span class="px-2.5 py-1 bg-indigo-500/20 border border-indigo-400 text-indigo-200 rounded-lg">MCQ: ${counts.mcq}</span>` : ''}
+              ${counts.blanks > 0 ? `<span class="px-2.5 py-1 bg-teal-500/20 border border-teal-400 text-teal-200 rounded-lg">ಬಿಟ್ಟ ಸ್ಥಳ: ${counts.blanks}</span>` : ''}
+              ${counts.true_false > 0 ? `<span class="px-2.5 py-1 bg-blue-500/20 border border-blue-400 text-blue-200 rounded-lg">ಸರಿ/ತಪ್ಪು: ${counts.true_false}</span>` : ''}
+              ${counts.analogy > 0 ? `<span class="px-2.5 py-1 bg-purple-500/20 border border-purple-400 text-purple-200 rounded-lg">ಸಂಬಂಧ ಕಲ್ಪಿಸಿ: ${counts.analogy}</span>` : ''}
+              ${counts.odd_one_out > 0 ? `<span class="px-2.5 py-1 bg-pink-500/20 border border-pink-400 text-pink-200 rounded-lg">ಗುಂಪಿಗೆ ಸೇರದ: ${counts.odd_one_out}</span>` : ''}
+              ${counts.match > 0 ? `<span class="px-2.5 py-1 bg-amber-500/20 border border-amber-400 text-amber-200 rounded-lg">ಹೊಂದಿಸಿ: ${counts.match}</span>` : ''}
+              ${counts.vsa_1m > 0 ? `<span class="px-2.5 py-1 bg-emerald-500/20 border border-emerald-400 text-emerald-200 rounded-lg">1 ಅಂಕ: ${counts.vsa_1m}</span>` : ''}
+              ${counts.sa_2m > 0 ? `<span class="px-2.5 py-1 bg-orange-500/20 border border-orange-400 text-orange-200 rounded-lg">2 ಅಂಕ: ${counts.sa_2m}</span>` : ''}
+              ${counts.sa_3m > 0 ? `<span class="px-2.5 py-1 bg-rose-500/20 border border-rose-400 text-rose-200 rounded-lg">3 ಅಂಕ: ${counts.sa_3m}</span>` : ''}
+              ${counts.la_4m > 0 ? `<span class="px-2.5 py-1 bg-fuchsia-500/20 border border-fuchsia-400 text-fuchsia-200 rounded-lg">4 ಅಂಕ: ${counts.la_4m}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // ೨. ಪ್ರತಿ ಪ್ರಶ್ನೆಯ ಪರಿಶೀಲನಾ ಕಾರ್ಡ್‌ಗಳ ಪ್ರದರ್ಶನ
+      const cardsContainer = document.getElementById('json-verified-cards-container');
+      cardsContainer.innerHTML = sanitized.map((q, idx) => `
+        <div class="p-3.5 bg-slate-50 border-2 ${q.isValid ? 'border-slate-200' : 'border-red-400 bg-red-50/20'} rounded-2xl text-xs space-y-2">
+          <div class="flex items-center justify-between border-b pb-1.5 font-bold">
+            <div class="flex items-center space-x-1.5">
+              <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type} &bull; ${q.marks}M</span>
+              <span class="text-slate-800 font-bold">${q.grade}ನೇ &bull; ${q.subject.split('(')[0]}</span>
+              <span class="text-indigo-900 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">&bull; ${q.chapter}</span>
+            </div>
+            <span class="text-[10px] font-bold text-slate-500">${q.obj} &bull; ${q.diff}</span>
+          </div>
+
+          <!-- ಪ್ರಶ್ನೆ ಪಠ್ಯ -->
+          <div class="font-black text-slate-900 text-[13.5px] leading-snug">${idx + 1}. ${escapeHtml(q.q)}</div>
+
+          <!-- MCQ ಆಪ್ಷನ್‌ಗಳಿದ್ದಲ್ಲಿ -->
+          ${q.type === 'mcq' ? `
+            <div class="grid grid-cols-2 gap-1.5 text-[11px] bg-white p-2.5 border rounded-xl font-medium">
+              <div>(A) ${escapeHtml(q.a || '-')}</div><div>(B) ${escapeHtml(q.b || '-')}</div>
+              <div>(C) ${escapeHtml(q.c || '-')}</div><div>(D) ${escapeHtml(q.d || '-')}</div>
+            </div>
+          ` : ''}
+
+          <!-- ಹೊಂದಿಸಿ ಬರೆಯಿರಿ ಜೋಡಿಗಳಿದ್ದಲ್ಲಿ -->
+          ${q.type === 'match' && q.matchPairs ? `
+            <div class="grid grid-cols-2 gap-2 bg-white p-2 border rounded-xl text-[11px]">
+              <div><b>'ಅ' ಗುಂಪು:</b> ${q.matchPairs.map(p => `<div>• ${escapeHtml(p.a)}</div>`).join('')}</div>
+              <div><b>'ಬ' ಗುಂಪು:</b> ${q.matchPairs.map(p => `<div>• ${escapeHtml(p.b)}</div>`).join('')}</div>
+            </div>
+          ` : ''}
+
+          <!-- ಉತ್ತರ -->
+          <div class="text-emerald-950 font-bold bg-emerald-50/90 p-2 rounded-xl border border-emerald-300 whitespace-pre-line text-[11px]">
+            <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // ೩. ಖಚಿತಪಡಿಸಿಕೊಂಡ ನಂತರ ಭಂಡಾರ & Firebase ಗೆ ಕಳುಹಿಸುವಿಕೆ
+    window.confirmAndSaveValidatedJSONQuestions = async function() {
+      if (!stagedValidatedJSONQuestions || stagedValidatedJSONQuestions.length === 0) {
+        return alert('⚠️ ಸೇರಿಸಲು ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      const count = stagedValidatedJSONQuestions.length;
+
+      appState.qbank = [...stagedValidatedJSONQuestions, ...(appState.qbank || [])];
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+      await pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+
+      document.getElementById('direct-json-upload-modal')?.classList.add('hidden');
+      alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${count} ಪ್ರಶ್ನೆಗಳು ಪೂರ್ಣ ತಪಾಸಣೆಯೊಂದಿಗೆ ಯಶಸ್ವಿಯಾಗಿ ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆಯಾಗಿವೆ!`);
+      showToast(`✅ ${count} ಪ್ರಶ್ನೆಗಳು ಭಂಡಾರಕ್ಕೆ ಸೇರಿವೆ!`, 'success');
+
+      stagedValidatedJSONQuestions = [];
+    };
     
   </script>
 </body>
