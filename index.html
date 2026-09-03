@@ -8663,109 +8663,362 @@
     };
 
 /* ==========================================================================
-       🏫 SMART BILINGUAL SCHOOL NAME AUTO-CONVERTER (LOCKED & SECURE)
+       🏫 100% ACCURATE DUAL SCHOOL NAME SYSTEM (KANNADA + VERIFIED ENGLISH NAME)
        ========================================================================== */
 
-    // ೧. ಕರ್ನಾಟಕ ಶಾಲಾ ಹೆಸರುಗಳನ್ನು ಅಧಿಕೃತ ಇಂಗ್ಲಿಷ್‌ಗೆ ಪರಿವರ್ತಿಸುವ ಸ್ಮಾರ್ಟ್ ಹೆಲ್ಪರ್
-    async function getStandardEnglishSchoolName(kannadaSchoolName) {
-      if (!kannadaSchoolName || !kannadaSchoolName.trim()) {
-        return 'Government School';
+    // ೧. ಮಾಧ್ಯಮಕ್ಕೆ ತಕ್ಕಂತೆ ಸರಿಯಾದ (ಕನ್ನಡ / English) ಶಾಲಾ ಹೆಸರು ಪಡೆಯುವುದು
+    function getAccurateSchoolNameByMedium(userObj, isEnglish) {
+      if (!userObj) return isEnglish ? 'Government Higher Primary School' : 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ';
+      
+      if (isEnglish) {
+        // ಮೊದಲ ಆದ್ಯತೆ: ಅಧಿಕೃತವಾಗಿ ನೋಂದಾಯಿಸಿದ English ಹೆಸರು
+        if (userObj.schoolEn && userObj.schoolEn.trim() !== '') {
+          return userObj.schoolEn.trim();
+        }
+        if (userObj.school && !containsKannadaText(userObj.school)) {
+          return userObj.school.trim();
+        }
+        // ಇಂಗ್ಲಿಷ್ ಹೆಸರು ಇಲ್ಲದಿದ್ದರೆ ಮಾತ್ರ ಸಾಮಾನ್ಯ ಇಂಗ್ಲಿಷ್ ಲೇಬಲ್
+        return 'Govt. Higher Primary School';
       }
-
-      let s = kannadaSchoolName.trim();
-
-      // ಒಂದು ವೇಳೆ ಮೊದಲೇ ಇಂಗ್ಲಿಷ್‌ನಲ್ಲಿದ್ದರೆ ಹಾಗೆಯೇ ಇಡುವುದು
-      if (!containsKannadaText(s)) {
-        return s;
-      }
-
-      // ಕರ್ನಾಟಕ ಶಿಕ್ಷಣ ಇಲಾಖೆಯ ಅಧಿಕೃತ ಶಾಲಾ ಪದಗಳ ನಿಖರ ಇಂಗ್ಲಿಷ್ ಮ್ಯಾಪಿಂಗ್
-      let prefix = 'Govt. Higher Primary School';
-      let placePart = s;
-
-      if (/ಸ\.ಹಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಹಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
-        prefix = 'Govt. Higher Primary School (GHPS)';
-        placePart = s.replace(/ಸ\.ಹಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಹಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
-      } else if (/ಸ\.ಕಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಕಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
-        prefix = 'Govt. Lower Primary School (GLPS)';
-        placePart = s.replace(/ಸ\.ಕಿ\.ಪ್ರಾ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಕಿರಿಯ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
-      } else if (/ಸ\.ಪ್ರೌ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢ\s*ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢಶಾಲೆ/i.test(s)) {
-        prefix = 'Govt. High School (GHS)';
-        placePart = s.replace(/ಸ\.ಪ್ರೌ\.ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢ\s*ಶಾಲೆ|ಸರ್ಕಾರಿ\s*ಪ್ರೌಢಶಾಲೆ/gi, '').trim();
-      } else if (/ಕರ್ನಾಟಕ\s*ಪಬ್ಲಿಕ್\s*ಶಾಲೆ|ಕೆ\.ಪಿ\.ಎಸ್/i.test(s)) {
-        prefix = 'Karnataka Public School (KPS)';
-        placePart = s.replace(/ಕರ್ನಾಟಕ\s*ಪಬ್ಲಿಕ್\s*ಶಾಲೆ|ಕೆ\.ಪಿ\.ಎಸ್/gi, '').trim();
-      } else if (/ಮಾದರಿ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/i.test(s)) {
-        prefix = 'Govt. Model Primary School';
-        placePart = s.replace(/ಮಾದರಿ\s*ಪ್ರಾಥಮಿಕ\s*ಶಾಲೆ/gi, '').trim();
-      } else if (/ಸಹಾಯಕ\s*ಅನುದಾನಿತ/i.test(s)) {
-        prefix = 'Aided School';
-        placePart = s.replace(/ಸಹಾಯಕ\s*ಅನುದಾನಿತ/gi, '').trim();
-      }
-
-      // ಊರಿನ ಹೆಸರು ಅಥವಾ ಸ್ಥಳವನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಭಾಷಾಂತರಿಸುವುದು (e.g. "ತುಮ್ಮರಗುದ್ದಿ" -> "Tummaraguddi")
-      let cleanPlace = placePart.replace(/^[\s\,\-\.\:]+/, '').trim();
-      if (cleanPlace && containsKannadaText(cleanPlace)) {
-        cleanPlace = await translateKannadaTextToEnglish(cleanPlace);
-      }
-
-      return cleanPlace ? `${prefix}, ${cleanPlace}` : prefix;
+      
+      return userObj.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
     }
 
-    // ೨. ಮೀಡಿಯಂ ಬದಲಾಯಿಸಿದಾಗ ಲಾಕ್ ಆಗಿರುವ ಶಾಲೆಯ ಹೆಸರನ್ನು ಆಟೋ-ಸ್ವಿಚ್ ಮಾಡುವುದು
-    const originalHandleClassOrSubjectChangeForSchoolName = window.handleClassOrSubjectChange;
-    window.handleClassOrSubjectChange = async function() {
-      if (typeof originalHandleClassOrSubjectChangeForSchoolName === 'function') {
-        originalHandleClassOrSubjectChangeForSchoolName();
+    // ೨. ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಮಾಡಲ್‌ನಲ್ಲಿ ಕನ್ನಡ + English ಶಾಲಾ ಹೆಸರು ಎರಡನ್ನೂ ಪಡೆಯುವುದು
+    window.openTeacherAuthModal = function() {
+      let modal = document.getElementById('teacher-auth-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teacher-auth-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
       }
 
+      const subjects = getSystemSubjects();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl font-bold"><i class="fa-solid fa-chalkboard-user text-base"></i></div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ಪೋರ್ಟಲ್ (Teacher Portal)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ವಾರ್ಷಿಕ ಶುಲ್ಕ: <b id="modal-tch-fee-badge" class="text-emerald-800 font-black">₹100/ವರ್ಷ (1 ವಿಷಯಕ್ಕೆ)</b></p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('teacher-auth-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl font-bold">
+            <button type="button" id="tab-btn-tch-login" onclick="switchTeacherModalTab('login')" class="flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm cursor-pointer">೧. ಲಾಗಿನ್ (Login)</button>
+            <button type="button" id="tab-btn-tch-reg" onclick="switchTeacherModalTab('reg')" class="flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer">೨. ಹೊಸ ನೋಂದಣಿ (Register)</button>
+          </div>
+
+          <form id="form-tch-modal-login" onsubmit="handleTeacherModalLogin(event)" class="space-y-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+              <input type="tel" id="modal-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ Access Key *</label>
+              <input type="text" id="modal-tch-key" required placeholder="e.g. WY-TCH-7492" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none" />
+            </div>
+            <div id="modal-tch-login-err" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center font-bold">❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!</div>
+            <button type="submit" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರ ಲಾಗಿನ್</button>
+          </form>
+
+          <form id="form-tch-modal-reg" onsubmit="handleTeacherModalRegister(event)" class="space-y-3 hidden">
+            <div><label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಪೂರ್ಣ ಹೆಸರು *</label><input type="text" id="reg-tch-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            
+            <!-- 🌟 ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡ + English) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡದಲ್ಲಿ) *</label>
+                <input type="text" id="reg-tch-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English ನಲ್ಲಿ) *</label>
+                <input type="text" id="reg-tch-school-en" required placeholder="e.g. GHPS Tummaraguddi" class="w-full px-3 py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+              </div>
+            </div>
+
+            <div><label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label><input type="tel" id="reg-tch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" /></div>
+            
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು</label>
+              <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                ${ALL_CLASSES_LIST.map(c => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="modal_tch_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು (೧ ವಿಷಯಕ್ಕೆ ₹100) *</label>
+                <span class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-black">₹100/ವಿಷಯ</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                ${subjects.map((s, idx) => `<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" onchange="updateTeacherModalFeeLive()" name="modal_tch_subj" value="${s}" class="rounded text-emerald-600" ${idx===0?'checked':''}><span class="font-medium text-[11px] truncate">${s.split('(')[0]}</span></label>`).join('')}
+              </div>
+            </div>
+            
+            <button type="submit" id="modal-tch-submit-btn" class="w-full py-3 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Key ಪಡೆಯಿರಿ (₹100)</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      updateTeacherModalFeeLive();
+    };
+
+    // ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಸಬ್ಮಿಶನ್ (ಕನ್ನಡ + ಇಂಗ್ಲಿಷ್ ಶಾಲಾ ಹೆಸರು ಸೇವ್)
+    window.handleTeacherModalRegister = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-tch-name').value.trim();
+      const school = document.getElementById('reg-tch-school').value.trim();
+      const schoolEn = document.getElementById('reg-tch-school-en')?.value.trim() || school;
+      const phone = document.getElementById('reg-tch-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="modal_tch_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="modal_tch_subj"]:checked')).map(cb => cb.value);
+
+      if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+      const totalFee = `₹${subjects.length * 100}`;
+      const regDate = getTodayFormattedDate();
+
+      const newRequest = {
+        id: 'REQ_TCH_' + Date.now(),
+        type: 'teacher',
+        name,
+        school,
+        schoolEn, // 🌟 English School Name
+        phone,
+        grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
+        fee: totalFee,
+        requestedDate: regDate,
+        status: 'pending'
+      };
+
+      if (!Array.isArray(appState.pendingRequests)) appState.pendingRequests = [];
+      appState.pendingRequests.unshift(newRequest);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      
+      await pushPendingRequestsToCloud();
+
+      const cleanSubjNames = subjects.map(s => s.split('(')[0].trim()).join(', ');
+      const msg = `*With You QP Generator - ಹೊಸ ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+                  `👤 *ಶಿಕ್ಷಕರ ಹೆಸರು:* ${name}\n` +
+                  `🏫 *ಶಾಲೆ (ಕನ್ನಡ):* ${school}\n` +
+                  `🏫 *School (English):* ${schoolEn}\n` +
+                  `📱 *ಮೊಬೈಲ್:* ${phone}\n` +
+                  `📖 *ವಿಷಯಗಳು (${subjects.length}):* ${cleanSubjNames}\n` +
+                  `💰 *ಶುಲ್ಕ:* *${totalFee}*\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ದಯವಿಟ್ಟು ಪರಿಶೀಲಿಸಿ ನನ್ನ *Access Key* ನೀಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('teacher-auth-modal')?.classList.add('hidden');
+      alert(`✅ ವಿವರಗಳನ್ನು ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ! ಶುಲ್ಕ: ${totalFee}`);
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ Edit Teacher ಮಾಡಲ್‌ನಲ್ಲಿ ಎರಡೂ ಶಾಲಾ ಹೆಸರುಗಳನ್ನು ತಿದ್ದುವ ಸೌಲಭ್ಯ
+    window.openEditTeacherModal = function(id) {
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      let modal = document.getElementById('edit-teacher-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-teacher-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+      const currentGrades = t.grades || ['6', '7', '8'];
+      const currentSubjs = t.subjects || ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'];
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-user-pen text-amber-600 text-base"></i>
+              <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ವಿವರ & ಶಾಲಾ ಹೆಸರು ತಿದ್ದುಪಡಿ</h3>
+            </div>
+            <button onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveTeacherEdit(event, '${t.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+              <input type="text" id="edit-tch-name" value="${escapeHtml(t.name)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡ) *</label>
+                <input type="text" id="edit-tch-school" value="${escapeHtml(t.school || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English) *</label>
+                <input type="text" id="edit-tch-school-en" value="${escapeHtml(t.schoolEn || '')}" placeholder="e.g. GHPS Tummaraguddi" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">WhatsApp ಮೊಬೈಲ್ *</label>
+                <input type="tel" id="edit-tch-phone" value="${escapeHtml(t.phone)}" required pattern="[0-9]{10}" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Access Key</label>
+                <input type="text" id="edit-tch-key" value="${t.accessKey}" required class="w-full p-2 bg-slate-100 border rounded-xl font-black uppercase text-indigo-900" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 p-2.5 bg-amber-50/60 border border-amber-300 rounded-xl">
+              <div>
+                <label class="block font-bold text-amber-950 mb-1">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ *</label>
+                <input type="text" id="edit-tch-regdate" value="${t.registeredDate || getTodayFormattedDate()}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-amber-300 rounded-lg font-bold text-xs" />
+              </div>
+              <div>
+                <label class="block font-bold text-amber-950 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ *</label>
+                <input type="text" id="edit-tch-expdate" value="${t.expiryDate || calculateExact1YearExpiry(t.registeredDate)}" required placeholder="DD-MM-YYYY" class="w-full p-2 bg-white border border-amber-300 rounded-lg font-bold text-xs text-emerald-800" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+              <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                ${ALL_CLASSES_LIST.map(c => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_class" value="${c.val}" class="rounded text-emerald-600" ${currentGrades.includes(c.val)?'checked':''}>
+                    <span class="font-bold text-[11px]">${c.val}ನೇ</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು *</label>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                ${subjects.map(s => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_subj" value="${s}" class="rounded text-emerald-600" ${currentSubjs.includes(s)?'checked':''}>
+                    <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleSaveTeacherEdit = function(e, id) {
+      e.preventDefault();
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      const grades = Array.from(document.querySelectorAll('input[name="edit_tch_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="edit_tch_subj"]:checked')).map(cb => cb.value);
+
+      if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+      t.name = document.getElementById('edit-tch-name').value.trim();
+      t.school = document.getElementById('edit-tch-school').value.trim();
+      t.schoolEn = document.getElementById('edit-tch-school-en')?.value.trim() || t.school;
+      t.phone = document.getElementById('edit-tch-phone').value.trim();
+      t.registeredDate = document.getElementById('edit-tch-regdate').value.trim();
+      t.expiryDate = document.getElementById('edit-tch-expdate').value.trim();
+      t.accessKey = document.getElementById('edit-tch-key').value.trim().toUpperCase();
+      t.grades = grades;
+      t.subjects = subjects;
+
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      
+      const loggedTeacher = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+      if (loggedTeacher && loggedTeacher.id === id) {
+        localStorage.setItem('withyou_logged_teacher', JSON.stringify(t));
+        sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(t));
+      }
+
+      pushAuthDataToFirebase();
+      renderRegisteredTeachers();
+      updateGlobalUserValidityDisplayEverywhere();
+      renderDashboardUserStatusBanner();
+      syncSubjectAndChapters();
+      
+      document.getElementById('edit-teacher-modal')?.classList.add('hidden');
+      showToast('✅ ಶಿಕ್ಷಕರ ಮತ್ತು ಶಾಲೆಯ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿದೆ!', 'success');
+    };
+
+    // ೪. 1-Click Approve ನಲ್ಲಿ ಎರಡೂ ಶಾಲಾ ಹೆಸರುಗಳ ವರ್ಗಾವಣೆ
+    const origApprovePendingRequest = window.approvePendingRequest;
+    window.approvePendingRequest = async function(reqId) {
+      const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+      const req = reqList.find(r => r.id === reqId);
+      if (!req) return;
+
+      if (req.type === 'teacher') {
+        const accessKey = generateGuaranteedUniqueKey('TCH');
+        const regDate = getTodayFormattedDate();
+        const newTeacher = {
+          id: 'T_' + Date.now(),
+          name: req.name,
+          school: req.school,
+          schoolEn: req.schoolEn || req.school, // 🌟 English Name Carried Over
+          phone: req.phone,
+          grades: req.grades || ['6', '7', '8'],
+          subjects: req.subjects || ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'],
+          accessKey: accessKey,
+          registeredDate: regDate,
+          expiryDate: calculateExact1YearExpiry(regDate),
+          fee: req.fee || `₹${(req.subjects || []).length * 100}`
+        };
+
+        appState.teachers.unshift(newTeacher);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        await pushAuthDataToFirebase();
+        renderRegisteredTeachers();
+
+        sendKeyToTeacherWhatsApp(req.phone, req.name, accessKey);
+      } else {
+        if (typeof origApprovePendingRequest === 'function') {
+          await origApprovePendingRequest(reqId);
+          return;
+        }
+      }
+
+      appState.pendingRequests = reqList.filter(r => r.id !== reqId);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      await pushPendingRequestsToCloud();
+      renderPendingRequestsInAdmin();
+      showToast(`🎉 ${req.name} ಅವರ ನೋಂದಣಿ ಅನುಮೋದನೆಗೊಂಡಿದೆ!`, 'success');
+    };
+
+    // ೫. ಜನರೇಟರ್‌ನಲ್ಲಿ ಮಾಧ್ಯಮ ಬದಲಾದಾಗ ನಿಖರ ಶಾಲಾ ಹೆಸರು ಆಟೋ-ಸ್ವಿಚ್ (LOCKED & ACCURATE)
+    window.handleClassOrSubjectChange = function() {
       const mediumSelect = document.getElementById('cfg-medium');
       const schoolInput = document.getElementById('cfg-school-name');
       const isEnglish = (mediumSelect?.value || '').toLowerCase().includes('english');
 
       if (schoolInput && appState.currentUserType === 'teacher') {
         const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
-        if (tObj && tObj.school) {
-          if (isEnglish) {
-            schoolInput.value = await getStandardEnglishSchoolName(tObj.school);
-          } else {
-            schoolInput.value = tObj.school;
-          }
-        }
-      }
-    };
-
-    // ೩. ಜನರೇಟರ್ ಎಂಜಿನ್‌ನಲ್ಲಿ ಇಂಗ್ಲಿಷ್ ಶಾಲಾ ಹೆಸರು ಅಳವಡಿಕೆ
-    const origGenerateExamPackageFromBankForSchoolName = window.generateExamPackageFromBank;
-    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
-      const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
-      const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
-      const schoolInput = document.getElementById('cfg-school-name');
-
-      // 🌟 ಇಂಗ್ಲಿಷ್ ಮಾಧ್ಯಮವಾಗಿದ್ದಾಗ ಶಾಲೆಯ ಹೆಸರನ್ನು ಇಂಗ್ಲಿಷ್‌ಗೆ ಖಚಿತಪಡಿಸುವುದು
-      if (isEnglishMedium) {
-        if (appState.currentUserType === 'teacher') {
-          const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
-          if (tObj && tObj.school && schoolInput) {
-            schoolInput.value = await getStandardEnglishSchoolName(tObj.school);
-          }
-        } else if (schoolInput && containsKannadaText(schoolInput.value)) {
-          schoolInput.value = await getStandardEnglishSchoolName(schoolInput.value);
-        }
-      } else {
-        // ಕನ್ನಡ ಮಾಧ್ಯಮಕ್ಕೆ ಮರಳಿದಾಗ ಮೂಲ ಹೆಸರು ಮರುಸ್ಥಾಪನೆ
-        if (appState.currentUserType === 'teacher') {
-          const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
-          if (tObj && tObj.school && schoolInput) {
-            schoolInput.value = tObj.school;
-          }
+        if (tObj) {
+          schoolInput.value = getAccurateSchoolNameByMedium(tObj, isEnglish);
         }
       }
 
-      // ಮೂಲ ಜನರೇಟರ್ ಚಾಲನೆ
-      if (typeof origGenerateExamPackageFromBankForSchoolName === 'function') {
-        await origGenerateExamPackageFromBankForSchoolName();
-      }
+      if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+      if (typeof renderMaster10QuestionFormats === 'function') renderMaster10QuestionFormats();
     };
     
   </script>
