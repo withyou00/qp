@@ -9020,6 +9020,275 @@
       if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
       if (typeof renderMaster10QuestionFormats === 'function') renderMaster10QuestionFormats();
     };
+
+
+    /* ==========================================================================
+       🔒 STRICT VALIDITY DATE PRESERVATION ON EDIT (NO AUTO-EXTENSION ON EDIT)
+       ========================================================================== */
+
+    // ೧. ದಿನಾಂಕವನ್ನು ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ಬದಲಾಯಿಸದೆ ಕೇವಲ ಇರುವ ದಿನಾಂಕವನ್ನೇ ಓದುವ ಪ್ಯೂರ್ ಹೆಲ್ಪರ್
+    function getUserExactDynamicExpiry(userObj) {
+      if (!userObj) return "31-03-2027";
+      
+      // ಮೊದಲೇ ಉಳಿಸಲಾಗಿರುವ ಎಕ್ಸ್‌ಪೈರಿ ದಿನಾಂಕವಿದ್ದರೆ ಅದನ್ನೇ ಕಡ್ಡಾಯವಾಗಿ ಬಳಸುವುದು (No Recalculation!)
+      if (userObj.expiryDate && typeof userObj.expiryDate === 'string' && userObj.expiryDate.trim() !== '') {
+        return userObj.expiryDate.trim();
+      }
+      
+      // ಎಕ್ಸ್‌ಪೈರಿ ಇಲ್ಲದಿದ್ದರೆ ಮಾತ್ರ ನೋಂದಾಯಿತ ದಿನಾಂಕದಿಂದ ಲೆಕ್ಕ ಹಾಕುವುದು
+      if (userObj.registeredDate && typeof userObj.registeredDate === 'string' && userObj.registeredDate.trim() !== '') {
+        return calculateExact1YearExpiry(userObj.registeredDate.trim());
+      }
+
+      return "31-03-2027";
+    }
+
+    // ೨. ಶಿಕ್ಷಕರ ವಿವರ ಎಡಿಟ್ ಮಾಡಲ್ (ಮೂಲ ದಿನಾಂಕಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ)
+    window.openEditTeacherModal = function(id) {
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      let modal = document.getElementById('edit-teacher-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-teacher-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+      const currentGrades = t.grades || ['6', '7', '8'];
+      const currentSubjs = t.subjects || ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'];
+
+      // 🌟 ಮೂಲ ದಿನಾಂಕಗಳನ್ನು ಹಾಗೆಯೇ ಹಿಡಿದಿಟ್ಟುಕೊಳ್ಳುವುದು (ಇವತ್ತಿನ ದಿನಾಂಕಕ್ಕೆ ಬದಲಾಗುವುದಿಲ್ಲ)
+      const exactRegDate = t.registeredDate || "28-08-2026";
+      const exactExpDate = t.expiryDate || calculateExact1YearExpiry(exactRegDate);
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-user-pen text-amber-600 text-base"></i>
+              <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ವಿವರ & ಶಾಲಾ ಹೆಸರು ತಿದ್ದುಪಡಿ</h3>
+            </div>
+            <button onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveTeacherEdit(event, '${t.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+              <input type="text" id="edit-tch-name" value="${escapeHtml(t.name)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡ) *</label>
+                <input type="text" id="edit-tch-school" value="${escapeHtml(t.school || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English) *</label>
+                <input type="text" id="edit-tch-school-en" value="${escapeHtml(t.schoolEn || '')}" placeholder="e.g. GHPS Tummaraguddi" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">WhatsApp ಮೊಬೈಲ್ *</label>
+                <input type="tel" id="edit-tch-phone" value="${escapeHtml(t.phone)}" required pattern="[0-9]{10}" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Access Key</label>
+                <input type="text" id="edit-tch-key" value="${t.accessKey}" required class="w-full p-2 bg-slate-100 border rounded-xl font-black uppercase text-indigo-900" />
+              </div>
+            </div>
+
+            <!-- 🌟 ಕಾಯಂ ದಿನಾಂಕಗಳು (ಬದಲಾಗುವುದಿಲ್ಲ) -->
+            <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border border-slate-300 rounded-xl">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ</label>
+                <input type="text" id="edit-tch-regdate" value="${exactRegDate}" required class="w-full p-2 bg-white border rounded-lg font-bold text-xs text-slate-800" />
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ (Expiry Date)</label>
+                <input type="text" id="edit-tch-expdate" value="${exactExpDate}" required class="w-full p-2 bg-white border border-emerald-400 rounded-lg font-black text-xs text-emerald-900" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+              <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                ${ALL_CLASSES_LIST.map(c => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_class" value="${c.val}" class="rounded text-emerald-600" ${currentGrades.includes(c.val)?'checked':''}>
+                    <span class="font-bold text-[11px]">${c.val}ನೇ</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು *</label>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                ${subjects.map(s => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_subj" value="${s}" class="rounded text-emerald-600" ${currentSubjs.includes(s)?'checked':''}>
+                    <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೩. ಸೇವ್ ಮಾಡುವಾಗ ಹಳೆಯ ದಿನಾಂಕಗಳನ್ನೇ ಕಟ್ಟುನಿಟ್ಟಾಗಿ ಉಳಿಸಿಕೊಳ್ಳುವುದು
+    window.handleSaveTeacherEdit = function(e, id) {
+      e.preventDefault();
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      const grades = Array.from(document.querySelectorAll('input[name="edit_tch_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="edit_tch_subj"]:checked')).map(cb => cb.value);
+
+      if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+      t.name = document.getElementById('edit-tch-name').value.trim();
+      t.school = document.getElementById('edit-tch-school').value.trim();
+      t.schoolEn = document.getElementById('edit-tch-school-en')?.value.trim() || t.school;
+      t.phone = document.getElementById('edit-tch-phone').value.trim();
+      
+      // 🌟 ಇನ್ಪುಟ್ ಬಾಕ್ಸ್‌ನಲ್ಲಿರುವ ಮೂಲ ದಿನಾಂಕವನ್ನೇ ಸೇವ್ ಮಾಡುವುದು (No auto-extension!)
+      t.registeredDate = document.getElementById('edit-tch-regdate').value.trim();
+      t.expiryDate = document.getElementById('edit-tch-expdate').value.trim();
+      
+      t.accessKey = document.getElementById('edit-tch-key').value.trim().toUpperCase();
+      t.grades = grades;
+      t.subjects = subjects;
+      t.fee = `₹${subjects.length * 100}`;
+
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      
+      const loggedTeacher = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+      if (loggedTeacher && loggedTeacher.id === id) {
+        localStorage.setItem('withyou_logged_teacher', JSON.stringify(t));
+        sessionStorage.setItem('withyou_logged_teacher', JSON.stringify(t));
+      }
+
+      pushAuthDataToFirebase();
+      renderRegisteredTeachers();
+      updateGlobalUserValidityDisplayEverywhere();
+      renderDashboardUserStatusBanner();
+      syncSubjectAndChapters();
+      
+      document.getElementById('edit-teacher-modal')?.classList.add('hidden');
+      showToast('✅ ವಿವರಗಳು ಸೇವ್ ಆಗಿವೆ (ವ್ಯಾಲಿಡಿಟಿ ಹಾಗೆಯೇ ಉಳಿದಿದೆ)!', 'success');
+    };
+
+    // ೪. ಶಾಲಾ ಎಡಿಟ್ ಮಾಡಲ್‌ನಲ್ಲೂ ದಿನಾಂಕಗಳ ರಕ್ಷಣೆ
+    window.openEditSchoolModal = function(id) {
+      const s = (appState.schools || []).find(x => x.id === id);
+      if (!s) return;
+
+      let modal = document.getElementById('edit-school-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-school-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const exactRegDate = s.registeredDate || "28-08-2026";
+      const exactExpDate = s.expiryDate || calculateExact1YearExpiry(exactRegDate);
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-school-flag text-indigo-600 text-base"></i>
+              <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ವಿವರ ತಿದ್ದುಪಡಿ</h3>
+            </div>
+            <button onclick="document.getElementById('edit-school-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveSchoolEdit(event, '${s.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label>
+              <input type="text" id="edit-sch-name" value="${escapeHtml(s.name)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">DISE ಕೋಡ್ *</label>
+                <input type="text" id="edit-sch-dise" value="${escapeHtml(s.dise)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">HM ಹೆಸರು *</label>
+                <input type="text" id="edit-sch-hm" value="${escapeHtml(s.hm)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">HM ಮೊಬೈಲ್ *</label>
+              <input type="tel" id="edit-sch-phone" value="${escapeHtml(s.hmPhone)}" required pattern="[0-9]{10}" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border border-slate-300 rounded-xl">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ</label>
+                <input type="text" id="edit-sch-regdate" value="${exactRegDate}" required class="w-full p-2 bg-white border rounded-lg font-bold text-xs text-slate-800" />
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ (Expiry)</label>
+                <input type="text" id="edit-sch-expdate" value="${exactExpDate}" required class="w-full p-2 bg-white border border-indigo-400 rounded-lg font-black text-xs text-indigo-900" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಶಾಲಾ Master Key</label>
+              <input type="text" id="edit-sch-key" value="${s.accessKey}" required class="w-full p-2 bg-slate-100 border rounded-xl font-black uppercase text-indigo-900" />
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('edit-school-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleSaveSchoolEdit = function(e, id) {
+      e.preventDefault();
+      const s = (appState.schools || []).find(x => x.id === id);
+      if (!s) return;
+
+      s.name = document.getElementById('edit-sch-name').value.trim();
+      s.dise = document.getElementById('edit-sch-dise').value.trim();
+      s.hm = document.getElementById('edit-sch-hm').value.trim();
+      s.hmPhone = document.getElementById('edit-sch-phone').value.trim();
+      s.registeredDate = document.getElementById('edit-sch-regdate').value.trim();
+      s.expiryDate = document.getElementById('edit-sch-expdate').value.trim();
+      s.accessKey = document.getElementById('edit-sch-key').value.trim().toUpperCase();
+
+      localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      pushAuthDataToFirebase();
+      renderRegisteredSchools();
+      updateGlobalUserValidityDisplayEverywhere();
+      renderDashboardUserStatusBanner();
+      
+      document.getElementById('edit-school-modal')?.classList.add('hidden');
+      showToast('✅ ಶಾಲಾ ವಿವರಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
+    };
     
   </script>
 </body>
