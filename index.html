@@ -10198,6 +10198,502 @@
     // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಪ್ರತ್ಯೇಕತೆಯನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
     if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
     renderCustomQuestionList();
+
+/* ==========================================================================
+       📢 BROADCAST NOTICE + 💰 REVENUE ANALYTICS + 🔔 WHATSAPP EXPIRY REMINDER
+       ========================================================================== */
+
+    // =========================================================================
+    // ೧. ಲೈವ್ ಪ್ರಕಟಣೆ / ನೋಟಿಸ್ ಬೋರ್ಡ್ ಎಂಜಿನ್ (BROADCAST NOTICE ENGINE)
+    // =========================================================================
+    let currentBroadcastNotice = localStorage.getItem('withyou_broadcast_notice') || '';
+
+    window.fetchBroadcastNoticeFromCloud = async function() {
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`);
+        if (res.ok) {
+          const data = await res.json();
+          currentBroadcastNotice = (typeof data === 'string') ? data.trim() : '';
+          localStorage.setItem('withyou_broadcast_notice', currentBroadcastNotice);
+          renderBroadcastBannerOnPages();
+        }
+      } catch (e) {}
+    };
+
+    window.saveBroadcastNoticeToCloud = async function(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('admin-broadcast-notice-input');
+      const msg = input ? input.value.trim() : '';
+
+      currentBroadcastNotice = msg;
+      localStorage.setItem('withyou_broadcast_notice', msg);
+
+      try {
+        await fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(msg)
+        });
+      } catch (err) {}
+
+      renderBroadcastBannerOnPages();
+      showToast(msg ? '📢 ಲೈವ್ ಪ್ರಕಟಣೆಯನ್ನು ಪ್ರಸಾರ ಮಾಡಲಾಗಿದೆ!' : 'ಪ್ರಕಟಣೆಯನ್ನು ತೆರವುಗೊಳಿಸಲಾಗಿದೆ.', 'success');
+    };
+
+    window.clearBroadcastNoticeFromCloud = async function() {
+      if (confirm('ಲೈವ್ ಪ್ರಕಟಣೆಯನ್ನು ತೆರವುಗೊಳಿಸಬೇಕೇ (Remove Notice)?')) {
+        currentBroadcastNotice = '';
+        localStorage.setItem('withyou_broadcast_notice', '');
+        const input = document.getElementById('admin-broadcast-notice-input');
+        if (input) input.value = '';
+
+        try {
+          await fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify('')
+          });
+        } catch (err) {}
+
+        renderBroadcastBannerOnPages();
+        showToast('ಪ್ರಕಟಣೆಯನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ.', 'info');
+      }
+    };
+
+    // ಸ್ಕ್ರೀನ್ ಮೇಲೆ ನೋಟಿಸ್ ಬ್ಯಾನರ್ ಪ್ರದರ್ಶನ
+    window.renderBroadcastBannerOnPages = function() {
+      document.querySelectorAll('.broadcast-notice-live-bar').forEach(el => el.remove());
+
+      if (!currentBroadcastNotice || currentBroadcastNotice.trim() === '') return;
+
+      const bannerHtml = `
+        <div class="broadcast-notice-live-bar w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 px-4 py-2 rounded-2xl shadow-md flex items-center gap-3 overflow-hidden text-xs font-black mb-4 border border-amber-300">
+          <div class="flex items-center gap-1.5 bg-slate-950 text-amber-300 px-2.5 py-1 rounded-xl shrink-0 text-[11px] shadow-sm animate-pulse">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>ಪ್ರಕಟಣೆ:</span>
+          </div>
+          <marquee behavior="scroll" direction="left" scrollamount="6" class="font-extrabold tracking-wide">
+            ${escapeHtml(currentBroadcastNotice)}
+          </marquee>
+        </div>
+      `;
+
+      const dashHero = document.querySelector('#view-dashboard .relative.overflow-hidden');
+      if (dashHero) dashHero.insertAdjacentHTML('beforebegin', bannerHtml);
+
+      const genTopBox = document.getElementById('gen-top-profile-container');
+      if (genTopBox) genTopBox.insertAdjacentHTML('beforebegin', bannerHtml);
+    };
+
+
+    // =========================================================================
+    // ೨. ಆದಾಯ & ಸದಸ್ಯತ್ವ ಲೈವ್ ಕ್ಯಾಲ್ಕುಲೇಟರ್ (REVENUE & ANALYTICS)
+    // =========================================================================
+    function calculateTotalSystemRevenue() {
+      const allTeachers = appState.teachers || [];
+      const allSchools = appState.schools || [];
+
+      let teacherRevenue = 0;
+      let activeTeachers = 0;
+      let expiredTeachers = 0;
+      let expiringSoonTeachers = 0;
+
+      allTeachers.forEach(t => {
+        const feeNum = parseInt(String(t.fee || '100').replace(/\D/g, '')) || 100;
+        teacherRevenue += feeNum;
+
+        const expStr = getUserExactDynamicExpiry(t);
+        const daysLeft = calculateRealRemainingDays(expStr);
+
+        if (daysLeft <= 0) {
+          expiredTeachers++;
+        } else {
+          activeTeachers++;
+          if (daysLeft <= 7) expiringSoonTeachers++;
+        }
+      });
+
+      let schoolRevenue = 0;
+      let activeSchools = 0;
+      let expiredSchools = 0;
+      let expiringSoonSchools = 0;
+
+      allSchools.forEach(s => {
+        const feeNum = parseInt(String(s.fee || '500').replace(/\D/g, '')) || 500;
+        schoolRevenue += feeNum;
+
+        const expStr = getUserExactDynamicExpiry(s);
+        const daysLeft = calculateRealRemainingDays(expStr);
+
+        if (daysLeft <= 0) {
+          expiredSchools++;
+        } else {
+          activeSchools++;
+          if (daysLeft <= 7) expiringSoonSchools++;
+        }
+      });
+
+      return {
+        totalRevenue: teacherRevenue + schoolRevenue,
+        teacherRevenue,
+        schoolRevenue,
+        activeTeachers,
+        expiredTeachers,
+        expiringSoonTeachers,
+        activeSchools,
+        expiredSchools,
+        expiringSoonSchools,
+        totalActiveUsers: activeTeachers + activeSchools
+      };
+    }
+
+
+    // =========================================================================
+    // ೩. ಸದಸ್ಯತ್ವ ಮುಕ್ತಾಯ WHATSAPP ರಿಮೈಂಡರ್ (1-CLICK EXPIRY REMINDER)
+    // =========================================================================
+    window.sendExpiryReminderWhatsApp = function(phone, name, expDate, fee, key, isExpired) {
+      const cleanPhone = cleanPhoneDigits(phone);
+      const daysLeft = calculateRealRemainingDays(expDate);
+
+      const msg = isExpired ? (
+        `*With You QP Generator - ಸದಸ್ಯತ್ವ ಮುಕ್ತಾಯ ಸೂಚನೆ (Expired)*\n\n` +
+        `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+        `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಸದಸ್ಯತ್ವವು *${expDate}* ರಂದು ಮುಕ್ತಾಯಗೊಂಡಿದೆ.\n\n` +
+        `🔑 *Access Key:* *${key}*\n` +
+        `💰 *ವಾರ್ಷಿಕ ನವೀಕರಣ ಶುಲ್ಕ:* ${fee}/ವರ್ಷ\n\n` +
+        `ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳನ್ನು ನಿರಂತರವಾಗಿ ರಚಿಸಲು ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸದಸ್ಯತ್ವವನ್ನು ಇಂದೇ ನವೀಕರಿಸಿ (Renew). ಧನ್ಯವಾದಗಳು!`
+      ) : (
+        `*With You QP Generator - ಸದಸ್ಯತ್ವ ಮುಕ್ತಾಯದ ಮುನ್ಸೂಚನೆ (Renewal Reminder)*\n\n` +
+        `ನಮಸ್ಕಾರ ${name} ಸರ್/ಮೇಡಂ,\n` +
+        `ನಿಮ್ಮ ವಾರ್ಷಿಕ ಸದಸ್ಯತ್ವದ ಅವಧಿಯು *${expDate}* ರಂದು ಮುಕ್ತಾಯಗೊಳ್ಳಲಿದೆ (ಇನ್ನು ಕೇವಲ *${daysLeft}* ದಿನಗಳು ಬಾಕಿ ಇವೆ).\n\n` +
+        `🔑 *Access Key:* *${key}*\n` +
+        `💰 *ನವೀಕರಣ ಶುಲ್ಕ:* ${fee}/ವರ್ಷ\n\n` +
+        `ಪರೀಕ್ಷಾ ಸಮಯದಲ್ಲಿ ಯಾವುದೇ ಅಡಚಣೆಯಾಗದಂತೆ ಮುಂಚಿತವಾಗಿ ನವೀಕರಿಸಿಕೊಳ್ಳಲು ವಿನಂತಿ. ಧನ್ಯವಾದಗಳು!`
+      );
+
+      window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+
+    // =========================================================================
+    // ೪. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಆದಾಯ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್, ನೋಟಿಸ್ ಬೋರ್ಡ್ & ರಿಮೈಂಡರ್ ಸೆಕ್ಷನ್
+    // =========================================================================
+    window.renderAdminMasterUnifiedView = function() {
+      const adminView = document.getElementById('view-admin');
+      if (!adminView) return;
+
+      const mediums = getSystemMediums();
+      const subjects = getSystemSubjects();
+      
+      const allTeachers = appState.teachers || [];
+      const allSchools = appState.schools || [];
+      const qbankCount = (appState.qbank || []).length;
+
+      const stats = calculateTotalSystemRevenue();
+
+      // ಮುಕ್ತಾಯ ಹಂತದಲ್ಲಿರುವ ಶಿಕ್ಷಕರ ಪಟ್ಟಿ (Days <= 7 or Expired)
+      const expiringOrExpiredTeachers = allTeachers.filter(t => {
+        const d = calculateRealRemainingDays(getUserExactDynamicExpiry(t));
+        return d <= 7;
+      });
+
+      adminView.innerHTML = `
+        <!-- ೧. ಅಡ್ಮಿನ್ ಟಾಪ್ ಕಂಟ್ರೋಲ್ ಬಾರ್ -->
+        <div class="flex flex-wrap items-center justify-between bg-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-xl text-xs gap-3">
+          <div class="flex items-center space-x-2 bg-slate-800/90 p-1.5 rounded-2xl border border-slate-700 font-bold">
+            <button type="button" onclick="switchAdminSubModuleTab('qbank')" id="sub-tab-btn-qbank" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='qbank'?'bg-amber-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-database"></i>
+              <span>೧. ಪ್ರಶ್ನೆ ಭಂಡಾರ (${qbankCount})</span>
+            </button>
+            <button type="button" onclick="switchAdminSubModuleTab('registration')" id="sub-tab-btn-reg" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-users"></i>
+              <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${allTeachers.length + allSchools.length})</span>
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="openBatchTranslateToEnglishModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl font-extrabold shadow flex items-center gap-1.5 cursor-pointer border border-blue-400/30">
+              <i class="fa-solid fa-language text-amber-300 text-sm"></i>
+              <span>🔄 ಕನ್ನಡ ➔ English ಭಾಷಾಂತರಿಸಿ</span>
+            </button>
+            <button type="button" onclick="openBulkAIImportModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl font-extrabold shadow flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+              <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+            </button>
+            <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-black shadow flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 🌟 ೨. ಲೈವ್ ಪ್ರಕಟಣೆ / ನೋಟಿಸ್ ಬೋರ್ಡ್ ಕಂಟ್ರೋಲರ್ (BROADCAST NOTICE CONTROLLER) -->
+        <div class="card-modern p-4 sm:p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-black text-amber-950 text-xs sm:text-sm flex items-center gap-2">
+              <i class="fa-solid fa-bullhorn text-amber-600"></i>
+              <span>ಶಿಕ್ಷಕರಿಗೆ ಲೈವ್ ಪ್ರಕಟಣೆ ಕಳುಹಿಸಿ (Broadcast Notice Banner):</span>
+            </label>
+            ${currentBroadcastNotice ? `<span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">ಸಕ್ರಿಯ ಪ್ರಕಟಣೆ ಲೈವ್ ಇದೆ</span>` : ''}
+          </div>
+          <div class="flex flex-col sm:flex-row items-center gap-2">
+            <input type="text" id="admin-broadcast-notice-input" value="${escapeHtml(currentBroadcastNotice)}" placeholder="e.g. 🎉 ೮ನೇ ತರಗತಿ ವಿಜ್ಞಾನ ಮತ್ತು ಸಮಾಜ ವಿಜ್ಞಾನದ ಹೊಸ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿವೆ!" class="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button type="button" onclick="saveBroadcastNoticeToCloud()" class="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-extrabold rounded-xl text-xs shadow cursor-pointer">
+                📢 ಪ್ರಕಟಿಸಿ (Broadcast)
+              </button>
+              <button type="button" onclick="clearBroadcastNoticeFromCloud()" class="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs border border-slate-300 cursor-pointer">
+                ತೆರವುಗೊಳಿಸಿ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🌟 ೩. ಆದಾಯ & ಸದಸ್ಯತ್ವ ಲೈವ್ ಅನಲಿಟಿಕ್ಸ್ (REVENUE & SUBSCRIPTIONS ANALYTICS) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card-modern p-4 border-2 border-emerald-400 bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center space-x-3.5 shadow-sm">
+            <div class="p-3 bg-emerald-500 text-white rounded-2xl text-2xl font-black shadow"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div>
+              <span class="text-[11px] text-emerald-900 font-extrabold block">ಒಟ್ಟು ಸಂಗ್ರಹವಾದ ಆದಾಯ</span>
+              <b class="text-2xl font-black text-emerald-950">₹${stats.totalRevenue}</b>
+              <span class="text-[10px] text-emerald-700 font-bold block">(ಶಿಕ್ಷಕರು: ₹${stats.teacherRevenue} | ಶಾಲೆ: ₹${stats.schoolRevenue})</span>
+            </div>
+          </div>
+
+          <div class="card-modern p-4 border border-indigo-200 bg-indigo-50/50 flex items-center space-x-3.5">
+            <div class="p-3 bg-indigo-500 text-white rounded-2xl text-xl font-bold shadow"><i class="fa-solid fa-chalkboard-user"></i></div>
+            <div>
+              <span class="text-[11px] text-indigo-900 font-bold block">ಶಿಕ್ಷಕರ ಸದಸ್ಯತ್ವ</span>
+              <b class="text-xl font-black text-slate-900">${allTeachers.length}</b>
+              <span class="text-[10px] text-emerald-700 font-bold block">(${stats.activeTeachers} ಸಕ್ರಿಯ &bull; ${stats.expiredTeachers} ಮುಕ್ತಾಯ)</span>
+            </div>
+          </div>
+
+          <div class="card-modern p-4 border border-blue-200 bg-blue-50/50 flex items-center space-x-3.5">
+            <div class="p-3 bg-blue-500 text-white rounded-2xl text-xl font-bold shadow"><i class="fa-solid fa-school"></i></div>
+            <div>
+              <span class="text-[11px] text-blue-900 font-bold block">ಶಾಲಾ Master ಸದಸ್ಯತ್ವ</span>
+              <b class="text-xl font-black text-slate-900">${allSchools.length}</b>
+              <span class="text-[10px] text-indigo-700 font-bold block">(${stats.activeSchools} ಸಕ್ರಿಯ &bull; ${stats.expiredSchools} ಮುಕ್ತಾಯ)</span>
+            </div>
+          </div>
+
+          <div class="card-modern p-4 border-2 ${stats.expiringSoonTeachers > 0 ? 'border-amber-400 bg-amber-50/60' : 'border-slate-200 bg-slate-50'} flex items-center space-x-3.5">
+            <div class="p-3 ${stats.expiringSoonTeachers > 0 ? 'bg-amber-500' : 'bg-slate-700'} text-white rounded-2xl text-xl font-bold shadow"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div>
+              <span class="text-[11px] font-bold block ${stats.expiringSoonTeachers > 0 ? 'text-amber-950' : 'text-slate-600'}">ಮುಕ್ತಾಯ ಹಂತದಲ್ಲಿರುವ ಖಾತೆಗಳು</span>
+              <b class="text-xl font-black ${stats.expiringSoonTeachers > 0 ? 'text-amber-900' : 'text-slate-900'}">${stats.expiringSoonTeachers + stats.expiredTeachers}</b>
+              <span class="text-[10px] text-red-600 font-bold block">(೭ ದಿನ ಬಾಕಿ: ${stats.expiringSoonTeachers} | ಮುಕ್ತಾಯ: ${stats.expiredTeachers})</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ೪. ಪ್ರಶ್ನೆ ಭಂಡಾರ SUB-TAB -->
+        <div id="admin-subview-qbank" class="${activeAdminSubTab==='qbank'?'':'hidden'} space-y-6">
+          <div class="card-modern p-6 space-y-4">
+            <h3 class="font-extrabold text-base text-slate-900 border-b pb-3 flex items-center gap-2">
+              <i class="fa-solid fa-circle-plus text-amber-600"></i> <span>ಹೊಸ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಸೇರಿಸಿ</span>
+            </h3>
+            <form id="form-add-custom-question" onsubmit="handleSaveCustomQuestion(event)" class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div><label class="block font-bold mb-1">ಮಾಧ್ಯಮ</label><select id="qadd-medium" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">${mediums.map(m=>`<option value="${m}">${m}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ತರಗತಿ</label><select id="qadd-class" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}">${c.label}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ವಿಷಯ</label><select id="qadd-subject" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ಭಾಗ</label><select id="qadd-part" class="w-full p-2.5 bg-indigo-50 border border-indigo-300 rounded-xl font-bold"><option value="ಭಾಗ 1">ಭಾಗ 1</option><option value="ಭಾಗ 2">ಭಾಗ 2</option></select></div>
+                <div><label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು *</label><input type="text" id="qadd-chapter" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" /></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
+                  <select id="qadd-type" onchange="handleQuestionTypeChangeInAdmin(this.value)" class="w-full p-2.5 bg-amber-50 border border-amber-300 rounded-xl font-bold">
+                    <option value="mcq" selected>೧. ಬಹು ಆಯ್ಕೆ (1M)</option>
+                    <option value="blanks">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</option>
+                    <option value="true_false">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</option>
+                    <option value="analogy">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)</option>
+                    <option value="odd_one_out">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</option>
+                    <option value="match">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</option>
+                    <option value="vsa_1m">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</option>
+                    <option value="sa_2m">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</option>
+                    <option value="sa_3m">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</option>
+                    <option value="la_4m">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</option>
+                  </select>
+                </div>
+                <div><label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label><select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ">ಜ್ಞಾನ</option><option value="ತಿಳುವಳಿಕೆ" selected>ತಿಳುವಳಿಕೆ</option><option value="ಅನ್ವಯ">ಅನ್ವಯ</option></select></div>
+                <div><label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label><select id="qadd-diff" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಸುಲಭ" selected>ಸುಲಭ</option><option value="ಸಾಧಾರಣ">ಸಾಧಾರಣ</option><option value="ಕಠಿಣ">ಕಠಿಣ</option></select></div>
+              </div>
+              <div id="admin-q-dynamic-fields" class="p-4 bg-slate-50 border rounded-2xl space-y-3"></div>
+              <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3.5 rounded-xl shadow-lg cursor-pointer"><i class="fa-solid fa-floppy-disk"></i> <span>ಈ ಪ್ರಶ್ನೋತ್ತರವನ್ನು ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಮಾಡಿ</span></button>
+            </form>
+          </div>
+
+          <div class="card-modern p-6 space-y-3">
+            <div class="flex flex-wrap items-center justify-between border-b pb-3 gap-2">
+              <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-emerald-600"></i>
+                <span>ಭಂಡಾರದಲ್ಲಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು (<span id="admin-qbank-total-count">${qbankCount}</span>)</span>
+              </h3>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openDirectJSONUploadModal()" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400 flex items-center gap-1 cursor-pointer shadow-sm">
+                  <i class="fa-solid fa-bolt text-amber-600"></i> <span>⚡ Direct JSON</span>
+                </button>
+                <button type="button" onclick="openManageSubjectsModal()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-black px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-book-bookmark text-emerald-600"></i> <span>📚 ವಿಷಯಗಳು</span>
+                </button>
+                <button type="button" onclick="openChapterRenameModal()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-900 font-black px-3 py-1.5 rounded-xl border border-blue-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-pen-to-square text-blue-600"></i> <span>✏️ ಪಾಠ ಹೆಸರು</span>
+                </button>
+                <button type="button" onclick="openChapterMergeModal()" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-900 font-black px-3 py-1.5 rounded-xl border border-purple-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-code-merge text-purple-600"></i> <span>📑 ವಿಲೀನ</span>
+                </button>
+                <button onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border cursor-pointer">
+                  <i class="fa-solid fa-arrows-rotate"></i> <span>Sync</span>
+                </button>
+              </div>
+            </div>
+            <div id="admin-qbank-display-list" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- ೫. ನೋಂದಣಿ SUB-TAB & EXPIRY REMINDER ALERT SECTION -->
+        <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
+          
+          <!-- 🌟 ಮುಕ್ತಾಯ ಹಂತದಲ್ಲಿರುವ ಶಿಕ್ಷಕರ ಪಟ್ಟಿ & WHATSAPP ALERT ಬಾಕ್ಸ್ -->
+          ${expiringOrExpiredTeachers.length > 0 ? `
+            <div class="card-modern p-5 border-2 border-red-400 bg-red-50/30 space-y-3 shadow-md">
+              <div class="flex items-center justify-between border-b border-red-200 pb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="p-2 bg-red-500 text-white rounded-xl font-bold"><i class="fa-solid fa-bell"></i></div>
+                  <div>
+                    <h3 class="font-black text-sm text-slate-900">ಸದಸ್ಯತ್ವ ಮುಕ್ತಾಯದ ಹಂತದಲ್ಲಿರುವ ಶಿಕ್ಷಕರು (${expiringOrExpiredTeachers.length})</h3>
+                    <p class="text-[11px] text-slate-500 font-semibold">ಇವರಿಗೆ ೧-ಕ್ಲಿಕ್‌ನಲ್ಲಿ WhatsApp ನವೀಕರಣ (Renewal) ಸಂದೇಶ ಕಳುಹಿಸಿ</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                ${expiringOrExpiredTeachers.map(t => {
+                  const expDate = getUserExactDynamicExpiry(t);
+                  const daysLeft = calculateRealRemainingDays(expDate);
+                  const isExp = daysLeft <= 0;
+                  const feeText = t.fee || `₹${(t.subjects||[]).length * 100 || 100}`;
+
+                  return `
+                    <div class="p-3 bg-white border-2 ${isExp ? 'border-red-400' : 'border-amber-300'} rounded-2xl flex flex-wrap items-center justify-between gap-2 shadow-sm text-xs">
+                      <div>
+                        <b class="text-slate-900 text-sm">${escapeHtml(t.name)}</b>
+                        <span class="text-slate-600 block text-[11px]">${escapeHtml(t.school)} &bull; 📱 ${t.phone}</span>
+                        <span class="text-[10px] font-bold ${isExp ? 'text-red-700 bg-red-50' : 'text-amber-800 bg-amber-50'} px-2 py-0.5 rounded">
+                          ${isExp ? `❌ ಮುಕ್ತಾಯಗೊಂಡಿದೆ (${expDate})` : `⚠️ ${daysLeft} ದಿನಗಳು ಬಾಕಿ (${expDate})`}
+                        </span>
+                      </div>
+                      <button type="button" onclick="sendExpiryReminderWhatsApp('${t.phone}', '${escapeHtml(t.name)}', '${expDate}', '${feeText}', '${t.accessKey}', ${isExp})" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow flex items-center gap-1.5 text-xs cursor-pointer">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                        <span>${isExp ? 'ನವೀಕರಣ ರಿಮೈಂಡರ್ ಕಳುಹಿಸಿ' : 'ಮುನ್ಸೂಚನೆ ಕಳುಹಿಸಿ'}</span>
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- REGISTRATION FORMS -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card-modern p-6 space-y-4">
+              <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-600"></i> <span>೧. ಶಿಕ್ಷಕರ ನೋಂದಣಿ (₹100/ವಿಷಯ)</span></h3>
+              <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3 text-xs">
+                <div><label class="font-bold">ಶಿಕ್ಷಕರ ಹೆಸರು *</label><input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div><label class="font-bold">ಶಾಲೆಯ ಹೆಸರು *</label><input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                  <div><label class="font-bold">WhatsApp ಮೊಬೈಲ್ *</label><input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+                  <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                    ${ALL_CLASSES_LIST.map(c=>`<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು (೧ ವಿಷಯಕ್ಕೆ ₹100) *</label>
+                    <span id="admin-tch-fee-badge" class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-black">₹100/ವಿಷಯ</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                    ${subjects.map((s, idx) => `
+                      <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" onchange="updateAdminTeacherFeeLive()" name="teacher_reg_subj" value="${s}" class="rounded text-emerald-600 w-3.5 h-3.5" ${idx===0?'checked':''}>
+                        <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+                <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ರಚಿಸಿ</button>
+              </form>
+              <div class="pt-3 border-t space-y-2">
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">${allTeachers.length}</span>)</h4>
+                <div id="list-registered-teachers" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+
+            <div class="card-modern p-6 space-y-4">
+              <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-building-columns text-indigo-600"></i> <span>೨. ಶಾಲಾ ನೋಂದಣಿ (${FEE_SCHOOL_YEARLY})</span></h3>
+              <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3 text-xs">
+                <div><label class="font-bold">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label><input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div><label class="font-bold">DISE ಕೋಡ್ *</label><input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                  <div><label class="font-bold">HM ಹೆಸರು *</label><input type="text" id="reg-school-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                </div>
+                <div><label class="font-bold">HM ಮೊಬೈಲ್ *</label><input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ರಚಿಸಿ</button>
+              </form>
+              <div class="pt-3 border-t space-y-2">
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">${allSchools.length}</span>)</h4>
+                <div id="list-registered-schools" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      handleQuestionTypeChangeInAdmin('mcq');
+      renderCustomQuestionList();
+      renderRegisteredTeachers();
+      renderRegisteredSchools();
+    };
+
+    // =========================================================================
+    // ೫. ಅವಧಿ ಮುಗಿದಾಗ ಪೇಪರ್ ಜನರೇಟರ್ ಸಂಪೂರ್ಣ ಬ್ಲಾಕ್ (STRICT GENERATOR GUARD)
+    // =========================================================================
+    const origGenerateExamPackageWithStrictGuard = window.generateExamPackageFromBank;
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+      const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
+      const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
+
+      // 🌟 ಅವಧಿ ಮುಗಿದಿದ್ದರೆ ಜನರೇಟರ್ ಸಂಪೂರ್ಣ ಸ್ಟಾಪ್
+      if (isTeacherPro || isSchoolPro) {
+        const activeUser = isTeacherPro 
+          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+        if (activeUser) {
+          const expStr = getUserExactDynamicExpiry(activeUser);
+          const daysLeft = calculateRealRemainingDays(expStr);
+
+          if (daysLeft <= 0) {
+            showAccountExpiredRenewalModal(activeUser);
+            return; // ❌ ಯಾವುದೇ ಪೇಪರ್ ರಚನೆಯಾಗುವುದಿಲ್ಲ!
+          }
+        }
+      }
+
+      if (typeof origGenerateExamPackageWithStrictGuard === 'function') {
+        await origGenerateExamPackageWithStrictGuard();
+      }
+    };
+
+    // ತಕ್ಷಣವೇ ನೋಟಿಸ್ ಬೋರ್ಡ್ ಮತ್ತು ಲೈವ್ ಬ್ಯಾನರ್ ಲೋಡ್ ಮಾಡುವುದು
+    fetchBroadcastNoticeFromCloud();
     
   </script>
 </body>
