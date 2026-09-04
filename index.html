@@ -11330,6 +11330,76 @@
       showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ.', 'info');
       setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
     };
+
+/* ==========================================================================
+       📋 ELEGANT MATCH-THE-FOLLOWING SCHEME OF VALUATION (ANSWER KEY FIX)
+       ========================================================================== */
+
+    // ಹೊಂದಿಸಿ ಬರೆಯಿರಿ ಉತ್ತರ ಪತ್ರಿಕೆಯ ವಿನ್ಯಾಸವನ್ನು ಅಧಿಕೃತ ಕೋಷ್ಟಕಕ್ಕೆ ನವೀಕರಿಸುವುದು
+    const originalRenderFullExamPaperForMatchKey = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      if (typeof originalRenderFullExamPaperForMatchKey === 'function') {
+        originalRenderFullExamPaperForMatchKey(headerHtml);
+      }
+
+      const allQuestions = appState.activeGeneratedQuestions || [];
+      const selMatch = allQuestions.filter(q => getCanonicalQuestionType(q) === 'match');
+
+      if (selMatch.length === 0) return;
+
+      const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+
+      const mItem = selMatch[0];
+      const originalPairs = mItem.matchPairs || [
+        { a: 'ಅಂಶ 1', b: 'ಉತ್ತರ 1' }, { a: 'ಅಂಶ 2', b: 'ಉತ್ತರ 2' },
+        { a: 'ಅಂಶ 3', b: 'ಉತ್ತರ 3' }, { a: 'ಅಂಶ 4', b: 'ಉತ್ತರ 4' }
+      ];
+
+      const colA = originalPairs.map((p, i) => ({ 
+        text: (p.a || '').replace(/^[\(\[]?\d+[\)\]\.\s]+/, '').trim(), 
+        origIdx: i 
+      }));
+      let colB = originalPairs.map((p, i) => ({ 
+        text: (p.b || '').replace(/^[\(\[]?[A-Za-z\u0C80-\u0CFF][\)\]\.\s]+/, '').trim(), 
+        origIdx: i 
+      }));
+
+      // 🌟 ಅಧಿಕೃತ ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ ಕೋಷ್ಟಕ ವಿನ್ಯಾಸ (Vertical Aligned Key Table)
+      const matchKeyTableHtml = `
+        <table style="border-collapse: collapse; width: 100%; max-width: 580px; font-size: 11.8px; margin-top: 2px; border: 1px solid #94a3b8; background: #fff;">
+          <tbody>
+            ${colA.map((aItem, i) => {
+              const bIdx = colB.findIndex(b => b.origIdx === aItem.origIdx);
+              const bLetter = String.fromCharCode(65 + bIdx);
+              const bText = colB[bIdx].text;
+              const isEven = i % 2 === 0;
+
+              return `
+                <tr style="border-bottom: 1px solid #e2e8f0; background: ${isEven ? '#ffffff' : '#f8fafc'};">
+                  <td style="padding: 3px 8px; width: 42%; font-weight: 700; border-right: 1px solid #cbd5e1; color: #0f172a;">
+                    (${i + 1}) ${escapeHtml(aItem.text)}
+                  </td>
+                  <td style="padding: 3px 8px; width: 58%; font-weight: 700; color: #0f172a;">
+                    <span style="color: #16a34a; font-weight: 900; margin-right: 4px;">➔</span> 
+                    <b>(${bLetter}) ${escapeHtml(bText)}</b>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      // ಉತ್ತರ ಪತ್ರಿಕೆಯಲ್ಲಿ ಹಳೆಯ ಅಡ್ಡಾದಿಡ್ಡಿ ಗ್ರಿಡ್ ಬದಲಿಗೆ ಹೊಸ ಕೋಷ್ಟಕವನ್ನು ಅಳವಡಿಸುವುದು
+      const keyContainer = document.getElementById('rendered-key');
+      if (keyContainer) {
+        const matchKeyTextWrapper = keyContainer.querySelector('.key-answer-row .key-text');
+        if (matchKeyTextWrapper && matchKeyTextWrapper.innerHTML.includes('➔')) {
+          matchKeyTextWrapper.innerHTML = matchKeyTableHtml;
+        }
+      }
+    };
     
   </script>
 </body>
