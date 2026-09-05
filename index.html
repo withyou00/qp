@@ -17340,6 +17340,388 @@
     // ತಕ್ಷಣವೇ ಕ್ಲೀನಿಂಗ್ ನಡೆಸಿ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     autoCleanAndMigrateObsoleteQuestionFormats();
     renderMaster10QuestionFormats();
+
+    /* ==========================================================================
+       🎯 QUESTION TYPE CHANGER & RE-ASSIGNMENT IN EDIT & LIVE SWAP MODALS
+       ========================================================================== */
+
+    // ೧. ಎಡಿಟ್ ಮಾಡಲ್‌ಗಳಿಗೆ ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡ್ರಾಪ್‌ಡೌನ್ HTML ಜನರೇಟರ್
+    function getQuestionTypeDropdownOptionsHTML(subjectName, currentTypeKey) {
+      const formats = getSubjectSpecificQuestionFormats(subjectName || 'ವಿಜ್ಞಾನ');
+      const cType = currentTypeKey ? getCanonicalQuestionType({ type: currentTypeKey }) : 'vsa_1m';
+
+      let options = formats.map(fmt => `
+        <option value="${fmt.key}" ${fmt.key === currentTypeKey || fmt.key === cType ? 'selected' : ''}>
+          ${escapeHtml(fmt.label)} (${fmt.marks || 1}M)
+        </option>
+      `).join('');
+
+      // ಒಂದು ವೇಳೆ ಹಳೆಯ ರಾ ಕೋಡ್ ಆಗಿದ್ದರೆ ಅದನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ತೋರಿಸುವುದು
+      if (!formats.some(f => f.key === currentTypeKey)) {
+        options = `<option value="${currentTypeKey}" selected>⚠️ ಹಳೆಯ ಪ್ರಕಾರ: ${currentTypeKey}</option>` + options;
+      }
+
+      return options;
+    }
+
+    // ೨. ಎಡಿಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ ಪ್ರಕಾರ ಬದಲಾಯಿಸಿದಾಗ ಅಂಕಗಳು & ಆಪ್ಷನ್‌ಗಳ ಆಟೋ-ಅಡ್ಜಸ್ಟ್
+    window.handleEditModalQuestionTypeChange = function(selectedType, targetPrefix) {
+      const marksInput = document.getElementById(`${targetPrefix}-marks`);
+      const optBox = document.getElementById(`${targetPrefix}-dynamic-options-box`);
+
+      // ಅಂಕಗಳ ಆಟೋ ಅಡ್ಜಸ್ಟ್
+      if (marksInput) {
+        if (selectedType.includes('5m') || selectedType.includes('5M')) marksInput.value = 5;
+        else if (selectedType === 'la_4m' || selectedType === 'match' || selectedType.includes('4m')) marksInput.value = 4;
+        else if (selectedType === 'sa_3m' || selectedType.includes('3m')) marksInput.value = 3;
+        else if (selectedType === 'sa_2m' || selectedType.includes('2m')) marksInput.value = 2;
+        else marksInput.value = 1;
+      }
+
+      // MCQ ಆಗಿದ್ದರೆ ಆಪ್ಷನ್ ಬಾಕ್ಸ್ ತೋರಿಸುವುದು
+      if (optBox) {
+        if (selectedType === 'mcq') {
+          optBox.innerHTML = `
+            <div class="p-3 bg-slate-100 border border-slate-300 rounded-2xl space-y-2 my-2">
+              <label class="font-black text-slate-900 text-xs">MCQ ಆಯ್ಕೆಗಳು (A, B, C, D Options):</label>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>(A) <input type="text" id="${targetPrefix}-opt-a" placeholder="ಆಯ್ಕೆ A" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(B) <input type="text" id="${targetPrefix}-opt-b" placeholder="ಆಯ್ಕೆ B" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(C) <input type="text" id="${targetPrefix}-opt-c" placeholder="ಆಯ್ಕೆ C" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                <div>(D) <input type="text" id="${targetPrefix}-opt-d" placeholder="ಆಯ್ಕೆ D" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+              </div>
+            </div>
+          `;
+        } else {
+          optBox.innerHTML = '';
+        }
+      }
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಭಂಡಾರ ಎಡಿಟ್ ಮಾಡಲ್ (ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಬದಲಾವಣೆ ಸಹಿತ)
+    window.openAdminQuestionEditModal = function(qId) {
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      let modal = document.getElementById('admin-q-edit-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-q-edit-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const isMCQ = (q.type === 'mcq' || Boolean(q.a || q.b));
+      const typeOptionsHtml = getQuestionTypeDropdownOptionsHTML(q.subject, q.type);
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-pen-to-square text-amber-600 text-lg"></i>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ, ಪ್ರಕಾರ & ವಿವರಗಳ ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-3">
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು (Chapter) *</label>
+                <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter || '')}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              
+              <!-- 🌟 ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಆಯ್ಕೆ ಡ್ರಾಪ್‌ಡೌನ್ -->
+              <div>
+                <label class="block font-black text-indigo-950 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type) *</label>
+                <select id="edit-q-type" onchange="handleEditModalQuestionTypeChange(this.value, 'edit-q')" class="w-full p-2.5 bg-indigo-50 border-2 border-indigo-300 rounded-xl font-black text-indigo-950 text-xs focus:outline-none shadow-sm">
+                  ${typeOptionsHtml}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+              <textarea id="edit-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 leading-relaxed">${escapeHtml(cleanQuestionTextForDisplay(q.q || ''))}</textarea>
+            </div>
+
+            <!-- 📷 ಚಿತ್ರ ಸೇರ್ಪಡೆ -->
+            <div class="p-3 bg-indigo-50/70 border-2 border-dashed border-indigo-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-indigo-950">📷 ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ (Main Diagram - Optional):</label>
+              </div>
+              <input type="file" id="edit-q-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-q-image-preview', 'edit-q-image-base64')" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input type="hidden" id="edit-q-image-base64" value="${getAnyQuestionImageSource(q)}" />
+              <div id="edit-q-image-preview" class="${getAnyQuestionImageSource(q) ? '' : 'hidden'} text-center">
+                ${getAnyQuestionImageSource(q) ? `<div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1"><img src="${getAnyQuestionImageSource(q)}" class="max-h-28 rounded-lg mx-auto" /><button type="button" onclick="removeQuestionImage('edit-q-image-preview', 'edit-q-image-base64', 'edit-q-image-file')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer">&times;</button></div>` : ''}
+              </div>
+            </div>
+
+            <!-- MCQ ಆಯ್ಕೆಗಳು -->
+            <div id="edit-q-dynamic-options-box">
+              ${isMCQ ? `
+                <div class="p-3 bg-slate-100 border border-slate-300 rounded-2xl space-y-2 my-2">
+                  <label class="font-black text-slate-900 text-xs">MCQ ಆಯ್ಕೆಗಳು (A, B, C, D Options):</label>
+                  <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>(A) <input type="text" id="edit-q-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                    <div>(B) <input type="text" id="edit-q-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                    <div>(C) <input type="text" id="edit-q-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                    <div>(D) <input type="text" id="edit-q-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಅಂಕಗಳು *</label>
+                <input type="number" id="edit-q-marks" value="${q.marks || getExactQuestionMarks(q)}" min="1" max="10" required class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+                <select id="edit-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+                <select id="edit-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
+              <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್ (ಹೊಸ ಪ್ರಕಾರದ ಸೇವ್)
+    window.saveAdminQuestionEdit = function(e, qId) {
+      e.preventDefault();
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      q.chapter = document.getElementById('edit-q-chapter').value.trim();
+      q.type = document.getElementById('edit-q-type').value; // 🌟 ಹೊಸ ಪ್ರಕಾರ ಸೇವ್
+      q.q = document.getElementById('edit-q-text').value.trim();
+      q.marks = parseInt(document.getElementById('edit-q-marks').value) || 1;
+      q.obj = document.getElementById('edit-q-obj').value;
+      q.diff = document.getElementById('edit-q-diff').value;
+      q.ans = document.getElementById('edit-q-ans').value.trim();
+      q.image = document.getElementById('edit-q-image-base64')?.value || '';
+
+      if (q.type === 'mcq' || (q.a && q.b)) {
+        if (document.getElementById('edit-q-opt-a')) q.a = document.getElementById('edit-q-opt-a').value.trim();
+        if (document.getElementById('edit-q-opt-b')) q.b = document.getElementById('edit-q-opt-b').value.trim();
+        if (document.getElementById('edit-q-opt-c')) q.c = document.getElementById('edit-q-opt-c').value.trim();
+        if (document.getElementById('edit-q-opt-d')) q.d = document.getElementById('edit-q-opt-d').value.trim();
+      }
+
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+      pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+      
+      document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+      showToast('✅ ಪ್ರಶ್ನೆ ಮತ್ತು ಪ್ರಕಾರ ಯಶಸ್ವಿಯಾಗಿ ತಿದ್ದುಪಡಿಯಾಗಿದೆ!', 'success');
+    };
+
+    // ೫. ಲೈವ್ ಪೇಪರ್ ಎಡಿಟರ್‌ನಲ್ಲೂ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಬದಲಾವಣೆ ಆಯ್ಕೆ
+    window.openPopupQuestionEditor = function(qIndex) {
+      const q = appState.activeGeneratedQuestions[qIndex];
+      if (!q) return;
+
+      let modal = document.getElementById('popup-q-editor-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'popup-q-editor-modal';
+        modal.className = 'fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const rawQBank = appState.qbank || [];
+      const currentCanonicalType = getCanonicalQuestionType(q);
+      const currentMarks = getExactQuestionMarks(q);
+      const typeName = getQuestionTypeFriendlyKannadaName(currentCanonicalType);
+      const typeOptionsHtml = getQuestionTypeDropdownOptionsHTML(q.subject, q.type);
+
+      // ಅದೇ ಪಾಠದ ಅದೇ ಪ್ರಕಾರದ ಪರ್ಯಾಯ ಪ್ರಶ್ನೆಗಳು
+      const alternativeQuestions = rawQBank.filter(item => {
+        const isNotSameQ = (item.id !== q.id && item.q !== q.q);
+        const isGrade = (String(item.grade).replace(/\D/g, '') === String(q.grade).replace(/\D/g, ''));
+        const isSubj = isStrictSubjectMatch(item.subject, q.subject);
+        const isChap = (item.chapter && safeCleanMatch(item.chapter) === safeCleanMatch(q.chapter));
+        const isExactSameType = (getCanonicalQuestionType(item) === currentCanonicalType);
+        return isNotSameQ && isGrade && isSubj && isChap && isExactSameType;
+      });
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-pen-to-square text-amber-600 text-base"></i>
+              <div>
+                <h3 class="font-black text-sm text-slate-900">ಪ್ರಶ್ನೆ & ಉತ್ತರ ಬದಲಾವಣೆ (Edit / Swap)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">
+                  ಪಾಠ: <b>${escapeHtml(q.chapter || '-')}</b> &bull; ಪ್ರಕಾರ: <b class="text-indigo-900">${typeName}</b>
+                </p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('popup-q-editor-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <!-- ಆಯ್ಕೆ ೧: ಭಂಡಾರದಿಂದ ಪರ್ಯಾಯ ಪ್ರಶ್ನೆ ಬದಲಾವಣೆ -->
+          <div class="p-3.5 bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-300 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="font-black text-indigo-950 flex items-center gap-1.5 text-xs">
+                <i class="fa-solid fa-arrows-rotate text-indigo-600"></i>
+                <span>ಆಯ್ಕೆ ೧: ಈ ಪಾಠದ ಬೇರೆ '${typeName}' ಪ್ರಶ್ನೆ ಆರಿಸಿ:</span>
+              </label>
+              <span class="text-[10px] bg-indigo-200 text-indigo-950 px-2 py-0.5 rounded font-black">
+                ${alternativeQuestions.length} ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯ
+              </span>
+            </div>
+
+            ${alternativeQuestions.length > 0 ? `
+              <div class="flex items-center gap-2">
+                <select id="pop-swap-q-select" onchange="handleSwapAlternativeQuestionSelected(this.value, ${qIndex})" class="w-full p-2 bg-white border border-indigo-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none">
+                  <option value="">-- ಭಂಡಾರದಲ್ಲಿರುವ ಪರ್ಯಾಯ '${typeName}' ಪ್ರಶ್ನೆ ಆರಿಸಿ --</option>
+                  ${alternativeQuestions.map((altQ, i) => `
+                    <option value="${altQ.id}">${i + 1}. ${escapeHtml(altQ.q.substring(0, 80))}...</option>
+                  `).join('')}
+                </select>
+              </div>
+            ` : `
+              <div class="text-[11px] text-slate-500 font-semibold bg-white p-2.5 rounded-xl border border-indigo-200">
+                💡 ಈ ಪಾಠದಲ್ಲಿ ಬೇರೆ ಪರ್ಯಾಯ <b>${typeName}</b> ಪ್ರಶ್ನೆಗಳಿಲ್ಲ. ಕೆಳಗೆ ನೀವೇ ನೇರವಾಗಿ ಟೈಪ್ ಮಾಡಿ ತಿದ್ದಬಹುದು.
+              </div>
+            `}
+          </div>
+
+          <!-- ಆಯ್ಕೆ ೨: ಮ್ಯಾನುವಲ್ ಎಡಿಟ್ & ಪ್ರಕಾರ ಬದಲಾವಣೆ -->
+          <form onsubmit="savePopupQuestionEdit(event, ${qIndex})" class="space-y-3 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">ಆಯ್ಕೆ ೨: ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+              </div>
+              <!-- 🌟 ಲೈವ್ ಪೇಪರ್‌ನಲ್ಲೂ ಪ್ರಕಾರ ಬದಲಾವಣೆ ಡ್ರಾಪ್‌ಡೌನ್ -->
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Change Type):</label>
+                <select id="pop-q-type" onchange="handleEditModalQuestionTypeChange(this.value, 'pop')" class="w-full p-1.5 bg-indigo-50 border border-indigo-300 rounded-lg font-bold text-indigo-950 text-xs focus:outline-none">
+                  ${typeOptionsHtml}
+                </select>
+              </div>
+            </div>
+            
+            <textarea id="pop-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 leading-relaxed">${escapeHtml(cleanQuestionTextForDisplay(q.q))}</textarea>
+
+            <!-- 📷 ಚಿತ್ರ ಸೇರ್ಪಡೆ -->
+            <div class="p-3 bg-indigo-50/70 border-2 border-dashed border-indigo-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-indigo-950 flex items-center gap-1.5">
+                  <i class="fa-solid fa-image text-indigo-600"></i>
+                  <span>📷 ಈ ಪ್ರಶ್ನೆಗೆ ಚಿತ್ರ ಸೇರಿಸಿ / ಬದಲಿಸಿ:</span>
+                </label>
+              </div>
+              <input type="file" id="pop-q-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-q-image-preview', 'pop-q-image-base64')" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input type="hidden" id="pop-q-image-base64" value="${getAnyQuestionImageSource(q)}" />
+              
+              <div id="pop-q-image-preview" class="${getAnyQuestionImageSource(q) ? '' : 'hidden'} text-center">
+                ${getAnyQuestionImageSource(q) ? `
+                  <div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1">
+                    <img src="${getAnyQuestionImageSource(q)}" class="max-h-28 rounded-lg mx-auto" />
+                    <button type="button" onclick="removeQuestionImage('pop-q-image-preview', 'pop-q-image-base64', 'pop-q-image-file')" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer" title="ಚಿತ್ರ ತೆಗೆದುಹಾಕಿ">&times;</button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- MCQ ಆಪ್ಷನ್‌ಗಳು -->
+            <div id="pop-dynamic-options-box">
+              ${q.type === 'mcq' || (q.a && q.b) ? `
+                <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border rounded-xl">
+                  <div>(A) <input type="text" id="pop-opt-a" value="${escapeHtml(q.a||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                  <div>(B) <input type="text" id="pop-opt-b" value="${escapeHtml(q.b||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                  <div>(C) <input type="text" id="pop-opt-c" value="${escapeHtml(q.c||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                  <div>(D) <input type="text" id="pop-opt-d" value="${escapeHtml(q.d||'')}" class="w-full p-1.5 border rounded-lg bg-white font-semibold" /></div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಅಂಕಗಳು</label>
+                <input type="number" id="pop-q-marks" value="${currentMarks}" class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+                <select id="pop-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+                <select id="pop-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ *</label>
+              <textarea id="pop-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('popup-q-editor-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-6 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">
+                <i class="fa-solid fa-floppy-disk"></i> <span>ಪತ್ರಿಕೆಗೆ ಅಪ್ಡೇಟ್ ಮಾಡಿ</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೬. ಲೈವ್ ಪೇಪರ್ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್‌ನಲ್ಲಿ ಹೊಸ ಪ್ರಕಾರದ ಅಪ್ಡೇಟ್
+    const origSavePopupQuestionEditForTypeChange = window.savePopupQuestionEdit;
+    window.savePopupQuestionEdit = function(e, qIndex) {
+      const q = appState.activeGeneratedQuestions[qIndex];
+      if (q) {
+        const typeDrop = document.getElementById('pop-q-type');
+        if (typeDrop && typeDrop.value) {
+          q.type = typeDrop.value; // 🌟 ಲೈವ್ ಪೇಪರ್‌ನಲ್ಲಿ ಪ್ರಕಾರ ಅಪ್ಡೇಟ್
+        }
+      }
+      if (typeof origSavePopupQuestionEditForTypeChange === 'function') {
+        origSavePopupQuestionEditForTypeChange(e, qIndex);
+      }
+    };
     
   </script>
 </body>
