@@ -18040,6 +18040,77 @@
     });
 
 })();
+
+    // =========================================================================
+// ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲಿ (Question Bank) ಪ್ರತಿಯೊಂದು ಪ್ರಶ್ನೆಗೂ EDIT ಬಟನ್ ಸೇರಿಸುವ ಕೋಡ್
+// =========================================================================
+(function() {
+    console.log("Question Bank Edit Button Injector Started...");
+
+    function injectEditButtonsToQuestionBank() {
+        // ಪ್ರಶ್ನೆ ಭಂಡಾರದ ಟೇಬಲ್ ಅಥವಾ ಲಿಸ್ಟ್ ಹುಡುಕುವುದು
+        const qBankContainer = document.querySelector('#questionBank, .question-bank, #qBankTable, #bankQuestionsList, [class*="question-bank"]') || document.body;
+        
+        // ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಸಾಲುಗಳನ್ನು (Rows/Cards) ಹುಡುಕುವುದು
+        const rows = qBankContainer.querySelectorAll('tr, .q-card, .bank-item, [data-qid], .list-group-item');
+
+        rows.forEach((row, index) => {
+            // ಈಗಾಗಲೇ Edit ಬಟನ್ ಇದ್ದರೆ ಬಿಡು
+            if (row.querySelector('.btn-qbank-edit-injected') || row.querySelector('.btn-live-q-edit')) return;
+
+            // Delete ಬಟನ್ ಅಥವಾ ಆಕ್ಷನ್ ಕಾಲಮ್ ಹುಡುಕಿ
+            const actionArea = row.querySelector('.actions, td:last-child, .btn-group, [class*="action"]') || row;
+
+            // Edit ಬಟನ್ ತಯಾರಿಸಿ
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn-qbank-edit-injected';
+            editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> ✏️ Edit';
+            
+            // ಬಟನ್ ಸ್ಟೈಲ್ (ಸುಂದರವಾಗಿ ಕಾಣಲು)
+            editBtn.style.cssText = `
+                background-color: #f59e0b;
+                color: #ffffff;
+                border: none;
+                padding: 4px 10px;
+                font-size: 12px;
+                font-weight: bold;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-left: 6px;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            `;
+
+            // ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಎಡಿಟ್ Modal ಓಪನ್ ಆಗುವಂತೆ ಮಾಡುವುದು
+            editBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof openPopupQuestionEditor === 'function') {
+                    openPopupQuestionEditor(index);
+                } else if (typeof editQuestion === 'function') {
+                    editQuestion(index);
+                }
+            };
+
+            // ಸಾಲಿನಲ್ಲಿ ಬಟನ್ ಸೇರಿಸುವುದು
+            if (actionArea !== row) {
+                actionArea.prepend(editBtn);
+            } else {
+                row.appendChild(editBtn);
+            }
+        });
+    }
+
+    // ಪ್ರಶ್ನೆ ಭಂಡಾರ ಓಪನ್ ಆದಾಗಲೆಲ್ಲಾ ಬಟನ್ ಸೇರಿಸಲು ನಿರಂತರ ಪರಿಶೀಲನೆ
+    setInterval(injectEditButtonsToQuestionBank, 500);
+
+    // ಕ್ಲಿಕ್ ಮಾಡಿದಾಗಲೂ ಚೆಕ್ ಮಾಡಿ
+    document.addEventListener('click', function(e) {
+        setTimeout(injectEditButtonsToQuestionBank, 300);
+    });
+})();
     
   </script>
 </body>
