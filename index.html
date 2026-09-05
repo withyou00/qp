@@ -17906,6 +17906,159 @@
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     renderMaster10QuestionFormats();
+
+    // ==========================================================================
+// FIX: ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಮತ್ತು ಗ್ರೂಪಿಂಗ್ ಸರಿಪಡಿಸುವ ಪ್ಯಾಚ್ (Patch)
+// ==========================================================================
+(function() {
+    console.log("Custom Question Type Grouping Patch Initialized...");
+
+    // 1. ಲೋಕಲ್ ಸ್ಟೋರೇಜ್‌ನಿಂದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಪಡೆಯುವುದು
+    function getCustomTypesMap() {
+        let types = [];
+        try {
+            // ನಿಮ್ಮ ಪ್ರಾಜೆಕ್ಟ್‌ನಲ್ಲಿ ಬಳಸಲಾದ localStorage ಕೀಗಳನ್ನು ಹುಡುಕುತ್ತದೆ
+            const raw = localStorage.getItem('customQuestionTypes') || 
+                        localStorage.getItem('customTypes') || 
+                        localStorage.getItem('questionTypes');
+            if (raw) types = JSON.parse(raw);
+        } catch (e) {
+            console.error("Custom types parse error:", e);
+        }
+        
+        const map = {};
+        if (Array.isArray(types)) {
+            types.forEach(t => {
+                const name = (t.name || t.typeName || t.title || '').trim();
+                if (name) {
+                    map[name] = {
+                        heading: t.heading || t.paperHeading || name,
+                        marks: parseInt(t.marks || t.defaultMarks || 1)
+                    };
+                }
+            });
+        }
+        return map;
+    }
+
+    // ರೋಮನ್ ಸಂಖ್ಯೆಗಳನ್ನು ಪಡೆಯಲು (I, II, III, IV...)
+    function toRoman(num) {
+        const lookup = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+        let roman = '';
+        for (let i in lookup) {
+            while (num >= lookup[i]) {
+                roman += i;
+                num -= lookup[i];
+            }
+        }
+        return roman;
+    }
+
+    // 2. ಪೇಪರ್ ಜನರೇಟ್ ಆದ ನಂತರ DOM ಅನ್ನು ಮರು-ಜೋಡಿಸುವ ಫಂಕ್ಷನ್
+    window.fixCustomQuestionSections = function() {
+        const customMap = getCustomTypesMap();
+        
+        // ಪತ್ರಿಕೆಯ ಕಂಟೈನರ್ ಪತ್ತೆ ಹಚ್ಚುವುದು
+        const container = document.querySelector('#paperPreview, #questionPaper, #printableArea, .paper-container') || document.body;
+        
+        // ಪ್ರಸ್ತುತ ಇರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಸಾಲುಗಳನ್ನು ಗುರುತಿಸುವುದು
+        const questionRows = container.querySelectorAll('.question-row, .q-item, [data-question-id], [class*="question"]');
+        if (!questionRows || questionRows.length === 0) return;
+
+        // ಪ್ರಶ್ನೆಗಳನ್ನು ಅವುಗಳ ಪ್ರಕಾರಕ್ಕೆ ಅನುಗುಣವಾಗಿ ಪ್ರತ್ಯೇಕಿಸುವುದು
+        // ನೀವು ಪ್ರಶ್ನೆಗಳಿಗೆ custom type ಸೆಟ್ ಮಾಡಿದ್ದರೆ ಅದು data attribute ಅಥವಾ ಆಬ್ಜೆಕ್ಟ್‌ನಲ್ಲಿದ್ದರೆ:
+        if (window.generatedQuestionsList || window.currentPaperQuestions) {
+            const list = window.generatedQuestionsList || window.currentPaperQuestions;
+            
+            // ಗ್ರೂಪ್ ಮಾಡುವ ಲಾಜಿಕ್
+            const grouped = {};
+            list.forEach(q => {
+                const type = (q.type || q.questionType || 'ಇತರೆ').trim();
+                if (!grouped[type]) grouped[type] = [];
+                grouped[type].push(q);
+            });
+
+            // Re-render triggering if global render exists
+            if (typeof window.originalRenderPaper === 'function') {
+                window.originalRenderPaper(grouped);
+            }
+        }
+    };
+
+    // 3. ನಿಮ್ಮ ಪೇಪರ್ ಜನರೇಟ್ ಮಾಡುವ ಮುಖ್ಯ ಫಂಕ್ಷನ್ ಅನ್ನು ಇಂಟರ್‌ಸೆಪ್ಟ್ ಮಾಡುವುದು
+    const originalGenerateFunctions = ['generatePaper', 'generateQuestionPaper', 'renderQuestions', 'buildPaper'];
+    
+    originalGenerateFunctions.forEach(fnName => {
+        if (typeof window[fnName] === 'function') {
+            const orig = window[fnName];
+            window[fnName] = function(...args) {
+                const result = orig.apply(this, args);
+                setTimeout(sanitizeSections, 150);
+                return result;
+            };
+        }
+    });
+
+    // 4. ತಪ್ಪಾಗಿ ಬಂದ ಹೆಡಿಂಗ್‌ಗಳನ್ನು ಸರಿಪಡಿಸುವ ಆಟೋ-ಕ್ಲೀನಪ್ ಲಾಜಿಕ್
+    function sanitizeSections() {
+        const customMap = getCustomTypesMap();
+        
+        // ಸೆಕ್ಷನ್ ಹೆಡರ್‌ಗಳನ್ನು ಹುಡುಕುವುದು
+        const sectionHeaders = document.querySelectorAll('h3, h4, .section-title, .part-heading');
+        
+        sectionHeaders.forEach(header => {
+            const text = header.textContent || '';
+            
+            // ಒಂದು ವೇಳೆ 1 ಅಥವಾ 2 ವಾಕ್ಯದ ಅಡಿಯಲ್ಲಿ ಈ ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆಗಳು ಸಿಲುಕಿದ್ದರೆ
+            if (text.includes("ಒಂದು ವಾಕ್ಯ") || text.includes("ಎರಡು ವಾಕ್ಯ")) {
+                let sibling = header.nextElementSibling;
+                let misgroupedQuestions = [];
+                
+                while (sibling && !sibling.matches('h3, h4, .section-title, .part-heading')) {
+                    const rowText = sibling.textContent || '';
+                    
+                    // ಕಸ್ಟಮ್ ಪ್ರಕಾರದ ಕೀವರ್ಡ್‌ಗಳು ಪ್ರಶ್ನೆಯಲ್ಲಿ ಕಂಡುಬಂದರೆ
+                    for (let typeName in customMap) {
+                        if (rowText.includes(typeName) || 
+                            (customMap[typeName].heading && rowText.includes(customMap[typeName].heading.slice(0, 15)))) {
+                            misgroupedQuestions.push({ node: sibling, type: typeName });
+                        }
+                    }
+                    sibling = sibling.nextElementSibling;
+                }
+
+                // ತಪ್ಪಾದ ಪ್ರಶ್ನೆಗಳನ್ನು ಹೊರತೆಗೆದು ಹೊಸ ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್ ಅಡಿಗೆ ಸೇರಿಸುವುದು
+                misgroupedQuestions.forEach(item => {
+                    const typeInfo = customMap[item.type];
+                    if (!typeInfo) return;
+
+                    // ಪ್ರತ್ಯೇಕ ಹೆಡರ್ ರಚಿಸಿ
+                    let newSection = document.getElementById('sec_' + item.type);
+                    if (!newSection) {
+                        newSection = document.createElement('div');
+                        newSection.id = 'sec_' + item.type;
+                        newSection.className = 'custom-paper-section';
+                        newSection.innerHTML = `
+                            <div style="font-weight: bold; margin-top: 15px; margin-bottom: 8px; font-size: 16px;">
+                                ${typeInfo.heading}
+                            </div>
+                        `;
+                        header.parentElement.insertBefore(newSection, header.nextElementSibling);
+                    }
+                    newSection.appendChild(item.node);
+                });
+            }
+        });
+    }
+
+    // Generate ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ರನ್ ಆಗಲು ಲಿಸನರ್
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate'))) {
+            setTimeout(sanitizeSections, 300);
+        }
+    });
+
+})();
     
   </script>
 </body>
