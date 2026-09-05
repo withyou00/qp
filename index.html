@@ -14479,6 +14479,289 @@
 
     // ತಕ್ಷಣವೇ ಕೋರಿಕೆಗಳನ್ನು ಕ್ಲೌಡ್‌ನಿಂದ ಲೋಡ್ ಮಾಡುವುದು
     fetchPendingRequestsFromCloud();
+
+/* ==========================================================================
+       🏫 DUAL SCHOOL NAME SYSTEM FOR SCHOOL PORTAL (KANNADA + ENGLISH NAME)
+       ========================================================================== */
+
+    // ೧. ಶಾಲಾ ನೋಂದಣಿ ಮಾಡಲ್‌ನಲ್ಲಿ ಕನ್ನಡ + English ಶಾಲಾ ಹೆಸರು ಸೇರ್ಪಡೆ
+    window.openSchoolAuthModal = function() {
+      let modal = document.getElementById('school-auth-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'school-auth-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-indigo-100 text-indigo-800 rounded-2xl font-bold"><i class="fa-solid fa-school text-base"></i></div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ಪೋರ್ಟಲ್ (School Portal)</h3>
+                <p class="text-[11px] text-slate-500">ವಾರ್ಷಿಕ ಸದಸ್ಯತ್ವ ಶುಲ್ಕ: <b class="text-indigo-900 font-black">${FEE_SCHOOL_YEARLY}/ವರ್ಷ</b></p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('school-auth-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl font-bold">
+            <button type="button" id="tab-btn-sch-login" onclick="switchSchoolModalTab('login')" class="flex-1 py-1.5 rounded-lg transition bg-white text-slate-900 shadow-sm cursor-pointer">೧. ಶಾಲಾ ಲಾಗಿನ್</button>
+            <button type="button" id="tab-btn-sch-reg" onclick="switchSchoolModalTab('reg')" class="flex-1 py-1.5 rounded-lg transition text-slate-600 hover:text-slate-900 cursor-pointer">೨. ಹೊಸ ಶಾಲೆ ನೋಂದಣಿ</button>
+          </div>
+
+          <!-- ಶಾಲಾ ಲಾಗಿನ್ ಫಾರ್ಮ್ -->
+          <form id="form-sch-modal-login" onsubmit="handleSchoolModalLogin(event)" class="space-y-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ DISE ಕೋಡ್ *</label>
+              <input type="text" id="modal-sch-dise" required placeholder="e.g. DISE-29150304" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಶಾಲಾ Master Key *</label>
+              <input type="text" id="modal-sch-key" required placeholder="e.g. WY-SCH-2915" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 uppercase font-mono focus:outline-none" />
+            </div>
+            <div id="modal-sch-login-err" class="hidden p-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-center font-bold">❌ DISE ಕೋಡ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!</div>
+            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಶಾಲಾ ಲಾಗಿನ್</button>
+          </form>
+
+          <!-- 🌟 ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ ಫಾರ್ಮ್ (ಕನ್ನಡ + English ಶಾಲಾ ಹೆಸರು ಸಮೇತ) -->
+          <form id="form-sch-modal-reg" onsubmit="handleSchoolModalRegister(event)" class="space-y-3 hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡದಲ್ಲಿ) *</label>
+                <input type="text" id="reg-sch-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ ತುಮ್ಮರಗುದ್ದಿ" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English ನಲ್ಲಿ) *</label>
+                <input type="text" id="reg-sch-name-en" required placeholder="e.g. Govt. High School Tummaraguddi" class="w-full px-3 py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label>
+                <input type="text" id="reg-sch-dise" required placeholder="e.g. DISE-292401001" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label>
+                <input type="text" id="reg-sch-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್ (WhatsApp) *</label>
+              <input type="tel" id="reg-sch-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+            </div>
+
+            <button type="submit" class="w-full py-3 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಅಡ್ಮಿನ್‌ಗೆ ವಿವರ ಕಳುಹಿಸಿ & Master Key ಪಡೆಯಿರಿ (${FEE_SCHOOL_YEARLY})</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. ಶಾಲಾ ನೋಂದಣಿ ಸಬ್ಮಿಶನ್ (ಕನ್ನಡ + ಇಂಗ್ಲಿಷ್ ಹೆಸರು ಕ್ಲೌಡ್ & WhatsApp ಗೆ ರವಾನೆ)
+    window.handleSchoolModalRegister = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-sch-name').value.trim();
+      const nameEn = document.getElementById('reg-sch-name-en')?.value.trim() || name;
+      const dise = document.getElementById('reg-sch-dise').value.trim();
+      const hm = document.getElementById('reg-sch-hm').value.trim();
+      const hmPhone = document.getElementById('reg-sch-phone').value.trim();
+      const regDate = getTodayFormattedDate();
+
+      const newRequest = {
+        id: 'REQ_SCH_' + Date.now(),
+        type: 'school',
+        name,
+        nameEn,
+        schoolEn: nameEn, // 🌟 English School Name
+        dise,
+        hm,
+        hmPhone,
+        fee: FEE_SCHOOL_YEARLY,
+        requestedDate: regDate,
+        status: 'pending'
+      };
+
+      if (!Array.isArray(appState.pendingRequests)) appState.pendingRequests = [];
+      appState.pendingRequests.unshift(newRequest);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+
+      await pushPendingRequestsToCloud();
+
+      const msg = `*With You QP Generator - ಹೊಸ ಶಾಲಾ ನೋಂದಣಿ ಕೋರಿಕೆ*\n\n` +
+                  `🏫 *ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡ):* ${name}\n` +
+                  `🏫 *School Name (English):* ${nameEn}\n` +
+                  `🔢 *DISE ಕೋಡ್:* ${dise}\n` +
+                  `👤 *HM ಹೆಸರು:* ${hm}\n` +
+                  `📱 *HM ಮೊಬೈಲ್:* ${hmPhone}\n` +
+                  `💰 *ಶಾಲಾ ಶುಲ್ಕ:* ${FEE_SCHOOL_YEARLY}/ವರ್ಷ\n\n` +
+                  `ನಮಸ್ಕಾರ ಸರ್, ನಮ್ಮ ಶಾಲೆಯ ವಿವರಗಳನ್ನು ಪರಿಶೀಲಿಸಿ *School Master Key* ನೀಡಿ.`;
+
+      window.open(`https://api.whatsapp.com/send?phone=91${ADMIN_PHONE_NUMBER}&text=${encodeURIComponent(msg)}`, '_blank');
+      document.getElementById('school-auth-modal')?.classList.add('hidden');
+      alert(`✅ ಶಾಲೆಯ ವಿವರಗಳನ್ನು ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ಗೆ ಕಳುಹಿಸಲಾಗಿದೆ! ಪರಿಶೀಲನೆಯ ನಂತರ Master Key ಸಿಗುತ್ತದೆ.`);
+    };
+
+    // ೩. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಶಾಲಾ ನೋಂದಣಿ ಫಾರ್ಮ್ ಹ್ಯಾಂಡ್ಲರ್
+    window.handleSchoolRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-school-name').value.trim();
+      const nameEn = document.getElementById('reg-school-name-en')?.value.trim() || name;
+      const dise = document.getElementById('reg-school-dise').value.trim();
+      const hm = document.getElementById('reg-school-hm').value.trim();
+      const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+      const accessKey = generateGuaranteedUniqueKey('SCH');
+      const regDate = getTodayFormattedDate();
+
+      const expDateInput = document.getElementById('reg-school-expdate');
+      const expiryDate = (expDateInput && expDateInput.value.trim()) ? expDateInput.value.trim() : calculateCustomExpiryDate(regDate, '1y');
+
+      const newSchool = {
+        id: 'SCH_' + Date.now(),
+        name,
+        nameEn,
+        schoolEn: nameEn, // 🌟 English Name
+        dise,
+        hm,
+        hmPhone,
+        accessKey,
+        registeredDate: regDate,
+        expiryDate: expiryDate,
+        fee: FEE_SCHOOL_YEARLY
+      };
+
+      appState.schools.unshift(newSchool);
+      localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      pushAuthDataToFirebase();
+      renderRegisteredSchools();
+      document.getElementById('form-register-school').reset();
+      
+      alert(`🎉 ಶಾಲೆ: ${name} ನೋಂದಣಿಯಾಗಿದೆ!\n\nMaster Key: ${accessKey}\nವ್ಯಾಲಿಡಿಟಿ: ${expiryDate}`);
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಶಾಲಾ ಎಡಿಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ ಕನ್ನಡ + English ಶಾಲಾ ಹೆಸರು ಎರಡನ್ನೂ ತಿದ್ದುವ ಸೌಲಭ್ಯ
+    window.openEditSchoolModal = function(id) {
+      const s = (appState.schools || []).find(x => x.id === id);
+      if (!s) return;
+
+      let modal = document.getElementById('edit-school-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-school-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const exactRegDate = s.registeredDate || getTodayFormattedDate();
+      const exactExpDate = s.expiryDate || calculateCustomExpiryDate(exactRegDate, '1y');
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-school-flag text-indigo-600 text-base"></i>
+              <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ವಿವರ & ಇಂಗ್ಲಿಷ್ ಹೆಸರು ತಿದ್ದುಪಡಿ</h3>
+            </div>
+            <button onclick="document.getElementById('edit-school-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveSchoolEdit(event, '${s.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡದಲ್ಲಿ) *</label>
+              <input type="text" id="edit-sch-name" value="${escapeHtml(s.name || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English ನಲ್ಲಿ) *</label>
+              <input type="text" id="edit-sch-name-en" value="${escapeHtml(s.schoolEn || s.nameEn || '')}" placeholder="e.g. Govt. High School Tummaraguddi" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">DISE ಕೋಡ್ *</label>
+                <input type="text" id="edit-sch-dise" value="${escapeHtml(s.dise || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">HM ಹೆಸರು *</label>
+                <input type="text" id="edit-sch-hm" value="${escapeHtml(s.hm || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">HM ಮೊಬೈಲ್ *</label>
+              <input type="tel" id="edit-sch-phone" value="${escapeHtml(s.hmPhone || '')}" required pattern="[0-9]{10}" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 p-2.5 bg-slate-50 border border-slate-300 rounded-xl">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ</label>
+                <input type="text" id="edit-sch-regdate" value="${exactRegDate}" required class="w-full p-2 bg-white border rounded-lg font-bold text-xs text-slate-800" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ (Expiry)</label>
+                <input type="text" id="edit-sch-expdate" value="${exactExpDate}" required class="w-full p-2 bg-white border border-indigo-400 rounded-lg font-black text-xs text-indigo-900" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಶಾಲಾ Master Key</label>
+              <input type="text" id="edit-sch-key" value="${s.accessKey}" required class="w-full p-2 bg-slate-100 border rounded-xl font-black uppercase text-indigo-900" />
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('edit-school-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleSaveSchoolEdit = function(e, id) {
+      e.preventDefault();
+      const s = (appState.schools || []).find(x => x.id === id);
+      if (!s) return;
+
+      s.name = document.getElementById('edit-sch-name').value.trim();
+      s.nameEn = document.getElementById('edit-sch-name-en')?.value.trim() || s.name;
+      s.schoolEn = s.nameEn; // 🌟 English Name Saved
+      s.dise = document.getElementById('edit-sch-dise').value.trim();
+      s.hm = document.getElementById('edit-sch-hm').value.trim();
+      s.hmPhone = document.getElementById('edit-sch-phone').value.trim();
+      s.registeredDate = document.getElementById('edit-sch-regdate').value.trim();
+      s.expiryDate = document.getElementById('edit-sch-expdate').value.trim();
+      s.accessKey = document.getElementById('edit-sch-key').value.trim().toUpperCase();
+
+      localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      pushAuthDataToFirebase();
+      renderRegisteredSchools();
+      updateGlobalUserValidityDisplayEverywhere();
+      renderDashboardUserStatusBanner();
+      
+      document.getElementById('edit-school-modal')?.classList.add('hidden');
+      showToast('✅ ಶಾಲಾ ವಿವರಗಳು & English ಹೆಸರು ಸೇವ್ ಆಗಿದೆ!', 'success');
+    };
+
+    // ೫. ಮಾಧ್ಯಮ ಆಧಾರಿತ ಶಾಲಾ ಹೆಸರು ಪಿಕ್ ಮಾಡುವ ಹೆಲ್ಪರ್ ಅಪ್ಡೇಟ್ (ಶಾಲಾ ಲಾಗಿನ್‌ಗೂ ಸಪೋರ್ಟ್)
+    function getAccurateSchoolNameByMedium(userObj, isEnglish) {
+      if (!userObj) return isEnglish ? 'Government Higher Primary School' : 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ';
+      
+      if (isEnglish) {
+        // ಶಾಲಾ ಆಬ್ಜೆಕ್ಟ್ ಅಥವಾ ಶಿಕ್ಷಕರ ಆಬ್ಜೆಕ್ಟ್‌ನ English ಹೆಸರು
+        if (userObj.schoolEn && userObj.schoolEn.trim() !== '') return userObj.schoolEn.trim();
+        if (userObj.nameEn && userObj.nameEn.trim() !== '') return userObj.nameEn.trim();
+        if (userObj.name && !containsKannadaText(userObj.name)) return userObj.name.trim();
+        if (userObj.school && !containsKannadaText(userObj.school)) return userObj.school.trim();
+        return 'Govt. Higher Primary School';
+      }
+      
+      return userObj.name || userObj.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+    }
     
   </script>
 </body>
