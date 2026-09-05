@@ -13974,6 +13974,289 @@
         qbHeaderRow.insertBefore(fmtBtn, qbHeaderRow.firstChild);
       }
     };
+
+
+    /* ==========================================================================
+       ⏱️ 100% CUSTOM ADMIN VALIDITY ENGINE (10 DAYS / 1 MONTH / 1 YEAR / STRICT EXPIRY)
+       ========================================================================== */
+
+    // ೧. ದಿನಾಂಕ ಫಾರ್ಮ್ಯಾಟಿಂಗ್ ಹೆಲ್ಪರ್ (Date -> DD-MM-YYYY)
+    function formatDateDDMMYYYY(dateObj) {
+      if (!dateObj) return getTodayFormattedDate();
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const y = dateObj.getFullYear();
+      return `${d}-${m}-${y}`;
+    }
+
+    // ೨. ಅವಧಿಗೆ ತಕ್ಕಂತೆ ಎಕ್ಸ್‌ಪೈರಿ ದಿನಾಂಕ ಲೆಕ್ಕಾಚಾರ (10 Days, 1 Month, 3 Months, 1 Year)
+    function calculateCustomExpiryDate(startDateStr, durationType) {
+      const base = parseDDMMYYYY(startDateStr) || new Date();
+      const target = new Date(base);
+
+      if (durationType === '10d') {
+        target.setDate(target.getDate() + 10);
+      } else if (durationType === '1m') {
+        target.setMonth(target.getMonth() + 1);
+      } else if (durationType === '3m') {
+        target.setMonth(target.getMonth() + 3);
+      } else if (durationType === '6m') {
+        target.setMonth(target.getMonth() + 6);
+      } else if (durationType === '1y') {
+        target.setFullYear(target.getFullYear() + 1);
+      }
+
+      return formatDateDDMMYYYY(target);
+    }
+
+    // ೩. ಅಡ್ಮಿನ್ ನೋಂದಣಿ ಫಾರ್ಮ್‌ನಲ್ಲಿ ಅವಧಿ ಆಟೋ-ಅಡ್ಜಸ್ಟ್ ಹೆಲ್ಪರ್
+    window.handleAdminValidityDurationChange = function(durationType, regInputId, expInputId) {
+      const regInput = document.getElementById(regInputId);
+      const expInput = document.getElementById(expInputId);
+      if (!expInput) return;
+
+      const regDate = (regInput && regInput.value) ? regInput.value.trim() : getTodayFormattedDate();
+      if (durationType !== 'custom') {
+        expInput.value = calculateCustomExpiryDate(regDate, durationType);
+      }
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಶಿಕ್ಷಕರ ನೋಂದಣಿ ಫಾರ್ಮ್ (ಫ್ಲೆಕ್ಸಿಬಲ್ ಅವಧಿ ಆಯ್ಕೆಯೊಂದಿಗೆ)
+    window.handleTeacherRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-teacher-name').value.trim();
+      const school = document.getElementById('reg-teacher-school').value.trim();
+      const phone = document.getElementById('reg-teacher-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+      const accessKey = generateGuaranteedUniqueKey('TCH');
+      const regDate = getTodayFormattedDate();
+
+      // 🌟 ಅಡ್ಮಿನ್ ನಿಗದಿಪಡಿಸಿದ ನಿಖರ ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ
+      const expDateInput = document.getElementById('reg-teacher-expdate');
+      const expiryDate = (expDateInput && expDateInput.value.trim()) ? expDateInput.value.trim() : calculateCustomExpiryDate(regDate, '1y');
+
+      if (subjects.length === 0) {
+        return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+      }
+
+      const totalFee = `₹${subjects.length * 100}`;
+
+      const newTeacher = {
+        id: 'T_' + Date.now(),
+        name,
+        school,
+        schoolEn: school,
+        phone,
+        grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
+        accessKey,
+        registeredDate: regDate,
+        expiryDate: expiryDate, // 🌟 ಅಡ್ಮಿನ್ ನೀಡಿದ ನಿಖರ ದಿನಾಂಕ (10 ದಿನ, 1 ತಿಂಗಳು ಅಥವಾ 1 ವರ್ಷ)
+        fee: totalFee
+      };
+
+      appState.teachers.unshift(newTeacher);
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      pushAuthDataToFirebase();
+      renderRegisteredTeachers();
+      document.getElementById('form-register-teacher').reset();
+      updateAdminTeacherFeeLive();
+
+      const days = calculateRealRemainingDays(expiryDate);
+      alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ!\n\nAccess Key: ${accessKey}\nವ್ಯಾಲಿಡಿಟಿ: ${expiryDate} ರವರೆಗೆ (${days} ದಿನಗಳು ಬಾಕಿ)`);
+    };
+
+    // ೫. ಅಡ್ಮಿನ್ ಶಿಕ್ಷಕರ ಎಡಿಟ್ ಮಾಡಲ್ (ನಿಖರ ಅವಧಿ ಮತ್ತು ದಿನಾಂಕ ಬದಲಾವಣೆ)
+    window.openEditTeacherModal = function(id) {
+      const t = (appState.teachers || []).find(x => x.id === id);
+      if (!t) return;
+
+      let modal = document.getElementById('edit-teacher-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-teacher-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const subjects = getSystemSubjects();
+      const currentGrades = t.grades || ['6', '7', '8'];
+      const currentSubjs = t.subjects || ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'];
+
+      const exactRegDate = t.registeredDate || getTodayFormattedDate();
+      const exactExpDate = t.expiryDate || calculateCustomExpiryDate(exactRegDate, '1y');
+      const currentDaysLeft = calculateRealRemainingDays(exactExpDate);
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-user-pen text-amber-600 text-base"></i>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ವಿವರ & ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ವ್ಯಾಲಿಡಿಟಿ: <b>${exactExpDate}</b> (${currentDaysLeft} ದಿನಗಳು ಬಾಕಿ)</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveTeacherEdit(event, '${t.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಶಿಕ್ಷಕರ ಹೆಸರು *</label>
+              <input type="text" id="edit-tch-name" value="${escapeHtml(t.name)}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡ) *</label>
+                <input type="text" id="edit-tch-school" value="${escapeHtml(t.school || '')}" required class="w-full p-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English) *</label>
+                <input type="text" id="edit-tch-school-en" value="${escapeHtml(t.schoolEn || '')}" placeholder="e.g. GHPS Tummaraguddi" class="w-full p-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold mb-1">WhatsApp ಮೊಬೈಲ್ *</label>
+                <input type="tel" id="edit-tch-phone" value="${escapeHtml(t.phone)}" required pattern="[0-9]{10}" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">Access Key</label>
+                <input type="text" id="edit-tch-key" value="${t.accessKey}" required class="w-full p-2 bg-slate-100 border rounded-xl font-black uppercase text-indigo-900" />
+              </div>
+            </div>
+
+            <!-- 🌟 ಅಡ್ಮಿನ್ ವ್ಯಾಲಿಡಿಟಿ ಅವಧಿ ನಿಯಂತ್ರಕ (10 Days, 1 Month, 1 Year, Custom) -->
+            <div class="p-3 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block font-black text-amber-950">⏱️ ವ್ಯಾಲಿಡಿಟಿ ಅವಧಿ ಆಯ್ಕೆಮಾಡಿ:</label>
+                <span class="text-[10px] text-amber-800 font-bold">(ಅಡ್ಮಿನ್ ನಿಗದಿಪಡಿಸಿದಷ್ಟು ಮಾತ್ರ)</span>
+              </div>
+              
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-1 text-[11px] font-bold">
+                <button type="button" onclick="handleAdminValidityDurationChange('10d', 'edit-tch-regdate', 'edit-tch-expdate')" class="p-1.5 bg-white hover:bg-amber-200 border border-amber-300 rounded-lg cursor-pointer">10 ದಿನಗಳು</button>
+                <button type="button" onclick="handleAdminValidityDurationChange('1m', 'edit-tch-regdate', 'edit-tch-expdate')" class="p-1.5 bg-white hover:bg-amber-200 border border-amber-300 rounded-lg cursor-pointer">1 ತಿಂಗಳು</button>
+                <button type="button" onclick="handleAdminValidityDurationChange('3m', 'edit-tch-regdate', 'edit-tch-expdate')" class="p-1.5 bg-white hover:bg-amber-200 border border-amber-300 rounded-lg cursor-pointer">3 ತಿಂಗಳು</button>
+                <button type="button" onclick="handleAdminValidityDurationChange('6m', 'edit-tch-regdate', 'edit-tch-expdate')" class="p-1.5 bg-white hover:bg-amber-200 border border-amber-300 rounded-lg cursor-pointer">6 ತಿಂಗಳು</button>
+                <button type="button" onclick="handleAdminValidityDurationChange('1y', 'edit-tch-regdate', 'edit-tch-expdate')" class="p-1.5 bg-white hover:bg-amber-200 border border-amber-300 rounded-lg cursor-pointer">1 ವರ್ಷ</button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-0.5">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ:</label>
+                  <input type="text" id="edit-tch-regdate" value="${exactRegDate}" required class="w-full p-2 bg-white border border-slate-300 rounded-lg font-bold text-xs" />
+                </div>
+                <div>
+                  <label class="block font-bold text-emerald-950 mb-0.5">ಮುಕ್ತಾಯ ದಿನಾಂಕ (Expiry Date) *:</label>
+                  <input type="text" id="edit-tch-expdate" value="${exactExpDate}" required class="w-full p-2 bg-white border-2 border-emerald-500 rounded-lg font-black text-xs text-emerald-950" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+              <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                ${ALL_CLASSES_LIST.map(c => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_class" value="${c.val}" class="rounded text-emerald-600" ${currentGrades.includes(c.val)?'checked':''}>
+                    <span class="font-bold text-[11px]">${c.val}ನೇ</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು *</label>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                ${subjects.map(s => `
+                  <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="checkbox" name="edit_tch_subj" value="${s}" class="rounded text-emerald-600" ${currentSubjs.includes(s)?'checked':''}>
+                    <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('edit-teacher-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೬. ಅಡ್ಮಿನ್ ನೋಂದಣಿ ಫಾರ್ಮ್ UI ನಲ್ಲೂ ವ್ಯಾಲಿಡಿಟಿ ದಿನಾಂಕ ಆಯ್ಕೆ ಬಾಕ್ಸ್ ಸೇರ್ಪಡೆ
+    const originalRenderAdminMasterUnifiedViewForDateControl = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof originalRenderAdminMasterUnifiedViewForDateControl === 'function') {
+        originalRenderAdminMasterUnifiedViewForDateControl();
+      }
+
+      const tchForm = document.getElementById('form-register-teacher');
+      if (tchForm && !document.getElementById('reg-teacher-expdate-wrapper')) {
+        const dateControlHtml = `
+          <div id="reg-teacher-expdate-wrapper" class="p-2.5 bg-amber-50/70 border border-amber-300 rounded-xl space-y-1.5 my-2">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-amber-950 text-[11px]">⏱️ ವ್ಯಾಲಿಡಿಟಿ ಅವಧಿ ನಿಗದಿಪಡಿಸಿ:</label>
+              <select onchange="handleAdminValidityDurationChange(this.value, null, 'reg-teacher-expdate')" class="p-1 bg-white border border-amber-300 rounded font-bold text-[10px]">
+                <option value="1y" selected>1 ವರ್ಷ (Default)</option>
+                <option value="6m">6 ತಿಂಗಳು</option>
+                <option value="3m">3 ತಿಂಗಳು</option>
+                <option value="1m">1 ತಿಂಗಳು</option>
+                <option value="10d">10 ದಿನಗಳು (Trial)</option>
+                <option value="custom">ಕಸ್ಟಮ್ ದಿನಾಂಕ</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600">ಮುಕ್ತಾಯ ದಿನಾಂಕ (Expiry Date):</label>
+              <input type="text" id="reg-teacher-expdate" value="${calculateCustomExpiryDate(getTodayFormattedDate(), '1y')}" required class="w-full p-1.5 bg-white border border-emerald-400 rounded-lg font-black text-xs text-emerald-950" />
+            </div>
+          </div>
+        `;
+
+        const submitBtn = tchForm.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.insertAdjacentHTML('beforebegin', dateControlHtml);
+        }
+      }
+    };
+
+    // ೭. 100% ಕಟ್ಟುನಿಟ್ಟಿನ ಎಕ್ಸ್‌ಪೈರಿ ಗಾರ್ಡ್ (ದಿನ ಮುಗಿದ ತಕ್ಷಣ ಪೇಪರ್ ಜನರೇಟ್ ಸಂಪೂರ್ಣ ಬ್ಲಾಕ್!)
+    const originalGenerateExamPackageWithAbsoluteBlock = window.generateExamPackageFromBank;
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+      const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
+      const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
+
+      // 🌟 ಅವಧಿ ಮುಗಿದಿದ್ದರೆ (0 ದಿನ ಅಥವಾ ಅದಕ್ಕಿಂತ ಕಡಿಮೆ ಇದ್ದರೆ) ಪೇಪರ್ ರಚನೆ 100% ಬ್ಲಾಕ್!
+      if (isTeacherPro || isSchoolPro) {
+        const activeUser = isTeacherPro 
+          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+        if (activeUser) {
+          const expStr = getUserExactDynamicExpiry(activeUser);
+          const daysLeft = calculateRealRemainingDays(expStr);
+
+          // ದಿನ ಮುಗಿದಿದ್ದರೆ ತಕ್ಷಣವೇ ಎಕ್ಸ್‌ಪೈರ್ಡ್ ಪಾಪ್ಅಪ್ ತೋರಿಸಿ ನಿಲ್ಲಿಸುವುದು
+          if (daysLeft <= 0) {
+            showAccountExpiredRenewalModal(activeUser);
+            return; // ❌ STOP! No paper generation allowed!
+          }
+        }
+      }
+
+      if (typeof originalGenerateExamPackageWithAbsoluteBlock === 'function') {
+        await originalGenerateExamPackageWithAbsoluteBlock();
+      }
+    };
       
     
   </script>
