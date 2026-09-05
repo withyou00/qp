@@ -3387,26 +3387,7 @@
         `);
       });
 
-      if (selVsa1M.length > 0) {
-        const r = romanNumerals[romanIndex++ - 1];
-        paperSectionsHtml.push(`
-          <div style="margin-bottom: 8px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
-              <span>${r}. ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:</span>
-              <span>1x${selVsa1M.length}=${selVsa1M.length}</span>
-            </div>
-            <div>${selVsa1M.map(v => {
-              const idx = allQuestions.indexOf(v);
-              return `
-                <div class="q-paper-item-row">
-                  <span class="q-paper-num">${qNum++}.</span>
-                  <span class="q-paper-text">${escapeHtml(v.q)}</span>
-                  <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                </div>`;
-            }).join('')}</div>
-          </div>
-        `);
-        keySectionsHtml.push(`
+      keySectionsHtml.push(`
           <div style="margin-bottom: 8px;">
             <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ಒಂದು ವಾಕ್ಯದ ಪೂರ್ಣ ಉತ್ತರಗಳು:</div>
             <div>${selVsa1M.map(v => `
