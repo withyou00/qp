@@ -13493,7 +13493,487 @@
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     renderMaster10QuestionFormats();
 
-   
+
+    /* ==========================================================================
+       🖼️ MCQ OPTION DIAGRAMS EDIT + 🎯 ADVANCED SUBJECT-WISE FORMATS MANAGER
+       ========================================================================== */
+
+    // =========================================================================
+    // ೧. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲಿ MCQ ಆಯ್ಕೆಗಳಿಗೆ (A, B, C, D) ಚಿತ್ರ ಸೇರಿಸುವ ಎಡಿಟ್ ಮಾಡಲ್
+    // =========================================================================
+    window.openAdminQuestionEditModal = function(qId) {
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      let modal = document.getElementById('admin-q-edit-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-q-edit-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const isMCQ = (q.type === 'mcq' || Boolean(q.a || q.b));
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-pen-to-square text-amber-600 text-lg"></i>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ, ಚಿತ್ರ & MCQ ಆಯ್ಕೆಗಳ ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-3">
+            <div>
+              <label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು *</label>
+              <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter || '')}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+            </div>
+
+            <div>
+              <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+              <textarea id="edit-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900">${escapeHtml(q.q || '')}</textarea>
+            </div>
+
+            <!-- 📷 ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ (Main Image) -->
+            <div class="p-3 bg-indigo-50/70 border-2 border-dashed border-indigo-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-indigo-950">📷 ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ (Main Diagram - Optional):</label>
+              </div>
+              <input type="file" id="edit-q-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-q-image-preview', 'edit-q-image-base64')" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input type="hidden" id="edit-q-image-base64" value="${q.image || ''}" />
+              <div id="edit-q-image-preview" class="${q.image ? '' : 'hidden'} text-center">
+                ${q.image ? `<div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1"><img src="${q.image}" class="max-h-28 rounded-lg mx-auto" /><button type="button" onclick="removeQuestionImage('edit-q-image-preview', 'edit-q-image-base64', 'edit-q-image-file')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer">&times;</button></div>` : ''}
+              </div>
+            </div>
+
+            <!-- 🌟 MCQ ಆಯ್ಕೆಗಳು (A, B, C, D) ಪಠ್ಯ + ಚಿತ್ರ ಅಪ್ಲೋಡರ್ -->
+            ${isMCQ ? `
+              <div class="p-3.5 bg-slate-100 border border-slate-300 rounded-2xl space-y-2">
+                <div class="flex items-center justify-between border-b pb-1.5 border-slate-200">
+                  <label class="font-black text-slate-900 text-xs">ಆಯ್ಕೆಗಳು ಮತ್ತು ಚಿತ್ರಗಳು (A, B, C, D Options & Diagrams):</label>
+                  <span class="text-[10px] text-slate-500 font-bold">(ಚಿತ್ರವಿದ್ದಲ್ಲಿ ಆಯ್ಕೆಮಾಡಿ)</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <!-- Option A -->
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(A) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-a-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-a-preview', 'edit-opt-a-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-a-img" value="${q.imageA || ''}" />
+                    <div id="edit-opt-a-preview" class="${q.imageA ? '' : 'hidden'} text-center">
+                      ${q.imageA ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageA}" class="max-h-20 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-a-preview', 'edit-opt-a-img', 'edit-opt-a-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Option B -->
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(B) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-b-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-b-preview', 'edit-opt-b-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-b-img" value="${q.imageB || ''}" />
+                    <div id="edit-opt-b-preview" class="${q.imageB ? '' : 'hidden'} text-center">
+                      ${q.imageB ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageB}" class="max-h-20 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-b-preview', 'edit-opt-b-img', 'edit-opt-b-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Option C -->
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(C) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-c-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-c-preview', 'edit-opt-c-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-c-img" value="${q.imageC || ''}" />
+                    <div id="edit-opt-c-preview" class="${q.imageC ? '' : 'hidden'} text-center">
+                      ${q.imageC ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageC}" class="max-h-20 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-c-preview', 'edit-opt-c-img', 'edit-opt-c-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Option D -->
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(D) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-d-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-d-preview', 'edit-opt-d-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-d-img" value="${q.imageD || ''}" />
+                    <div id="edit-opt-d-preview" class="${q.imageD ? '' : 'hidden'} text-center">
+                      ${q.imageD ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageD}" class="max-h-20 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-d-preview', 'edit-opt-d-img', 'edit-opt-d-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಅಂಕಗಳು *</label>
+                <input type="number" id="edit-q-marks" value="${q.marks || 1}" min="1" max="10" required class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+                <select id="edit-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+                <select id="edit-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
+              <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ (Save)</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ಅಡ್ಮಿನ್ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್ (ಆಯ್ಕೆಗಳ ಚಿತ್ರಗಳ ಸಮೇತ ಸೇವ್)
+    window.saveAdminQuestionEdit = function(e, qId) {
+      e.preventDefault();
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      q.chapter = document.getElementById('edit-q-chapter').value.trim();
+      q.q = document.getElementById('edit-q-text').value.trim();
+      q.marks = parseInt(document.getElementById('edit-q-marks').value) || 1;
+      q.obj = document.getElementById('edit-q-obj').value;
+      q.diff = document.getElementById('edit-q-diff').value;
+      q.ans = document.getElementById('edit-q-ans').value.trim();
+      q.image = document.getElementById('edit-q-image-base64')?.value || '';
+
+      // 🌟 MCQ ಆಯ್ಕೆಗಳ ಪಠ್ಯ ಮತ್ತು ಚಿತ್ರಗಳ ಸೇವ್
+      if (document.getElementById('edit-q-opt-a')) q.a = document.getElementById('edit-q-opt-a').value.trim();
+      if (document.getElementById('edit-q-opt-b')) q.b = document.getElementById('edit-q-opt-b').value.trim();
+      if (document.getElementById('edit-q-opt-c')) q.c = document.getElementById('edit-q-opt-c').value.trim();
+      if (document.getElementById('edit-q-opt-d')) q.d = document.getElementById('edit-q-opt-d').value.trim();
+
+      if (document.getElementById('edit-opt-a-img')) q.imageA = document.getElementById('edit-opt-a-img').value;
+      if (document.getElementById('edit-opt-b-img')) q.imageB = document.getElementById('edit-opt-b-img').value;
+      if (document.getElementById('edit-opt-c-img')) q.imageC = document.getElementById('edit-opt-c-img').value;
+      if (document.getElementById('edit-opt-d-img')) q.imageD = document.getElementById('edit-opt-d-img').value;
+
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+      pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+      
+      document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+      showToast('✅ ಪ್ರಶ್ನೆ ಮತ್ತು ಆಯ್ಕೆಗಳ ಚಿತ್ರಗಳು ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿವೆ!', 'success');
+    };
+
+
+    // =========================================================================
+    // ೨. ಜನರೇಟ್ ಆದ ಲೈವ್ ಪೇಪರ್‌ನಲ್ಲೂ MCQ ಆಯ್ಕೆಗಳ ಚಿತ್ರ ತಿದ್ದುಪಡಿ ಮಾಡಲ್
+    // =========================================================================
+    const originalOpenPopupQuestionEditorForMCQImgs = window.openPopupQuestionEditor;
+    window.openPopupQuestionEditor = function(qIndex) {
+      if (typeof originalOpenPopupQuestionEditorForMCQImgs === 'function') {
+        originalOpenPopupQuestionEditorForMCQImgs(qIndex);
+      }
+
+      const q = appState.activeGeneratedQuestions[qIndex];
+      if (!q) return;
+
+      const optBox = document.getElementById('pop-dynamic-options-box');
+      if (optBox && (q.type === 'mcq' || (q.a && q.b))) {
+        optBox.innerHTML = `
+          <div class="p-3 bg-slate-100 border border-slate-300 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between border-b pb-1.5 border-slate-200">
+              <label class="font-black text-slate-900 text-xs">MCQ ಆಯ್ಕೆಗಳು & ಚಿತ್ರಗಳು (A, B, C, D Options & Diagrams):</label>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <!-- A -->
+              <div class="p-2 bg-white border rounded-xl space-y-1">
+                <b>(A) ಪಠ್ಯ:</b> <input type="text" id="pop-opt-a" value="${escapeHtml(q.a||'')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                <input type="file" id="pop-opt-a-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-opt-a-preview', 'pop-opt-a-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                <input type="hidden" id="pop-opt-a-img" value="${q.imageA || ''}" />
+                <div id="pop-opt-a-preview" class="${q.imageA ? '' : 'hidden'} text-center">
+                  ${q.imageA ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageA}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('pop-opt-a-preview', 'pop-opt-a-img', 'pop-opt-a-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                </div>
+              </div>
+
+              <!-- B -->
+              <div class="p-2 bg-white border rounded-xl space-y-1">
+                <b>(B) ಪಠ್ಯ:</b> <input type="text" id="pop-opt-b" value="${escapeHtml(q.b||'')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                <input type="file" id="pop-opt-b-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-opt-b-preview', 'pop-opt-b-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                <input type="hidden" id="pop-opt-b-img" value="${q.imageB || ''}" />
+                <div id="pop-opt-b-preview" class="${q.imageB ? '' : 'hidden'} text-center">
+                  ${q.imageB ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageB}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('pop-opt-b-preview', 'pop-opt-b-img', 'pop-opt-b-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                </div>
+              </div>
+
+              <!-- C -->
+              <div class="p-2 bg-white border rounded-xl space-y-1">
+                <b>(C) ಪಠ್ಯ:</b> <input type="text" id="pop-opt-c" value="${escapeHtml(q.c||'')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                <input type="file" id="pop-opt-c-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-opt-c-preview', 'pop-opt-c-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                <input type="hidden" id="pop-opt-c-img" value="${q.imageC || ''}" />
+                <div id="pop-opt-c-preview" class="${q.imageC ? '' : 'hidden'} text-center">
+                  ${q.imageC ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageC}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('pop-opt-c-preview', 'pop-opt-c-img', 'pop-opt-c-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                </div>
+              </div>
+
+              <!-- D -->
+              <div class="p-2 bg-white border rounded-xl space-y-1">
+                <b>(D) ಪಠ್ಯ:</b> <input type="text" id="pop-opt-d" value="${escapeHtml(q.d||'')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                <input type="file" id="pop-opt-d-file" accept="image/*" onchange="processQuestionImageUpload(this, 'pop-opt-d-preview', 'pop-opt-d-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                <input type="hidden" id="pop-opt-d-img" value="${q.imageD || ''}" />
+                <div id="pop-opt-d-preview" class="${q.imageD ? '' : 'hidden'} text-center">
+                  ${q.imageD ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageD}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('pop-opt-d-preview', 'pop-opt-d-img', 'pop-opt-d-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    };
+
+    // ಲೈವ್ ಪೇಪರ್ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್ (ಆಯ್ಕೆಗಳ ಚಿತ್ರಗಳ ಸಮೇತ ಸೇವ್)
+    const origSavePopupQuestionEditForOptImgs = window.savePopupQuestionEdit;
+    window.savePopupQuestionEdit = function(e, qIndex) {
+      const q = appState.activeGeneratedQuestions[qIndex];
+      if (q) {
+        if (document.getElementById('pop-opt-a-img')) q.imageA = document.getElementById('pop-opt-a-img').value;
+        if (document.getElementById('pop-opt-b-img')) q.imageB = document.getElementById('pop-opt-b-img').value;
+        if (document.getElementById('pop-opt-c-img')) q.imageC = document.getElementById('pop-opt-c-img').value;
+        if (document.getElementById('pop-opt-d-img')) q.imageD = document.getElementById('pop-opt-d-img').value;
+      }
+      if (typeof origSavePopupQuestionEditForOptImgs === 'function') {
+        origSavePopupQuestionEditForOptImgs(e, qIndex);
+      }
+    };
+
+
+    // =========================================================================
+    // ೩. ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣಾ ಮಾಡಲ್ (MANAGE SUBJECT FORMATS)
+    // =========================================================================
+    window.openManageSubjectFormatsModal = function() {
+      let modal = document.getElementById('manage-subject-formats-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'manage-subject-formats-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      editingCustomQTypeKey = null;
+      const subjects = getSystemSubjects();
+      const customList = getCustomQuestionTypesList();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 text-xs font-sans max-h-[92vh] overflow-y-auto">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-layer-group text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900" id="subfmt-modal-title">ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ & ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ಪ್ರಕಾರಗಳನ್ನು ನಿರ್ದಿಷ್ಟ ವಿಷಯಕ್ಕೆ ನಿಯೋಜಿಸಿ ಅಥವಾ ಬದಲಾಯಿಸಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <!-- Add / Edit Form -->
+          <form id="form-manage-subject-formats" onsubmit="handleSaveOrUpdateSubjectFormat(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಸಂಬಂಧಿಸಿದ ವಿಷಯ (Target Subject) *</label>
+                <select id="subfmt-target-subject" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-indigo-950">
+                  <option value="all">🌐 ಎಲ್ಲಾ ವಿಷಯಗಳಿಗೆ (All Subjects / Universal)</option>
+                  ${subjects.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು *</label>
+                <input type="text" id="subfmt-label" required placeholder="e.g. ೧೧. ಪ್ರಬಂಧ ರಚನೆ (5M)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆ (Paper Heading) *</label>
+              <input type="text" id="subfmt-heading" required placeholder="e.g. ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ನಿಗದಿತ ಅಂಕಗಳು *</label>
+                <input type="number" id="subfmt-marks" value="1" min="1" max="20" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-900" />
+              </div>
+              <div class="flex items-end gap-1.5">
+                <button type="button" id="subfmt-btn-cancel" onclick="cancelSubjectFormatEdit()" class="hidden px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">
+                  ರದ್ದು
+                </button>
+                <button type="submit" id="subfmt-btn-submit" class="flex-1 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-plus text-amber-300"></i>
+                  <span>ಪ್ರಕಾರ ಸೇರಿಸಿ</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- List of Formats with Subject Badges -->
+          <div class="space-y-2 pt-2 border-t">
+            <h4 class="font-black text-slate-800 text-xs uppercase flex items-center justify-between">
+              <span>ಲಭ್ಯವಿರುವ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿ (${customList.length})</span>
+            </h4>
+            <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
+              ${customList.length === 0 ? `
+                <div class="p-4 bg-slate-50 border border-dashed rounded-xl text-center text-slate-400 font-semibold">
+                  ಯಾವುದೇ ಹೆಚ್ಚುವರಿ ಪ್ರಕಾರಗಳಿಲ್ಲ.
+                </div>
+              ` : customList.map((ct) => {
+                const isAll = (!ct.subject || ct.subject === 'all');
+                const subjBadge = isAll ? '🌐 ಎಲ್ಲಾ ವಿಷಯ' : ct.subject.split('(')[0];
+
+                return `
+                  <div class="p-3 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-between gap-2 shadow-sm hover:border-purple-300 transition">
+                    <div class="truncate">
+                      <div class="flex items-center gap-1.5">
+                        <b class="text-slate-900 text-xs truncate">${escapeHtml(ct.label)}</b>
+                        <span class="text-[10px] font-black ${isAll ? 'bg-slate-100 text-slate-800' : 'bg-indigo-100 text-indigo-950'} px-2 py-0.5 rounded border border-indigo-200">${escapeHtml(subjBadge)}</span>
+                      </div>
+                      <span class="text-[10px] text-slate-500 truncate block mt-0.5">${escapeHtml(ct.heading)} (${ct.marks}M)</span>
+                    </div>
+                    <div class="flex items-center space-x-1 shrink-0">
+                      <!-- 🌟 EDIT BUTTON -->
+                      <button type="button" onclick="loadSubjectFormatIntoForm('${ct.key}')" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold text-[11px] cursor-pointer flex items-center gap-1" title="ತಿದ್ದುಪಡಿ ಮಾಡಿ">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+                      </button>
+                      <button type="button" onclick="deleteCustomQType('${ct.key}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer" title="ಅಳಿಸಿ">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t">
+            <button type="button" onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">
+              ಮುಚ್ಚಿ (Close)
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ಫಾರ್ಮ್‌ಗೆ ಲೋಡ್ ಮಾಡಿ ಎಡಿಟ್ ಮೋಡ್ ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+    window.loadSubjectFormatIntoForm = function(key) {
+      const list = getCustomQuestionTypesList();
+      const item = list.find(x => x.key === key);
+      if (!item) return;
+
+      editingCustomQTypeKey = key;
+
+      document.getElementById('subfmt-target-subject').value = item.subject || 'all';
+      document.getElementById('subfmt-label').value = item.label || '';
+      document.getElementById('subfmt-heading').value = item.heading || '';
+      document.getElementById('subfmt-marks').value = item.marks || 1;
+
+      const title = document.getElementById('subfmt-modal-title');
+      const submitBtn = document.getElementById('subfmt-btn-submit');
+      const cancelBtn = document.getElementById('subfmt-btn-cancel');
+
+      if (title) title.innerText = "ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ವಿವರ & ವಿಷಯ ತಿದ್ದುಪಡಿ";
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
+      if (submitBtn) {
+        submitBtn.className = "flex-1 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer";
+        submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk text-amber-300"></i> <span>ಬದಲಾವಣೆ ಸೇವ್ ಮಾಡಿ</span>`;
+      }
+    };
+
+    window.cancelSubjectFormatEdit = function() {
+      editingCustomQTypeKey = null;
+      document.getElementById('form-manage-subject-formats').reset();
+
+      const title = document.getElementById('subfmt-modal-title');
+      const submitBtn = document.getElementById('subfmt-btn-submit');
+      const cancelBtn = document.getElementById('subfmt-btn-cancel');
+
+      if (title) title.innerText = "ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ & ತಿದ್ದುಪಡಿ";
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+      if (submitBtn) {
+        submitBtn.className = "flex-1 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer";
+        submitBtn.innerHTML = `<i class="fa-solid fa-plus text-amber-300"></i> <span>ಪ್ರಕಾರ ಸೇರಿಸಿ</span>`;
+      }
+    };
+
+    window.handleSaveOrUpdateSubjectFormat = function(e) {
+      e.preventDefault();
+      const targetSubj = document.getElementById('subfmt-target-subject')?.value || 'all';
+      const label = document.getElementById('subfmt-label')?.value.trim();
+      const heading = document.getElementById('subfmt-heading')?.value.trim();
+      const marks = parseInt(document.getElementById('subfmt-marks')?.value) || 1;
+
+      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+
+      let list = getCustomQuestionTypesList();
+
+      if (editingCustomQTypeKey) {
+        const item = list.find(x => x.key === editingCustomQTypeKey);
+        if (item) {
+          item.subject = targetSubj;
+          item.label = label;
+          item.heading = heading;
+          item.marks = marks;
+        }
+        showToast(`✅ '${label}' ಪ್ರಕಾರವನ್ನು ಅಪ್ಡೇಟ್ ಮಾಡಲಾಗಿದೆ!`, 'success');
+      } else {
+        const key = 'custom_' + Date.now();
+        list.push({ key, label, heading, marks, subject: targetSubj });
+        showToast(`🎉 '${label}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
+      }
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+
+      openManageSubjectFormatsModal(); // Refresh Modal
+      renderMaster10QuestionFormats(); // Refresh Step 3
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ "🎯 ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ" ಬಟನ್ ಸೇರ್ಪಡೆ
+    const origRenderAdminMasterUnifiedViewForSubjFmt = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof origRenderAdminMasterUnifiedViewForSubjFmt === 'function') {
+        origRenderAdminMasterUnifiedViewForSubjFmt();
+      }
+
+      const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2');
+      if (qbHeaderRow && !document.getElementById('btn-admin-manage-subject-formats')) {
+        const fmtBtn = document.createElement('button');
+        fmtBtn.id = 'btn-admin-manage-subject-formats';
+        fmtBtn.type = 'button';
+        fmtBtn.className = 'text-xs bg-purple-100 hover:bg-purple-200 text-purple-950 font-black px-3 py-1.5 rounded-xl border border-purple-400 flex items-center gap-1 cursor-pointer shadow-sm';
+        fmtBtn.innerHTML = '<i class="fa-solid fa-layer-group text-purple-700"></i> <span>🎯 ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ</span>';
+        fmtBtn.onclick = () => openManageSubjectFormatsModal();
+        qbHeaderRow.insertBefore(fmtBtn, qbHeaderRow.firstChild);
+      }
+    };
       
     
   </script>
