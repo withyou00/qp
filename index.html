@@ -17722,6 +17722,190 @@
         origSavePopupQuestionEditForTypeChange(e, qIndex);
       }
     };
+
+
+    /* ==========================================================================
+       💎 100% PERMANENT CUSTOM QUESTION FORMAT SAVER & LIVE STEP-3 SYNC FIX
+       ========================================================================== */
+
+    // ೧. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಲಿಸ್ಟ್ ಪಡೆಯುವುದು (ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ಡಿಲೀಟ್ ಆಗುವುದಿಲ್ಲ!)
+    window.getCustomQuestionTypesList = function() {
+      let saved = [];
+      try {
+        saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      } catch (e) {
+        saved = [];
+      }
+
+      // ಕೇವಲ ಹಳೆಯ ಇಂಗ್ಲಿಷ್ ರಾ ಕಂಪ್ಯೂಟರ್ ಕೀಗಳನ್ನು ಮಾತ್ರ ಫಿಲ್ಟರ್ ಮಾಡುವುದು
+      const rawCodeFilterRegex = /^(solve_\d+m|words_form|num_form|definitions|compare|estimation)$/i;
+      return saved.filter(ct => {
+        if (!ct || !ct.label) return false;
+        const k = String(ct.key || '').trim();
+        const l = String(ct.label || '').trim();
+        return !rawCodeFilterRegex.test(k) && !rawCodeFilterRegex.test(l.replace(/\s*\(\d+M\)/i, ''));
+      });
+    };
+
+    // ೨. ಹೊಸ ಪ್ರಕಾರ ಸೇವ್ ಅಥವಾ ಅಪ್ಡೇಟ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್ (ಕಾಯಂ ಸೇವ್)
+    window.handleSaveOrUpdateSubjectFormat = window.handleSaveOrUpdateCustomQType = function(e) {
+      if (e) e.preventDefault();
+
+      const labelInput = document.getElementById('subfmt-label') || document.getElementById('new-qtype-label');
+      const headingInput = document.getElementById('subfmt-heading') || document.getElementById('new-qtype-heading');
+      const marksInput = document.getElementById('subfmt-marks') || document.getElementById('new-qtype-marks');
+      const subjSelect = document.getElementById('subfmt-target-subject') || document.getElementById('new-qtype-subject');
+
+      const label = labelInput ? labelInput.value.trim() : '';
+      const heading = headingInput ? headingInput.value.trim() : '';
+      const marks = marksInput ? (parseInt(marksInput.value) || 1) : 1;
+      const targetSubj = subjSelect ? subjSelect.value : 'all';
+
+      if (!label || !heading) {
+        return alert('⚠️ ದಯವಿಟ್ಟು ಪ್ರಕಾರದ ಹೆಸರು ಮತ್ತು ಹೆಡಿಂಗ್ ಸೂಚನೆಯನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+      }
+
+      let list = getCustomQuestionTypesList();
+
+      if (window.editingCustomQTypeKey) {
+        // 🌟 ಎಡಿಟ್ / ಅಪ್ಡೇಟ್
+        const item = list.find(x => x.key === window.editingCustomQTypeKey);
+        if (item) {
+          item.label = label;
+          item.heading = heading;
+          item.marks = marks;
+          item.subject = targetSubj;
+        }
+        showToast(`✅ '${label}' ಪ್ರಕಾರವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಪ್ಡೇಟ್ ಮಾಡಲಾಗಿದೆ!`, 'success');
+        window.editingCustomQTypeKey = null;
+      } else {
+        // 🌟 ಹೊಸ ಪ್ರಕಾರ ಸೇರ್ಪಡೆ (Permanent Safe Key: fmt_...)
+        const newKey = 'fmt_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        list.push({
+          key: newKey,
+          label: label,
+          heading: heading,
+          marks: marks,
+          subject: targetSubj
+        });
+        showToast(`🎉 '${label}' ಪ್ರಕಾರ ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
+      }
+
+      // ಕಾಯಂ ಮೆಮೊರಿ ಮತ್ತು Firebase ಗೆ ಸೇವ್
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+
+      // ಫಾರ್ಮ್ ಕ್ಲಿಯರ್ ಮಾಡುವುದು
+      if (labelInput) labelInput.value = '';
+      if (headingInput) headingInput.value = '';
+      if (marksInput) marksInput.value = '1';
+
+      // ಮಾಡಲ್ ಲಿಸ್ಟ್ ಮತ್ತು Step 3 ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್
+      if (typeof openManageSubjectFormatsModal === 'function' && document.getElementById('manage-subject-formats-modal') && !document.getElementById('manage-subject-formats-modal').classList.contains('hidden')) {
+        openManageSubjectFormatsModal();
+      }
+      if (typeof openAddCustomQTypeModal === 'function' && document.getElementById('add-custom-qtype-modal') && !document.getElementById('add-custom-qtype-modal').classList.contains('hidden')) {
+        openAddCustomQTypeModal();
+      }
+
+      renderMaster10QuestionFormats();
+    };
+
+    // ೩. ಜನರೇಟರ್ Step 3 (ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ಕಡ್ಡಾಯವಾಗಿ ಪ್ರದರ್ಶನವಾಗುವಂತೆ ಗ್ಯಾರಂಟಿ)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+      const sKey = getNormalizedSubjectKey(currentSubj);
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
+      let formats = [
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
+      ];
+
+      // ವಿಷಯವಾರು ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
+          if (!formats.some(f => f.key === ct.key)) {
+            formats.push({
+              key: ct.key,
+              label: ct.label,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      let html = formats.map(fmt => {
+        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೪. ಕಸ್ಟಮ್ ಪ್ರಕಾರವನ್ನು ಡಿಲೀಟ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    window.deleteCustomQType = function(key) {
+      if (confirm('ಈ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?')) {
+        let list = getCustomQuestionTypesList().filter(x => x.key !== key);
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+        try {
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(list)
+          });
+        } catch (err) {}
+
+        showToast('ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಅಳಿಸಲಾಗಿದೆ.', 'info');
+        
+        if (typeof openManageSubjectFormatsModal === 'function') openManageSubjectFormatsModal();
+        if (typeof openAddCustomQTypeModal === 'function') openAddCustomQTypeModal();
+        renderMaster10QuestionFormats();
+      }
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
