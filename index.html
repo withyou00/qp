@@ -18059,6 +18059,43 @@
     });
 
 })();
+
+    // =========================================================================
+// FIX: ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು ಮತ್ತು ಬ್ರಾಕೆಟ್ (5M) ಹೊಂದಾಣಿಕೆ ಸರಿಪಡಿಸುವ ಕೋಡ್
+// =========================================================================
+(function() {
+    // ಹೆಸರಿನಲ್ಲಿರುವ (5M), (1M), ಸ್ಪೇಸ್ ಇತ್ಯಾದಿಗಳನ್ನು ತೆಗೆದು ಶುದ್ಧ ಹೆಸರನ್ನು ಪಡೆಯುವ ಫಂಕ್ಷನ್
+    function cleanTypeName(name) {
+        if (!name) return '';
+        return name.replace(/\s*\(\d+M\)\s*/gi, '').trim().toLowerCase();
+    }
+
+    // ವಿಂಡೋ ಲೋಡ್ ಆದಾಗ ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳ type ಮ್ಯಾಚಿಂಗ್ ಸರಿಪಡಿಸುವುದು
+    const originalFilterOrRender = window.renderQuestionPaper || window.generatePaper;
+
+    if (typeof originalFilterOrRender === 'function') {
+        window.renderQuestionPaper = function() {
+            // ಡೇಟಾಬೇಸ್ ಅಥವಾ ಗ್ಲೋಬಲ್ ಲಿಸ್ಟ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಸಿಂಕ್ ಮಾಡುವುದು
+            if (window.questionsList && Array.isArray(window.questionsList)) {
+                window.questionsList.forEach(q => {
+                    const cleanQType = cleanTypeName(q.type || q.questionType);
+                    
+                    // ಸೆಲೆಕ್ಟ್ ಮಾಡಲಾದ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳ ಜೊತೆ ಹೊಂದಿಸುವುದು
+                    document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+                        const cbLabel = cb.closest('label') || cb.parentElement;
+                        const cbText = cbLabel ? cbLabel.textContent : '';
+                        if (cleanTypeName(cbText) === cleanQType) {
+                            // ಎರಡೂ ಹೆಸರನ್ನು ಒಂದೇ ಸಮನಾಗಿ ಮಾಡಿ
+                            q.questionType = cbText.trim();
+                            q.type = cbText.trim();
+                        }
+                    });
+                });
+            }
+            return originalFilterOrRender.apply(this, arguments);
+        };
+    }
+})();
     
   </script>
 </body>
