@@ -18096,6 +18096,115 @@
         };
     }
 })();
+
+// =========================================================================
+// AUTO-FIX: ಡಬಲ್ ಬ್ರಾಕೆಟ್ (5m) (5M) ಮತ್ತು ತಪ್ಪು ಹೆಡಿಂಗ್ ಸರಿಪಡಿಸುವ ಅಂತಿಮ ಕೋಡ್
+// =========================================================================
+(function() {
+    console.log("Starting Auto-Fix for Question Types & Headings...");
+
+    // 1. ಹೆಸರನ್ನು ಕ್ಲೀನ್ ಮಾಡುವ ಫಂಕ್ಷನ್ (ಎಲ್ಲಾ (5M), (5m), ಡಬಲ್ ಬ್ರಾಕೆಟ್‌ಗಳನ್ನು ತೆಗೆದು ಸಮನಾಗಿಸುತ್ತದೆ)
+    function normalize(text) {
+        if (!text) return '';
+        return text
+            .replace(/\(\s*\d+\s*[mM]\s*\)/gi, '') // (5m), (5M) ಎಲ್ಲವನ್ನೂ ಅಳಿಸಿಹಾಕುತ್ತದೆ
+            .replace(/\s+/g, ' ')                  // ಹೆಚ್ಚುವರಿ ಸ್ಪೇಸ್ ತೆಗೆಯುತ್ತದೆ
+            .trim()
+            .toLowerCase();
+    }
+
+    // 2. ಪೇಪರ್ ಜನರೇಟ್ ಆದ ನಂತರ ಹೆಡಿಂಗ್‌ಗಳನ್ನು ಮರುಹೊಂದಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+    function fixGeneratedSections() {
+        // ಎಲ್ಲಾ ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ವಿವರ ಪಡೆಯುವುದು
+        let customTypes = [];
+        try {
+            const raw = localStorage.getItem('customQuestionTypes') || 
+                        localStorage.getItem('customTypes') || 
+                        localStorage.getItem('questionTypes') || '[]';
+            customTypes = JSON.parse(raw);
+        } catch(e) {}
+
+        // ಡ್ರಾಪ್‌ಡೌನ್ ಮತ್ತು ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳಲ್ಲಿರುವ ಹೆಸರುಗಳನ್ನು ಸಂಗ್ರಹಿಸಿ
+        const typeMap = {};
+        customTypes.forEach(t => {
+            const cleanKey = normalize(t.name || t.typeName || t.title);
+            if (cleanKey) {
+                typeMap[cleanKey] = {
+                    title: t.heading || t.paperHeading || t.name,
+                    marks: t.marks || 1
+                };
+            }
+        });
+
+        // ಹಾರ್ಡ್‌ಕೋಡ್ ಆದ ಡೀಫಾಲ್ಟ್ ಹೆಡಿಂಗ್ ಅಡಿಯಲ್ಲಿ ಸಿಲುಕಿರುವ ಪ್ರಶ್ನೆಗಳನ್ನು ಹುಡುಕುವುದು
+        const oneMarkHeaders = document.querySelectorAll('h3, h4, .section-title, .heading, div');
+        
+        oneMarkHeaders.forEach(header => {
+            if (header.innerText && header.innerText.includes('ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ')) {
+                // ಈ ಹೆಡರ್ ಕೆಳಗಿರುವ ಪ್ರಶ್ನೆ ಸಾಲುಗಳನ್ನು ಹುಡುಕಿ
+                let parentSection = header.closest('.section, .part-container') || header.parentElement;
+                let questionRows = parentSection.querySelectorAll('.question-row, .q-item, li, [class*="question"]');
+
+                questionRows.forEach(row => {
+                    const rowText = row.innerText || '';
+                    
+                    // ಪ್ರಶ್ನೆ ಸಂಖ್ಯೆ ಮತ್ತು ಪಠ್ಯ (ಉದಾ: 700596, 251388, 401010)
+                    // ಇದು 'ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ' ಅಥವಾ 'ಅಂಕಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ'ಗೆ ಸಂಬಂಧಿಸಿದ್ದಾಗಿದ್ದರೆ:
+                    for (let key in typeMap) {
+                        if (key.includes('ಪದಗಳಲ್ಲಿ') || key.includes('ಅಂಕಿಗಳಲ್ಲಿ') || normalize(rowText).includes(key)) {
+                            
+                            // ಪ್ರತ್ಯೇಕ ಸೆಕ್ಷನ್ ರಚಿಸುವುದು
+                            let targetSecId = 'custom_sec_' + key.replace(/[^a-z0-9]/gi, '_');
+                            let targetSec = document.getElementById(targetSecId);
+
+                            if (!targetSec) {
+                                targetSec = document.createElement('div');
+                                targetSec.id = targetSecId;
+                                targetSec.style.marginTop = '20px';
+                                targetSec.style.marginBottom = '15px';
+
+                                targetSec.innerHTML = `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; font-size:16px; margin-bottom:8px; border-bottom:1px solid #ccc; padding-bottom:4px;">
+                                        <span>${typeMap[key].title}</span>
+                                        <span>5x1=5</span>
+                                    </div>
+                                `;
+                                parentSection.parentElement.insertBefore(targetSec, parentSection.nextSibling);
+                            }
+                            
+                            // ಆ ಪ್ರಶ್ನೆಯನ್ನು ತಪ್ಪಾದ ಜಾಗದಿಂದ ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್ ಕೆಳಗೆ ಸ್ಥಳಾಂತರಿಸಿ
+                            targetSec.appendChild(row);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // 3. ಡ್ರಾಪ್‌ಡೌನ್‌ಗಳಲ್ಲಿ ಡಬಲ್ ಬ್ರಾಕೆಟ್ (5m) (5M) ಬರದಂತೆ ತಡೆಯುವುದು
+    function fixDropdowns() {
+        document.querySelectorAll('select').forEach(sel => {
+            Array.from(sel.options).forEach(opt => {
+                if (opt.text.includes('(5m) (5M)') || opt.text.includes('(5M) (5M)')) {
+                    opt.text = opt.text.replace(/\s*\(\d+[mM]\)\s*\(\d+[mM]\)/gi, ' (5M)');
+                }
+            });
+        });
+    }
+
+    // ನಿರಂತರವಾಗಿ ಪರಿಶೀಲಿಸಿ ಸರಿಪಡಿಸಲು ಈವೆಂಟ್ ಲಿಸನರ್ಸ್
+    setInterval(fixDropdowns, 500);
+
+    document.addEventListener('click', function(e) {
+        setTimeout(fixGeneratedSections, 300);
+        setTimeout(fixGeneratedSections, 800);
+    });
+
+    // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ
+    window.addEventListener('load', function() {
+        setTimeout(fixGeneratedSections, 500);
+    });
+})();
     
   </script>
 </body>
