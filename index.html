@@ -13049,6 +13049,206 @@
       `;
       modal.classList.remove('hidden');
     };
+
+    /* ==========================================================================
+       🖼️ IMAGE-BASED MCQ OPTIONS ENGINE: DIAGRAMS FOR OPTIONS (A, B, C, D)
+       ========================================================================== */
+
+    // ೧. MCQ ಆಯ್ಕೆಗಳ ಗ್ರಿಡ್ ರೆಂಡರರ್ (ಕೇವಲ ಪಠ್ಯ ಅಥವಾ ೪ ಪ್ರತ್ಯೇಕ ಚಿತ್ರಗಳ ಬಾಕ್ಸ್)
+    function renderMCQOptionsWithImages(q) {
+      const hasOptImages = Boolean(q.imageA || q.imageB || q.imageC || q.imageD);
+
+      if (hasOptImages) {
+        // 🌟 ೪ ಪ್ರತ್ಯೇಕ ಚಿತ್ರಗಳ ಸುಂದರ ಬಾಕ್ಸ್ ಗ್ರಿಡ್
+        return `
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-left: 26px; margin-top: 3px; text-align: center;">
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
+              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(A) ${escapeHtml(q.a || '')}</div>
+              ${q.imageA ? `<img src="${q.imageA}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
+            </div>
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
+              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(B) ${escapeHtml(q.b || '')}</div>
+              ${q.imageB ? `<img src="${q.imageB}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
+            </div>
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
+              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(C) ${escapeHtml(q.c || '')}</div>
+              ${q.imageC ? `<img src="${q.imageC}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
+            </div>
+            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
+              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(D) ${escapeHtml(q.d || '')}</div>
+              ${q.imageD ? `<img src="${q.imageD}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        // ಸಾಮಾನ್ಯ ಪಠ್ಯ MCQ
+        return `
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 8px; font-size: 12px; padding-left: 26px; margin-top: 1px;">
+            <div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div>
+            <div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div>
+          </div>
+        `;
+      }
+    }
+
+    // ೨. ಅಡ್ಮಿನ್ ಫಾರ್ಮ್‌ನಲ್ಲಿ MCQ ಆಯ್ಕೆಗಳಿಗೆ ಚಿತ್ರ ಅಪ್ಲೋಡರ್ ಸೇರ್ಪಡೆ
+    const originalHandleQuestionTypeChangeInAdminForOptImages = window.handleQuestionTypeChangeInAdmin;
+    window.handleQuestionTypeChangeInAdmin = function(type) {
+      if (typeof originalHandleQuestionTypeChangeInAdminForOptImages === 'function') {
+        originalHandleQuestionTypeChangeInAdminForOptImages(type);
+      }
+
+      const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+      if (!formFieldsBox || type !== 'mcq') return;
+
+      formFieldsBox.innerHTML = `
+        <div><label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" /></div>
+        
+        <!-- 📷 ಪ್ರಶ್ನೆಗೆ ಮೇನ್ ಚಿತ್ರ (Optional) -->
+        <div class="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-1.5">
+          <label class="font-bold text-indigo-950 text-[11px] flex items-center gap-1"><i class="fa-solid fa-image"></i> ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ (Main Diagram - Optional):</label>
+          <input type="file" id="qadd-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'qadd-image-preview', 'qadd-image-base64')" class="w-full text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+          <input type="hidden" id="qadd-image-base64" value="" />
+          <div id="qadd-image-preview" class="hidden text-center"></div>
+        </div>
+
+        <!-- 🌟 ೪ ಆಯ್ಕೆಗಳಿಗೆ ಪ್ರತ್ಯೇಕ ಚಿತ್ರಗಳ ಅಪ್ಲೋಡ್ ಬಾಕ್ಸ್ -->
+        <div class="p-3 bg-slate-100 border border-slate-300 rounded-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-black text-slate-900 text-xs">ಆಯ್ಕೆಗಳು ಮತ್ತು ಚಿತ್ರಗಳು (A, B, C, D Options & Diagrams):</label>
+            <span class="text-[10px] text-slate-500 font-bold">(ಚಿತ್ರವಿದ್ದರೆ ಅಪ್ಲೋಡ್ ಮಾಡಿ)</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <!-- Option A -->
+            <div class="p-2 bg-white border rounded-xl space-y-1">
+              <b>(A) ಪಠ್ಯ:</b> <input type="text" id="qadd-opt-a" required placeholder="ಆಯ್ಕೆ A" class="w-full p-1.5 border rounded-lg" />
+              <input type="file" accept="image/*" onchange="processQuestionImageUpload(this, 'qadd-opt-a-preview', 'qadd-opt-a-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+              <input type="hidden" id="qadd-opt-a-img" value="" />
+              <div id="qadd-opt-a-preview" class="hidden text-center"></div>
+            </div>
+
+            <!-- Option B -->
+            <div class="p-2 bg-white border rounded-xl space-y-1">
+              <b>(B) ಪಠ್ಯ:</b> <input type="text" id="qadd-opt-b" required placeholder="ಆಯ್ಕೆ B" class="w-full p-1.5 border rounded-lg" />
+              <input type="file" accept="image/*" onchange="processQuestionImageUpload(this, 'qadd-opt-b-preview', 'qadd-opt-b-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+              <input type="hidden" id="qadd-opt-b-img" value="" />
+              <div id="qadd-opt-b-preview" class="hidden text-center"></div>
+            </div>
+
+            <!-- Option C -->
+            <div class="p-2 bg-white border rounded-xl space-y-1">
+              <b>(C) ಪಠ್ಯ:</b> <input type="text" id="qadd-opt-c" required placeholder="ಆಯ್ಕೆ C" class="w-full p-1.5 border rounded-lg" />
+              <input type="file" accept="image/*" onchange="processQuestionImageUpload(this, 'qadd-opt-c-preview', 'qadd-opt-c-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+              <input type="hidden" id="qadd-opt-c-img" value="" />
+              <div id="qadd-opt-c-preview" class="hidden text-center"></div>
+            </div>
+
+            <!-- Option D -->
+            <div class="p-2 bg-white border rounded-xl space-y-1">
+              <b>(D) ಪಠ್ಯ:</b> <input type="text" id="qadd-opt-d" required placeholder="ಆಯ್ಕೆ D" class="w-full p-1.5 border rounded-lg" />
+              <input type="file" accept="image/*" onchange="processQuestionImageUpload(this, 'qadd-opt-d-preview', 'qadd-opt-d-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+              <input type="hidden" id="qadd-opt-d-img" value="" />
+              <div id="qadd-opt-d-preview" class="hidden text-center"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label>
+          <select id="qadd-correct-opt" class="w-full px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">
+            <option value="A">ಆಯ್ಕೆ (A)</option><option value="B">ಆಯ್ಕೆ (B)</option><option value="C" selected>ಆಯ್ಕೆ (C)</option><option value="D">ಆಯ್ಕೆ (D)</option>
+          </select>
+        </div>
+      `;
+    };
+
+    // ೩. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಆಯ್ಕೆಗಳ ಚಿತ್ರ ಸಹಿತ MCQ ಸೇವ್ ಮಾಡುವಿಕೆ
+    const origHandleSaveCustomQuestionForOptImages = window.handleSaveCustomQuestion;
+    window.handleSaveCustomQuestion = function(e) {
+      const type = document.getElementById('qadd-type')?.value || 'mcq';
+
+      if (type === 'mcq') {
+        e.preventDefault();
+        const medium = document.getElementById('qadd-medium')?.value || 'ಕನ್ನಡ (Kannada)';
+        const grade = document.getElementById('qadd-class')?.value || '6';
+        const subject = document.getElementById('qadd-subject')?.value || 'ವಿಜ್ಞಾನ (Science)';
+        const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+        const chapter = document.getElementById('qadd-chapter')?.value.trim();
+        const obj = document.getElementById('qadd-obj')?.value || 'ತಿಳುವಳಿಕೆ';
+        const diff = document.getElementById('qadd-diff')?.value || 'ಸುಲಭ';
+
+        if (!chapter) return alert('ದಯವಿಟ್ಟು ಪಾಠದ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.');
+
+        const correctOpt = document.getElementById('qadd-correct-opt')?.value || 'A';
+        const optA = document.getElementById('qadd-opt-a')?.value.trim() || '';
+        const optB = document.getElementById('qadd-opt-b')?.value.trim() || '';
+        const optC = document.getElementById('qadd-opt-c')?.value.trim() || '';
+        const optD = document.getElementById('qadd-opt-d')?.value.trim() || '';
+
+        const newQ = {
+          id: 'q_' + Date.now() + Math.floor(Math.random() * 1000),
+          medium, grade, subject, part, chapter, type: 'mcq', obj, diff,
+          q: document.getElementById('qadd-text')?.value.trim() || '',
+          a: optA, b: optB, c: optC, d: optD,
+          image: document.getElementById('qadd-image-base64')?.value || '',
+          imageA: document.getElementById('qadd-opt-a-img')?.value || '',
+          imageB: document.getElementById('qadd-opt-b-img')?.value || '',
+          imageC: document.getElementById('qadd-opt-c-img')?.value || '',
+          imageD: document.getElementById('qadd-opt-d-img')?.value || '',
+          ans: `(${correctOpt}) ${correctOpt === 'A' ? optA : (correctOpt === 'B' ? optB : (correctOpt === 'C' ? optC : optD))}`,
+          marks: 1
+        };
+
+        appState.qbank.unshift(newQ);
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+        pushToFirebaseCloud();
+        renderCustomQuestionList();
+        renderChapterCheckboxes();
+        handleQuestionTypeChangeInAdmin('mcq');
+
+        showToast(`🎉 ಚಿತ್ರ ಸಹಿತ MCQ ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಆಗಿದೆ!`, 'success');
+        return;
+      }
+
+      if (typeof origHandleSaveCustomQuestionForOptImages === 'function') {
+        origHandleSaveCustomQuestionForOptImages(e);
+      }
+    };
+
+    // ೪. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್‌ನಲ್ಲಿ MCQ ಚಿತ್ರಗಳ ಪ್ರದರ್ಶನ ಇಂಜೆಕ್ಷನ್
+    const originalRenderFullExamPaperForOptImages = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      if (typeof originalRenderFullExamPaperForOptImages === 'function') {
+        originalRenderFullExamPaperForOptImages(headerHtml);
+      }
+
+      const allQuestions = appState.activeGeneratedQuestions || [];
+      const selMcq = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq' && (q.imageA || q.imageB || q.imageC || q.imageD));
+
+      if (selMcq.length === 0) return;
+
+      // ಒಂದು ವೇಳೆ ಆಪ್ಷನ್‌ನಲ್ಲಿ ಚಿತ್ರಗಳಿದ್ದರೆ ಆ MCQ ಬ್ಲಾಕ್ ಅನ್ನು ಸುಂದರ ಇಮೇಜ್ ಗ್ರಿಡ್‌ಗೆ ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+      const paperContainer = document.getElementById('rendered-paper');
+      if (paperContainer) {
+        selMcq.forEach(q => {
+          const qTextClean = cleanDuplicateQuestionNumber(q.q);
+          const allRows = paperContainer.querySelectorAll('.q-paper-item-row');
+          allRows.forEach(row => {
+            if (row.innerText.includes(qTextClean.substring(0, 25))) {
+              const parentBlock = row.closest('div');
+              if (parentBlock) {
+                const optGrid = parentBlock.querySelector('.mcq-grid-layout, div[style*="grid-template-columns"]');
+                if (optGrid) {
+                  optGrid.outerHTML = renderMCQOptionsWithImages(q);
+                }
+              }
+            }
+          });
+        });
+      }
+    };
     
   </script>
 </body>
