@@ -15691,6 +15691,187 @@
       renderExactThreeBlueprints(allQuestions, exactSumOfAllSections);
       applyDemoWatermarkToOutput();
     };
+
+    /* ==========================================================================
+       🎓 CLASS-WISE SMART SUBJECTS FILTER (1-5 PRIMARY vs 6-10 HIGH SCHOOL)
+       ========================================================================== */
+
+    // ೧. ತರಗತಿವಾರು ಅಧಿಕೃತ ವಿಷಯಗಳ ಲಿಸ್ಟ್ ಜನರೇಟರ್
+    function getOfficialSubjectsByClassGrade(gradeValue) {
+      const g = parseInt(String(gradeValue || '6').replace(/\D/g, ''), 10) || 6;
+
+      if (g >= 1 && g <= 5) {
+        // 🌟 ೧ ರಿಂದ ೫ ನೇ ತರಗತಿಯ ವಿಷಯಗಳು
+        return [
+          "ಕನ್ನಡ (Kannada)",
+          "English",
+          "ಗಣಿತ (Mathematics)",
+          "ಪರಿಸರ ಅಧ್ಯಯನ (EVS)"
+        ];
+      } else {
+        // 🌟 ೬ ರಿಂದ ೧೦ ನೇ ತರಗತಿಯ ವಿಷಯಗಳು
+        return [
+          "ಕನ್ನಡ (Kannada)",
+          "English",
+          "ಹಿಂದಿ (Hindi)",
+          "ಗಣಿತ (Mathematics)",
+          "ವಿಜ್ಞಾನ (Science)",
+          "ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)",
+          "ದೈಹಿಕ ಶಿಕ್ಷಣ (Physical Education)"
+        ];
+      }
+    }
+
+    // ೨. ಪರಿಸರ ಅಧ್ಯಯನ (EVS) ವಿಷಯದ ಪ್ರತ್ಯೇಕತೆ (No mix-up)
+    const originalGetNormalizedSubjectKeyWithEVS = window.getNormalizedSubjectKey;
+    window.getNormalizedSubjectKey = function(subjectStr) {
+      const s = String(subjectStr || '').toLowerCase();
+
+      // ಪರಿಸರ ಅಧ್ಯಯನ ಪ್ರತ್ಯೇಕ ಕೀ
+      if (s.includes('ಪರಿಸರ') || s.includes('evs') || s.includes('environmental')) {
+        return 'evs';
+      }
+
+      if (typeof originalGetNormalizedSubjectKeyWithEVS === 'function') {
+        return originalGetNormalizedSubjectKeyWithEVS(subjectStr);
+      }
+
+      if (s.includes('ಸಮಾಜ') || s.includes('social')) return 'social_science';
+      if (s.includes('ವಿಜ್ಞಾನ') || s.includes('science')) return 'science';
+      if (s.includes('ಗಣಿತ') || s.includes('math')) return 'mathematics';
+      if (s.includes('ಇಂಗ್ಲಿಷ್') || s.includes('english')) return 'english';
+      if (s.includes('ಕನ್ನಡ') || s.includes('kannada')) return 'kannada';
+      if (s.includes('ಹಿಂದಿ') || s.includes('hindi')) return 'hindi';
+      if (s.includes('ಉರ್ದು') || s.includes('urdu')) return 'urdu';
+      if (s.includes('ದೈಹಿಕ') || s.includes('physical')) return 'physical_education';
+
+      return safeCleanMatch(s);
+    };
+
+    // ೩. ಜನರೇಟರ್‌ನಲ್ಲಿ ತರಗತಿ ಬದಲಾದಾಗ ವಿಷಯ ಡ್ರಾಪ್‌ಡೌನ್ ಆಟೋ-ಫಿಲ್ಟರ್
+    window.syncSubjectAndChapters = function() {
+      const mediumSelect = document.getElementById('cfg-medium');
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      const schoolInput = document.getElementById('cfg-school-name');
+
+      const currentGradeVal = classSelect ? classSelect.value : '6';
+      const allMediums = getSystemMediums();
+      
+      // 🌟 ತರಗತಿಗೆ ತಕ್ಕಂತೆ ವಿಷಯಗಳ ಆಯ್ಕೆ (1-5 ಅಥವಾ 6-10)
+      let availableSubjects = getOfficialSubjectsByClassGrade(currentGradeVal);
+      let availableClasses = ALL_CLASSES_LIST;
+
+      // ಶಿಕ್ಷಕರ ಲಾಗಿನ್ ಆಗಿದ್ದರೆ ಅವರ ವಿಷಯಗಳು & ಶಾಲಾ ಹೆಸರು ಲಾಕ್
+      if (appState.currentUserType === 'teacher') {
+        const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+        if (tObj) {
+          if (schoolInput) {
+            const isEnglish = (mediumSelect?.value || '').toLowerCase().includes('english');
+            schoolInput.value = getAccurateSchoolNameByMedium(tObj, isEnglish);
+            schoolInput.readOnly = true;
+            schoolInput.classList.add('bg-slate-200', 'cursor-not-allowed');
+            schoolInput.classList.remove('bg-slate-50');
+          }
+
+          if (tObj.grades && tObj.grades.length > 0) {
+            availableClasses = ALL_CLASSES_LIST.filter(c => tObj.grades.includes(c.val));
+          }
+
+          if (tObj.subjects && tObj.subjects.length > 0) {
+            availableSubjects = availableSubjects.filter(s => {
+              return tObj.subjects.some(ts => isStrictSubjectMatch(s, ts));
+            });
+          }
+        }
+      } else {
+        if (schoolInput) {
+          schoolInput.readOnly = false;
+          schoolInput.classList.remove('bg-slate-200', 'cursor-not-allowed');
+          schoolInput.classList.add('bg-slate-50');
+        }
+      }
+
+      if (mediumSelect) mediumSelect.innerHTML = allMediums.map(m => `<option value="${m}">${m}</option>`).join('');
+      if (classSelect && classSelect.innerHTML === '') {
+        classSelect.innerHTML = availableClasses.map(c => `<option value="${c.val}">${c.label}</option>`).join('');
+      }
+
+      // ವಿಷಯ ಡ್ರಾಪ್‌ಡೌನ್ ನವೀಕರಣ
+      if (subjectSelect) {
+        const previousVal = subjectSelect.value;
+        subjectSelect.innerHTML = (availableSubjects.length > 0 ? availableSubjects : getOfficialSubjectsByClassGrade(currentGradeVal)).map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        // ಹಿಂದಿನ ವಿಷಯ ಲಿಸ್ಟ್‌ನಲ್ಲಿದ್ದರೆ ಅದನ್ನೇ ಉಳಿಸುವುದು, ಇಲ್ಲದಿದ್ದರೆ ಮೊದಲ ವಿಷಯ ಸೆಲೆಕ್ಟ್
+        if (availableSubjects.includes(previousVal)) {
+          subjectSelect.value = previousVal;
+        }
+      }
+
+      updateGlobalUserValidityDisplayEverywhere();
+      renderChapterCheckboxes();
+      renderMaster10QuestionFormats();
+    };
+
+    // ೪. ತರಗತಿ ಅಥವಾ ವಿಷಯ ಬದಲಾದಾಗ ತಕ್ಷಣವೇ ವಿಷಯ ಲಿಸ್ಟ್ ಅಪ್ಡೇಟ್ ಆಗುವುದು
+    window.handleClassOrSubjectChange = function() {
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      const mediumSelect = document.getElementById('cfg-medium');
+      const schoolInput = document.getElementById('cfg-school-name');
+
+      if (classSelect && subjectSelect) {
+        const currentGrade = classSelect.value;
+        let validSubjects = getOfficialSubjectsByClassGrade(currentGrade);
+
+        if (appState.currentUserType === 'teacher') {
+          const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+          if (tObj && tObj.subjects && tObj.subjects.length > 0) {
+            validSubjects = validSubjects.filter(s => tObj.subjects.some(ts => isStrictSubjectMatch(s, ts)));
+          }
+        }
+
+        const prevSubj = subjectSelect.value;
+        subjectSelect.innerHTML = validSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        if (validSubjects.includes(prevSubj)) {
+          subjectSelect.value = prevSubj;
+        }
+      }
+
+      if (schoolInput && appState.currentUserType === 'teacher') {
+        const tObj = JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null');
+        if (tObj) {
+          const isEnglish = (mediumSelect?.value || '').toLowerCase().includes('english');
+          schoolInput.value = getAccurateSchoolNameByMedium(tObj, isEnglish);
+        }
+      }
+
+      if (typeof renderChapterCheckboxes === 'function') renderChapterCheckboxes();
+      if (typeof renderMaster10QuestionFormats === 'function') renderMaster10QuestionFormats();
+    };
+
+    // ೫. AI ಇಂಪೋರ್ಟರ್‌ನಲ್ಲೂ ತರಗತಿಗೆ ತಕ್ಕಂತೆ ವಿಷಯ ಫಿಲ್ಟರ್
+    const originalRefreshBulkImportExistingChaptersDropdown = window.refreshBulkImportExistingChaptersDropdown;
+    window.refreshBulkImportExistingChaptersDropdown = function() {
+      const cls = document.getElementById('bulk-import-class')?.value || '6';
+      const subjSelect = document.getElementById('bulk-import-subject');
+
+      if (subjSelect) {
+        const currentSelected = subjSelect.value;
+        const validSubjects = getOfficialSubjectsByClassGrade(cls);
+        subjSelect.innerHTML = validSubjects.map(s => `<option value="${s}">${s.split('(')[0]}</option>`).join('');
+        if (validSubjects.includes(currentSelected)) {
+          subjSelect.value = currentSelected;
+        }
+      }
+
+      if (typeof originalRefreshBulkImportExistingChaptersDropdown === 'function') {
+        originalRefreshBulkImportExistingChaptersDropdown();
+      }
+    };
+
+    // ತಕ್ಷಣವೇ ಸ್ಕ್ರೀನ್ ಮೇಲೆ ಸಕ್ರಿಯಗೊಳಿಸುವುದು
+    syncSubjectAndChapters();
     
   </script>
 </body>
