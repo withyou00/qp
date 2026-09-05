@@ -13249,6 +13249,249 @@
         });
       }
     };
+
+/* ==========================================================================
+       📚 SUBJECT-SMART DYNAMIC QUESTION FORMATS & AUTO-JSON DISCOVERY ENGINE
+       ========================================================================== */
+
+    // ೧. ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ನಿರ್ಧರಿಸುವ ಮಾಸ್ಟರ್ ಲಿಸ್ಟ್
+    window.getSubjectSpecificQuestionFormats = function(subjectName) {
+      const sKey = getNormalizedSubjectKey(subjectName);
+      let list = [];
+
+      // 🌟 ಎಲ್ಲಾ ವಿಷಯಗಳಿಗೂ ಸಾಮಾನ್ಯವಾದ ೧೦ ಸಾರ್ವತ್ರಿಕ ಪ್ರಕಾರಗಳು (Universal)
+      list.push(
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', marks: 1, subject: 'all' },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', marks: 1, subject: 'all' },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', marks: 1, subject: 'all' },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', marks: 1, subject: 'all' },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', marks: 1, subject: 'all' },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', marks: 4, subject: 'all' },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', marks: 1, subject: 'all' },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', marks: 2, subject: 'all' },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', marks: 3, subject: 'all' },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', marks: 4, subject: 'all' }
+      );
+
+      // 🌟 ಭಾಷಾ ವಿಷಯಗಳಿಗೆ ಮಾತ್ರ (ಕನ್ನಡ, English, ಹಿಂದಿ, ಉರ್ದು)
+      if (sKey === 'kannada' || sKey === 'english' || sKey === 'hindi' || sKey === 'urdu') {
+        list.push(
+          { key: 'grammar', label: 'ವ್ಯಾಕರಣ ಭಾಗ (Grammar - 1M)', heading: 'ವ್ಯಾಕರಣ ಭಾಗದ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:', marks: 1, subject: sKey },
+          { key: 'poem_4lines', label: '೪ ಸಾಲುಗಳ ಪದ್ಯ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:', marks: 4, subject: sKey },
+          { key: 'proverb_essay', label: 'ಗಾದೆ ಮಾತು / ಪ್ರಬಂಧ / ಪತ್ರ ಲೇಖನ (4M/5M)', heading: 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ / ಪ್ರಬಂಧ ಬರೆಯಿರಿ:', marks: 4, subject: sKey }
+        );
+      }
+
+      // 🌟 ವಿಜ್ಞಾನಕ್ಕೆ ಮಾತ್ರ (Science Only)
+      if (sKey === 'science') {
+        list.push(
+          { key: 'diagram_parts', label: 'ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರವನ್ನು ಬಿಡಿಸಿ, ಭಾಗಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'science' },
+          { key: 'give_reason', label: 'ವೈಜ್ಞಾನಿಕ ಕಾರಣ ಕೊಡಿ (2M)', heading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ವೈಜ್ಞಾನಿಕ ಕಾರಣ ನೀಡಿ:', marks: 2, subject: 'science' }
+        );
+      }
+
+      // 🌟 ಸಮಾಜ ವಿಜ್ಞಾನಕ್ಕೆ ಮಾತ್ರ (Social Science Only)
+      if (sKey === 'social_science') {
+        list.push(
+          { key: 'map_locations', label: 'ಭಾರತದ ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ (4M)', heading: 'ಭಾರತದ ನಕ್ಷೆಯನ್ನು ಬಿಡಿಸಿ, ಕೆಳಗಿನ ಸ್ಥಳಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'social_science' }
+        );
+      }
+
+      // 🌟 ಗಣಿತಕ್ಕೆ ಮಾತ್ರ (Mathematics Only)
+      if (sKey === 'mathematics') {
+        list.push(
+          { key: 'solve_math', label: 'ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸಿ (2M/3M)', heading: 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:', marks: 2, subject: 'mathematics' },
+          { key: 'theorem_graph', label: 'ಪ್ರಮೇಯ ಸಾಧಿಸಿ / ಗ್ರಾಫ್ ರಚಿಸಿ (4M)', heading: 'ಪ್ರಮೇಯವನ್ನು ಸಾಧಿಸಿ / ನಕ್ಷೆ (Graph) ರಚಿಸಿ:', marks: 4, subject: 'mathematics' }
+        );
+      }
+
+      // 🌟 ಅಡ್ಮಿನ್ ಸೇರಿಸಿರುವ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಲ್ಲಿ ಈ ವಿಷಯಕ್ಕೆ ಮ್ಯಾಚ್ ಆಗುವ ಪ್ರಕಾರಗಳು
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, subjectName)) {
+          if (!list.some(x => x.key === ct.key)) {
+            list.push(ct);
+          }
+        }
+      });
+
+      // 🌟 ಭಂಡಾರದಲ್ಲಿ (qbank) ಈ ವಿಷಯದಲ್ಲಿ ಇರುವ ಯಾವುದೇ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಆಟೋ-ಪತ್ತೆಹಚ್ಚುವಿಕೆ
+      (appState.qbank || []).forEach(q => {
+        if (isStrictSubjectMatch(q.subject, subjectName)) {
+          const qType = getCanonicalQuestionType(q);
+          if (!list.some(x => x.key === qType || x.key === q.type)) {
+            list.push({
+              key: q.type,
+              label: `${q.type} (${q.marks || 1}M)`,
+              heading: `${q.type}:`,
+              marks: q.marks || 1,
+              subject: sKey
+            });
+          }
+        }
+      });
+
+      return list;
+    };
+
+    // ೨. ಜನರೇಟರ್ Step 3 (ವಿಷಯ ಬದಲಾದಾಗ ಅದಕ್ಕೆ ಸಂಬಂಧಿಸಿದ ಪ್ರಕಾರಗಳು ಮಾತ್ರ ಲೈವ್ ಪ್ರದರ್ಶನ)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+      const isOwnerAdmin = (sessionStorage.getItem('withyou_admin_auth_token') === 'true' || isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      // 🌟 ಆಯ್ಕೆಮಾಡಿದ ವಿಷಯಕ್ಕೆ ಸೇರಿದ ಪ್ರಕಾರಗಳು ಮಾತ್ರ ಬರುತ್ತವೆ
+      const activeFormats = getSubjectSpecificQuestionFormats(currentSubj);
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      let html = activeFormats.map((fmt, idx) => {
+        const isSpecial = (fmt.subject && fmt.subject !== 'all');
+        const bgClass = isSpecial ? 'bg-indigo-50/90 border-2 border-indigo-300 hover:border-indigo-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = isSpecial ? 'font-black text-indigo-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-indigo-600 w-4 h-4">
+            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openAddCustomQTypeModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಹೊಸ ಪ್ರಕಾರ ಸೇರಿಸುವಾಗ "ವಿಷಯ ಆಯ್ಕೆ" ಡ್ರಾಪ್‌ಡೌನ್
+    const originalOpenAddCustomQTypeModalForSubj = window.openAddCustomQTypeModal;
+    window.openAddCustomQTypeModal = function() {
+      if (typeof originalOpenAddCustomQTypeModalForSubj === 'function') {
+        originalOpenAddCustomQTypeModalForSubj();
+      }
+
+      const form = document.getElementById('form-manage-custom-qtype');
+      if (!form || document.getElementById('new-qtype-subject')) return;
+
+      const subjects = getSystemSubjects();
+      
+      const subjSelectorHtml = `
+        <div class="mb-2">
+          <label class="block font-bold text-slate-700 mb-1">ಸಂಬಂಧಿಸಿದ ವಿಷಯ (Target Subject) *</label>
+          <select id="new-qtype-subject" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-indigo-950">
+            <option value="all" selected>🌐 ಎಲ್ಲಾ ವಿಷಯಗಳಿಗೆ (All Subjects / Universal)</option>
+            ${subjects.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+      `;
+
+      form.insertAdjacentHTML('afterbegin', subjSelectorHtml);
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಸೇವ್ ಮಾಡುವಾಗ ವಿಷಯದ ಟ್ಯಾಗ್ ಸೇರ್ಪಡೆ
+    const origHandleSaveOrUpdateCustomQTypeForSubj = window.handleSaveOrUpdateCustomQType;
+    window.handleSaveOrUpdateCustomQType = function(e) {
+      e.preventDefault();
+      const label = document.getElementById('new-qtype-label')?.value.trim();
+      const heading = document.getElementById('new-qtype-heading')?.value.trim();
+      const marks = parseInt(document.getElementById('new-qtype-marks')?.value) || 1;
+      const targetSubj = document.getElementById('new-qtype-subject')?.value || 'all';
+
+      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+
+      let list = getCustomQuestionTypesList();
+
+      if (editingCustomQTypeKey) {
+        const item = list.find(x => x.key === editingCustomQTypeKey);
+        if (item) {
+          item.label = label;
+          item.heading = heading;
+          item.marks = marks;
+          item.subject = targetSubj;
+        }
+        showToast(`✅ '${label}' ಪ್ರಕಾರವನ್ನು ಅಪ್ಡೇಟ್ ಮಾಡಲಾಗಿದೆ!`, 'success');
+      } else {
+        const key = 'custom_' + Date.now();
+        list.push({ key, label, heading, marks, subject: targetSubj });
+        showToast(`🎉 '${label}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
+      }
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+
+      openAddCustomQTypeModal();
+      renderMaster10QuestionFormats();
+    };
+
+    // ೫. JSON ಅಪ್ಲೋಡ್ ಆದಾಗ ಆ ಪ್ರಕಾರವನ್ನು ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಆಯಾ ವಿಷಯಕ್ಕೆ ಲಿಂಕ್ ಮಾಡುವುದು
+    const origHandleExecuteDirectJSONUploadForAutoSubj = window.handleExecuteDirectJSONUpload;
+    window.handleExecuteDirectJSONUpload = async function() {
+      const textarea = document.getElementById('direct-json-textarea');
+      let rawVal = textarea?.value.trim();
+
+      if (rawVal) {
+        try {
+          rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+          const parsed = JSON.parse(rawVal);
+          if (Array.isArray(parsed)) {
+            let customList = getCustomQuestionTypesList();
+            let modified = false;
+
+            parsed.forEach(q => {
+              const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+              if (q.type && !standardKeys.includes(q.type) && !customList.some(c => c.key === q.type)) {
+                customList.push({
+                  key: q.type,
+                  label: `${q.type} (${q.marks || 1}M)`,
+                  heading: `${q.type}:`,
+                  marks: q.marks || 1,
+                  subject: q.subject || 'all' // 🌟 ಆಟೋ-ಲಿಂಕ್
+                });
+                modified = true;
+              }
+            });
+
+            if (modified) {
+              localStorage.setItem('withyou_custom_qtypes', JSON.stringify(customList));
+              try {
+                fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(customList)
+                });
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (typeof origHandleExecuteDirectJSONUploadForAutoSubj === 'function') {
+        await origHandleExecuteDirectJSONUploadForAutoSubj();
+      }
+
+      renderMaster10QuestionFormats();
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
