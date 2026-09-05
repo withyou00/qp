@@ -18303,6 +18303,91 @@
         }
     });
 })();
+
+// =========================================================================
+// FIX: ಅಂಕಗಳ ಆಟೋ-ಗ್ರೂಪಿಂಗ್ ತಡೆದು, ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಪ್ರತ್ಯೇಕಿಸುವ ಕೋಡ್
+// =========================================================================
+(function() {
+    function splitCustomQuestionSections() {
+        // 1. ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್‌ಗಳ ಲಿಸ್ಟ್ ಪಡೆಯುವುದು
+        let customTypes = [];
+        try {
+            customTypes = JSON.parse(localStorage.getItem('customQuestionTypes') || 
+                                     localStorage.getItem('customTypes') || 
+                                     localStorage.getItem('questionTypes') || '[]');
+        } catch(e) {}
+
+        if (!customTypes.length) return;
+
+        // 2. ಪೇಪರ್‌ನಲ್ಲಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಹುಡುಕುವುದು
+        const allEditButtons = document.querySelectorAll('button, a, span');
+        let renderedRows = [];
+        allEditButtons.forEach(el => {
+            if (el.textContent.trim().toLowerCase() === 'edit') {
+                let row = el.closest('tr, li, .question-item, .row, div[style*="flex"], div') || el.parentElement;
+                if (row && !renderedRows.includes(row)) {
+                    renderedRows.push(row);
+                }
+            }
+        });
+
+        // 3. ಪ್ರಶ್ನೆಗಳ ಡೇಟಾಬೇಸ್‌ನಿಂದ ಪ್ರಕಾರ ಪರಿಶೀಲಿಸುವುದು
+        const qBank = window.questionsList || window.allQuestions || window.paperQuestions || [];
+        
+        customTypes.forEach(cType => {
+            const typeName = (cType.name || '').replace(/\s*\(\d+M\)\s*/gi, '').trim().toLowerCase();
+            const headingText = cType.heading || cType.paperHeading || cType.name;
+
+            // ಈ ಕಸ್ಟಮ್ ಪ್ರಕಾರಕ್ಕೆ ಸೇರಿದ ಪ್ರಶ್ನೆಗಳನ್ನು ಫಿಲ್ಟರ್ ಮಾಡಿ
+            let matchedRows = [];
+            renderedRows.forEach(row => {
+                const text = row.innerText || '';
+                // ಪ್ರಶ್ನೆ ಸಂಖ್ಯೆ ಅಥವಾ ಪಠ್ಯದಿಂದ ಮ್ಯಾಚ್ ಮಾಡುವುದು
+                qBank.forEach(q => {
+                    const qText = (q.question || q.questionText || q.text || '').trim();
+                    const qType = (q.type || q.questionType || '').replace(/\s*\(\d+M\)\s*/gi, '').trim().toLowerCase();
+                    
+                    if (qText && text.includes(qText) && qType.includes(typeName)) {
+                        if (!matchedRows.includes(row)) matchedRows.push(row);
+                    }
+                });
+            });
+
+            // ಮ್ಯಾಚ್ ಆದ ಪ್ರಶ್ನೆಗಳನ್ನು 1 ಅಂಕದ ವಿಭಾಗದಿಂದ ಕಿತ್ತು ಪ್ರತ್ಯೇಕ ಸೆಕ್ಷನ್‌ಗೆ ಹಾಕುವುದು
+            if (matchedRows.length > 0) {
+                // ಹೊಸ ಪ್ರತ್ಯೇಕ ಸೆಕ್ಷನ್ ರಚಿಸಿ
+                let newSection = document.createElement('div');
+                newSection.style.margin = '20px 0';
+                newSection.innerHTML = `
+                    <div style="font-weight: bold; font-size: 15px; margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; display: flex; justify-content: space-between;">
+                        <span>${headingText}</span>
+                        <span>1x${matchedRows.length}=${matchedRows.length}</span>
+                    </div>
+                `;
+
+                // ಮೊದಲ ಪ್ರಶ್ನೆಯಿರುವ ಜಾಗದ ಕೆಳಗೆ ಹೊಸ ಸೆಕ್ಷನ್ ಸೇರಿಸಿ
+                const firstRow = matchedRows[0];
+                firstRow.parentElement.parentElement.appendChild(newSection);
+
+                // ಪ್ರಶ್ನೆಗಳನ್ನು ಹೊಸ ಹೆಡಿಂಗ್ ಕೆಳಗೆ ವರ್ಗಾಯಿಸಿ
+                matchedRows.forEach(row => {
+                    newSection.appendChild(row);
+                });
+            }
+        });
+    }
+
+    // Generate ಅಥವಾ Filter ಬಟನ್ ಕ್ಲಿಕ್ ಆದಾಗ ರನ್ ಆಗಲು
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate'))) {
+            setTimeout(splitCustomQuestionSections, 400);
+            setTimeout(splitCustomQuestionSections, 800);
+        }
+    });
+
+    // ವಿಂಡೋ ಲೋಡ್ ಆದಾಗಲೂ ರನ್ ಮಾಡಿ
+    window.addEventListener('load', () => setTimeout(splitCustomQuestionSections, 600));
+})();
     
   </script>
 </body>
