@@ -18111,6 +18111,124 @@
         setTimeout(injectEditButtonsToQuestionBank, 300);
     });
 })();
+
+    // =============================================================================
+// ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡ್ರಾಪ್‌ಡೌನ್ ಪಕ್ಕದಲ್ಲೇ EDIT ಬಟನ್ ಮತ್ತು ಆಟೋ-ಅಪ್‌ಡೇಟ್ ಕೋಡ್
+// =============================================================================
+(function() {
+    console.log("Question Types Editor Button & Auto-Sync Initialized...");
+
+    // 1. ಡ್ರಾಪ್‌ಡೌನ್ ಪಕ್ಕದಲ್ಲಿ "✏️ ಪ್ರಕಾರ ತಿದ್ದುಪಡಿ" ಬಟನ್ ಸೇರಿಸುವುದು
+    function injectTypeEditButton() {
+        const modal = document.querySelector('.modal, [class*="modal"], div[style*="z-index"]');
+        if (!modal) return;
+
+        // "ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type)" ಲೇಬಲ್ ಹುಡುಕುವುದು
+        const labels = modal.querySelectorAll('label, div, span');
+        let targetLabel = null;
+
+        labels.forEach(l => {
+            if (l.innerText && l.innerText.includes('ಪ್ರಶ್ನೆ ಪ್ರಕಾರ') && l.innerText.includes('Question Type')) {
+                targetLabel = l;
+            }
+        });
+
+        if (targetLabel && !targetLabel.querySelector('.btn-quick-edit-type')) {
+            // ಸುಂದರವಾದ Edit ಬಟನ್ ರಚಿಸುವುದು
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn-quick-edit-type';
+            editBtn.innerHTML = '✏️ ಪ್ರಕಾರ ತಿದ್ದುಪಡಿ (Edit Types)';
+            editBtn.style.cssText = `
+                background: linear-gradient(135deg, #6366f1, #4f46e5);
+                color: #ffffff;
+                border: none;
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: bold;
+                border-radius: 4px;
+                cursor: pointer;
+                margin-left: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                vertical-align: middle;
+            `;
+
+            // ಕ್ಲಿಕ್ ಮಾಡಿದಾಗ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ (Customizer) ಓಪನ್ ಆಗುವುದು
+            editBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Customizer ಬಟನ್ ಹುಡುಕಿ ಕ್ಲಿಕ್ ಮಾಡುವುದು
+                const openBtn = Array.from(document.querySelectorAll('button, a')).find(b => 
+                    b.innerText.includes('Customizer') || 
+                    b.innerText.includes('ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ') || 
+                    b.innerText.includes('Admin Add Format')
+                );
+
+                if (openBtn) {
+                    openBtn.click();
+                } else if (typeof openCustomFormatModal === 'function') {
+                    openCustomFormatModal();
+                } else if (typeof openAdminFormatModal === 'function') {
+                    openAdminFormatModal();
+                } else {
+                    alert('ಪ್ರಕಾರ ನಿರ್ವಹಣೆ ವಿಂಡೋ ತೆರೆಯಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ.');
+                }
+            };
+
+            targetLabel.appendChild(editBtn);
+        }
+    }
+
+    // 2. ಡ್ರಾಪ್‌ಡೌನ್‌ನಲ್ಲಿರುವ ಡಬಲ್ (1M) (1M), (5M) (5M) ಮತ್ತು ಹಳೆಯ fmt_ ID ಸರಿಪಡಿಸುವುದು
+    function cleanAndRefreshDropdownOptions() {
+        const modal = document.querySelector('.modal, [class*="modal"], div[style*="z-index"]');
+        if (!modal) return;
+
+        const select = modal.querySelector('select');
+        if (!select) return;
+
+        // ಲೋಕಲ್ ಸ್ಟೋರೇಜ್‌ನಿಂದ ಲೇಟೆಸ್ಟ್ ಪ್ರಕಾರಗಳನ್ನು ಪಡೆಯುವುದು
+        let customTypes = [];
+        try {
+            customTypes = JSON.parse(localStorage.getItem('customQuestionTypes') || 
+                                     localStorage.getItem('customTypes') || 
+                                     localStorage.getItem('questionTypes') || '[]');
+        } catch(e) {}
+
+        Array.from(select.options).forEach(opt => {
+            let txt = opt.text;
+
+            // (5M) (5M) ಡಬಲ್ ಆಗಿದ್ದರೆ ಒಂದೇ (5M) ಮಾಡುವುದು
+            if (txt.match(/\(\d+[mM]\)\s*\(\d+[mM]\)/)) {
+                opt.text = txt.replace(/\s*\(\d+[mM]\)\s*\(\d+[mM]\)/gi, (match) => {
+                    return match.split(' ')[0]; // ಮೊದಲ ಬ್ರಾಕೆಟ್ ಮಾತ್ರ ಇಡುತ್ತದೆ
+                });
+            }
+
+            // '⚠️ ಹಳೆಯ ಪ್ರಕಾರ' ದೋಷವಿದ್ದರೆ ಲೇಟೆಸ್ಟ್ ಹೆಸರಿಗೆ ಬದಲಾಯಿಸುವುದು
+            if (txt.includes('⚠️ ಹಳೆಯ ಪ್ರಕಾರ') || txt.includes('fmt_')) {
+                customTypes.forEach(ct => {
+                    const ctName = ct.name || ct.typeName;
+                    if (ctName && (ctName.includes('ಪದಗಳಲ್ಲಿ') || ctName.includes('ಅಂಕಿಗಳಲ್ಲಿ'))) {
+                        opt.text = ctName;
+                        opt.value = ct.id || ctName;
+                    }
+                });
+            }
+        });
+    }
+
+    // 3. ನಿರಂತರವಾಗಿ ಪರಿಶೀಲಿಸಿ ಬಟನ್ ಹಾಕುವುದು ಮತ್ತು ಡ್ರಾಪ್‌ಡೌನ್ ಅಪ್‌ಡೇಟ್ ಮಾಡುವುದು
+    setInterval(function() {
+        injectTypeEditButton();
+        cleanAndRefreshDropdownOptions();
+    }, 400);
+
+})();
     
   </script>
 </body>
