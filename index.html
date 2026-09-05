@@ -18205,6 +18205,104 @@
         setTimeout(fixGeneratedSections, 500);
     });
 })();
+
+    // =========================================================================
+// PERMANENT FIX: ಅಂಕಗಳ ಆಧಾರದ ಗ್ರೂಪಿಂಗ್ ರದ್ದುಗೊಳಿಸಿ, ಪ್ರಕಾರದ ಹೆಡಿಂಗ್ ನೀಡುವ ಕೋಡ್
+// =========================================================================
+(function() {
+    console.log("Activating Deep Grouping Fix...");
+
+    // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಮ್ಯಾಪ್ ಪಡೆಯುವುದು
+    function getCustomHeadings() {
+        let types = [];
+        try {
+            types = JSON.parse(localStorage.getItem('customQuestionTypes') || 
+                               localStorage.getItem('customTypes') || 
+                               localStorage.getItem('questionTypes') || '[]');
+        } catch(e) {}
+        
+        let map = {};
+        types.forEach(t => {
+            let key = (t.name || t.typeName || '').trim();
+            if (key) {
+                map[key] = t.heading || t.paperHeading || key;
+            }
+        });
+        return map;
+    }
+
+    // Generate ಬಟನ್ ಕ್ಲಿಕ್ ಆದ ನಂತರ ಪೇಪರ್ ಅನ್ನು ಪುನರ್-ವಿಂಗಡಿಸುವ ಫಂಕ್ಷನ್
+    window.reorganizePaperByTypes = function() {
+        const customHeadings = getCustomHeadings();
+        
+        // ಪತ್ರಿಕೆಯ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಕಾರ್ಡ್/ಸಾಲುಗಳನ್ನು ಹುಡುಕುವುದು
+        const editButtons = document.querySelectorAll('button, a, span');
+        let questionNodes = [];
+
+        editButtons.forEach(btn => {
+            if (btn.textContent.trim().toLowerCase() === 'edit') {
+                let row = btn.closest('tr, li, .question-item, .row, div[class*="question"]') || btn.parentElement;
+                if (row) questionNodes.push(row);
+            }
+        });
+
+        // ಪ್ರಶ್ನೆಗಳನ್ನು ಅವುಗಳ ನಿಖರ ಪ್ರಕಾರಕ್ಕೆ ತಕ್ಕಂತೆ ಹೆಡಿಂಗ್ ರಚಿಸಿ ಸ್ಥಳಾಂತರಿಸುವುದು
+        // ನಿಮ್ಮ ಪ್ರಶ್ನೆಗಳ ಡೇಟಾಬೇಸ್ ಮೆಮೊರಿಯಲ್ಲಿದ್ದರೆ
+        const qList = window.generatedQuestions || window.paperQuestions || window.selectedQuestions || [];
+        
+        if (qList.length > 0 && questionNodes.length === qList.length) {
+            // ಪ್ರತಿಯೊಂದು ಪ್ರಶ್ನೆಯ ಸರಿಯಾದ ಪ್ರಕಾರವನ್ನು ಪರೀಕ್ಷಿಸಿ
+            let sections = {};
+
+            qList.forEach((q, index) => {
+                let node = questionNodes[index];
+                let type = q.questionType || q.type || 'ಇತರೆ';
+                let heading = customHeadings[type] || q.heading || type;
+
+                if (!sections[heading]) {
+                    sections[heading] = [];
+                }
+                sections[heading].push(node);
+            });
+
+            // ಹಳೆಯ ತಪ್ಪಾದ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ಅಳಿಸಿ ಸರಿಯಾದ ಹೆಡಿಂಗ್ ಅಡಿಯಲ್ಲಿ ಜೋಡಿಸುವುದು
+            const mainContainer = questionNodes[0].parentElement;
+            mainContainer.innerHTML = '';
+
+            let secIndex = 1;
+            const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+            for (let heading in sections) {
+                let secDiv = document.createElement('div');
+                secDiv.style.margin = '20px 0';
+                
+                let rNum = roman[secIndex - 1] || secIndex;
+                secDiv.innerHTML = `
+                    <div style="font-weight: bold; font-size: 16px; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 10px;">
+                        ${rNum}. ${heading}
+                    </div>
+                `;
+
+                sections[heading].forEach(qNode => {
+                    secDiv.appendChild(qNode);
+                });
+
+                mainContainer.appendChild(secDiv);
+                secIndex++;
+            }
+        }
+    };
+
+    // 'Generate' ಅಥವಾ ಯಾವುದೇ ಪೇಪರ್ ತಯಾರಿಸುವ ಬಟನ್ ಕ್ಲಿಕ್ ಆದಾಗ ಇದು ರನ್ ಆಗುತ್ತದೆ
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('Generate') || 
+                         e.target.innerText.includes('ರಚಿಸಿ') || 
+                         e.target.id.includes('generate'))) {
+            setTimeout(window.reorganizePaperByTypes, 400);
+            setTimeout(window.reorganizePaperByTypes, 1000);
+        }
+    });
+})();
     
   </script>
 </body>
