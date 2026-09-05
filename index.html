@@ -17906,6 +17906,140 @@
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     renderMaster10QuestionFormats();
+
+// =============================================================================
+// MASTER FIX: ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ, ಪ್ರಕಾರಗಳ ಸಿಂಕ್ ಮತ್ತು ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸರಿಪಡಿಸುವ ಕೋಡ್
+// =============================================================================
+(function() {
+    console.log("Master Sync & Question Editor Initialized...");
+
+    // 1. ಹೆಸರನ್ನು ಶುದ್ಧೀಕರಿಸುವ ಫಂಕ್ಷನ್ (ಡಬಲ್ (5M) (5M) ಬರದಂತೆ ತಡೆಯುತ್ತದೆ)
+    function cleanName(str) {
+        if (!str) return '';
+        return str.replace(/\s*\(.*?\)/gi, '').trim().toLowerCase();
+    }
+
+    // 2. ಲೋಕಲ್ ಸ್ಟೋರೇಜ್‌ನಿಂದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಪಡೆಯುವುದು
+    function getAllCustomTypes() {
+        try {
+            return JSON.parse(localStorage.getItem('customQuestionTypes') || 
+                              localStorage.getItem('customTypes') || 
+                              localStorage.getItem('questionTypes') || '[]');
+        } catch(e) { return []; }
+    }
+
+    // =========================================================================
+    // ಬೇಡಿಕೆ ೧ & ೨: ಡ್ರಾಪ್‌ಡೌನ್ ಕ್ಲೀನ್ ಮಾಡುವುದು ಮತ್ತು ಪ್ರಶ್ನೆ ಎಡಿಟ್ ಸರಿಪಡಿಸುವುದು
+    // =========================================================================
+    function sanitizeQuestionEditorModal() {
+        const modal = document.querySelector('.modal, [class*="modal"], #editModal, div[style*="z-index"]');
+        if (!modal) return;
+
+        const typeSelect = modal.querySelector('select');
+        const customTypes = getAllCustomTypes();
+
+        if (typeSelect) {
+            // ಡ್ರಾಪ್‌ಡೌನ್‌ನಲ್ಲಿರುವ ಡಬಲ್ (5M) (5M) ಮತ್ತು ಹಳೆಯ fmt_ ID ಸರಿಪಡಿಸುವುದು
+            Array.from(typeSelect.options).forEach(opt => {
+                let txt = opt.text;
+                // ಡಬಲ್ ಬ್ರಾಕೆಟ್ ತೆಗೆಯುವುದು
+                if (txt.includes(') (')) {
+                    opt.text = txt.replace(/\s*\(\d+[mM]\)\s*\(\d+[mM]\)/gi, ' (5M)');
+                }
+                
+                // ಹಳೆಯ 'fmt_' ದೋಷವಿದ್ದರೆ ಅದನ್ನು ಹೆಸರಿನೊಂದಿಗೆ ಹೊಂದಿಸುವುದು
+                if (opt.text.includes('fmt_') || opt.text.includes('ಹಳೆಯ ಪ್ರಕಾರ')) {
+                    // ಪ್ರಸ್ತುತ ಇರುವ ಸರಿಯಾದ ಪ್ರಕಾರಕ್ಕೆ ಮ್ಯಾಪ್ ಮಾಡಿ
+                    customTypes.forEach(ct => {
+                        if (cleanName(ct.name).includes('ಪದಗಳಲ್ಲಿ') || cleanName(ct.name).includes('ಅಂಕಿಗಳಲ್ಲಿ')) {
+                            opt.text = ct.name;
+                            opt.value = ct.id || ct.name;
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    // Modal ಓಪನ್ ಆದಾಗ ತಕ್ಷಣ ಡ್ರಾಪ್‌ಡೌನ್ ಸರಿಪಡಿಸಲು ನಿಗಾ ಇಡುವುದು
+    setInterval(sanitizeQuestionEditorModal, 400);
+
+    // =========================================================================
+    // ಬೇಡಿಕೆ ೩: ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಡಿಂಗ್ ಸೂಚನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ ನಿಖರವಾಗಿ ಬರುವಂತೆ ಮಾಡುವುದು
+    // =========================================================================
+    window.addEventListener('load', function() {
+        // ಪೇಪರ್ ಜನರೇಟ್ ಆದಾಗ ಸರಿಯಾದ ಹೆಡಿಂಗ್ ಅಪ್ಲೈ ಮಾಡುವ ಇಂಟರ್‌ಸೆಪ್ಟರ್
+        const originalRender = window.renderQuestionPaper || window.generatePaper;
+        
+        function enforceCustomHeadings() {
+            const customTypes = getAllCustomTypes();
+            if (!customTypes.length) return;
+
+            // ಪೇಪರ್‌ನಲ್ಲಿರುವ ಎಲ್ಲಾ ಸೆಕ್ಷನ್ ಹೆಡಿಂಗ್‌ಗಳನ್ನು ಹುಡುಕುವುದು
+            const allHeadings = document.querySelectorAll('h3, h4, .section-title, [class*="heading"], div');
+            
+            allHeadings.forEach(h => {
+                const hText = h.innerText || '';
+                
+                // ಒಂದು ವೇಳೆ 'ಒಂದು ವಾಕ್ಯ' ಅಥವಾ ಯಾವುದೇ ಡಿಫಾಲ್ಟ್ ಹೆಡಿಂಗ್ ಕೆಳಗೆ ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ
+                customTypes.forEach(ct => {
+                    const cClean = cleanName(ct.name);
+                    const officialHeading = ct.heading || ct.paperHeading;
+
+                    if (!officialHeading) return;
+
+                    // ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ಈ ಪ್ರಕಾರದ ಹೆಸರು ಕಂಡುಬಂದರೆ, ನೀವು ನೀಡಿದ ಪೂರ್ಣ ಹೆಡಿಂಗ್ ಸೂಚನೆಯನ್ನು ರಿಪ್ಲೇಸ್ ಮಾಡಿ
+                    if (cleanName(hText).includes(cClean) || (hText.includes(ct.name))) {
+                        let marksBadge = h.querySelector('span:last-child');
+                        let marksText = marksBadge ? marksBadge.outerHTML : '';
+                        
+                        let romanMatch = hText.match(/^([IVXLCDM]+\.|\d+\.)/);
+                        let roman = romanMatch ? romanMatch[0] + ' ' : '';
+                        
+                        h.innerHTML = `<span>${roman}${officialHeading}</span> ${marksText}`;
+                    }
+                });
+            });
+        }
+
+        // Generate ಬಟನ್ ಒತ್ತಿದ ನಂತರ ಹೆಡಿಂಗ್ ಅಪ್ಲೈ ಮಾಡಿ
+        document.addEventListener('click', function(e) {
+            if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate') || e.target.innerText.includes('ರಚಿಸಿ'))) {
+                setTimeout(enforceCustomHeadings, 300);
+                setTimeout(enforceCustomHeadings, 700);
+            }
+        });
+    });
+
+    // =========================================================================
+    // ಸೇವ್ ಮಾಡಿದಾಗ ಪ್ರಶ್ನೆ ಪಠ್ಯ ಮತ್ತು ಪ್ರಕಾರ ಎಲ್ಲ ಕಡೆ ಸಿಂಕ್ ಆಗುವಂತೆ ಮಾಡುವುದು
+    // =========================================================================
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('ಸೇವ್') || e.target.innerText.includes('Save'))) {
+            const modal = e.target.closest('.modal, [class*="modal"], div[style*="z-index"]');
+            if (modal) {
+                const textInput = modal.querySelector('textarea, input[type="text"]');
+                const typeSelect = modal.querySelector('select');
+                
+                if (textInput && typeSelect) {
+                    const updatedText = textInput.value.trim();
+                    const selectedTypeName = typeSelect.options[typeSelect.selectedIndex].text;
+                    
+                    // ಆಲ್ ಕ್ವೆಶ್ಚನ್ಸ್ ಲಿಸ್ಟ್‌ನಲ್ಲೂ ತಕ್ಷಣ ಅಪ್‌ಡೇಟ್ ಮಾಡುವುದು
+                    if (window.allQuestions && Array.isArray(window.allQuestions)) {
+                        window.allQuestions.forEach(q => {
+                            if (q.q === updatedText || q.text === updatedText) {
+                                q.questionType = selectedTypeName;
+                                q.type = selectedTypeName;
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+})();
     
   </script>
 </body>
