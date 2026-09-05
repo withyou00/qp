@@ -17129,6 +17129,217 @@
     if (typeof renderCustomQuestionList === 'function') {
       renderCustomQuestionList();
     }
+
+/* ==========================================================================
+       🧹 AUTO-CLEAN OBSOLETE RAW MACHINE KEYS & MERGE DUPLICATE QUESTION FORMATS
+       ========================================================================== */
+
+    // ೧. ಅನಗತ್ಯ ಇಂಗ್ಲಿಷ್ ಕಂಪ್ಯೂಟರ್ ಕೋಡ್‌ಗಳನ್ನು ಸ್ವಚ್ಛಗೊಳಿಸುವ ಮಾಸ್ಟರ್ ಕ್ಲೀನರ್
+    function autoCleanAndMigrateObsoleteQuestionFormats() {
+      let rawQBank = appState.qbank || [];
+      let customTypes = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      let qbankModified = false;
+      let typesModified = false;
+
+      // ಇಂಗ್ಲಿಷ್ ರಾ ಕೋಡ್‌ಗಳನ್ನು ಸರಿಯಾದ ಕನ್ನಡ ಪ್ರಕಾರಗಳಿಗೆ ಮ್ಯಾಪ್ ಮಾಡುವುದು
+      const rawKeyMigrationMap = {
+        'solve_5m': 'solve_5m_kannada', // ಕೆಳಗಿನ ಸಮಸ್ಯೆಗಳನ್ನು ಬಿಡಿಸಿ (5M)
+        'solve_4m': 'la_4m',
+        'solve_3m': 'sa_3m',
+        'solve_2m': 'sa_2m',
+        'words_form': 'vsa_1m',
+        'num_form': 'vsa_1m',
+        'definitions': 'vsa_1m',
+        'compare': 'sa_2m',
+        'estimation': 'sa_2m'
+      };
+
+      // A. ಭಂಡಾರದಲ್ಲಿರುವ ಹಳೆಯ ಪ್ರಶ್ನೆಗಳ ಪ್ರಕಾರವನ್ನು ಶುದ್ಧೀಕರಿಸುವುದು
+      rawQBank.forEach(q => {
+        if (q.type && rawKeyMigrationMap[q.type]) {
+          q.type = rawKeyMigrationMap[q.type];
+          qbankModified = true;
+        }
+      });
+
+      // B. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿಯಿಂದ ಅನಗತ್ಯ ಕೋಡ್‌ಗಳನ್ನು ತೆಗೆದುಹಾಕುವುದು
+      const rawCodeFilterRegex = /^(solve_\d+m|words_form|num_form|definitions|compare|estimation|custom_\d+)$/i;
+
+      const cleanedCustomTypes = customTypes.filter(ct => {
+        const k = (ct.key || '').trim();
+        const l = (ct.label || '').trim();
+        
+        // ಅನಗತ್ಯ ಇಂಗ್ಲಿಷ್ ಕೋಡ್ ಇರುವ ಪ್ರಕಾರಗಳನ್ನು ಡಿಲೀಟ್ ಮಾಡುವುದು
+        if (rawCodeFilterRegex.test(k) || rawCodeFilterRegex.test(l.replace(/\s*\(\d+M\)/i, ''))) {
+          typesModified = true;
+          return false;
+        }
+        return true;
+      });
+
+      // C. "ಕೆಳಗಿನ ಸಮಸ್ಯೆಗಳನ್ನು ಬಿಡಿಸಿ (5M)" ಪ್ರಕಾರವನ್ನು ಸರಿಯಾಗಿ ಒಂದೇ ಒಂದು ಬಾರಿ ಕಾಯಂ ಆಗಿ ಇಡುವುದು
+      const hasMath5M = cleanedCustomTypes.some(ct => ct.key === 'solve_5m_kannada' || ct.label.includes('ಕೆಳಗಿನ ಸಮಸ್ಯೆಗಳನ್ನು ಬಿಡಿಸಿ'));
+      if (!hasMath5M) {
+        cleanedCustomTypes.push({
+          key: 'solve_5m_kannada',
+          label: 'ಕೆಳಗಿನ ಸಮಸ್ಯೆಗಳನ್ನು ಬಿಡಿಸಿ (5M)',
+          heading: 'ಈ ಕೆಳಗಿನ ಗಣಿತದ ಸಮಸ್ಯೆಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:',
+          marks: 5,
+          subject: 'mathematics'
+        });
+        typesModified = true;
+      }
+
+      // ಡೇಟಾಬೇಸ್ ಮತ್ತು ಲೋಕಲ್ ಸ್ಟೋರೇಜ್ ಅಪ್ಡೇಟ್
+      if (typesModified) {
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(cleanedCustomTypes));
+        try {
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cleanedCustomTypes)
+          });
+        } catch (e) {}
+      }
+
+      if (qbankModified) {
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(rawQBank));
+        pushToFirebaseCloud();
+      }
+    }
+
+    // ೨. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿ (ಸ್ವಚ್ಛವಾದ ಕನ್ನಡ ಹೆಸರುಗಳು ಮಾತ್ರ)
+    window.getCustomQuestionTypesList = function() {
+      autoCleanAndMigrateObsoleteQuestionFormats();
+      const saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      
+      const rawCodeFilterRegex = /^(solve_\d+m|words_form|num_form|definitions|compare|estimation)$/i;
+      return saved.filter(ct => {
+        const k = (ct.key || '').trim();
+        const l = (ct.label || '').trim();
+        return !rawCodeFilterRegex.test(k) && !rawCodeFilterRegex.test(l.replace(/\s*\(\d+M\)/i, ''));
+      });
+    };
+
+    // ೩. ಜನರೇಟರ್ Step 3 (ಕೇವಲ ಅಚ್ಚುಕಟ್ಟಾದ ಪ್ರಕಾರಗಳು ಮಾತ್ರ ಪ್ರದರ್ಶನ)
+    window.getSubjectSpecificQuestionFormats = function(subjectName) {
+      const sKey = getNormalizedSubjectKey(subjectName);
+      let list = [];
+
+      // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
+      list.push(
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', marks: 1, subject: 'all' },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', marks: 1, subject: 'all' },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', marks: 1, subject: 'all' },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', marks: 1, subject: 'all' },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', marks: 1, subject: 'all' },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', marks: 4, subject: 'all' },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', marks: 1, subject: 'all' },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', marks: 2, subject: 'all' },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', marks: 3, subject: 'all' },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', marks: 4, subject: 'all' }
+      );
+
+      // ಭಾಷಾ ವಿಷಯಗಳು (ಕನ್ನಡ, ಇಂಗ್ಲಿಷ್, ಹಿಂದಿ, ಉರ್ದು)
+      if (sKey === 'kannada' || sKey === 'english' || sKey === 'hindi' || sKey === 'urdu') {
+        list.push(
+          { key: 'grammar', label: 'ವ್ಯಾಕರಣ ಭಾಗ (Grammar - 1M)', heading: 'ವ್ಯಾಕರಣ ಭಾಗದ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:', marks: 1, subject: sKey },
+          { key: 'poem_4lines', label: '೪ ಸಾಲುಗಳ ಪದ್ಯ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:', marks: 4, subject: sKey },
+          { key: 'proverb_essay', label: 'ಗಾದೆ ಮಾತು / ಪ್ರಬಂಧ / ಪತ್ರ ಲೇಖನ (4M/5M)', heading: 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ / ಪ್ರಬಂಧ ಬರೆಯಿರಿ:', marks: 4, subject: sKey }
+        );
+      }
+
+      // ವಿಜ್ಞಾನ
+      if (sKey === 'science') {
+        list.push(
+          { key: 'diagram_parts', label: 'ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರವನ್ನು ಬಿಡಿಸಿ, ಭಾಗಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'science' },
+          { key: 'give_reason', label: 'ವೈಜ್ಞಾನಿಕ ಕಾರಣ ಕೊಡಿ (2M)', heading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ವೈಜ್ಞಾನಿಕ ಕಾರಣ ನೀಡಿ:', marks: 2, subject: 'science' }
+        );
+      }
+
+      // ಸಮಾಜ ವಿಜ್ಞಾನ
+      if (sKey === 'social_science') {
+        list.push(
+          { key: 'map_locations', label: 'ಭಾರತದ ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ (4M)', heading: 'ಭಾರತದ ನಕ್ಷೆಯನ್ನು ಬಿಡಿಸಿ, ಕೆಳಗಿನ ಸ್ಥಳಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'social_science' }
+        );
+      }
+
+      // ಗಣಿತ
+      if (sKey === 'mathematics') {
+        list.push(
+          { key: 'solve_math', label: 'ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸಿ (2M/3M)', heading: 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:', marks: 2, subject: 'mathematics' },
+          { key: 'theorem_graph', label: 'ಪ್ರಮೇಯ ಸಾಧಿಸಿ / ಗ್ರಾಫ್ ರಚಿಸಿ (4M)', heading: 'ಪ್ರಮೇಯವನ್ನು ಸಾಧಿಸಿ / ನಕ್ಷೆ (Graph) ರಚಿಸಿ:', marks: 4, subject: 'mathematics' }
+        );
+      }
+
+      // 🌟 ಅಡ್ಮಿನ್ ನಿಗದಿಪಡಿಸಿದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (ಡೂಪ್ಲಿಕೇಟ್ ಇಲ್ಲದೆ)
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, subjectName)) {
+          if (!list.some(x => x.key === ct.key || x.label.trim() === ct.label.trim())) {
+            list.push(ct);
+          }
+        }
+      });
+
+      return list;
+    };
+
+    // ೪. ಅಡ್ಮಿನ್‌ನಲ್ಲಿ ಪ್ರಕಾರ ಎಡಿಟ್ ಮಾಡಿದಾಗ ಪ್ರಶ್ನೆಗಳ ಡೇಟಾಬೇಸ್‌ನಲ್ಲೂ ಪ್ರಕಾರದ ಕೀ ಮೈಗ್ರೇಟ್ ಮಾಡುವುದು
+    window.handleSaveOrUpdateSubjectFormat = function(e) {
+      e.preventDefault();
+      const targetSubj = document.getElementById('subfmt-target-subject')?.value || 'all';
+      const label = document.getElementById('subfmt-label')?.value.trim();
+      const heading = document.getElementById('subfmt-heading')?.value.trim();
+      const marks = parseInt(document.getElementById('subfmt-marks')?.value) || 1;
+
+      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
+
+      let list = getCustomQuestionTypesList();
+
+      if (editingCustomQTypeKey) {
+        // 🌟 ಎಡಿಟ್ ಆದಾಗ ಹಳೆಯ ಕೀಯನ್ನು ಅಪ್ಡೇಟ್ ಮಾಡಿ ಪ್ರಶ್ನೆಗಳನ್ನೂ ಮೈಗ್ರೇಟ್ ಮಾಡುವುದು
+        const item = list.find(x => x.key === editingCustomQTypeKey);
+        if (item) {
+          const oldKey = item.key;
+          item.subject = targetSubj;
+          item.label = label;
+          item.heading = heading;
+          item.marks = marks;
+
+          // ಭಂಡಾರದಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳಲ್ಲೂ ಪ್ರಕಾರದ ಹೆಸರು ಅಪ್ಡೇಟ್
+          (appState.qbank || []).forEach(q => {
+            if (q.type === oldKey) {
+              q.type = editingCustomQTypeKey;
+            }
+          });
+          localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+          pushToFirebaseCloud();
+        }
+        showToast(`✅ '${label}' ಪ್ರಕಾರವನ್ನು ಅಪ್ಡೇಟ್ ಮಾಡಲಾಗಿದೆ!`, 'success');
+      } else {
+        const key = 'custom_' + Date.now();
+        list.push({ key, label, heading, marks, subject: targetSubj });
+        showToast(`🎉 '${label}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
+      }
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(list)
+        });
+      } catch (err) {}
+
+      openManageSubjectFormatsModal();
+      renderMaster10QuestionFormats();
+    };
+
+    // ತಕ್ಷಣವೇ ಕ್ಲೀನಿಂಗ್ ನಡೆಸಿ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    autoCleanAndMigrateObsoleteQuestionFormats();
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
