@@ -161,7 +161,7 @@
 </head>
 <body class="flex flex-col">
 
-  <!-- TOP HEADER -->
+  <!-- 🌟 TOP HEADER WITH FULL BUTTON CONTAINER -->
   <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-sm py-2">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-wrap items-center justify-between gap-3 min-h-[50px]">
@@ -179,6 +179,7 @@
           </div>
         </div>
 
+        <!-- 🌟 ALL TOP BUTTONS RENDERED DYNAMICALLY HERE -->
         <div id="top-nav-actions-container" class="flex flex-wrap items-center justify-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200 text-xs font-bold w-full sm:w-auto"></div>
 
       </div>
@@ -403,7 +404,7 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-<script>
+  <script>
     const ADMIN_CREDENTIALS = { user: "WithYou2026", pass: "WithYoupassword2026" };
     const ADMIN_PHONE_NUMBER = "9902090911";
     const FIREBASE_REST_BASE = "https://withyouqp-default-rtdb.firebaseio.com";
@@ -548,13 +549,12 @@
       return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     }
 
-    // 🌟 ನಿಖರ Question Type Identification (Custom ಪ್ರಕಾರಗಳು 1M/2M ಗೆ ಮಿಕ್ಸ್ ಆಗದಂತೆ ತಡೆಗಟ್ಟಲಾಗಿದೆ)
+    // 🌟 ಸರಿಪಡಿಸಲಾದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಐಡೆಂಟಿಫೈಯರ್ (Custom ಪ್ರಕಾರಗಳನ್ನು ಮುಟ್ಟುವುದಿಲ್ಲ)
     function getCanonicalQuestionType(q) {
       if (!q) return 'vsa_1m';
       const t = String(q.type || '').trim();
       const lowerT = t.toLowerCase();
 
-      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಾಗಿದ್ದರೆ ಅಥವಾ ಕನ್ನಡ ಹೆಸರಾಗಿದ್ದರೆ ಹಾಗೆಯೇ ಉಳಿಸಿಕೊಳ್ಳುವುದು
       const customList = (typeof getCustomQuestionTypesList === 'function') ? getCustomQuestionTypesList() : [];
       const isCustom = customList.some(ct => ct.key === t || ct.label === t || ct.key === lowerT);
       if (isCustom || t.startsWith('fmt_') || t.startsWith('custom_') || /[\u0C80-\u0CFF]/.test(t)) {
@@ -634,289 +634,457 @@
       return userObj.name || userObj.school || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
     }
 
-    function getAnyQuestionImageSource(q) {
-      if (!q) return '';
-      let src = q.image || q.img || q.diagram || q.picture || q.imageUrl || q.photo || '';
-      if (!src && q.q && typeof q.q === 'string') {
-        const match = q.q.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (match) src = match[1];
-        const mdMatch = q.q.match(/!\[.*?\]\((https?:\/\/[^\)]+|data:image\/[^\)]+)\)/i);
-        if (mdMatch) src = mdMatch[1];
+    function restoreUserSession() {
+      if (localStorage.getItem('withyou_admin_auth_token') === 'true' || sessionStorage.getItem('withyou_admin_auth_token') === 'true') {
+        isAdminLoggedIn = true;
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+        return;
       }
-      return (typeof src === 'string' && src.trim().length > 15) ? src.trim() : '';
-    }
-
-    function renderQuestionDiagramImage(qOrSrc) {
-      const src = (typeof qOrSrc === 'string') ? qOrSrc : getAnyQuestionImageSource(qOrSrc);
-      if (!src || src.length < 15) return '';
-      return `
-        <div style="text-align: center; margin: 4px 0 3px 0; width: 100%; display: block !important;">
-          <img src="${src}" alt="Diagram" style="max-height: 125px; max-width: 88%; border: 1.5px solid #64748b; border-radius: 6px; padding: 2px; display: inline-block !important; background: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
-        </div>
-      `;
-    }
-
-    function renderMCQOptionsGridBlock(q) {
-      const hasOptImages = Boolean(q.imageA || q.imageB || q.imageC || q.imageD);
-      if (hasOptImages) {
-        return `
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-left: 24px; margin-top: 3px; text-align: center;">
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(A) ${escapeHtml(q.a || '')}</div>
-              ${q.imageA ? `<img src="${q.imageA}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(B) ${escapeHtml(q.b || '')}</div>
-              ${q.imageB ? `<img src="${q.imageB}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(C) ${escapeHtml(q.c || '')}</div>
-              ${q.imageC ? `<img src="${q.imageC}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(D) ${escapeHtml(q.d || '')}</div>
-              ${q.imageD ? `<img src="${q.imageD}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-          </div>
-        `;
-      } else {
-        return `
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 8px; font-size: 12px; padding-left: 26px; margin-top: 1px;">
-            <div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div>
-            <div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div>
-          </div>
-        `;
-      }
-    }
-  // =========================================================================
-    // ೧. ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಪರಿಪೂರ್ಣ ನಿರ್ವಹಣೆ & ಶೇಖರಣೆ
-    // =========================================================================
-    window.getCustomQuestionTypesList = function() {
-      let saved = [];
-      try {
-        saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
-      } catch (e) { saved = []; }
-      const rawCodeFilter = /^(solve_\d+m|words_form|num_form|definitions|compare|estimation)$/i;
-      return saved.filter(ct => ct && ct.label && !rawCodeFilter.test(ct.key || ''));
-    };
-
-    window.getSubjectSpecificQuestionFormats = function(subjectName) {
-      const sKey = getNormalizedSubjectKey(subjectName);
-      let list = [
-        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', marks: 1, subject: 'all' },
-        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', marks: 1, subject: 'all' },
-        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', marks: 1, subject: 'all' },
-        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', marks: 1, subject: 'all' },
-        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', marks: 1, subject: 'all' },
-        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', marks: 4, subject: 'all' },
-        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', marks: 1, subject: 'all' },
-        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', marks: 2, subject: 'all' },
-        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', marks: 3, subject: 'all' },
-        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', marks: 4, subject: 'all' }
-      ];
-
-      if (['kannada', 'english', 'hindi', 'urdu'].includes(sKey)) {
-        list.push(
-          { key: 'grammar', label: 'ವ್ಯಾಕರಣ ಭಾಗ (Grammar - 1M)', heading: 'ವ್ಯಾಕರಣ ಭಾಗದ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:', marks: 1, subject: sKey },
-          { key: 'poem_4lines', label: '೪ ಸಾಲುಗಳ ಪದ್ಯ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:', marks: 4, subject: sKey },
-          { key: 'proverb_essay', label: 'ಗಾದೆ ಮಾತು / ಪ್ರಬಂಧ / ಪತ್ರ ಲೇಖನ (4M/5M)', heading: 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ / ಪ್ರಬಂಧ ಬರೆಯಿರಿ:', marks: 4, subject: sKey }
-        );
-      } else if (sKey === 'science') {
-        list.push(
-          { key: 'diagram_parts', label: 'ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ (4M)', heading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರವನ್ನು ಬಿಡಿಸಿ, ಭಾಗಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'science' },
-          { key: 'give_reason', label: 'ವೈಜ್ಞಾನಿಕ ಕಾರಣ ಕೊಡಿ (2M)', heading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ವೈಜ್ಞಾನಿಕ ಕಾರಣ ನೀಡಿ:', marks: 2, subject: 'science' }
-        );
-      } else if (sKey === 'social_science') {
-        list.push(
-          { key: 'map_locations', label: 'ಭಾರತದ ನಕ್ಷೆ ಬಿಡಿಸಿ ಸ್ಥಳ ಗುರುತಿಸಿ (4M)', heading: 'ಭಾರತದ ನಕ್ಷೆಯನ್ನು ಬಿಡಿಸಿ, ಕೆಳಗಿನ ಸ್ಥಳಗಳನ್ನು ಗುರುತಿಸಿ:', marks: 4, subject: 'social_science' }
-        );
-      } else if (sKey === 'mathematics') {
-        list.push(
-          { key: 'solve_math', label: 'ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸಿ (2M/3M)', heading: 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:', marks: 2, subject: 'mathematics' },
-          { key: 'theorem_graph', label: 'ಪ್ರಮೇಯ ಸಾಧಿಸಿ / ಗ್ರಾಫ್ ರಚಿಸಿ (4M)', heading: 'ಪ್ರಮೇಯವನ್ನು ಸಾಧಿಸಿ / ನಕ್ಷೆ (Graph) ರಚಿಸಿ:', marks: 4, subject: 'mathematics' }
-        );
-      }
-
-      const customList = getCustomQuestionTypesList();
-      customList.forEach(ct => {
-        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
-        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, subjectName)) {
-          if (!list.some(x => x.key === ct.key || x.label.trim() === ct.label.trim())) {
-            list.push(ct);
-          }
-        }
-      });
-
-      return list;
-    };
-
-    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
-      const container = document.getElementById('step3-formats-container');
-      if (!container) return;
-      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
-      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
-      const activeFormats = getSubjectSpecificQuestionFormats(currentSubj);
-
-      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
-
-      let html = activeFormats.map(fmt => {
-        const isSpecial = (fmt.subject && fmt.subject !== 'all');
-        const bgClass = isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
-        const textClass = isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
-
-        return `
-          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
-            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
-            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
-          </label>
-        `;
-      }).join('');
-
-      if (isOwnerAdmin) {
-        html += `
-          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
-            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
-              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
-              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
-            </button>
-          </div>
-        `;
-      }
-      container.innerHTML = html;
-    };
-
-    // =========================================================================
-    // ೨. ಪರೀಕ್ಷಾ ಜನರೇಟರ್ ಎಂಜಿನ್ (ಪ್ರತ್ಯೇಕ ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್ ಗ್ಯಾರಂಟಿ)
-    // =========================================================================
-    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
-      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
-      const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
-      const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
-      const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
-
-      const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
-      const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
-
-      if (isTeacherPro || isSchoolPro) {
-        const activeUser = isTeacherPro 
-          ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
-          : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
-
-        if (activeUser) {
-          const expStr = getUserExactDynamicExpiry(activeUser);
-          if (calculateRealRemainingDays(expStr) <= 0) {
-            showAccountExpiredRenewalModal(activeUser);
+      const tData = localStorage.getItem('withyou_logged_teacher') || sessionStorage.getItem('withyou_logged_teacher');
+      if (tData) {
+        try {
+          const t = JSON.parse(tData);
+          if (t && t.id) {
+            appState.currentUserType = 'teacher';
+            appState.currentUserId = t.id;
             return;
           }
-        }
+        } catch (e) {}
       }
-
-      if (isDemo) {
-        let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
-        if (dCount >= 1) {
-          showDemoLimitReachedModal();
-          return;
-        }
-        sessionStorage.setItem('wy_demo_gen_count', '1');
+      const sData = localStorage.getItem('withyou_logged_school') || sessionStorage.getItem('withyou_logged_school');
+      if (sData) {
+        try {
+          const s = JSON.parse(sData);
+          if (s && s.id) {
+            appState.currentUserType = 'school';
+            appState.currentUserId = s.id;
+            return;
+          }
+        } catch (e) {}
       }
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+    }
 
-      const schoolName = isDemo ? (isEnglishMedium ? 'Govt. Higher Primary School (Demo Sample)' : 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)') : (document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ');
-      const grade = document.getElementById('cfg-class')?.value || '6';
-      let rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಜ್ಞಾನ';
-      const part = document.getElementById('cfg-part')?.value || 'all';
-      let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
-      const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
-      const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 15;
-      const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+    // =========================================================================
+    // 🌟 ಮೇಲ್ಭಾಗದ ಎಲ್ಲಾ ಬಟನ್‌ಗಳನ್ನು ರೆಂಡರ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್ (TOP NAVBAR)
+    // =========================================================================
+    window.updateTopNavbarClean = function() {
+      const navContainer = document.getElementById('top-nav-actions-container');
+      if (!navContainer) return;
 
-      let cleanExamType = isEnglishMedium ? getStandardEnglishExamTypeName(rawExamType) : rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
-      let cleanSubject = isEnglishMedium ? getStandardEnglishSubjectName(rawSubject) : rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
-      const isLBAExam = cleanExamType.includes('ಘಟಕ') || cleanExamType.includes('Unit Test') || cleanExamType.includes('LBA');
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
 
-      const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
-      const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+      if (isOwnerAdmin) {
+        navContainer.innerHTML = `
+          <button type="button" onclick="openBulkAIImportModal()" class="px-3 py-1.5 rounded-xl font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-md flex items-center gap-1 text-xs cursor-pointer">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+            <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+          </button>
+          <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-xs cursor-pointer">
+            <i class="fa-solid fa-house text-emerald-600"></i>
+            <span>Dashboard</span>
+          </button>
+          <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-xs cursor-pointer">
+            <i class="fa-solid fa-file-signature text-teal-600"></i>
+            <span>ಜನರೇಟರ್</span>
+          </button>
+          <button id="nav-btn-qbank" type="button" onclick="navigateToSection('qbank')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-xs cursor-pointer">
+            <i class="fa-solid fa-database text-amber-600"></i>
+            <span>📚 ಪ್ರಶ್ನೆ ಭಂಡಾರ</span>
+          </button>
+          <button id="nav-btn-admin" type="button" onclick="navigateToSection('admin')" class="px-3 py-1.5 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1 text-xs cursor-pointer">
+            <i class="fa-solid fa-gear text-slate-700"></i>
+            <span>Admin</span>
+          </button>
+          <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow cursor-pointer">
+            Logout
+          </button>
+        `;
+      } else {
+        navContainer.innerHTML = `
+          <button id="nav-btn-dashboard" type="button" onclick="navigateToSection('dashboard')" class="px-4 py-2 rounded-xl font-bold bg-white text-slate-900 shadow-sm flex items-center gap-1.5 text-xs cursor-pointer">
+            <i class="fa-solid fa-house text-emerald-600"></i>
+            <span>Dashboard</span>
+          </button>
+          <button id="nav-btn-generator" type="button" onclick="navigateToSection('generator')" class="px-4 py-2 rounded-xl font-bold text-slate-700 hover:bg-white flex items-center gap-1.5 text-xs cursor-pointer">
+            <i class="fa-solid fa-file-signature text-teal-600"></i>
+            <span>ಜನರೇಟರ್</span>
+          </button>
+          <button type="button" onclick="showAdminLoginModal()" class="px-3 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 flex items-center gap-1 text-xs border border-slate-200 cursor-pointer">
+            <i class="fa-solid fa-lock"></i>
+            <span class="hidden sm:inline">Admin</span>
+          </button>
+        `;
+      }
+    };
 
-      if (selectedTypes.length === 0) {
-        alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+    window.navigateToSection = function(section) {
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      if ((section === 'admin' || section === 'qbank') && !isOwnerAdmin) {
+        showAdminLoginModal();
         return;
       }
 
-      let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
-      let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
-      let selectedChapterNamesString = selectedChapters.join(', ') || (isEnglishMedium ? 'Selected Chapters' : 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು');
-
-      const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
-
-      let pool = qbank.filter(q => {
-        const isGradeOk = (String(q.grade).replace(/\D/g, '') === String(grade).replace(/\D/g, ''));
-        const isSubjOk = isStrictSubjectMatch(q.subject, rawSubject);
-        const isPartOk = (part === 'all' || q.part === part || !q.part);
-        const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
-        const canonicalType = getCanonicalQuestionType(q);
-        const isTypeOk = selectedTypes.includes(canonicalType) || selectedTypes.includes(q.type);
-        return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+      ['dashboard', 'generator', 'admin'].forEach(v => {
+        const el = document.getElementById('view-' + v);
+        if (el) el.classList.add('hidden');
       });
 
-      if (pool.length === 0) {
-        alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
-        return;
-      }
+      const dashView = document.getElementById('view-dashboard');
+      const genView = document.getElementById('view-generator');
+      const adminView = document.getElementById('view-admin');
 
-      function shufflePool(arr) {
-        let a = [...arr];
-        for (let i = a.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [a[i], a[j]] = [a[j], a[i]];
+      if (section === 'dashboard') {
+        if (dashView) dashView.classList.remove('hidden');
+        renderDashboardUserStatusBanner();
+      } else if (section === 'generator') {
+        if (genView) genView.classList.remove('hidden');
+        syncSubjectAndChapters();
+        renderMaster10QuestionFormats();
+      } else if (section === 'qbank') {
+        if (adminView) {
+          adminView.classList.remove('hidden');
+          activeAdminSubTab = 'qbank';
+          renderAdminMasterUnifiedView();
         }
-        return a;
+      } else if (section === 'admin') {
+        if (adminView) {
+          adminView.classList.remove('hidden');
+          activeAdminSubTab = 'registration';
+          renderAdminMasterUnifiedView();
+        }
       }
 
-      let chosenQuestions = shufflePool(pool).slice(0, targetTotalQuestions);
-      appState.activeGeneratedQuestions = chosenQuestions;
+      updateTopNavbarClean();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-      const professionalHeaderHtml = `
-        <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
-          <div style="width: 100%; text-align: center; margin-bottom: 6px;">
-            <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
-              ${escapeHtml(schoolName)}
-            </h1>
+    let secretLogoClickCount = 0, secretLogoTimer = null;
+    window.handleSecretLogoClick = function() {
+      secretLogoClickCount++;
+      clearTimeout(secretLogoTimer);
+      secretLogoTimer = setTimeout(() => { secretLogoClickCount = 0; }, 1500);
+
+      if (secretLogoClickCount >= 3) {
+        secretLogoClickCount = 0;
+        showAdminLoginModal();
+      }
+    };
+
+    window.showAdminLoginModal = function() {
+      let modal = document.getElementById('admin-login-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-login-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 space-y-5 text-center text-xs">
+          <div class="space-y-2">
+            <div class="h-14 w-14 bg-slate-900 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="font-extrabold text-base text-slate-900">Admin Security Login</h3>
+            <p class="text-slate-500">ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಪ್ರವೇಶಿಸಲು ವಿವರ ನಮೂದಿಸಿ</p>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
-              <span>${isEnglishMedium ? 'Subject' : 'ವಿಷಯ'} : ${escapeHtml(cleanSubject)}</span>
-              <span>${isEnglishMedium ? 'Marks' : 'ಅಂಕ'} &nbsp;&nbsp;: ${targetTotalMarks}</span>
+
+          <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-3.5 text-left">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Username</label>
+              <input type="text" id="admin-login-user" required class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold focus:outline-none" />
             </div>
-            <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
-              <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Password</label>
+              <input type="password" id="admin-login-pass" required class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold focus:outline-none" />
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
-              <span>${isEnglishMedium ? 'Class' : 'ತರಗತಿ'} : ${escapeHtml(grade)}${isEnglishMedium ? 'th Standard' : ''}</span>
-              <span>${isEnglishMedium ? 'Date' : 'ದಿನಾಂಕ'} &nbsp;: ${escapeHtml(examDate)}</span>
+            <div id="admin-login-error" class="hidden text-xs text-red-600 font-bold bg-red-50 p-2 rounded-xl text-center">
+              ❌ ತಪ್ಪಾದ Username ಅಥವಾ Password!
             </div>
-          </div>
-          ${isLBAExam ? `
-            <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
-              <span>${isEnglishMedium ? 'Chapter' : 'ಘಟಕದ ಹೆಸರು'} : ${escapeHtml(selectedChapterNamesString)}</span>
+            <div class="pt-1 flex items-center space-x-2">
+              <button type="button" onclick="document.getElementById('admin-login-modal').classList.add('hidden')" class="w-1/3 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="w-2/3 btn-primary-gradient text-white font-extrabold py-2.5 rounded-xl shadow-lg cursor-pointer">Login</button>
             </div>
-          ` : ''}
-          <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+          </form>
         </div>
       `;
+      modal.classList.remove('hidden');
+    };
 
-      renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+    window.handleAdminLoginSubmit = function(e) {
+      e.preventDefault();
+      const u = document.getElementById('admin-login-user').value.trim();
+      const p = document.getElementById('admin-login-pass').value.trim();
 
-      const outSec = document.getElementById('output-section');
-      if (outSec) {
-        outSec.classList.remove('hidden');
-        switchOutputTab('paper');
-        outSec.scrollIntoView({ behavior: 'smooth' });
+      if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+        isAdminLoggedIn = true;
+        localStorage.setItem('withyou_admin_auth_token', 'true');
+        sessionStorage.setItem('withyou_admin_auth_token', 'true');
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+
+        document.getElementById('admin-login-modal')?.classList.add('hidden');
+        updateTopNavbarClean();
+        showToast('👑 Admin Master Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+        navigateToSection('qbank');
+      } else {
+        document.getElementById('admin-login-error')?.classList.remove('hidden');
       }
+    };
 
-      showToast(`✅ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+    window.logoutAdmin = function() {
+      isAdminLoggedIn = false;
+      localStorage.removeItem('withyou_admin_auth_token');
+      sessionStorage.removeItem('withyou_admin_auth_token');
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+
+      updateTopNavbarClean();
+      showToast('🔒 Admin ನಿಂದ ಹೊರಬರಲಾಗಿದೆ.', 'info');
+      navigateToSection('dashboard');
+    };
+
+    window.launchDemoDirectly = function() {
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+      showToast('⭐ ೧ ಬಾರಿಯ ಉಚಿತ ಡೆಮೋ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ!', 'info');
+      navigateToSection('generator');
     };
 
     // =========================================================================
-    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ನಿಖರ ಹೆಡಿಂಗ್ ಪ್ರದರ್ಶನ)
+    // 🌟 ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನ ಎಲ್ಲಾ ಬಟನ್‌ಗಳ ಸಹಿತ ಸಂಪೂರ್ಣ ವ್ಯೂ (ADMIN TOOLBAR FIX)
+    // =========================================================================
+    window.renderAdminMasterUnifiedView = function() {
+      const adminView = document.getElementById('view-admin');
+      if (!adminView) return;
+
+      const mediums = getSystemMediums();
+      const subjects = getSystemSubjects();
+      
+      const allTeachers = appState.teachers || [];
+      const allSchools = appState.schools || [];
+      const qbankCount = (appState.qbank || []).length;
+
+      adminView.innerHTML = `
+        <!-- ೧. ಅಡ್ಮಿನ್ ಟಾಪ್ ಕಂಟ್ರೋಲ್ ಬಾರ್ -->
+        <div class="flex flex-wrap items-center justify-between bg-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-xl text-xs gap-3">
+          <div class="flex items-center space-x-2 bg-slate-800/90 p-1.5 rounded-2xl border border-slate-700 font-bold">
+            <button type="button" onclick="switchAdminSubModuleTab('qbank')" id="sub-tab-btn-qbank" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='qbank'?'bg-amber-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-database"></i>
+              <span>೧. ಪ್ರಶ್ನೆ ಭಂಡಾರ (${qbankCount})</span>
+            </button>
+            <button type="button" onclick="switchAdminSubModuleTab('registration')" id="sub-tab-btn-reg" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-users"></i>
+              <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${allTeachers.length + allSchools.length})</span>
+            </button>
+          </div>
+
+          <!-- 🌟 ಮೇಲ್ಭಾಗದ ಎಲ್ಲಾ ಆಕ್ಷನ್ ಬಟನ್‌ಗಳು -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="openBatchTranslateToEnglishModal()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl font-extrabold shadow flex items-center gap-1.5 cursor-pointer border border-blue-400/30">
+              <i class="fa-solid fa-language text-amber-300 text-sm"></i>
+              <span>🔄 ಕನ್ನಡ ➔ English ಭಾಷಾಂತರಿಸಿ</span>
+            </button>
+            <button type="button" onclick="openBulkAIImportModal()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3.5 py-2 rounded-xl font-extrabold shadow flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+              <span>🚀 AI ಇಂಪೋರ್ಟ್</span>
+            </button>
+            <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-black shadow flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ೨. ಪ್ರಶ್ನೆ ಭಂಡಾರ SUB-TAB -->
+        <div id="admin-subview-qbank" class="${activeAdminSubTab==='qbank'?'':'hidden'} space-y-6">
+          <div class="card-modern p-6 space-y-4">
+            <h3 class="font-extrabold text-base text-slate-900 border-b pb-3 flex items-center gap-2">
+              <i class="fa-solid fa-circle-plus text-amber-600"></i> <span>ಹೊಸ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಸೇರಿಸಿ</span>
+            </h3>
+            <form id="form-add-custom-question" onsubmit="handleSaveCustomQuestion(event)" class="space-y-4 text-xs">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div><label class="block font-bold mb-1">ಮಾಧ್ಯಮ</label><select id="qadd-medium" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">${mediums.map(m=>`<option value="${m}">${m}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ತರಗತಿ</label><select id="qadd-class" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold">${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}">${c.label}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ವಿಷಯ</label><select id="qadd-subject" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">${subjects.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+                <div><label class="block font-bold mb-1">ಭಾಗ</label><select id="qadd-part" class="w-full p-2.5 bg-indigo-50 border border-indigo-300 rounded-xl font-bold"><option value="ಭಾಗ 1">ಭಾಗ 1</option><option value="ಭಾಗ 2">ಭಾಗ 2</option></select></div>
+                <div><label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು *</label><input type="text" id="qadd-chapter" required placeholder="e.g. 1. ನಮ್ಮ ಹೆಮ್ಮೆಯ ಭಾರತ" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold" /></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ *</label>
+                  <select id="qadd-type" onchange="handleQuestionTypeChangeInAdmin(this.value)" class="w-full p-2.5 bg-amber-50 border border-amber-300 rounded-xl font-bold">
+                    <option value="mcq" selected>೧. ಬಹು ಆಯ್ಕೆ (1M)</option>
+                    <option value="blanks">೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)</option>
+                    <option value="true_false">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)</option>
+                    <option value="analogy">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)</option>
+                    <option value="odd_one_out">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)</option>
+                    <option value="match">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)</option>
+                    <option value="vsa_1m">೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)</option>
+                    <option value="sa_2m">೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)</option>
+                    <option value="sa_3m">೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)</option>
+                    <option value="la_4m">೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)</option>
+                  </select>
+                </div>
+                <div><label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label><select id="qadd-obj" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಜ್ಞಾನ">ಜ್ಞಾನ</option><option value="ತಿಳುವಳಿಕೆ" selected>ತಿಳುವಳಿಕೆ</option><option value="ಅನ್ವಯ">ಅನ್ವಯ</option></select></div>
+                <div><label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label><select id="qadd-diff" class="w-full p-2.5 bg-slate-50 border rounded-xl font-semibold"><option value="ಸುಲಭ" selected>ಸುಲಭ</option><option value="ಸಾಧಾರಣ">ಸಾಧಾರಣ</option><option value="ಕಠಿಣ">ಕಠಿಣ</option></select></div>
+              </div>
+              <div id="admin-q-dynamic-fields" class="p-4 bg-slate-50 border rounded-2xl space-y-3"></div>
+              <button type="submit" class="w-full btn-emerald-gradient text-white font-extrabold py-3.5 rounded-xl shadow-lg cursor-pointer"><i class="fa-solid fa-floppy-disk"></i> <span>ಈ ಪ್ರಶ್ನೋತ್ತರವನ್ನು ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಮಾಡಿ</span></button>
+            </form>
+          </div>
+
+          <!-- 🌟 ಪ್ರಶ್ನೆ ಭಂಡಾರ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿರುವ ಎಲ್ಲಾ ಬಟನ್‌ಗಳು -->
+          <div class="card-modern p-6 space-y-3">
+            <div class="flex flex-wrap items-center justify-between border-b pb-3 gap-2">
+              <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-emerald-600"></i>
+                <span>ಭಂಡಾರದಲ್ಲಿರುವ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು (<span id="admin-qbank-total-count">${qbankCount}</span>)</span>
+              </h3>
+              
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="openDirectJSONUploadModal()" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400 flex items-center gap-1 cursor-pointer shadow-sm">
+                  <i class="fa-solid fa-bolt text-amber-600"></i> <span>⚡ Direct JSON Upload</span>
+                </button>
+                <button type="button" onclick="openManageSubjectFormatsModal()" class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-950 font-black px-3 py-1.5 rounded-xl border border-purple-400 flex items-center gap-1 cursor-pointer shadow-sm">
+                  <i class="fa-solid fa-layer-group text-purple-700"></i> <span>🎯 ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ</span>
+                </button>
+                <button type="button" onclick="openManageSubjectsModal()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-black px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-book-bookmark text-emerald-600"></i> <span>📚 ವಿಷಯಗಳು</span>
+                </button>
+                <button type="button" onclick="openChapterRenameModal()" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-900 font-black px-3 py-1.5 rounded-xl border border-blue-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-pen-to-square text-blue-600"></i> <span>✏️ ಪಾಠದ ಹೆಸರು</span>
+                </button>
+                <button type="button" onclick="openChapterMergeModal()" class="text-xs bg-purple-50 hover:bg-purple-100 text-purple-900 font-black px-3 py-1.5 rounded-xl border border-purple-300 flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-code-merge text-purple-600"></i> <span>📑 ವಿಲೀನ</span>
+                </button>
+                <button onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl border cursor-pointer">
+                  <i class="fa-solid fa-arrows-rotate"></i> <span>Sync</span>
+                </button>
+              </div>
+            </div>
+            
+            <div id="admin-qbank-display-list" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- ೩. ನೋಂದಣಿ SUB-TAB -->
+        <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
+          <div id="admin-pending-requests-wrapper" class="card-modern p-5 space-y-3 border-2 border-amber-400 bg-amber-50/20 shadow-md">
+            <div class="flex items-center justify-between border-b border-amber-200 pb-2.5">
+              <div class="flex items-center space-x-2.5">
+                <div class="p-2 bg-amber-500 text-slate-950 rounded-xl font-black text-sm shadow"><i class="fa-solid fa-bell"></i></div>
+                <div>
+                  <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+                    <span>ಹೊಸ ನೋಂದಣಿ ಕೋರಿಕೆಗಳು (Live Registration Requests)</span>
+                    <span id="admin-pending-badge-count" class="bg-red-600 text-white font-black text-[11px] px-2 py-0.5 rounded-full shadow-sm">0</span>
+                  </h3>
+                  <p class="text-[11px] text-slate-500 font-semibold">ಶಿಕ್ಷಕರು/ಶಾಲೆಗಳು ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಕಳುಹಿಸಿದ ಬಾಕಿ ಕೋರಿಕೆಗಳು</p>
+                </div>
+              </div>
+              <button onclick="fetchPendingRequestsFromCloud()" class="text-xs bg-white hover:bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-xl border border-slate-300 shadow-sm flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate text-amber-600"></i> <span>Sync Requests</span>
+              </button>
+            </div>
+            <div id="admin-pending-requests-list" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Teacher Form -->
+            <div class="card-modern p-6 space-y-4">
+              <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-user-plus text-emerald-600"></i> <span>೧. ಶಿಕ್ಷಕರ ನೋಂದಣಿ (₹100/ವಿಷಯ)</span></h3>
+              <form id="form-register-teacher" onsubmit="handleTeacherRegister(event)" class="space-y-3 text-xs">
+                <div><label class="font-bold">ಶಿಕ್ಷಕರ ಹೆಸರು *</label><input type="text" id="reg-teacher-name" required placeholder="e.g. ರಮೇಶ್ ಕುಮಾರ್" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div><label class="font-bold">ಶಾಲೆಯ ಹೆಸರು *</label><input type="text" id="reg-teacher-school" required placeholder="e.g. ಸ.ಹಿ.ಪ್ರಾ.ಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                  <div><label class="font-bold">WhatsApp ಮೊಬೈಲ್ *</label><input type="tel" id="reg-teacher-phone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+                  <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                    ${ALL_CLASSES_LIST.map(c=>`<label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" name="teacher_reg_class" value="${c.val}" class="rounded text-emerald-600" ${['6','7','8'].includes(c.val)?'checked':''}><span class="font-bold text-[11px]">${c.val}ನೇ</span></label>`).join('')}
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು (೧ ವಿಷಯಕ್ಕೆ ₹100) *</label>
+                    <span id="admin-tch-fee-badge" class="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-black">₹100/ವಿಷಯ</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                    ${subjects.map((s, idx) => `
+                      <label class="flex items-center space-x-1 cursor-pointer">
+                        <input type="checkbox" onchange="updateAdminTeacherFeeLive()" name="teacher_reg_subj" value="${s}" class="rounded text-emerald-600 w-3.5 h-3.5" ${idx===0?'checked':''}>
+                        <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+                <button type="submit" class="w-full btn-emerald-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರನ್ನು ನೋಂದಾಯಿಸಿ & Key ರಚಿಸಿ</button>
+              </form>
+              <div class="pt-3 border-t space-y-2">
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">${allTeachers.length}</span>)</h4>
+                <div id="list-registered-teachers" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+
+            <!-- School Form -->
+            <div class="card-modern p-6 space-y-4">
+              <h3 class="font-extrabold text-sm border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-building-columns text-indigo-600"></i> <span>೨. ಶಾಲಾ ನೋಂದಣಿ (${FEE_SCHOOL_YEARLY})</span></h3>
+              <form id="form-register-school" onsubmit="handleSchoolRegister(event)" class="space-y-3 text-xs">
+                <div><label class="font-bold">ಶಾಲೆಯ ಪೂರ್ಣ ಹೆಸರು *</label><input type="text" id="reg-school-name" required placeholder="e.g. ಸರ್ಕಾರಿ ಪ್ರೌಢಶಾಲೆ..." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div><label class="font-bold">DISE ಕೋಡ್ *</label><input type="text" id="reg-school-dise" required placeholder="e.g. DISE-292401001" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                  <div><label class="font-bold">HM ಹೆಸರು *</label><input type="text" id="reg-school-hm" required placeholder="e.g. ಬಸವರಾಜಪ್ಪ ಎಸ್." class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                </div>
+                <div><label class="font-bold">HM ಮೊಬೈಲ್ (WhatsApp) *</label><input type="tel" id="reg-school-hmphone" required pattern="[0-9]{10}" placeholder="e.g. 9876543210" class="w-full p-2 bg-slate-50 border rounded-xl font-bold" /></div>
+                <button type="submit" class="w-full btn-primary-gradient text-white font-bold py-2.5 rounded-xl shadow cursor-pointer">ಶಾಲೆಯನ್ನು ನೋಂದಾಯಿಸಿ & Master Key ರಚಿಸಿ</button>
+              </form>
+              <div class="pt-3 border-t space-y-2">
+                <h4 class="text-xs font-black uppercase">ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">${allSchools.length}</span>)</h4>
+                <div id="list-registered-schools" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      handleQuestionTypeChangeInAdmin('mcq');
+      renderCustomQuestionList();
+      renderRegisteredTeachers();
+      renderRegisteredSchools();
+      renderPendingRequestsInAdmin();
+    };
+
+    window.switchAdminSubModuleTab = function(subTab) {
+      activeAdminSubTab = subTab;
+      const qbSubView = document.getElementById('admin-subview-qbank');
+      const regSubView = document.getElementById('admin-subview-registration');
+      const btnQb = document.getElementById('sub-tab-btn-qbank');
+      const btnReg = document.getElementById('sub-tab-btn-reg');
+
+      if (subTab === 'qbank') {
+        if (qbSubView) qbSubView.classList.remove('hidden');
+        if (regSubView) regSubView.classList.add('hidden');
+        if (btnQb) btnQb.className = "px-4 py-2 rounded-xl transition bg-amber-500 text-slate-950 font-black shadow-md flex items-center gap-2 cursor-pointer";
+        if (btnReg) btnReg.className = "px-4 py-2 rounded-xl transition text-slate-300 hover:text-white flex items-center gap-2 cursor-pointer";
+        renderCustomQuestionList();
+      } else {
+        if (qbSubView) qbSubView.classList.add('hidden');
+        if (regSubView) regSubView.classList.remove('hidden');
+        if (btnReg) btnReg.className = "px-4 py-2 rounded-xl transition bg-emerald-500 text-slate-950 font-black shadow-md flex items-center gap-2 cursor-pointer";
+        if (btnQb) btnQb.className = "px-4 py-2 rounded-xl transition text-slate-300 hover:text-white flex items-center gap-2 cursor-pointer";
+        renderRegisteredTeachers();
+        renderRegisteredSchools();
+        renderPendingRequestsInAdmin();
+      }
+    };
+
+    // =========================================================================
+    // 🌟 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್ ಪ್ರತ್ಯೇಕವಾಗಿ ಬರುವಂತೆ ಗ್ಯಾರಂಟಿ)
     // =========================================================================
     window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
       const allQuestions = appState.activeGeneratedQuestions || [];
@@ -925,7 +1093,7 @@
       const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
       const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
 
-      // ಪ್ರಮಾಣಿತ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿ
+      // ೧. ಪ್ರಮಾಣಿತ ೧೦ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿ
       const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
       
       const selMcq = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq');
@@ -939,7 +1107,7 @@
       const selSa3M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'sa_3m');
       const selLa4M = allQuestions.filter(q => getCanonicalQuestionType(q) === 'la_4m');
 
-      // 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪ್ರತ್ಯೇಕ ಮ್ಯಾಪಿಂಗ್
+      // 🌟 ೨. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪ್ರತ್ಯೇಕ ಮ್ಯಾಪಿಂಗ್ (ಇವುಗಳು VSA/SA ಕೆಳಗೆ ಹೋಗುವುದಿಲ್ಲ!)
       const customQuestionsMap = new Map();
       allQuestions.forEach(q => {
         const cType = getCanonicalQuestionType(q);
@@ -997,7 +1165,7 @@
         `);
         keySectionsHtml.push(`
           <div style="margin-bottom: 8px;">
-            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ${isEnglish ? 'Multiple Choice Answers:' : 'ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:'}</div>
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ${isEnglish ? 'Multiple Choice Key:' : 'ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:'}</div>
             <div>${selMcq.map(m => `<div class="key-answer-row"><span class="key-qnum">${kNum++}.</span><span class="key-text">${escapeHtml(m.ans || '')}</span></div>`).join('')}</div>
           </div>
         `);
@@ -1030,18 +1198,7 @@
             <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
               <span>${isEnglish ? `${r}. State True or False:` : `${r}. ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ 'ಸರಿ' ತಪ್ಪು ಇದ್ದರೆ 'ತಪ್ಪು' ಎಂದು ಬರೆಯಿರಿ:`}</span><span>1x${selTrueFalse.length}=${selTrueFalse.length}</span>
             </div>
-            <div>${selTrueFalse.map(tf => {
-              const idx = allQuestions.indexOf(tf);
-              return `
-                <div style="margin-bottom: 3.5px;">
-                  <div class="q-paper-item-row">
-                    <span class="q-paper-num">${qNum++}.</span>
-                    <span class="q-paper-text">${escapeHtml(cleanQuestionTextForDisplay(tf.q))} &nbsp; [ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</span>
-                    <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                  </div>
-                  ${renderQuestionDiagramImage(tf)}
-                </div>`;
-            }).join('')}</div>
+            <div>${selTrueFalse.map(tf => buildQuestionItemWithImage(tf, qNum++)).join('')}</div>
           </div>
         `);
         keySectionsHtml.push(`
@@ -1092,7 +1249,7 @@
         paperSectionsHtml.push(`
           <div class="compact-section-header">
             <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 2px;">
-              <span>${isEnglish ? `${r}. Match the items in Column 'A' with Column 'B':` : `${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:`}</span><span>1x4=4</span>
+              <span>${isEnglish ? `${r}. Match the items:` : `${r}. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:`}</span><span>1x4=4</span>
             </div>
             <div class="q-paper-item-row" style="margin-bottom: 2px;">
               <span class="q-paper-num">${matchQNum}.</span>
@@ -1115,7 +1272,7 @@
 
         keySectionsHtml.push(`
           <div style="margin-bottom: 8px;">
-            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ${isEnglish ? 'Match Key Answers:' : 'ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:'}</div>
+            <div style="font-weight: 900; font-size: 13px; margin-bottom: 3px;">${r}. ${isEnglish ? 'Match Key:' : 'ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:'}</div>
             <div class="key-answer-row">
               <span class="key-qnum">${matchKNum}.</span>
               <div class="key-text">
@@ -1156,7 +1313,7 @@
         `);
       }
 
-      // 🌟 VII. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (ನಿಮ್ಮ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ಪ್ರತ್ಯೇಕ ಹೆಡಿಂಗ್‌ನೊಂದಿಗೆ ಇಲ್ಲಿ ರೆಂಡರ್ ಆಗುತ್ತವೆ!)
+      // 🌟 VII. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು (ನಿಮ್ಮ ಕಸ್ಟಮ್ ಹೆಡಿಂಗ್ ಅಡಿಯಲ್ಲಿ ಪ್ರತ್ಯೇಕ ಸೆಕ್ಷನ್ ರಚನೆ!)
       customQuestionsMap.forEach((qList, typeKey) => {
         if (qList.length === 0) return;
         const r = romanNumerals[romanIndex++ - 1];
@@ -1265,7 +1422,6 @@
         `);
       }
 
-      // ಅಂಕಗಳ ನಿಖರ ಮೊತ್ತ ಲೆಕ್ಕಾಚಾರ
       let customSectionsMarksSum = 0;
       customQuestionsMap.forEach((qList, typeKey) => {
         const customDef = customTypeList.find(c => c.key === typeKey || c.label === typeKey || cleanMatchText(c.label) === cleanMatchText(typeKey));
@@ -1317,329 +1473,26 @@
       renderExactThreeBlueprints(allQuestions, exactSumOfAllSections);
       applyDemoWatermarkToOutput();
     };
-  // =========================================================================
-    // ೧. ಎಡಿಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಮರು-ನಿಯೋಜನೆ & ಲೈವ್ ಸ್ವೆಪ್
+
     // =========================================================================
-    function getQuestionTypeDropdownOptionsHTML(subjectName, currentTypeKey) {
-      const formats = getSubjectSpecificQuestionFormats(subjectName || 'ವಿಜ್ಞಾನ');
-      const cType = currentTypeKey ? getCanonicalQuestionType({ type: currentTypeKey }) : 'vsa_1m';
-
-      let options = formats.map(fmt => `
-        <option value="${fmt.key}" ${fmt.key === currentTypeKey || fmt.key === cType ? 'selected' : ''}>
-          ${escapeHtml(fmt.label)} (${fmt.marks || 1}M)
-        </option>
-      `).join('');
-
-      if (!formats.some(f => f.key === currentTypeKey)) {
-        options = `<option value="${currentTypeKey}" selected>ಪ್ರಕಾರ: ${currentTypeKey}</option>` + options;
-      }
-      return options;
-    }
-
-    window.openAdminQuestionEditModal = function(qId) {
-      const q = (appState.qbank || []).find(item => item.id === qId);
-      if (!q) return;
-
-      let modal = document.getElementById('admin-q-edit-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'admin-q-edit-modal';
-        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
-        document.body.appendChild(modal);
-      }
-
-      const isMCQ = (q.type === 'mcq' || Boolean(q.a || q.b));
-      const typeOptionsHtml = getQuestionTypeDropdownOptionsHTML(q.subject, q.type);
-
-      modal.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
-          <div class="border-b pb-3 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <i class="fa-solid fa-pen-to-square text-amber-600 text-lg"></i>
-              <div>
-                <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ, ಪ್ರಕಾರ & ವಿವರಗಳ ತಿದ್ದುಪಡಿ</h3>
-                <p class="text-[11px] text-slate-500 font-semibold">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</p>
-              </div>
-            </div>
-            <button onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
-          </div>
-
-          <form onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು (Chapter) *</label>
-                <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter || '')}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
-              </div>
-              <div>
-                <label class="block font-black text-indigo-950 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Question Type) *</label>
-                <select id="edit-q-type" class="w-full p-2.5 bg-indigo-50 border-2 border-indigo-300 rounded-xl font-black text-indigo-950 text-xs focus:outline-none shadow-sm">
-                  ${typeOptionsHtml}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
-              <textarea id="edit-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900 leading-relaxed">${escapeHtml(cleanQuestionTextForDisplay(q.q || ''))}</textarea>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <label class="block font-bold mb-1">ಅಂಕಗಳು *</label>
-                <input type="number" id="edit-q-marks" value="${q.marks || getExactQuestionMarks(q)}" min="1" max="10" required class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
-              </div>
-              <div>
-                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
-                <select id="edit-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
-                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
-                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
-                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
-                <select id="edit-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
-                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
-                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
-                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
-              <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
-            </div>
-
-            <div class="flex justify-end space-x-2 pt-2 border-t">
-              <button type="button" onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
-              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ</button>
-            </div>
-          </form>
+    // ೫. ಬ್ಲೂಪ್ರಿಂಟ್ಸ್, PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್ & ಆಪ್ ಆರಂಭ
+    // =========================================================================
+    window.renderExactThreeBlueprints = function(questions, totalMarks) {
+      if (!questions || questions.length === 0) return;
+      const bpContainer = document.getElementById('rendered-blueprint');
+      if (!bpContainer) return;
+      bpContainer.innerHTML = `
+        <div class="a4-sheet-container">
+          <h2 style="text-align: center; font-size: 18px; font-weight: 900; color: #000; margin-bottom: 12px;">ನೀಲನಕ್ಷೆಗಳು (Blueprints - ${totalMarks} Marks)</h2>
+          <div class="p-4 bg-slate-50 border rounded-xl text-center text-xs font-bold">ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ: ${questions.length} | ಒಟ್ಟು ಅಂಕ: ${totalMarks}</div>
         </div>
       `;
-      modal.classList.remove('hidden');
     };
 
-    window.saveAdminQuestionEdit = function(e, qId) {
-      e.preventDefault();
-      const q = (appState.qbank || []).find(item => item.id === qId);
-      if (!q) return;
-
-      q.chapter = document.getElementById('edit-q-chapter').value.trim();
-      q.type = document.getElementById('edit-q-type').value;
-      q.q = document.getElementById('edit-q-text').value.trim();
-      q.marks = parseInt(document.getElementById('edit-q-marks').value) || 1;
-      q.obj = document.getElementById('edit-q-obj').value;
-      q.diff = document.getElementById('edit-q-diff').value;
-      q.ans = document.getElementById('edit-q-ans').value.trim();
-
-      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
-      pushToFirebaseCloud();
-      renderCustomQuestionList();
-      renderChapterCheckboxes();
-      
-      document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
-      showToast('✅ ಪ್ರಶ್ನೆ ಮತ್ತು ಪ್ರಕಾರ ಯಶಸ್ವಿಯಾಗಿ ತಿದ್ದುಪಡಿಯಾಗಿದೆ!', 'success');
-    };
-
-    // =========================================================================
-    // ೨. ಕಸ್ಟಮ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣಾ ಮಾಡಲ್
-    // =========================================================================
-    window.openManageSubjectFormatsModal = function() {
-      let modal = document.getElementById('manage-subject-formats-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'manage-subject-formats-modal';
-        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
-        document.body.appendChild(modal);
-      }
-
-      editingCustomQTypeKey = null;
-      const subjects = getSystemSubjects();
-      const customList = getCustomQuestionTypesList();
-
-      modal.innerHTML = `
-        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 text-xs font-sans max-h-[92vh] overflow-y-auto">
-          <div class="border-b pb-3 flex items-center justify-between">
-            <div class="flex items-center space-x-2.5">
-              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
-                <i class="fa-solid fa-layer-group text-amber-300 text-base"></i>
-              </div>
-              <div>
-                <h3 class="font-extrabold text-sm text-slate-900" id="subfmt-modal-title">ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ & ತಿದ್ದುಪಡಿ</h3>
-                <p class="text-[11px] text-slate-500 font-semibold">ಪ್ರಕಾರಗಳನ್ನು ನಿರ್ದಿಷ್ಟ ವಿಷಯಕ್ಕೆ ನಿಯೋಜಿಸಿ ಅಥವಾ ಬದಲಾಯಿಸಿ</p>
-              </div>
-            </div>
-            <button onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
-          </div>
-
-          <form id="form-manage-subject-formats" onsubmit="handleSaveOrUpdateSubjectFormat(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">ಸಂಬಂಧಿಸಿದ ವಿಷಯ (Target Subject) *</label>
-                <select id="subfmt-target-subject" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-indigo-950">
-                  <option value="all">🌐 ಎಲ್ಲಾ ವಿಷಯಗಳಿಗೆ (Universal)</option>
-                  ${subjects.map(s => `<option value="${s}">${s}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು *</label>
-                <input type="text" id="subfmt-label" required placeholder="e.g. ೧೧. ಅಂಕಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ (5M)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆ (Paper Heading) *</label>
-              <input type="text" id="subfmt-heading" required placeholder="e.g. ಈ ಕೆಳಗಿನವುಗಳನ್ನು ಸಂಖ್ಯಾ ರೂಪದಲ್ಲಿ ಬರೆಯಿರಿ:" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-2.5">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">ನಿಗದಿತ ಅಂಕಗಳು *</label>
-                <input type="number" id="subfmt-marks" value="1" min="1" max="20" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-900" />
-              </div>
-              <div class="flex items-end gap-1.5">
-                <button type="submit" id="subfmt-btn-submit" class="w-full py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
-                  <i class="fa-solid fa-plus text-amber-300"></i>
-                  <span>ಪ್ರಕಾರ ಸೇರಿಸಿ / Update</span>
-                </button>
-              </div>
-            </div>
-          </form>
-
-          <div class="space-y-2 pt-2 border-t">
-            <h4 class="font-black text-slate-800 text-xs uppercase flex items-center justify-between">
-              <span>ಲಭ್ಯವಿರುವ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪಟ್ಟಿ (${customList.length})</span>
-            </h4>
-            <div class="space-y-2 max-h-52 overflow-y-auto pr-1">
-              ${customList.map(ct => `
-                <div class="p-3 bg-white border-2 border-slate-200 rounded-xl flex items-center justify-between gap-2 shadow-sm hover:border-purple-300 transition">
-                  <div class="truncate">
-                    <b class="text-slate-900 text-xs block truncate">${escapeHtml(ct.label)}</b>
-                    <span class="text-[10px] text-slate-500 truncate block mt-0.5">${escapeHtml(ct.heading)} (${ct.marks}M)</span>
-                  </div>
-                  <button type="button" onclick="deleteCustomQType('${ct.key}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="flex justify-end pt-2 border-t">
-            <button type="button" onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ಮುಚ್ಚಿ</button>
-          </div>
-        </div>
-      `;
-      modal.classList.remove('hidden');
-    };
-
-    window.handleSaveOrUpdateSubjectFormat = function(e) {
-      e.preventDefault();
-      const targetSubj = document.getElementById('subfmt-target-subject')?.value || 'all';
-      const label = document.getElementById('subfmt-label')?.value.trim();
-      const heading = document.getElementById('subfmt-heading')?.value.trim();
-      const marks = parseInt(document.getElementById('subfmt-marks')?.value) || 1;
-
-      if (!label || !heading) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
-
-      let list = getCustomQuestionTypesList();
-      const newKey = 'fmt_' + Date.now();
-      list.push({ key: newKey, label, heading, marks, subject: targetSubj });
-
-      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
-      try {
-        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(list)
-        });
-      } catch (err) {}
-
-      openManageSubjectFormatsModal();
-      renderMaster10QuestionFormats();
-      showToast(`🎉 '${label}' ಯಶಸ್ವಿಯಾಗಿ ಸೇರ್ಪಡೆಯಾಗಿದೆ!`, 'success');
-    };
-
-    window.deleteCustomQType = function(key) {
-      if (confirm('ಈ ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಖಚಿತವಾಗಿ ಅಳಿಸಬೇಕೇ?')) {
-        let list = getCustomQuestionTypesList().filter(x => x.key !== key);
-        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
-        try {
-          fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(list)
-          });
-        } catch (err) {}
-        openManageSubjectFormatsModal();
-        renderMaster10QuestionFormats();
-        showToast('ಪ್ರಕಾರವನ್ನು ಅಳಿಸಲಾಗಿದೆ.', 'info');
-      }
-    };
-
-    // =========================================================================
-    // ೩. PDF EXPORT, SESSION RESTORE & CLOUD SYNC
-    // =========================================================================
-    window.exportCurrentTabToPDF = function() {
-      let activeTabId = 'tab-content-paper', fileLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
-      if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) { activeTabId = 'tab-content-key'; fileLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ'; }
-      else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) { activeTabId = 'tab-content-blueprint'; fileLabel = 'ನೀಲನಕ್ಷೆ'; }
-
-      const activeSheet = document.querySelector(`#${activeTabId} .a4-sheet-container`);
-      if (!activeSheet) return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
-
-      const sheetClone = activeSheet.cloneNode(true);
-      sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
-
-      const rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಜ್ಞಾನ';
-      const cleanSubject = rawSubject.split('(')[0].trim().replace(/\s+/g, '_');
-      const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
-      const fileName = `${cleanSubject}_${grade}_${fileLabel}`;
-
-      let printFrame = document.getElementById('isolated-vector-print-frame');
-      if (printFrame) printFrame.remove();
-
-      printFrame = document.createElement('iframe');
-      printFrame.id = 'isolated-vector-print-frame';
-      printFrame.style.position = 'fixed';
-      printFrame.style.right = '0';
-      printFrame.style.bottom = '0';
-      printFrame.style.width = '0';
-      printFrame.style.height = '0';
-      printFrame.style.border = 'none';
-      document.body.appendChild(printFrame);
-
-      const frameDoc = printFrame.contentWindow.document;
-      frameDoc.open();
-      frameDoc.write(`
-        <!DOCTYPE html>
-        <html lang="kn">
-        <head>
-          <meta charset="UTF-8">
-          <title>${fileName}</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-          <style>
-            @page { size: A4 portrait; margin: 6mm 7mm !important; }
-            * { box-sizing: border-box; font-family: 'Anek Kannada', sans-serif !important; }
-            body { margin: 0; padding: 0; background: #fff; color: #000; }
-            .a4-sheet-container { width: 100% !important; border: 2.5px solid #000 !important; padding: 6mm 8mm !important; margin: 0 auto !important; min-height: 275mm !important; height: 275mm !important; position: relative !important; box-sizing: border-box !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; }
-            .q-paper-item-row, .key-answer-row { display: flex !important; align-items: flex-start !important; gap: 6px !important; margin-bottom: 3.5px !important; line-height: 1.38 !important; }
-            .q-paper-num, .key-qnum { font-weight: 900 !important; font-size: 13px !important; min-width: 25px !important; flex-shrink: 0 !important; color: #000 !important; }
-            .q-paper-text, .key-text { flex: 1 !important; font-size: 12.8px !important; text-align: justify !important; line-height: 1.38 !important; }
-            .compact-section-header { margin-top: 6px !important; margin-bottom: 3px !important; }
-            .demo-watermark-overlay { position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; pointer-events: none !important; }
-            .demo-watermark-text { position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) rotate(-32deg) !important; font-size: 34px !important; font-weight: 900 !important; color: rgba(0, 0, 0, 0.16) !important; border: 4px dashed rgba(0, 0, 0, 0.22) !important; padding: 16px 36px !important; border-radius: 25px !important; text-transform: uppercase !important; white-space: nowrap !important; }
-          </style>
-        </head>
-        <body>${sheetClone.outerHTML}</body>
-        </html>
-      `);
-      frameDoc.close();
-
-      showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ.', 'info');
-      setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
+    window.switchOutputTab = function(t) {
+      ['paper', 'key', 'blueprint'].forEach(x => {
+        document.getElementById(`tab-content-${x}`)?.classList.toggle('hidden', x !== t);
+      });
     };
 
     async function fetchFromFirebaseCloud() {
@@ -1650,7 +1503,6 @@
           fetch(`${FIREBASE_REST_BASE}/withyou_schools.json`),
           fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`)
         ]);
-
         if (qRes.ok) {
           const d = await qRes.json();
           if (d) {
@@ -1689,10 +1541,11 @@
       setTimeout(() => el.remove(), 3500);
     }
 
+    // 🌟 ಅಪ್ಲಿಕೇಶನ್ ಆರಂಭ
     window.addEventListener('DOMContentLoaded', () => {
       restoreUserSession();
+      updateTopNavbarClean(); // 🌟 ಮೇಲ್ಭಾಗದ ಎಲ್ಲಾ ಬಟನ್‌ಗಳನ್ನು ಮೊದಲೇ ರೆಂಡರ್ ಮಾಡುವುದು
       syncSubjectAndChapters();
-      updateTopNavbarClean();
       renderDashboardUserStatusBanner();
       renderMaster10QuestionFormats();
       fetchFromFirebaseCloud();
@@ -1701,10 +1554,4 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
   
