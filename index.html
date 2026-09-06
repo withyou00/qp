@@ -184,6 +184,7 @@
           </div>
         </div>
 
+        <!-- DYNAMIC TOP NAVIGATION -->
         <div id="top-nav-actions-container" class="flex flex-wrap items-center justify-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200 text-xs font-bold w-full sm:w-auto">
         </div>
 
@@ -795,184 +796,7 @@
     };
 
     // =========================================================================
-    // ಚಿತ್ರಗಳ ಅಪ್ಲೋಡ್ & ಪ್ರದರ್ಶನ
-    // =========================================================================
-    function getAnyQuestionImageSource(q) {
-      if (!q) return '';
-      let src = q.image || q.img || q.diagram || q.picture || q.imageUrl || q.photo || '';
-      if (!src && q.q && typeof q.q === 'string') {
-        const match = q.q.match(/<img[^>]+src=["']([^"']+)["']/i);
-        if (match) src = match[1];
-      }
-      return (typeof src === 'string' && src.trim().length > 15) ? src.trim() : '';
-    }
-
-    function renderQuestionDiagramImage(imgSrc) {
-      if (!imgSrc || imgSrc.trim() === '') return '';
-      return `
-        <div style="text-align: center; margin: 4px 0 3px 0; width: 100%; display: block !important;">
-          <img src="${imgSrc}" alt="Diagram" style="max-height: 125px; max-width: 88%; border: 1.5px solid #64748b; border-radius: 6px; padding: 2px; display: inline-block !important; background: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />
-        </div>
-      `;
-    }
-
-    function renderMCQOptionsGridBlock(q) {
-      const hasOptImages = Boolean(q.imageA || q.imageB || q.imageC || q.imageD);
-      if (hasOptImages) {
-        return `
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-left: 24px; margin-top: 3px; text-align: center;">
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(A) ${escapeHtml(q.a || '')}</div>
-              ${q.imageA ? `<img src="${q.imageA}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(B) ${escapeHtml(q.b || '')}</div>
-              ${q.imageB ? `<img src="${q.imageB}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(C) ${escapeHtml(q.c || '')}</div>
-              ${q.imageC ? `<img src="${q.imageC}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 3px; background: #fff;">
-              <div style="font-weight: bold; font-size: 11px; margin-bottom: 2px;">(D) ${escapeHtml(q.d || '')}</div>
-              ${q.imageD ? `<img src="${q.imageD}" style="max-height: 55px; max-width: 100%; margin: 0 auto; display: block;" />` : ''}
-            </div>
-          </div>
-        `;
-      } else {
-        return `
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 8px; font-size: 12px; padding-left: 26px; margin-top: 1px;">
-            <div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div>
-            <div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div>
-          </div>
-        `;
-      }
-    }
-
-    window.processQuestionImageUpload = function(inputEl, previewBoxId, hiddenHolderId) {
-      const file = inputEl.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 450;
-          let width = img.width, height = img.height;
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.8);
-          const holder = document.getElementById(hiddenHolderId);
-          const previewBox = document.getElementById(previewBoxId);
-          if (holder) holder.value = compressed;
-          if (previewBox) {
-            previewBox.innerHTML = `<div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1"><img src="${compressed}" class="max-h-28 rounded-lg mx-auto" /><button type="button" onclick="removeQuestionImage('${previewBoxId}', '${hiddenHolderId}', '${inputEl.id}')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer">&times;</button></div>`;
-            previewBox.classList.remove('hidden');
-          }
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    };
-
-    window.removeQuestionImage = function(previewBoxId, hiddenHolderId, inputId) {
-      const holder = document.getElementById(hiddenHolderId);
-      const previewBox = document.getElementById(previewBoxId);
-      const inputEl = document.getElementById(inputId);
-      if (holder) holder.value = '';
-      if (inputEl) inputEl.value = '';
-      if (previewBox) { previewBox.innerHTML = ''; previewBox.classList.add('hidden'); }
-    };
-
-    // =========================================================================
-    // DIOPHANTINE COMBO MATH ENGINE
-    // =========================================================================
-    function solveExactDiophantineCombo(targetM, targetQ, avail1, avail2, avail3, avail4, mustIncludeMatch4M) {
-      let bestSolution = null;
-      let minDistance = Infinity;
-
-      const min4 = mustIncludeMatch4M ? 1 : 0;
-      const max4 = Math.min(avail4, Math.floor(targetM / 4));
-
-      for (let c4 = min4; c4 <= max4; c4++) {
-        const max3 = Math.min(avail3, Math.floor((targetM - c4 * 4) / 3));
-        for (let c3 = 0; c3 <= max3; c3++) {
-          const remMarks = targetM - (c4 * 4 + c3 * 3);
-          const remQ = targetQ - (c4 + c3);
-
-          if (remMarks >= 0 && remQ >= 0) {
-            const c2 = remMarks - remQ;
-            const c1 = 2 * remQ - remMarks;
-
-            if (c2 >= 0 && c1 >= 0 && c1 <= avail1 && c2 <= avail2) {
-              const exactMarks = c1 * 1 + c2 * 2 + c3 * 3 + c4 * 4;
-              const exactQ = c1 + c2 + c3 + c4;
-              if (exactMarks === targetM && exactQ === targetQ) {
-                return { c1, c2, c3, c4, totalM: exactMarks, totalQ: exactQ, perfect: true };
-              }
-            } else {
-              const maxC2 = Math.min(avail2, Math.floor(remMarks / 2));
-              for (let testC2 = maxC2; testC2 >= 0; testC2--) {
-                const testC1 = remMarks - testC2 * 2;
-                if (testC1 >= 0 && testC1 <= avail1) {
-                  const testQ = c4 + c3 + testC2 + testC1;
-                  const diffQ = Math.abs(testQ - targetQ);
-                  if (diffQ < minDistance) {
-                    minDistance = diffQ;
-                    bestSolution = { c1: testC1, c2: testC2, c3, c4, totalM: targetM, totalQ: testQ, perfect: false };
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      return bestSolution;
-    }
-
-    // =========================================================================
-    // 🌟 ಆದಾಯ & ಸದಸ್ಯತ್ವ ಲೈವ್ ಕ್ಯಾಲ್ಕುಲೇಟರ್ (ERROR-FREE REVENUE ENGINE)
-    // =========================================================================
-    function calculateTotalSystemRevenue() {
-      const allT = appState.teachers || [];
-      const allS = appState.schools || [];
-      
-      let tRev = 0, actT = 0, expT = 0, soonT = 0;
-      allT.forEach(t => {
-        tRev += (parseInt(String(t.fee || '100').replace(/\D/g, '')) || 100);
-        const d = calculateRealRemainingDays(getUserExactDynamicExpiry(t));
-        if (d <= 0) expT++; 
-        else { actT++; if (d <= 7) soonT++; }
-      });
-
-      let sRev = 0, actS = 0, expS = 0, soonS = 0;
-      allS.forEach(s => {
-        sRev += (parseInt(String(s.fee || '500').replace(/\D/g, '')) || 500);
-        const d = calculateRealRemainingDays(getUserExactDynamicExpiry(s));
-        if (d <= 0) expS++; 
-        else { actS++; if (d <= 7) soonS++; }
-      });
-
-      return {
-        totalRevenue: tRev + sRev,
-        teacherRevenue: tRev,
-        schoolRevenue: sRev,
-        activeTeachers: actT,
-        expiredTeachers: expT,
-        expiringSoonTeachers: soonT,
-        activeSchools: actS,
-        expiredSchools: expS,
-        expiringSoonSchools: soonS
-      };
-    }
-
-    // =========================================================================
-    // 🌟 ಅಡ್ಮಿನ್ ಮಾಸ್ಟರ್ ಯೂನಿಫೈಡ್ ವ್ಯೂ (100% WORKING & NEVER EMPTY!)
+    // 🌟 ಅಡ್ಮಿನ್ ಮಾಸ್ಟರ್ ಯೂನಿಫೈಡ್ ವ್ಯೂ
     // =========================================================================
     window.renderAdminMasterUnifiedView = function() {
       const adminView = document.getElementById('view-admin');
@@ -1283,8 +1107,799 @@
     };
 
     // =========================================================================
-    // ಬೇಸಿಕ್ ರೂಟಿಂಗ್ & ನಾವಿಗೇಷನ್
+    // ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಭಂಡಾರ ಲಿಸ್ಟ್ ರೆಂಡರರ್
     // =========================================================================
+    window.renderCustomQuestionList = function() {
+      const container = document.getElementById('admin-qbank-display-list');
+      const countEl = document.getElementById('admin-qbank-total-count');
+      if (!container) return;
+      const allSubjects = getSystemSubjects();
+      const rawQBank = appState.qbank || [];
+
+      const availableChapters = Array.from(new Set(
+        rawQBank.filter(q => (adminFilterGrade === 'all' || String(q.grade) === String(adminFilterGrade)) && isStrictSubjectMatch(q.subject, adminFilterSubject))
+          .map(q => q.chapter).filter(Boolean)
+      )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+      let filteredList = rawQBank.filter(q => {
+        const isG = (adminFilterGrade === 'all' || String(q.grade) === String(adminFilterGrade));
+        const isS = isStrictSubjectMatch(q.subject, adminFilterSubject);
+        const isC = (adminFilterChapter === 'all' || safeCleanMatch(q.chapter) === safeCleanMatch(adminFilterChapter));
+        const isT = (adminFilterType === 'all' || getCanonicalQuestionType(q) === adminFilterType);
+        let isQ = true;
+        if (adminSearchQuery.trim() !== '') {
+          isQ = `${q.q} ${q.ans} ${q.chapter}`.toLowerCase().includes(adminSearchQuery.toLowerCase());
+        }
+        return isG && isS && isC && isT && isQ;
+      });
+
+      if (countEl) countEl.innerText = `${filteredList.length} / ಒಟ್ಟು ${rawQBank.length}`;
+      const allFilteredSelected = filteredList.length > 0 && filteredList.every(q => window.adminSelectedQIds && window.adminSelectedQIds.has(q.id));
+
+      container.innerHTML = `
+        <div style="position: sticky !important; top: 0 !important; z-index: 40 !important; background: rgba(255, 255, 255, 0.98) !important;" class="p-3.5 rounded-2xl border-2 border-indigo-300 space-y-2.5 mb-3 text-xs shadow-md">
+          <input type="text" value="${escapeHtml(adminSearchQuery)}" oninput="adminSearchQuery=this.value; renderCustomQuestionList();" placeholder="🔍 ಹುಡುಕಿ..." class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold" />
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <select onchange="adminFilterGrade=this.value; renderCustomQuestionList();" class="p-1.5 border rounded-xl font-bold"><option value="all">ಎಲ್ಲಾ ತರಗತಿ</option>${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${adminFilterGrade===c.val?'selected':''}>${c.label}</option>`).join('')}</select>
+            <select onchange="adminFilterSubject=this.value; renderCustomQuestionList();" class="p-1.5 border rounded-xl font-bold text-emerald-950"><option value="all">ಎಲ್ಲಾ ವಿಷಯ</option>${allSubjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}</select>
+            <select onchange="adminFilterChapter=this.value; renderCustomQuestionList();" class="p-1.5 border rounded-xl font-bold text-indigo-950"><option value="all">ಎಲ್ಲಾ ಪಾಠಗಳು</option>${availableChapters.map(c=>`<option value="${escapeHtml(c)}" ${adminFilterChapter===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select>
+            <select onchange="adminFilterType=this.value; renderCustomQuestionList();" class="p-1.5 border rounded-xl font-bold"><option value="all">ಎಲ್ಲಾ ಪ್ರಕಾರಗಳು</option><option value="mcq">ಬಹು ಆಯ್ಕೆ</option><option value="blanks">ಖಾಲಿ ಜಾಗ</option><option value="true_false">ಸರಿ/ತಪ್ಪು</option><option value="match">ಹೊಂದಿಸಿ</option><option value="math_words">ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ</option><option value="math_figures">ಸಂಖ್ಯಾ ರೂಪ</option><option value="math_compare">ಹೋಲಿಸಿ</option><option value="math_estimate">ಅಂದಾಜು</option><option value="vsa_1m">1 ಅಂಕ</option><option value="sa_2m">2 ಅಂಕ</option><option value="sa_3m">3 ಅಂಕ</option><option value="la_4m">4 ಅಂಕ</option></select>
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t">
+            <label class="flex items-center space-x-1.5 font-bold cursor-pointer"><input type="checkbox" onchange="toggleSelectAllFilteredAdminQuestions(this.checked)" ${allFilteredSelected ? 'checked' : ''} class="w-4 h-4 rounded text-red-600"><span>Select All (${filteredList.length})</span></label>
+            <button onclick="bulkDeleteSelectedQuestions()" class="py-1 px-3 bg-red-600 text-white rounded-xl font-bold text-xs"><i class="fa-solid fa-trash-can"></i> ಅಳಿಸಿ (${(window.adminSelectedQIds && window.adminSelectedQIds.size)||0})</button>
+          </div>
+        </div>
+      ` + (filteredList.length === 0 ? `<div class="p-6 text-center font-bold text-slate-400">ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</div>` : filteredList.map((q, idx) => {
+        const isChecked = window.adminSelectedQIds && window.adminSelectedQIds.has(q.id);
+        const imgSrc = getAnyQuestionImageSource(q);
+        return `
+          <div class="p-3 bg-white border-2 ${isChecked?'border-red-400 bg-red-50/20':'border-slate-200'} rounded-2xl text-xs space-y-2 mb-2">
+            <div class="flex items-center justify-between border-b pb-1">
+              <div class="flex items-center space-x-1.5">
+                <input type="checkbox" onchange="toggleSingleAdminQuestionSelection('${q.id}', this.checked)" ${isChecked?'checked':''} class="w-4 h-4 rounded text-red-600" />
+                <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type} &bull; ${q.marks||1}M</span>
+                <span class="font-bold text-slate-900">${q.grade}ನೇ &bull; ${q.subject.split('(')[0]} &bull; ${q.chapter}</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <button onclick="openAdminQuestionEditModal('${q.id}')" class="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-bold text-[11px]"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                <button onclick="deleteQuestionFromBank('${q.id}')" class="px-2.5 py-1 bg-red-100 text-red-700 rounded-lg font-bold text-[11px]"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            </div>
+            <div class="font-black text-slate-900 text-[13px] leading-snug pl-5">${idx+1}. ${escapeHtml(cleanQuestionTextForDisplay(q.q))}</div>
+            ${renderQuestionDiagramImage(imgSrc)}
+            <div class="text-emerald-800 text-[11px] pl-5 font-bold"><b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}</div>
+          </div>
+        `;
+      }).join(''));
+    };
+
+    window.toggleSingleAdminQuestionSelection = function(qId, isChecked) {
+      if (isChecked) window.adminSelectedQIds.add(qId);
+      else window.adminSelectedQIds.delete(qId);
+      renderCustomQuestionList();
+    };
+
+    window.toggleSelectAllFilteredAdminQuestions = function(isSelected) {
+      const raw = appState.qbank || [];
+      raw.forEach(q => {
+        if (isSelected) window.adminSelectedQIds.add(q.id);
+        else window.adminSelectedQIds.delete(q.id);
+      });
+      renderCustomQuestionList();
+    };
+
+    window.bulkDeleteSelectedQuestions = function() {
+      if (!window.adminSelectedQIds || window.adminSelectedQIds.size === 0) return alert('ಪ್ರಶ್ನೆ ಆರಿಸಿ.');
+      if (confirm(`ಆಯ್ಕೆಮಾಡಿದ ${window.adminSelectedQIds.size} ಪ್ರಶ್ನೆಗಳನ್ನು ಅಳಿಸಬೇಕೇ?`)) {
+        appState.qbank = (appState.qbank || []).filter(q => !window.adminSelectedQIds.has(q.id));
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+        window.adminSelectedQIds.clear();
+        pushToFirebaseCloud();
+        renderCustomQuestionList();
+        renderChapterCheckboxes();
+      }
+    };
+
+    window.deleteQuestionFromBank = function(qId) {
+      if (confirm('ಈ ಪ್ರಶ್ನೆಯನ್ನು ಅಳಿಸಬೇಕೇ?')) {
+        appState.qbank = (appState.qbank || []).filter(q => q.id !== qId);
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+        pushToFirebaseCloud();
+        renderCustomQuestionList();
+        renderChapterCheckboxes();
+      }
+    };
+
+    window.handleQuestionTypeChangeInAdmin = function(type) {
+      const formFieldsBox = document.getElementById('admin-q-dynamic-fields');
+      if (!formFieldsBox) return;
+
+      if (type === 'mcq') {
+        formFieldsBox.innerHTML = `
+          <div><label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" /></div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="block font-bold">ಆಯ್ಕೆ (A) *</label><input type="text" id="qadd-opt-a" required placeholder="ಆಯ್ಕೆ ಎ" class="w-full p-2 bg-slate-50 border rounded-xl" /></div>
+            <div><label class="block font-bold">ಆಯ್ಕೆ (B) *</label><input type="text" id="qadd-opt-b" required placeholder="ಆಯ್ಕೆ ಬಿ" class="w-full p-2 bg-slate-50 border rounded-xl" /></div>
+            <div><label class="block font-bold">ಆಯ್ಕೆ (C) *</label><input type="text" id="qadd-opt-c" required placeholder="ಆಯ್ಕೆ ಸಿ" class="w-full p-2 bg-slate-50 border rounded-xl" /></div>
+            <div><label class="block font-bold">ಆಯ್ಕೆ (D) *</label><input type="text" id="qadd-opt-d" required placeholder="ಆಯ್ಕೆ ಡಿ" class="w-full p-2 bg-slate-50 border rounded-xl" /></div>
+          </div>
+          <div><label class="block font-bold mb-1">ಸರಿಯಾದ ಉತ್ತರ *</label><select id="qadd-correct-opt" class="w-full px-3 py-2 bg-emerald-50 border rounded-xl font-bold"><option value="A">ಆಯ್ಕೆ (A)</option><option value="B">ಆಯ್ಕೆ (B)</option><option value="C" selected>ಆಯ್ಕೆ (C)</option><option value="D">ಆಯ್ಕೆ (D)</option></select></div>
+        `;
+      } else {
+        formFieldsBox.innerHTML = `
+          <div><label class="block font-bold mb-1">ಪ್ರಶ್ನೆ *</label><input type="text" id="qadd-text" required placeholder="ಪ್ರಶ್ನೆ ನಮೂದಿಸಿ" class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl" /></div>
+          <div><label class="block font-bold mb-1">ಮಾದರಿ ಉತ್ತರ *</label><textarea id="qadd-ans" rows="3" required placeholder="ಮಾದರಿ ಉತ್ತರ" class="w-full p-2.5 bg-emerald-50 border rounded-xl"></textarea></div>
+        `;
+      }
+    };
+
+    window.handleSaveCustomQuestion = function(e) {
+      e.preventDefault();
+      const grade = document.getElementById('qadd-class')?.value || '7';
+      const subject = document.getElementById('qadd-subject')?.value || 'ಗಣಿತ (Mathematics)';
+      const part = document.getElementById('qadd-part')?.value || 'ಭಾಗ 1';
+      const chapter = document.getElementById('qadd-chapter')?.value.trim();
+      const type = document.getElementById('qadd-type')?.value || 'mcq';
+      const obj = document.getElementById('qadd-obj')?.value || 'ತಿಳುವಳಿಕೆ';
+      const diff = document.getElementById('qadd-diff')?.value || 'ಸುಲಭ';
+
+      if (!chapter) return alert('ಪಾಠದ ಹೆಸರು ನಮೂದಿಸಿ.');
+
+      let newQ = { id: 'q_' + Date.now(), grade, subject, part, chapter, type, obj, diff };
+
+      if (type === 'mcq') {
+        newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+        newQ.a = document.getElementById('qadd-opt-a')?.value.trim() || '';
+        newQ.b = document.getElementById('qadd-opt-b')?.value.trim() || '';
+        newQ.c = document.getElementById('qadd-opt-c')?.value.trim() || '';
+        newQ.d = document.getElementById('qadd-opt-d')?.value.trim() || '';
+        const cOpt = document.getElementById('qadd-correct-opt')?.value || 'A';
+        newQ.ans = `(${cOpt}) ${newQ[cOpt.toLowerCase()] || ''}`;
+        newQ.marks = 1;
+      } else {
+        newQ.q = document.getElementById('qadd-text')?.value.trim() || '';
+        newQ.ans = document.getElementById('qadd-ans')?.value.trim() || '';
+        newQ.marks = getExactQuestionMarks({ type });
+      }
+
+      appState.qbank.unshift(newQ);
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+      pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+      showToast('ಪ್ರಶ್ನೆ ಭಂಡಾರಕ್ಕೆ ಸೇವ್ ಆಗಿದೆ!', 'success');
+    };
+
+    window.openAdminQuestionEditModal = function(qId) {
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      let modal = document.getElementById('admin-q-edit-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-q-edit-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-3 text-xs">
+          <div class="border-b pb-2 flex items-center justify-between"><b class="text-sm">ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿ</b><button onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="text-xl font-bold">&times;</button></div>
+          <form onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-2.5">
+            <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter||'')}" required class="w-full p-2 border rounded-xl font-bold" />
+            <textarea id="edit-q-text" rows="3" required class="w-full p-2 border rounded-xl font-bold">${escapeHtml(cleanQuestionTextForDisplay(q.q||''))}</textarea>
+            <textarea id="edit-q-ans" rows="3" required class="w-full p-2 bg-emerald-50 border rounded-xl font-bold">${escapeHtml(q.ans||'')}</textarea>
+            <button type="submit" class="w-full py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow">ಸೇವ್ ಮಾಡಿ</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.saveAdminQuestionEdit = function(e, qId) {
+      e.preventDefault();
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+      q.chapter = document.getElementById('edit-q-chapter').value.trim();
+      q.q = document.getElementById('edit-q-text').value.trim();
+      q.ans = document.getElementById('edit-q-ans').value.trim();
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+      pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+      document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+      showToast('ಪ್ರಶ್ನೆ ತಿದ್ದುಪಡಿಯಾಗಿದೆ!', 'success');
+    };
+
+    // ನೋಂದಣಿಗಳು & ರಿಮೈಂಡರ್‌ಗಳು
+    window.switchAdminSubModuleTab = function(subTab) {
+      activeAdminSubTab = subTab;
+      document.getElementById('admin-subview-qbank')?.classList.toggle('hidden', subTab !== 'qbank');
+      document.getElementById('admin-subview-registration')?.classList.toggle('hidden', subTab === 'qbank');
+      document.getElementById('sub-tab-btn-qbank').className = `px-4 py-2 rounded-xl transition ${subTab==='qbank'?'bg-amber-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer`;
+      document.getElementById('sub-tab-btn-reg').className = `px-4 py-2 rounded-xl transition ${subTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer`;
+      if (subTab === 'qbank') renderCustomQuestionList();
+      else { renderRegisteredTeachers(); renderRegisteredSchools(); renderPendingRequestsInAdmin(); }
+    };
+
+    window.renderRegisteredTeachers = function() {
+      const container = document.getElementById('list-registered-teachers');
+      if (!container) return;
+      container.innerHTML = (appState.teachers || []).map(t => `
+        <div class="p-3 bg-white border rounded-xl text-xs space-y-1">
+          <div class="flex items-center justify-between"><b class="text-slate-900">${t.name} (${t.accessKey})</b><button onclick="deleteTeacher('${t.id}')" class="text-red-600 font-bold">&times;</button></div>
+          <p class="text-slate-500 text-[11px]">${t.school} &bull; 📱 ${t.phone} &bull; ವ್ಯಾಲಿಡಿಟಿ: ${t.expiryDate}</p>
+        </div>
+      `).join('');
+    };
+
+    window.renderRegisteredSchools = function() {
+      const container = document.getElementById('list-registered-schools');
+      if (!container) return;
+      container.innerHTML = (appState.schools || []).map(s => `
+        <div class="p-3 bg-white border rounded-xl text-xs space-y-1">
+          <div class="flex items-center justify-between"><b class="text-slate-900">${s.name} (${s.accessKey})</b><button onclick="deleteSchool('${s.id}')" class="text-red-600 font-bold">&times;</button></div>
+          <p class="text-slate-500 text-[11px]">DISE: ${s.dise} &bull; HM: ${s.hm} &bull; ವ್ಯಾಲಿಡಿಟಿ: ${s.expiryDate}</p>
+        </div>
+      `).join('');
+    };
+
+    window.handleTeacherRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-teacher-name').value.trim();
+      const school = document.getElementById('reg-teacher-school').value.trim();
+      const phone = document.getElementById('reg-teacher-phone').value.trim();
+      const grades = Array.from(document.querySelectorAll('input[name="teacher_reg_class"]:checked')).map(cb => cb.value);
+      const subjects = Array.from(document.querySelectorAll('input[name="teacher_reg_subj"]:checked')).map(cb => cb.value);
+      const accessKey = generateGuaranteedUniqueKey('TCH');
+      const regDate = getTodayFormattedDate();
+
+      const newTeacher = {
+        id: 'T_' + Date.now(),
+        name, school, schoolEn: school, phone,
+        grades: grades.length > 0 ? grades : ['6', '7', '8'],
+        subjects: subjects,
+        accessKey,
+        registeredDate: regDate,
+        expiryDate: calculateCustomExpiryDate(regDate, '1y'),
+        fee: `₹${subjects.length * 100}`
+      };
+      appState.teachers.unshift(newTeacher);
+      localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      pushAuthDataToFirebase();
+      renderRegisteredTeachers();
+      document.getElementById('form-register-teacher').reset();
+      alert(`🎉 ಶಿಕ್ಷಕ ${name} ನೋಂದಣಿಯಾಗಿದ್ದಾರೆ! Key: ${accessKey}`);
+    };
+
+    window.handleSchoolRegister = function(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-school-name').value.trim();
+      const dise = document.getElementById('reg-school-dise').value.trim();
+      const hm = document.getElementById('reg-school-hm').value.trim();
+      const hmPhone = document.getElementById('reg-school-hmphone').value.trim();
+      const accessKey = generateGuaranteedUniqueKey('SCH');
+      const regDate = getTodayFormattedDate();
+
+      const newSchool = {
+        id: 'SCH_' + Date.now(),
+        name, nameEn: name, schoolEn: name, dise, hm, hmPhone,
+        accessKey, registeredDate: regDate,
+        expiryDate: calculateCustomExpiryDate(regDate, '1y'),
+        fee: FEE_SCHOOL_YEARLY
+      };
+      appState.schools.unshift(newSchool);
+      localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      pushAuthDataToFirebase();
+      renderRegisteredSchools();
+      document.getElementById('form-register-school').reset();
+      alert(`🎉 ಶಾಲೆ: ${name} ನೋಂದಣಿಯಾಗಿದೆ! Key: ${accessKey}`);
+    };
+
+    window.deleteTeacher = function(id) {
+      if (confirm('ಅಳಿಸಬೇಕೇ?')) {
+        appState.teachers = appState.teachers.filter(x => x.id !== id);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        pushAuthDataToFirebase();
+        renderRegisteredTeachers();
+      }
+    };
+
+    window.deleteSchool = function(id) {
+      if (confirm('ಅಳಿಸಬೇಕೇ?')) {
+        appState.schools = appState.schools.filter(x => x.id !== id);
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+        pushAuthDataToFirebase();
+        renderRegisteredSchools();
+      }
+    };
+
+    window.fetchBroadcastNoticeFromCloud = async function() {
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`);
+        if (res.ok) {
+          const d = await res.json();
+          currentBroadcastNotice = typeof d === 'string' ? d.trim() : '';
+          localStorage.setItem('withyou_broadcast_notice', currentBroadcastNotice);
+          renderBroadcastBannerOnPages();
+        }
+      } catch (e) {}
+    };
+
+    window.saveBroadcastNoticeToCloud = async function() {
+      const input = document.getElementById('admin-broadcast-notice-input');
+      const msg = input ? input.value.trim() : '';
+      currentBroadcastNotice = msg;
+      localStorage.setItem('withyou_broadcast_notice', msg);
+      try { fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(msg) }); } catch (e) {}
+      renderBroadcastBannerOnPages();
+      showToast('ಪ್ರಕಟಣೆ ಪ್ರಸಾರವಾಗಿದೆ!', 'success');
+    };
+
+    window.clearBroadcastNoticeFromCloud = function() {
+      currentBroadcastNotice = '';
+      localStorage.setItem('withyou_broadcast_notice', '');
+      try { fetch(`${FIREBASE_REST_BASE}/withyou_broadcast_notice.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify('') }); } catch (e) {}
+      renderBroadcastBannerOnPages();
+      showToast('ಪ್ರಕಟಣೆ ತೆರವುಗೊಳಿಸಲಾಗಿದೆ.', 'info');
+    };
+
+    window.renderBroadcastBannerOnPages = function() {
+      document.querySelectorAll('.broadcast-notice-live-bar').forEach(el => el.remove());
+      if (!currentBroadcastNotice) return;
+      const html = `<div class="broadcast-notice-live-bar w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 px-4 py-2 rounded-2xl shadow-md flex items-center gap-3 overflow-hidden text-xs font-black mb-4 border border-amber-300"><div class="flex items-center gap-1.5 bg-slate-950 text-amber-300 px-2 py-0.5 rounded-lg shrink-0 text-[10px]"><i class="fa-solid fa-bullhorn"></i><span>ಪ್ರಕಟಣೆ:</span></div><marquee behavior="scroll" direction="left" scrollamount="6">${escapeHtml(currentBroadcastNotice)}</marquee></div>`;
+      document.querySelector('#view-dashboard .relative.overflow-hidden')?.insertAdjacentHTML('beforebegin', html);
+      document.getElementById('gen-top-profile-container')?.insertAdjacentHTML('beforebegin', html);
+    };
+
+    window.fetchPendingRequestsFromCloud = async function() {
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_pending_requests.json`);
+        if (res.ok) {
+          const d = await res.json();
+          appState.pendingRequests = d ? (Array.isArray(d) ? d.filter(Boolean) : Object.values(d)) : [];
+          localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+          renderPendingRequestsInAdmin();
+        }
+      } catch (e) {}
+    };
+
+    window.pushPendingRequestsToCloud = async function() {
+      try {
+        await fetch(`${FIREBASE_REST_BASE}/withyou_pending_requests.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState.pendingRequests || []) });
+      } catch (e) {}
+    };
+
+    window.renderPendingRequestsInAdmin = function() {
+      const container = document.getElementById('admin-pending-requests-list');
+      const badge = document.getElementById('admin-pending-badge-count');
+      const reqList = appState.pendingRequests || [];
+      if (badge) badge.innerText = reqList.length;
+      if (!container) return;
+
+      if (reqList.length === 0) {
+        container.innerHTML = `<div class="p-3 bg-emerald-50 text-emerald-800 text-center font-bold rounded-xl">ಯಾವುದೇ ಹೊಸ ನೋಂದಣಿ ಕೋರಿಕೆಗಳಿಲ್ಲ.</div>`;
+        return;
+      }
+
+      container.innerHTML = reqList.map(req => `
+        <div class="p-3 bg-white border-2 border-amber-400 rounded-xl space-y-1.5">
+          <div class="flex items-center justify-between"><b class="text-slate-900">${escapeHtml(req.name)} (${req.type})</b><span class="text-emerald-800 font-bold">${req.fee}</span></div>
+          <p class="text-slate-500 text-[11px]">${req.school||req.name} &bull; 📱 ${req.phone||req.hmPhone}</p>
+          <div class="flex justify-end gap-1.5 pt-1">
+            <button onclick="rejectPendingRequest('${req.id}')" class="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg font-bold text-xs border border-red-200">ತಿರಸ್ಕರಿಸಿ</button>
+            <button onclick="approvePendingRequest('${req.id}')" class="px-3 py-1 btn-emerald-gradient text-white rounded-lg font-bold text-xs">ಅನುಮೋದಿಸಿ</button>
+          </div>
+        </div>
+      `).join('');
+    };
+
+    window.approvePendingRequest = async function(reqId) {
+      const req = (appState.pendingRequests || []).find(r => r.id === reqId);
+      if (!req) return;
+      const regDate = getTodayFormattedDate();
+
+      if (req.type === 'teacher') {
+        const accessKey = generateGuaranteedUniqueKey('TCH');
+        appState.teachers.unshift({
+          id: 'T_' + Date.now(),
+          name: req.name,
+          school: req.school,
+          schoolEn: req.schoolEn || req.school,
+          phone: req.phone,
+          grades: req.grades || ['6', '7', '8'],
+          subjects: req.subjects || ['ಗಣಿತ (Mathematics)'],
+          accessKey,
+          registeredDate: regDate,
+          expiryDate: calculateCustomExpiryDate(regDate, '1y'),
+          fee: req.fee || '₹100'
+        });
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+      } else {
+        const accessKey = generateGuaranteedUniqueKey('SCH');
+        appState.schools.unshift({
+          id: 'SCH_' + Date.now(),
+          name: req.name,
+          nameEn: req.name,
+          schoolEn: req.name,
+          dise: req.dise,
+          hm: req.hm,
+          hmPhone: req.hmPhone,
+          accessKey,
+          registeredDate: regDate,
+          expiryDate: calculateCustomExpiryDate(regDate, '1y'),
+          fee: FEE_SCHOOL_YEARLY
+        });
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+      }
+
+      appState.pendingRequests = (appState.pendingRequests || []).filter(r => r.id !== reqId);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      await pushAuthDataToFirebase();
+      await pushPendingRequestsToCloud();
+      renderPendingRequestsInAdmin();
+      showToast('ಅನುಮೋದನೆಗೊಂಡಿದೆ!', 'success');
+    };
+
+    window.rejectPendingRequest = async function(reqId) {
+      appState.pendingRequests = (appState.pendingRequests || []).filter(r => r.id !== reqId);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      await pushPendingRequestsToCloud();
+      renderPendingRequestsInAdmin();
+    };
+
+    // Firebase Core Functions
+    async function fetchFromFirebaseCloud() {
+      try {
+        const [qRes, subRes] = await Promise.all([
+          fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`),
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_subjects.json`)
+        ]);
+        if (qRes.ok) {
+          const d = await qRes.json();
+          if (d) {
+            appState.qbank = Array.isArray(d) ? d.filter(Boolean) : Object.values(d);
+            localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+            renderChapterCheckboxes();
+            renderCustomQuestionList();
+          }
+        }
+        if (subRes.ok) {
+          const subd = await subRes.json();
+          if (subd && Array.isArray(subd)) localStorage.setItem('withyou_custom_subjects', JSON.stringify(subd));
+        }
+      } catch (e) {}
+    }
+
+    async function pushToFirebaseCloud() {
+      try {
+        await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState.qbank) });
+      } catch (e) {}
+    }
+
+    async function fetchAuthDataFromFirebase() {
+      try {
+        const [tRes, sRes] = await Promise.all([
+          fetch(`${FIREBASE_REST_BASE}/withyou_teachers.json`),
+          fetch(`${FIREBASE_REST_BASE}/withyou_schools.json`)
+        ]);
+        if (tRes.ok) {
+          const d = await tRes.json();
+          if (d) {
+            appState.teachers = Array.isArray(d) ? d.filter(Boolean) : Object.values(d);
+            localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+            renderRegisteredTeachers();
+          }
+        }
+        if (sRes.ok) {
+          const d = await sRes.json();
+          if (d) {
+            appState.schools = Array.isArray(d) ? d.filter(Boolean) : Object.values(d);
+            localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+            renderRegisteredSchools();
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function pushAuthDataToFirebase() {
+      try {
+        await Promise.all([
+          fetch(`${FIREBASE_REST_BASE}/withyou_teachers.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState.teachers) }),
+          fetch(`${FIREBASE_REST_BASE}/withyou_schools.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(appState.schools) })
+        ]);
+      } catch (e) {}
+    }
+
+    // ಹೆಲ್ಪರ್ಸ್ & ವ್ಯೂಸ್
+    window.syncSubjectAndChapters = function() {
+      const mediumSelect = document.getElementById('cfg-medium');
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      const currentGradeVal = classSelect ? classSelect.value : '7';
+      let availableSubjects = getOfficialSubjectsByClassGrade(currentGradeVal);
+
+      if (mediumSelect) mediumSelect.innerHTML = getSystemMediums().map(m => `<option value="${m}">${m}</option>`).join('');
+      if (classSelect && classSelect.innerHTML === '') classSelect.innerHTML = ALL_CLASSES_LIST.map(c => `<option value="${c.val}" ${c.val==='7'?'selected':''}>${c.label}</option>`).join('');
+      if (subjectSelect) subjectSelect.innerHTML = availableSubjects.map(s => `<option value="${s}" ${s.includes('ಗಣಿತ')?'selected':''}>${s}</option>`).join('');
+
+      renderChapterCheckboxes();
+      renderMaster10QuestionFormats();
+    };
+
+    window.handleClassOrSubjectChange = function() {
+      const classSelect = document.getElementById('cfg-class');
+      const subjectSelect = document.getElementById('cfg-subject');
+      if (classSelect && subjectSelect) {
+        const validSubjects = getOfficialSubjectsByClassGrade(classSelect.value);
+        const prev = subjectSelect.value;
+        subjectSelect.innerHTML = validSubjects.map(s => `<option value="${s}">${s}</option>`).join('');
+        if (validSubjects.includes(prev)) subjectSelect.value = prev;
+      }
+      renderChapterCheckboxes();
+      renderMaster10QuestionFormats();
+    };
+
+    window.renderChapterCheckboxes = function() {
+      const subject = document.getElementById('cfg-subject')?.value || 'ಗಣಿತ';
+      const grade = document.getElementById('cfg-class')?.value || '7';
+      const container = document.getElementById('chapter-list-box');
+      if (!container) return;
+
+      const chaps = Array.from(new Set(
+        (appState.qbank || []).filter(q => String(q.grade).replace(/\D/g, '') === String(grade).replace(/\D/g, '') && isStrictSubjectMatch(q.subject, subject))
+          .map(q => q.chapter).filter(Boolean)
+      )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+      if (chaps.length === 0) {
+        container.innerHTML = `<div class="col-span-2 p-4 bg-amber-50 text-amber-900 font-bold text-center rounded-xl">⚠️ ಈ ತರಗತಿ ಮತ್ತು ವಿಷಯಕ್ಕೆ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ. (DSERT JSON ಅಪ್ಲೋಡ್ ಮಾಡಿ)</div>`;
+        return;
+      }
+
+      container.innerHTML = chaps.map(c => `
+        <label class="flex items-center space-x-2.5 p-2.5 bg-slate-50 border rounded-xl hover:border-emerald-500 cursor-pointer text-xs">
+          <input type="checkbox" name="selected_chapter" value="${escapeHtml(c)}" checked class="w-4 h-4 text-emerald-600 rounded" />
+          <span class="font-bold text-slate-800">${escapeHtml(c)}</span>
+        </label>
+      `).join('');
+    };
+
+    window.toggleChapters = function(b) {
+      document.querySelectorAll('input[name="selected_chapter"]').forEach(c => c.checked = b);
+    };
+
+    window.switchOutputTab = function(t) {
+      ['paper', 'key', 'blueprint'].forEach(x => {
+        document.getElementById(`tab-content-${x}`)?.classList.toggle('hidden', x !== t);
+        const b = document.getElementById(`tab-btn-${x}`);
+        if (b) b.className = x === t ? 'px-4 py-2 rounded-xl text-xs font-extrabold bg-white text-slate-900 shadow-sm border border-slate-200 flex items-center gap-1.5 cursor-pointer' : 'px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer';
+      });
+    };
+
+    window.exportCurrentTabToPDF = function() {
+      let activeTabId = 'tab-content-paper', fileLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+      if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) { activeTabId = 'tab-content-key'; fileLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ'; }
+      else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) { activeTabId = 'tab-content-blueprint'; fileLabel = 'ನೀಲನಕ್ಷೆ'; }
+
+      const activeSheet = document.querySelector(`#${activeTabId} .a4-sheet-container`);
+      if (!activeSheet) return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
+
+      const sheetClone = activeSheet.cloneNode(true);
+      sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
+
+      let printFrame = document.createElement('iframe');
+      printFrame.style.position = 'fixed'; printFrame.style.right = '0'; printFrame.style.bottom = '0'; printFrame.style.width = '0'; printFrame.style.height = '0'; printFrame.style.border = 'none';
+      document.body.appendChild(printFrame);
+
+      const frameDoc = printFrame.contentWindow.document;
+      frameDoc.open();
+      frameDoc.write(`
+        <!DOCTYPE html>
+        <html lang="kn">
+        <head>
+          <meta charset="UTF-8"><title>WithYou_Exam_${fileLabel}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+          <style>
+            @page { size: A4 portrait; margin: 6mm 7mm !important; }
+            * { box-sizing: border-box; font-family: 'Anek Kannada', sans-serif !important; }
+            body { margin: 0; padding: 0; background: #fff; color: #000; }
+            .a4-sheet-container { width: 100% !important; border: 2.5px solid #000 !important; padding: 6mm 8mm !important; min-height: 275mm !important; height: 275mm !important; position: relative !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; }
+            .q-paper-item-row, .key-answer-row { display: flex !important; align-items: flex-start !important; gap: 6px !important; margin-bottom: 3.5px !important; line-height: 1.38 !important; }
+            .q-paper-num, .key-qnum { font-weight: 900 !important; font-size: 13px !important; min-width: 25px !important; flex-shrink: 0 !important; }
+            .q-paper-text, .key-text { flex: 1 !important; font-size: 12.8px !important; text-align: justify !important; line-height: 1.38 !important; }
+            .compact-section-header { margin-top: 6px !important; margin-bottom: 3px !important; }
+          </style>
+        </head>
+        <body>${sheetClone.outerHTML}</body>
+        </html>
+      `);
+      frameDoc.close();
+      setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
+    };
+
+    window.applyDemoWatermarkToOutput = function() {
+      document.querySelectorAll('.demo-watermark-overlay').forEach(el => el.remove());
+      if (isAdminLoggedIn || appState.currentUserType !== 'demo') return;
+      const watermarkHtml = `<div class="demo-watermark-overlay"><div class="demo-watermark-text">WITH YOU QP GENERATOR<br><span style="font-size: 19px; color: rgba(0,0,0,0.22);">DEMO VERSION • KEY: 9902090911</span></div></div>`;
+      document.querySelectorAll('#print-area .a4-sheet-container').forEach(sheet => sheet.insertAdjacentHTML('beforeend', watermarkHtml));
+    };
+
+    function showToast(m, t='info') {
+      const c = document.getElementById('toast-container');
+      if (!c) return;
+      const el = document.createElement('div');
+      el.className = `px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-2xl ${t==='success'?'bg-emerald-700':'bg-slate-900'}`;
+      el.innerHTML = escapeHtml(m);
+      c.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // ಲಾಗಿನ್ / ಕ್ರಿಡೆನ್ಷಿಯಲ್ಸ್
+    window.showAdminLoginModal = function() {
+      let modal = document.getElementById('admin-login-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-login-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 text-xs">
+          <div class="text-center"><h3 class="font-extrabold text-base text-slate-900">Admin Login</h3><p class="text-slate-500">ಪ್ರವೇಶಿಸಲು ವಿವರ ನಮೂದಿಸಿ</p></div>
+          <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-3">
+            <input type="text" id="admin-login-user" required placeholder="Username" class="w-full p-2.5 border rounded-xl font-bold" />
+            <input type="password" id="admin-login-pass" required placeholder="Password" class="w-full p-2.5 border rounded-xl font-bold" />
+            <div id="admin-login-error" class="hidden text-xs text-red-600 font-bold text-center">❌ ತಪ್ಪಾದ ವಿವರಗಳು!</div>
+            <button type="submit" class="w-full py-2.5 btn-primary-gradient text-white font-extrabold rounded-xl shadow">Login</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleAdminLoginSubmit = function(e) {
+      e.preventDefault();
+      const u = document.getElementById('admin-login-user').value.trim();
+      const p = document.getElementById('admin-login-pass').value.trim();
+      if (u === ADMIN_CREDENTIALS.user && p === ADMIN_CREDENTIALS.pass) {
+        isAdminLoggedIn = true;
+        localStorage.setItem('withyou_admin_auth_token', 'true');
+        sessionStorage.setItem('withyou_admin_auth_token', 'true');
+        appState.currentUserType = 'admin';
+        appState.currentUserId = 'master_admin';
+        document.getElementById('admin-login-modal')?.classList.add('hidden');
+        updateTopNavbarClean();
+        navigateToSection('qbank');
+        showToast('Admin Mode ಸಕ್ರಿಯವಾಗಿದೆ!', 'success');
+      } else {
+        document.getElementById('admin-login-error')?.classList.remove('hidden');
+      }
+    };
+
+    window.logoutAdmin = function() {
+      isAdminLoggedIn = false;
+      localStorage.removeItem('withyou_admin_auth_token');
+      sessionStorage.removeItem('withyou_admin_auth_token');
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+      updateTopNavbarClean();
+      navigateToSection('dashboard');
+    };
+
+    window.logoutActiveUser = function() {
+      localStorage.removeItem('withyou_logged_teacher');
+      localStorage.removeItem('withyou_logged_school');
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+      updateTopNavbarClean();
+      navigateToSection('dashboard');
+    };
+
+    // ಶಿಕ್ಷಕರ & ಶಾಲಾ ಅಧಿಕೃತ ಮಾಡಲ್‌ಗಳು
+    window.openTeacherAuthModal = function() {
+      let modal = document.getElementById('teacher-auth-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'teacher-auth-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+      const subjects = getSystemSubjects();
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-4 max-h-[90vh] overflow-y-auto text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಿಕ್ಷಕರ ಪೋರ್ಟಲ್ (Teacher Portal)</h3>
+            <button onclick="document.getElementById('teacher-auth-modal').classList.add('hidden')" class="text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+          <form onsubmit="handleTeacherModalLogin(event)" class="space-y-3">
+            <div><label class="font-bold">ಮೊಬೈಲ್ ನಂಬರ್ *</label><input type="tel" id="modal-tch-phone" required class="w-full p-2 border rounded-xl font-bold" /></div>
+            <div><label class="font-bold">Access Key *</label><input type="text" id="modal-tch-key" required class="w-full p-2 border rounded-xl font-bold uppercase font-mono" /></div>
+            <button type="submit" class="w-full py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಶಿಕ್ಷಕರ ಲಾಗಿನ್</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleTeacherModalLogin = function(e) {
+      e.preventDefault();
+      const p = cleanPhoneDigits(document.getElementById('modal-tch-phone')?.value);
+      const k = cleanKeyString(document.getElementById('modal-tch-key')?.value);
+      const teachers = appState.teachers || [];
+      const match = teachers.find(t => cleanPhoneDigits(t.phone) === p && cleanKeyString(t.accessKey) === k);
+      if (match) {
+        appState.currentUserType = 'teacher';
+        appState.currentUserId = match.id;
+        localStorage.setItem('withyou_logged_teacher', JSON.stringify(match));
+        document.getElementById('teacher-auth-modal')?.classList.add('hidden');
+        showToast(`ಸ್ವಾಗತ ${match.name}!`, 'success');
+        navigateToSection('generator');
+      } else {
+        alert('❌ ಮೊಬೈಲ್ ನಂಬರ್ ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!');
+      }
+    };
+
+    window.openSchoolAuthModal = function() {
+      let modal = document.getElementById('school-auth-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'school-auth-modal';
+        modal.className = 'fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 text-xs font-sans">
+          <div class="border-b pb-3 flex items-center justify-between">
+            <h3 class="font-extrabold text-sm text-slate-900">ಶಾಲಾ ಪೋರ್ಟಲ್ (School Portal)</h3>
+            <button onclick="document.getElementById('school-auth-modal').classList.add('hidden')" class="text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+          <form onsubmit="handleSchoolModalLogin(event)" class="space-y-3">
+            <div><label class="font-bold">DISE ಕೋಡ್ *</label><input type="text" id="modal-sch-dise" required class="w-full p-2 border rounded-xl font-bold" /></div>
+            <div><label class="font-bold">Master Key *</label><input type="text" id="modal-sch-key" required class="w-full p-2 border rounded-xl font-bold uppercase font-mono" /></div>
+            <button type="submit" class="w-full py-2.5 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಶಾಲಾ ಲಾಗಿನ್</button>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    window.handleSchoolModalLogin = function(e) {
+      e.preventDefault();
+      const d = cleanKeyString(document.getElementById('modal-sch-dise')?.value);
+      const k = cleanKeyString(document.getElementById('modal-sch-key')?.value);
+      const schools = appState.schools || [];
+      const match = schools.find(s => cleanKeyString(s.dise) === d && cleanKeyString(s.accessKey) === k);
+      if (match) {
+        appState.currentUserType = 'school';
+        appState.currentUserId = match.id;
+        localStorage.setItem('withyou_logged_school', JSON.stringify(match));
+        document.getElementById('school-auth-modal')?.classList.add('hidden');
+        showToast(`ಶಾಲೆ ${match.name} ಲಾಗಿನ್ ಯಶಸ್ವಿಯಾಗಿದೆ!`, 'success');
+        navigateToSection('generator');
+      } else {
+        alert('❌ DISE ಅಥವಾ Key ತಪ್ಪಾಗಿದೆ!');
+      }
+    };
+
+    window.launchDemoDirectly = function() {
+      appState.currentUserType = 'demo';
+      appState.currentUserId = 'guest';
+      navigateToSection('generator');
+    };
+
+    let secretLogoClickCount = 0, secretLogoTimer = null;
+    window.handleSecretLogoClick = function() {
+      secretLogoClickCount++;
+      clearTimeout(secretLogoTimer);
+      secretLogoTimer = setTimeout(() => { secretLogoClickCount = 0; }, 1500);
+      if (secretLogoClickCount >= 3) {
+        secretLogoClickCount = 0;
+        showAdminLoginModal();
+      }
+    };
+
+    // ನಾವಿಗೇಷನ್
     window.updateTopNavbarClean = function() {
       const navContainer = document.getElementById('top-nav-actions-container');
       if (!navContainer) return;
@@ -1331,10 +1946,26 @@
         return;
       }
       ['dashboard', 'generator', 'admin'].forEach(v => document.getElementById('view-' + v)?.classList.add('hidden'));
-      if (section === 'dashboard') { document.getElementById('view-dashboard')?.classList.remove('hidden'); renderBroadcastBannerOnPages(); }
-      else if (section === 'generator') { document.getElementById('view-generator')?.classList.remove('hidden'); syncSubjectAndChapters(); renderMaster10QuestionFormats(); renderBroadcastBannerOnPages(); }
-      else if (section === 'qbank') { document.getElementById('view-admin')?.classList.remove('hidden'); activeAdminSubTab = 'qbank'; renderAdminMasterUnifiedView(); }
-      else if (section === 'admin') { document.getElementById('view-admin')?.classList.remove('hidden'); activeAdminSubTab = 'registration'; renderAdminMasterUnifiedView(); }
+      if (section === 'dashboard') { 
+        document.getElementById('view-dashboard')?.classList.remove('hidden'); 
+        renderBroadcastBannerOnPages(); 
+      }
+      else if (section === 'generator') { 
+        document.getElementById('view-generator')?.classList.remove('hidden'); 
+        syncSubjectAndChapters(); 
+        renderMaster10QuestionFormats(); 
+        renderBroadcastBannerOnPages(); 
+      }
+      else if (section === 'qbank') { 
+        document.getElementById('view-admin')?.classList.remove('hidden'); 
+        activeAdminSubTab = 'qbank'; 
+        renderAdminMasterUnifiedView(); 
+      }
+      else if (section === 'admin') { 
+        document.getElementById('view-admin')?.classList.remove('hidden'); 
+        activeAdminSubTab = 'registration'; 
+        renderAdminMasterUnifiedView(); 
+      }
       updateTopNavbarClean();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -1364,5 +1995,4 @@
   </script>
 </body>
 </html>
-
 
