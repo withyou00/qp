@@ -5318,12 +5318,25 @@
     // =========================================================================
     // 🌟 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯಲ್ಲಿ SIDE-BY-SIDE ಮತ್ತು CENTER ಲೇಔಟ್ ಮಾಸ್ಟರ್ ರೆಂಡರರ್
     // =========================================================================
-    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
-      const allQuestions = appState.activeGeneratedQuestions || [];
-      const actualCalculatedMarks = allQuestions.reduce((a, b) => a + (b.marks || 1), 0);
+  window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      let allQuestions = appState.activeGeneratedQuestions || [];
       const customTypeList = getCustomQuestionTypesList();
 
-      const selMcq = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+      // =========================================================================
+      // 🎯 MCQ ಹೆಚ್ಚುವರಿ ನುಗ್ಗುವಿಕೆ ತಡೆದು ನಿಖರ ಮಿತಿ (Limit) ಹಾಕುವ ಫಿಕ್ಸ್
+      // =========================================================================
+      const allMcqQuestions = allQuestions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+      
+      // ಟಾರ್ಗೆಟ್ ಅಂಕ 20-25 ಇದ್ದರೆ ಕೇವಲ 1 (ಅಥವಾ 2) MCQ ಮಾತ್ರ ತಗೋ, 40 ಇದ್ದರೆ 4 ತಗೋ!
+      let targetMcqLimit = 1;
+      const tMarks = (typeof targetTotalMarks !== 'undefined') ? targetTotalMarks : (appState.targetMarks || 20);
+      if (tMarks >= 40) targetMcqLimit = 4;
+      else if (tMarks >= 25) targetMcqLimit = 2;
+      else targetMcqLimit = 1;
+
+      // ಹೆಚ್ಚುವರಿ 10 MCQ ಗಳನ್ನು ಕಟ್ ಮಾಡಿ ಕೇವಲ ನಿಗದಿತ ಸಂಖ್ಯೆಯನ್ನು ಮಾತ್ರ ಇಡುವುದು
+      const selMcq = allMcqQuestions.slice(0, targetMcqLimit);
+
       const selBlanks = allQuestions.filter(q => getCanonicalQuestionType(q) === 'blanks');
       const selTrueFalse = allQuestions.filter(q => getCanonicalQuestionType(q) === 'true_false');
       const selAnalogy = allQuestions.filter(q => getCanonicalQuestionType(q) === 'analogy');
