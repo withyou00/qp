@@ -14066,6 +14066,46 @@
   };
 
 })();
+
+    // =========================================================================
+// FIX: ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ನಿಗದಿಯಾದಷ್ಟೇ ಪ್ರಶ್ನೆಗಳನ್ನು ತೋರಿಸುವ ಆಟೋ-ಲಿಮಿಟ್ ಕೋಡ್
+// =========================================================================
+(function() {
+    function enforceSectionQuestionLimits() {
+        // ಎಲ್ಲಾ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ಹುಡುಕುವುದು
+        const sections = document.querySelectorAll('#paperPreview > div, .paper-container > div, div[style*="margin-bottom"]');
+
+        sections.forEach(sec => {
+            const headerText = sec.querySelector('div')?.innerText || '';
+            
+            // ಹೆಡಿಂಗ್‌ನಲ್ಲಿರುವ '1x2=2' ಅಥವಾ '1x5=5' ಲೆಕ್ಕವನ್ನು ಕಂಡುಹಿಡಿಯುವುದು
+            const match = headerText.match(/(\d+)\s*[xX*]\s*(\d+)\s*=\s*(\d+)/);
+            if (match) {
+                const allowedCount = parseInt(match[2]); // ಅನುಮತಿಸಲಾದ ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ
+                
+                // ಈ ಸೆಕ್ಷನ್ ಕೆಳಗಿರುವ ಪ್ರಶ್ನೆ ಸಾಲುಗಳನ್ನು ಪಡೆಯುವುದು
+                const rows = sec.querySelectorAll('.q-paper-item-row, .question-row, [class*="item-row"]');
+                
+                // ಒಂದು ವೇಳೆ ನಿಗದಿತ ಸಂಖ್ಯೆಗಿಂತ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಹೆಚ್ಚುವರಿಯನ್ನು ತೆಗೆದುಹಾಕುವುದು
+                if (rows.length > allowedCount) {
+                    for (let i = allowedCount; i < rows.length; i++) {
+                        rows[i].remove();
+                    }
+                }
+            }
+        });
+    }
+
+    // Generate ಆದಾಗ ರನ್ ಆಗಲು
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate'))) {
+            setTimeout(enforceSectionQuestionLimits, 300);
+            setTimeout(enforceSectionQuestionLimits, 700);
+        }
+    });
+
+    window.addEventListener('load', () => setTimeout(enforceSectionQuestionLimits, 500));
+})();
     
   </script>
 </body>
