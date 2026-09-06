@@ -1992,6 +1992,227 @@
       fetchBroadcastNoticeFromCloud();
       navigateToSection('dashboard');
     });
+
+/* ==========================================================================
+   🚀 FINAL RESCUE PATCH: FIX EMPTY QBANK & ADMIN + NATIVE MATHS SUPPORT
+   ========================================================================== */
+(function() {
+  console.log("WithYou QP: Applying Master Admin & Maths Patch...");
+
+  // ೧. ಗಣಿತದ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಅಧಿಕೃತ ಹೆಡಿಂಗ್ & ಮ್ಯಾಪಿಂಗ್
+  const MATH_FORMAT_HEADINGS = {
+    'math_words': 'ಈ ಕೆಳಗಿನ ಸಂಖ್ಯೆಗಳಿಗೆ ಅಲ್ಪವಿರಾಮ ಹಾಕಿ ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ:',
+    'math_figures': 'ಈ ಕೆಳಗಿನವುಗಳನ್ನು ಸಂಖ್ಯಾ ರೂಪದಲ್ಲಿ (ಅಂಕಿಗಳಲ್ಲಿ) ಬರೆಯಿರಿ:',
+    'math_compare': 'ಈ ಕೆಳಗಿನ ಸಂಖ್ಯೆಗಳನ್ನು ಹೋಲಿಸಿ ಸೂಕ್ತ ಚಿಹ್ನೆ ಬಳಸಿ [&lt;, &gt;, =]:',
+    'math_estimate': 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಸೂಚಿಸಿದಂತೆ ಅಂದಾಜು ಮಾಡಿ ಬರೆಯಿರಿ:'
+  };
+
+  // ೨. ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಗುರುತಿಸುವಿಕೆ
+  const origCanonical = window.getCanonicalQuestionType;
+  window.getCanonicalQuestionType = function(q) {
+    if (!q) return 'vsa_1m';
+    const t = String(q.type || '').toLowerCase().trim();
+    if (t === 'math_words' || t === 'ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ') return 'math_words';
+    if (t === 'math_figures' || t === 'ಸಂಖ್ಯಾ ರೂಪದಲ್ಲಿ ಬರೆಯಿರಿ' || t === 'ಅಂಕಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ') return 'math_figures';
+    if (t === 'math_compare' || t === 'ಹೋಲಿಸಿ' || t.includes('compare')) return 'math_compare';
+    if (t === 'math_estimate' || t === 'ಅಂದಾಜು ಮಾಡಿ' || t.includes('estimate')) return 'math_estimate';
+    if (typeof origCanonical === 'function') return origCanonical(q);
+    return t || 'vsa_1m';
+  };
+
+  // ೩. Step 3 ರಲ್ಲಿ ಗಣಿತದ ಪ್ರಕಾರಗಳು ಆಟೋಮ್ಯಾಟಿಕ್ ಕಾಣಿಸಲು
+  const origGetFormats = window.getSubjectSpecificQuestionFormats;
+  window.getSubjectSpecificQuestionFormats = function(subjectName) {
+    let list = typeof origGetFormats === 'function' ? origGetFormats(subjectName) : [];
+    const s = String(subjectName || '').toLowerCase();
+    
+    if (s.includes('ಗಣಿತ') || s.includes('math')) {
+      const mathTypes = [
+        { key: 'math_words', label: 'ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ (1M)', marks: 1, subject: 'mathematics' },
+        { key: 'math_figures', label: 'ಸಂಖ್ಯಾ ರೂಪದಲ್ಲಿ ಬರೆಯಿರಿ (1M)', marks: 1, subject: 'mathematics' },
+        { key: 'math_compare', label: 'ಹೋಲಿಸಿರಿ [&lt;, &gt;, =] (1M)', marks: 1, subject: 'mathematics' },
+        { key: 'math_estimate', label: 'ಅಂದಾಜು ಮಾಡಿ (2M/3M)', marks: 2, subject: 'mathematics' }
+      ];
+      mathTypes.forEach(mt => {
+        if (!list.some(x => x.key === mt.key)) list.push(mt);
+      });
+    }
+    return list;
+  };
+
+  // ೪. ಅಡ್ಮಿನ್ & ಪ್ರಶ್ನೆ ಭಂಡಾರ EMPTY ಆಗದಂತೆ ಗ್ಯಾರಂಟಿ ಡಿಸ್ಪ್ಲೇ ಫಂಕ್ಷನ್
+  window.renderAdminMasterUnifiedView = function() {
+    const adminView = document.getElementById('view-admin');
+    if (!adminView) return;
+
+    const allQ = appState.qbank || [];
+    const allT = appState.teachers || [];
+    const allS = appState.schools || [];
+    const allSubs = typeof getSystemSubjects === 'function' ? getSystemSubjects() : ["ಕನ್ನಡ", "English", "ಗಣಿತ (Mathematics)", "ವಿಜ್ಞಾನ (Science)", "ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)"];
+    const mediums = typeof getSystemMediums === 'function' ? getSystemMediums() : ["ಕನ್ನಡ (Kannada)", "English"];
+
+    adminView.innerHTML = `
+      <!-- Top Action Bar -->
+      <div class="flex flex-wrap items-center justify-between bg-slate-900 text-white p-4 rounded-3xl shadow-xl text-xs gap-3">
+        <div class="flex items-center space-x-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700 font-bold">
+          <button type="button" onclick="switchAdminSubModuleTab('qbank')" id="sub-tab-btn-qbank" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='qbank'?'bg-amber-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-database"></i>
+            <span>೧. ಪ್ರಶ್ನೆ ಭಂಡಾರ (${allQ.length})</span>
+          </button>
+          <button type="button" onclick="switchAdminSubModuleTab('registration')" id="sub-tab-btn-reg" class="px-4 py-2 rounded-xl transition ${activeAdminSubTab==='registration'?'bg-emerald-500 text-slate-950 font-black shadow-md':'text-slate-300 hover:text-white'} flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-users"></i>
+            <span>೨. ಶಿಕ್ಷಕರು & ಶಾಲಾ ನೋಂದಣಿ (${allT.length + allS.length})</span>
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="openDirectJSONUploadModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-bolt"></i> <span>⚡ Direct JSON Upload</span>
+          </button>
+          <button type="button" onclick="logoutAdmin()" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-black shadow cursor-pointer">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- ೧. ಪ್ರಶ್ನೆ ಭಂಡಾರ ವಿಭಾಗ -->
+      <div id="admin-subview-qbank" class="${activeAdminSubTab==='qbank'?'':'hidden'} space-y-6">
+        <div class="card-modern p-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between border-b pb-3 gap-2">
+            <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-emerald-600"></i>
+              <span>ಭಂಡಾರದಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳು (<span id="admin-qbank-total-count">${allQ.length}</span>)</span>
+            </h3>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="openDirectJSONUploadModal()" class="text-xs bg-amber-100 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400 cursor-pointer">
+                ⚡ Direct JSON
+              </button>
+              <button type="button" onclick="fetchFromFirebaseCloud()" class="text-xs bg-slate-100 text-slate-700 font-bold px-3 py-1.5 rounded-xl border cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate"></i> Sync Cloud
+              </button>
+            </div>
+          </div>
+          <div id="admin-qbank-display-list" class="space-y-2.5 max-h-[600px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- ೨. ನೋಂದಣಿ ವಿಭಾಗ -->
+      <div id="admin-subview-registration" class="${activeAdminSubTab==='registration'?'':'hidden'} space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="card-modern p-5 space-y-3">
+            <h3 class="font-black text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-chalkboard-user text-emerald-600"></i>
+              <span>ನೋಂದಾಯಿತ ಶಿಕ್ಷಕರು (<span id="count-teachers">${allT.length}</span>)</span>
+            </h3>
+            <div id="list-registered-teachers" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="card-modern p-5 space-y-3">
+            <h3 class="font-black text-sm text-slate-900 border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-school text-indigo-600"></i>
+              <span>ನೋಂದಾಯಿತ ಶಾಲೆಗಳು (<span id="count-schools">${allS.length}</span>)</span>
+            </h3>
+            <div id="list-registered-schools" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderCustomQuestionList();
+    renderRegisteredTeachers();
+    renderRegisteredSchools();
+  };
+
+  // ೫. ಪ್ರಶ್ನೆ ಭಂಡಾರ ಲಿಸ್ಟ್ ಖಾಲಿಯಾಗದಂತೆ ಡಿಸ್ಪ್ಲೇ ಮಾಡುವ ಫಂಕ್ಷನ್
+  window.renderCustomQuestionList = function() {
+    const container = document.getElementById('admin-qbank-display-list');
+    const countEl = document.getElementById('admin-qbank-total-count');
+    if (!container) return;
+
+    const rawQ = appState.qbank || [];
+    if (countEl) countEl.innerText = rawQ.length;
+
+    if (rawQ.length === 0) {
+      container.innerHTML = `
+        <div class="p-8 bg-amber-50 border-2 border-dashed border-amber-300 rounded-2xl text-center space-y-3">
+          <div class="text-amber-800 font-black text-sm">ಪ್ರಶ್ನೆ ಭಂಡಾರ ಪ್ರಸ್ತುತ ಖಾಲಿಯಾಗಿದೆ (0 Questions).</div>
+          <p class="text-xs text-slate-600">ಗಣಿತ ಅಥವಾ ಇತರೆ ವಿಷಯಗಳ ಪ್ರಶ್ನೆಗಳನ್ನು ನೇರವಾಗಿ ಸೇರಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ:</p>
+          <button type="button" onclick="openDirectJSONUploadModal()" class="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl shadow cursor-pointer text-xs">
+            ⚡ Direct JSON Upload ಮಾಡಿ
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = rawQ.map((q, idx) => `
+      <div class="p-3.5 bg-white border-2 border-slate-200 rounded-2xl text-xs space-y-1.5 shadow-sm mb-2">
+        <div class="flex items-center justify-between border-b pb-1.5 font-bold">
+          <div class="flex items-center space-x-2">
+            <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type || '1M'} &bull; ${q.marks || 1}M</span>
+            <span class="text-slate-800 font-bold">${q.grade || '7'}ನೇ &bull; ${(q.subject || '').split('(')[0]} &bull; ${q.chapter || ''}</span>
+          </div>
+          <button type="button" onclick="deleteQuestionFromBank('${q.id}')" class="px-2 py-1 bg-red-100 text-red-700 rounded-lg font-bold text-[10px] cursor-pointer">ಅಳಿಸಿ</button>
+        </div>
+        <div class="font-black text-slate-900 text-xs leading-snug">${idx + 1}. ${escapeHtml(q.q || '')}</div>
+        ${q.type === 'mcq' && (q.a || q.b) ? `
+          <div class="grid grid-cols-2 gap-1 text-[11px] bg-slate-50 p-2 rounded-xl border">
+            <div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div>
+            <div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div>
+          </div>
+        ` : ''}
+        <div class="text-emerald-950 font-bold bg-emerald-50 p-2 rounded-xl border border-emerald-300 text-[11px]">
+          <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+        </div>
+      </div>
+    `).join('');
+  };
+
+  // ೬. ನಾವಿಗೇಷನ್ ಕ್ಲಿಕ್ ಆದಾಗ ಖಾತರಿಯಾಗಿ ಪೇಜ್ ತೆರೆಯುವುದು
+  window.navigateToSection = function(section) {
+    ['dashboard', 'generator', 'admin'].forEach(v => document.getElementById('view-' + v)?.classList.add('hidden'));
+
+    if (section === 'dashboard') {
+      document.getElementById('view-dashboard')?.classList.remove('hidden');
+    } else if (section === 'generator') {
+      document.getElementById('view-generator')?.classList.remove('hidden');
+      syncSubjectAndChapters();
+      renderMaster10QuestionFormats();
+    } else if (section === 'qbank') {
+      document.getElementById('view-admin')?.classList.remove('hidden');
+      activeAdminSubTab = 'qbank';
+      renderAdminMasterUnifiedView();
+    } else if (section === 'admin') {
+      document.getElementById('view-admin')?.classList.remove('hidden');
+      activeAdminSubTab = 'registration';
+      renderAdminMasterUnifiedView();
+    }
+    updateTopNavbarClean();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ೭. ಗಣಿತದ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (ಹೆಡಿಂಗ್‌ಗಳು ಸರಿಹೊಂದುವಂತೆ)
+  const origPaperRender = window.renderFullExamPaperWithCustomHeader;
+  window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+    const allQ = appState.activeGeneratedQuestions || [];
+    
+    // ಗಣಿತದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಸರಿಯಾದ ಹೆಡಿಂಗ್ ಕೆಳಗೆ ತರುವುದು
+    allQ.forEach(q => {
+      if (MATH_FORMAT_HEADINGS[q.type]) {
+        q.customHeading = MATH_FORMAT_HEADINGS[q.type];
+      }
+    });
+
+    if (typeof origPaperRender === 'function') {
+      origPaperRender(headerHtml);
+    }
+  };
+
+  // ಆಟೋ ಸಿಂಕ್ & ರೆಂಡರ್
+  syncSubjectAndChapters();
+  updateTopNavbarClean();
+})();
+    
   </script>
 </body>
 </html>
