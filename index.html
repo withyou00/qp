@@ -13974,7 +13974,98 @@
         qbHeaderRow.insertBefore(fmtBtn, qbHeaderRow.firstChild);
       }
     };
-      
+
+    /* ==========================================================================
+   🎯 MASTER FIX: 1-MARK CUSTOM TYPES & HEADINGS MARKS CALCULATION FIX
+   ========================================================================== */
+(function() {
+  console.log("Applying 1-Mark Custom Heading & Marks Fix...");
+
+  // ೧. 1 ಅಂಕದ ಪ್ರಶ್ನೆಗಳನ್ನು 'ಒಂದು ವಾಕ್ಯ'ಕ್ಕೆ ಕಡ್ಡಾಯವಾಗಿ ನೂಕುವುದನ್ನು ತಡೆಯುವುದು
+  window.getCanonicalQuestionType = function(q) {
+    if (!q) return 'vsa_1m';
+    const t = String(q.type || '').trim();
+    const tLower = t.toLowerCase();
+
+    // ಸ್ಟ್ಯಾಂಡರ್ಡ್ ಪ್ರಕಾರಗಳಿದ್ದರೆ ಮಾತ್ರ ನೇರ ಕೀ ನೀಡಿ
+    if (tLower === 'mcq' || (q.a && q.b)) return 'mcq';
+    if (tLower === 'blanks') return 'blanks';
+    if (tLower === 'true_false') return 'true_false';
+    if (tLower === 'analogy') return 'analogy';
+    if (tLower === 'odd_one_out' || tLower.includes('ಗುಂಪು')) return 'odd_one_out';
+    if (tLower === 'match' || q.matchPairs) return 'match';
+    if (tLower === 'vsa_1m' || tLower === 'vsa') return 'vsa_1m';
+    if (tLower === 'sa_2m' || tLower === 'sa') return 'sa_2m';
+    if (tLower === 'sa_3m') return 'sa_3m';
+    if (tLower === 'la_4m' || tLower === 'la') return 'la_4m';
+
+    // 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಿದ್ದರೆ (ಉದಾ: 'ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ', 'ಅಂಕಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ')
+    // ಅಂಕ 1 ಇದ್ದರೂ ಅದರ ಮೂಲ ಹೆಸರನ್ನೇ ಉಳಿಸಿಕೊಳ್ಳುವುದು!
+    return t;
+  };
+
+  // ೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್‌ನಲ್ಲಿ ನಿಖರ ಅಂಕ 1x5=5 ಬರುವಂತೆ ಸರಿಪಡಿಸುವಿಕೆ
+  const origRenderWithCleanHeadings = window.renderFullExamPaperWithCustomHeader;
+  window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+    const allQuestions = appState.activeGeneratedQuestions || [];
+    const customTypeList = typeof getCustomQuestionTypesList === 'function' ? getCustomQuestionTypesList() : [];
+
+    // ಸ್ಟ್ಯಾಂಡರ್ಡ್ ಪ್ರಕಾರಗಳು
+    const standardKeys = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+    const customMap = new Map();
+
+    allQuestions.forEach(q => {
+      const cType = getCanonicalQuestionType(q);
+      // ಸ್ಟ್ಯಾಂಡರ್ಡ್ ಅಲ್ಲದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ಅವುಗಳ ಕಸ್ಟಮ್ ಹೆಸರಿನಡಿ ಪ್ರತ್ಯೇಕಿಸುವುದು
+      if (!standardKeys.has(cType)) {
+        if (!customMap.has(q.type)) customMap.set(q.type, []);
+        customMap.get(q.type).push(q);
+      }
+    });
+
+    // ಮೂಲ ರೆಂಡರರ್ ಕಾಲ್
+    if (typeof origRenderWithCleanHeadings === 'function') {
+      origRenderWithCleanHeadings(headerHtml);
+    }
+
+    // ಕಸ್ಟಮ್ ವಿಭಾಗಗಳಲ್ಲಿ ಅಂಕಗಳ ಹೆಡಿಂಗ್ ಸರಿಪಡಿಸುವುದು (1x5=5)
+    const paperContainer = document.getElementById('rendered-paper');
+    if (paperContainer && customMap.size > 0) {
+      customMap.forEach((qList, typeKey) => {
+        const customDef = customTypeList.find(c => c.key === typeKey || c.label.includes(typeKey));
+        const marksPerQ = qList[0].marks || (customDef ? customDef.marks : 1);
+        const totalSecMarks = marksPerQ * qList.length;
+
+        // ಹೆಡಿಂಗ್ ಬ್ಲಾಕ್ ಹುಡುಕಿ ಅಂಕವನ್ನು ಸರಿಪಡಿಸುವುದು
+        const allHeadings = paperContainer.querySelectorAll('.compact-section-header, div');
+        allHeadings.forEach(sec => {
+          if (sec.innerText.includes(typeKey) || (customDef && sec.innerText.includes(customDef.heading))) {
+            const badge = sec.querySelector('span:last-child');
+            if (badge && badge.innerText.includes('=')) {
+              badge.innerText = `${marksPerQ}x${qList.length}=${totalSecMarks}`; // 🌟 1x5=5
+            }
+          }
+        });
+      });
+    }
+
+    // ಹೆಡರ್‌ನಲ್ಲಿರುವ ಒಟ್ಟು ಅಂಕವನ್ನು ಎಲ್ಲ ಪ್ರಶ್ನೆಗಳ ನಿಖರ ಮೊತ್ತಕ್ಕೆ ಮ್ಯಾಚ್ ಮಾಡುವುದು
+    const realTotalSum = allQuestions.reduce((a, b) => a + (parseInt(b.marks) || 1), 0);
+    const paperEl = document.getElementById('rendered-paper');
+    const keyEl = document.getElementById('rendered-key');
+
+    [paperEl, keyEl].forEach(container => {
+      if (container) {
+        container.innerHTML = container.innerHTML
+          .replace(/ಅಂಕ\s*&nbsp;&nbsp;:\s*\d+/gi, `ಅಂಕ &nbsp;&nbsp;: ${realTotalSum}`)
+          .replace(/Marks\s*&nbsp;&nbsp;:\s*\d+/gi, `Marks &nbsp;&nbsp;: ${realTotalSum}`)
+          .replace(/ಅಂಕ\s*:\s*\d+/gi, `ಅಂಕ : ${realTotalSum}`)
+          .replace(/Marks\s*:\s*\d+/gi, `Marks : ${realTotalSum}`);
+      }
+    });
+  };
+
+})();
     
   </script>
 </body>
