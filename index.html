@@ -3051,11 +3051,22 @@
         canIncludeMatch
       );
 
+      // =========================================================================
+      // 5 ಅಂಕ (5M) ಸೇರ್ಪಡೆ ಮತ್ತು ನಿಖರ ಅಂಕ/ಪ್ರಶ್ನೆ ಲಾಕ್ ಮಾಡುವ ಫಿಕ್ಸ್
+      // =========================================================================
       let chosenQuestions = [];
 
+      // 5 ಅಂಕದ ಪ್ರಶ್ನೆಗಳ ಪೂಲ್ ಇಲ್ಲದಿದ್ದರೆ ರಚಿಸಿಕೊಳ್ಳುವುದು
+      const safePool5M = (typeof pool5M !== 'undefined') ? pool5M : (typeof poolCustom !== 'undefined' ? poolCustom : []);
+
       if (solution) {
-        let needed4M = solution.c4;
-        if (canIncludeMatch && needed4M > 0) {
+        // 5 ಅಂಕದ ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಮೊದಲು ಸೇರಿಸಿ
+        if (solution.c5 && safePool5M.length > 0) {
+          for (let i = 0; i < solution.c5 && safePool5M.length > 0; i++) chosenQuestions.push(safePool5M.pop());
+        }
+
+        let needed4M = solution.c4 || 0;
+        if (canIncludeMatch && needed4M > 0 && typeof matchQuestions !== 'undefined' && matchQuestions.length > 0) {
           chosenQuestions.push(matchQuestions.pop());
           needed4M--;
         }
@@ -3063,16 +3074,49 @@
           chosenQuestions.push(pool4M.pop());
           needed4M--;
         }
-        for (let i = 0; i < solution.c3 && pool3M.length > 0; i++) chosenQuestions.push(pool3M.pop());
-        for (let i = 0; i < solution.c2 && pool2M.length > 0; i++) chosenQuestions.push(pool2M.pop());
-        for (let i = 0; i < solution.c1 && pool1M.length > 0; i++) chosenQuestions.push(pool1M.pop());
+        for (let i = 0; i < (solution.c3 || 0) && pool3M.length > 0; i++) chosenQuestions.push(pool3M.pop());
+        for (let i = 0; i < (solution.c2 || 0) && pool2M.length > 0; i++) chosenQuestions.push(pool2M.pop());
+        for (let i = 0; i < (solution.c1 || 0) && pool1M.length > 0; i++) chosenQuestions.push(pool1M.pop());
       } else {
+        // ನಿಖರ ಲೆಕ್ಕಾಚಾರ: 5M, 4M, 3M, 2M, 1M ಕ್ರಮವಾಗಿ ತುಂಬುವುದು (ಮಿತಿ ಮೀರದಂತೆ)
         let curM = 0;
-        if (canIncludeMatch && curM + 4 <= targetTotalMarks) { chosenQuestions.push(matchQuestions.pop()); curM += 4; }
-        while (curM + 2 <= targetTotalMarks && pool2M.length > 0) { chosenQuestions.push(pool2M.pop()); curM += 2; }
-        while (curM + 1 <= targetTotalMarks && pool1M.length > 0) { chosenQuestions.push(pool1M.pop()); curM += 1; }
-        while (curM + 3 <= targetTotalMarks && pool3M.length > 0) { chosenQuestions.push(pool3M.pop()); curM += 3; }
-        while (curM + 4 <= targetTotalMarks && pool4M.length > 0) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+        let maxAllowedQuestions = (typeof targetTotalQuestions !== 'undefined') ? targetTotalQuestions : 999;
+
+        // 1. ಮೊದಲು 5 ಅಂಕದ ಪ್ರಶ್ನೆಗಳನ್ನು ಮಿತಿಯೊಳಗೆ ಸೇರಿಸಿ
+        while (curM + 5 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && safePool5M.length > 0) {
+          chosenQuestions.push(safePool5M.pop());
+          curM += 5;
+        }
+
+        // 2. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4 ಅಂಕ)
+        if (canIncludeMatch && curM + 4 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && typeof matchQuestions !== 'undefined' && matchQuestions.length > 0) { 
+          chosenQuestions.push(matchQuestions.pop()); 
+          curM += 4; 
+        }
+
+        // 3. 4 ಅಂಕ
+        while (curM + 4 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && pool4M.length > 0) { 
+          chosenQuestions.push(pool4M.pop()); 
+          curM += 4; 
+        }
+
+        // 4. 3 ಅಂಕ
+        while (curM + 3 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && pool3M.length > 0) { 
+          chosenQuestions.push(pool3M.pop()); 
+          curM += 3; 
+        }
+
+        // 5. 2 ಅಂಕ
+        while (curM + 2 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && pool2M.length > 0) { 
+          chosenQuestions.push(pool2M.pop()); 
+          curM += 2; 
+        }
+
+        // 6. 1 ಅಂಕ (ಕೇವಲ ಟಾರ್ಗೆಟ್ ಅಂಕ ಮತ್ತು ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ ಮೀರದಂತೆ ಮಾತ್ರ ಸೇರಿಸು!)
+        while (curM + 1 <= targetTotalMarks && chosenQuestions.length < maxAllowedQuestions && pool1M.length > 0) { 
+          chosenQuestions.push(pool1M.pop()); 
+          curM += 1; 
+        }
       }
 
       appState.activeGeneratedQuestions = chosenQuestions;
@@ -14067,45 +14111,7 @@
 
 })();
 
-    // =========================================================================
-// FIX: ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ನಿಗದಿಯಾದಷ್ಟೇ ಪ್ರಶ್ನೆಗಳನ್ನು ತೋರಿಸುವ ಆಟೋ-ಲಿಮಿಟ್ ಕೋಡ್
-// =========================================================================
-(function() {
-    function enforceSectionQuestionLimits() {
-        // ಎಲ್ಲಾ ಸೆಕ್ಷನ್‌ಗಳನ್ನು ಹುಡುಕುವುದು
-        const sections = document.querySelectorAll('#paperPreview > div, .paper-container > div, div[style*="margin-bottom"]');
-
-        sections.forEach(sec => {
-            const headerText = sec.querySelector('div')?.innerText || '';
-            
-            // ಹೆಡಿಂಗ್‌ನಲ್ಲಿರುವ '1x2=2' ಅಥವಾ '1x5=5' ಲೆಕ್ಕವನ್ನು ಕಂಡುಹಿಡಿಯುವುದು
-            const match = headerText.match(/(\d+)\s*[xX*]\s*(\d+)\s*=\s*(\d+)/);
-            if (match) {
-                const allowedCount = parseInt(match[2]); // ಅನುಮತಿಸಲಾದ ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ
-                
-                // ಈ ಸೆಕ್ಷನ್ ಕೆಳಗಿರುವ ಪ್ರಶ್ನೆ ಸಾಲುಗಳನ್ನು ಪಡೆಯುವುದು
-                const rows = sec.querySelectorAll('.q-paper-item-row, .question-row, [class*="item-row"]');
-                
-                // ಒಂದು ವೇಳೆ ನಿಗದಿತ ಸಂಖ್ಯೆಗಿಂತ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಹೆಚ್ಚುವರಿಯನ್ನು ತೆಗೆದುಹಾಕುವುದು
-                if (rows.length > allowedCount) {
-                    for (let i = allowedCount; i < rows.length; i++) {
-                        rows[i].remove();
-                    }
-                }
-            }
-        });
-    }
-
-    // Generate ಆದಾಗ ರನ್ ಆಗಲು
-    document.addEventListener('click', function(e) {
-        if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate'))) {
-            setTimeout(enforceSectionQuestionLimits, 300);
-            setTimeout(enforceSectionQuestionLimits, 700);
-        }
-    });
-
-    window.addEventListener('load', () => setTimeout(enforceSectionQuestionLimits, 500));
-})();
+ 
     
   </script>
 </body>
