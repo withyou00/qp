@@ -14124,7 +14124,45 @@
 
 })();
 
- 
+ // =========================================================================
+// 🎯 ಹೆಡರ್‌ನಲ್ಲಿ ನಿಖರ ಅಂಕ (40) ಮತ್ತು ಗಣಿತದ ಪ್ರಶ್ನೆ ಮಿತಿ ಲಾಕ್ ಮಾಡುವ ಕೋಡ್
+// =========================================================================
+(function() {
+    function fixPaperHeaderAndLimits() {
+        // 1. ಹೆಡರ್‌ನಲ್ಲಿ 41 ಅಥವಾ 21 ಬರುವುದನ್ನು ಸರಿಪಡಿಸಿ ಸರಿಯಾದ ಅಂಕ ಹಾಕುವುದು
+        const headerElements = document.querySelectorAll('div, span, p');
+        headerElements.forEach(el => {
+            if (el.innerText && el.innerText.match(/ಅಂಕ\s*:\s*41/)) {
+                el.innerText = el.innerText.replace(/ಅಂಕ\s*:\s*41/, 'ಅಂಕ : 40');
+            }
+            if (el.innerText && el.innerText.match(/ಅಂಕ\s*:\s*21/)) {
+                el.innerText = el.innerText.replace(/ಅಂಕ\s*:\s*21/, 'ಅಂಕ : 20');
+            }
+        });
+
+        // 2. ಗಣಿತದಲ್ಲಿ 24 ಪ್ರಶ್ನೆಗಳಿಗಿಂತ ಹೆಚ್ಚುವರಿ ನುಗ್ಗಿದರೆ 24 ಕ್ಕೆ ನಿಲ್ಲಿಸುವುದು
+        const targetMaxQuestions = 24;
+        const allQuestionRows = document.querySelectorAll('.q-paper-item-row, [class*="item-row"], .question-row');
+
+        // ಒಂದು ವೇಳೆ 24 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳು ನುಗ್ಗಿದ್ದರೆ ಹೆಚ್ಚುವರಿಯನ್ನು ಕಟ್ ಮಾಡಿ
+        if (allQuestionRows.length > targetMaxQuestions) {
+            for (let i = targetMaxQuestions; i < allQuestionRows.length; i++) {
+                let row = allQuestionRows[i].closest('[style*="margin-bottom"], div') || allQuestionRows[i];
+                row.style.display = 'none'; // ಹೆಚ್ಚುವರಿ ಪ್ರಶ್ನೆಗಳನ್ನು ಮರೆಮಾಚು
+            }
+        }
+    }
+
+    // Generate ಆದಾಗ ರನ್ ಆಗಲು
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.innerText.includes('Generate') || e.target.id.includes('generate'))) {
+            setTimeout(fixPaperHeaderAndLimits, 400);
+            setTimeout(fixPaperHeaderAndLimits, 800);
+        }
+    });
+
+    window.addEventListener('load', () => setTimeout(fixPaperHeaderAndLimits, 600));
+})();
     
   </script>
 </body>
