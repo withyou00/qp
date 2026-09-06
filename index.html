@@ -14165,60 +14165,7 @@
 })();
 
     <style>
-/* =========================================================================
-   🖨️ ಪ್ರಿಂಟ್ ಬಾರ್ಡರ್ ಸರಿಪಡಿಸುವ ಮತ್ತು 1 ಪೇಜ್‌ನಲ್ಲಿ ಫಿಟ್ ಮಾಡುವ ಮಾಸ್ಟರ್ CSS
-   ========================================================================= */
-@media print {
-  /* ಪೇಜ್ ಅಂಚುಗಳ ಸೆಟ್ಟಿಂಗ್ */
-  @page {
-    size: A4 portrait;
-    margin: 6mm 8mm 6mm 8mm !important;
-  }
 
-  /* ಬಾರ್ಡರ್ ಕಟ್ ಆಗುವುದನ್ನು ತಡೆಯುವುದು (Auto Height) */
-  #printableArea, #paperPreview, .paper-container, .a4-page, div[style*="border"] {
-    height: auto !important;
-    min-height: 98% !important;
-    max-height: none !important;
-    overflow: visible !important;
-    border: 1.5px solid #000 !important;
-    padding: 5mm 6mm !important;
-    box-sizing: border-box !important;
-  }
-
-  /* ಅಕ್ಷರಗಳ ಗಾತ್ರ ಮತ್ತು ಸಾಲಿನ ಅಂತರ ಅಚ್ಚುಕಟ್ಟಾಗಿಸುವುದು */
-  body {
-    font-size: 11.5px !important;
-    line-height: 1.22 !important;
-  }
-
-  /* ಪ್ರಶ್ನೆಗಳ ನಡುವಿನ ಗ್ಯಾಪ್ ಕಡಿಮೆ ಮಾಡಿ 24ನೇ ಪ್ರಶ್ನೆಯನ್ನು ಒಳಗೆ ಎಳೆದುಕೊಳ್ಳುವುದು */
-  .q-paper-item-row, .question-row, [class*="item-row"], 
-  div[style*="margin-bottom: 8px"], div[style*="margin-bottom: 4px"] {
-    margin-bottom: 2px !important;
-    padding-top: 0px !important;
-    padding-bottom: 0px !important;
-  }
-
-  /* ಸೆಕ್ಷನ್ ಹೆಡಿಂಗ್ ಗ್ಯಾಪ್ ಕಡಿಮೆ ಮಾಡುವುದು */
-  div[style*="margin-bottom: 8px"], div[style*="margin-bottom: 10px"], div[style*="margin-top"] {
-    margin-top: 3px !important;
-    margin-bottom: 2px !important;
-  }
-
-  /* ಬಹು ಆಯ್ಕೆ ಆಪ್ಷನ್‌ಗಳ ಗ್ಯಾಪ್ */
-  div[style*="display: grid"] {
-    margin-top: 0px !important;
-    gap: 1px 6px !important;
-    font-size: 11px !important;
-  }
-
-  /* ಬಟನ್‌ಗಳು ಪ್ರಿಂಟ್‌ನಲ್ಲಿ ಬರದಂತೆ ತಡೆಯುವುದು */
-  button, .btn-live-q-edit, .no-print {
-    display: none !important;
-  }
-}
-</style>
     
   </script>
 </body>
