@@ -14873,6 +14873,448 @@
     renderMaster10QuestionFormats();
     if (typeof renderCustomQuestionList === 'function') renderCustomQuestionList();
 
+/* ==========================================================================
+       🛡️ 100% BULLETPROOF ZERO-CRASH CONTROLLER (HANDLES 4,800+ QUESTIONS SAFELY)
+       ========================================================================== */
+
+    // ೧. ಅಲ್ಟ್ರಾ-ಸೇಫ್ ಟೆಕ್ಸ್ಟ್ ಕ್ಲೀನರ್‌ಗಳು (Null-Safe)
+    function safeString(val) {
+      return (val !== null && val !== undefined) ? String(val).trim() : '';
+    }
+
+    function safeCleanMatch(str) {
+      return safeString(str).toLowerCase().replace(/[\(\)\s\-\.\:\d\/\,]/g, '');
+    }
+
+    function cleanDuplicateQuestionNumber(text) {
+      if (!text) return '';
+      return String(text).replace(/^[\(\[]?\d+[\)\]\.\s\:\-]+/, '').trim();
+    }
+
+    function cleanQuestionTextForDisplay(text) {
+      if (!text) return '';
+      let clean = cleanDuplicateQuestionNumber(text);
+      clean = clean.replace(/<img[^>]*>/gi, '').replace(/!\[.*?\]\(.*?\)/gi, '').trim();
+      return clean;
+    }
+
+    function getAnyQuestionImageSource(q) {
+      if (!q) return '';
+      let src = q.image || q.img || q.diagram || q.picture || q.imageUrl || q.photo || '';
+      if (!src && q.q && typeof q.q === 'string') {
+        const match = q.q.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if (match) src = match[1];
+      }
+      return (typeof src === 'string' && src.trim().length > 15) ? src.trim() : '';
+    }
+
+    function renderQuestionDiagramImage(qOrSrc) {
+      const src = (typeof qOrSrc === 'string') ? qOrSrc : getAnyQuestionImageSource(qOrSrc);
+      if (!src || src.length < 15) return '';
+      return `
+        <div style="text-align: center; margin: 4px 0 3px 0; width: 100%; display: block !important;">
+          <img src="${src}" alt="Diagram" style="max-height: 125px; max-width: 88%; border: 1.5px solid #64748b; border-radius: 6px; padding: 2px; display: inline-block !important; background: #ffffff !important;" />
+        </div>
+      `;
+    }
+
+    // ೨. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಶುದ್ಧ ಪಟ್ಟಿ
+    window.getCustomQuestionTypesList = function() {
+      let saved = [];
+      try {
+        saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      } catch (e) { saved = []; }
+      const rawCodeFilterRegex = /^(solve_\d+m|words_form|num_form|definitions|compare|estimation)$/i;
+      return saved.filter(ct => ct && ct.label && !rawCodeFilterRegex.test(String(ct.key||'').trim()) && !String(ct.label).startsWith('fmt_') && !String(ct.label).startsWith('custom_') && !String(ct.label).startsWith('fib'));
+    };
+
+    // ೩. ೪,೮೦೦+ ಪ್ರಶ್ನೆಗಳನ್ನು ಕ್ರ್ಯಾಶ್ ಇಲ್ಲದೆ ಲೋಡ್ ಮಾಡುವ ಪ್ರಶ್ನೆ ಭಂಡಾರ ರೆಂಡರರ್ (Image 1 Fix)
+    window.renderCustomQuestionList = function() {
+      try {
+        const container = document.getElementById('admin-qbank-display-list');
+        const countEl = document.getElementById('admin-qbank-total-count');
+        if (!container) return;
+
+        const allSubjects = getSystemSubjects();
+        const rawQBank = appState.qbank || [];
+        const customTypeList = getCustomQuestionTypesList();
+
+        const isSubjMatch = (qS, fS) => (fS === 'all' || safeCleanMatch(qS).includes(safeCleanMatch(fS)) || safeCleanMatch(fS).includes(safeCleanMatch(qS)));
+        const isGradeMatch = (qG, fG) => (fG === 'all' || String(qG || '').replace(/\D/g, '') === String(fG || '').replace(/\D/g, ''));
+
+        // ಪಾಠಗಳ ಪಟ್ಟಿ
+        const availableChapters = Array.from(new Set(
+          rawQBank
+            .filter(q => q && isGradeMatch(q.grade, adminFilterGrade) && isSubjMatch(q.subject, adminFilterSubject))
+            .map(q => q && q.chapter ? safeString(q.chapter) : '')
+            .filter(Boolean)
+        )).sort((a, b) => getSerialSortNum(a) - getSerialSortNum(b));
+
+        // ಫಿಲ್ಟರ್ ಆದ ಪ್ರಶ್ನೆಗಳು
+        let filteredList = rawQBank.filter(q => {
+          if (!q) return false;
+          const isG = isGradeMatch(q.grade, adminFilterGrade);
+          const isS = isSubjMatch(q.subject, adminFilterSubject);
+          const isC = (adminFilterChapter === 'all' || safeCleanMatch(q.chapter) === safeCleanMatch(adminFilterChapter));
+          
+          let isT = true;
+          if (adminFilterType !== 'all') {
+            isT = (q.type === adminFilterType || getCanonicalQuestionType(q) === adminFilterType);
+          }
+
+          let isQ = true;
+          if (adminSearchQuery && adminSearchQuery.trim() !== '') {
+            const s = adminSearchQuery.toLowerCase();
+            isQ = `${safeString(q.q)} ${safeString(q.ans)} ${safeString(q.chapter)} ${safeString(q.a)} ${safeString(q.b)} ${safeString(q.c)} ${safeString(q.d)}`.toLowerCase().includes(s);
+          }
+
+          return isG && isS && isC && isT && isQ;
+        });
+
+        if (countEl) countEl.innerText = `${filteredList.length} / ಒಟ್ಟು ${rawQBank.length}`;
+
+        const allFilteredSelected = filteredList.length > 0 && filteredList.every(q => window.adminSelectedQIds && window.adminSelectedQIds.has(q.id));
+
+        container.innerHTML = `
+          <div style="position: sticky !important; top: 0 !important; z-index: 40 !important; background: rgba(255, 255, 255, 0.98) !important; backdrop-filter: blur(8px) !important;" class="p-3.5 rounded-2xl border-2 border-indigo-300 space-y-2.5 mb-3 text-xs shadow-md">
+            
+            <div class="relative">
+              <input type="text" id="admin-live-search-input" value="${escapeHtml(adminSearchQuery)}" oninput="adminSearchQuery=this.value; renderCustomQuestionList();" placeholder="🔍 ಪ್ರಶ್ನೆ, ಉತ್ತರ ಅಥವಾ ಪಾಠದ ಹೆಸರನ್ನು ಟೈಪ್ ಮಾಡಿ ಹುಡುಕಿ..." class="w-full pl-4 pr-8 py-2 bg-slate-50 border border-indigo-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
+              ${adminSearchQuery ? `<button onclick="adminSearchQuery=''; renderCustomQuestionList();" class="absolute inset-y-0 right-0 pr-3 font-bold text-slate-400 hover:text-red-600 text-base cursor-pointer">&times;</button>` : ''}
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <select onchange="adminFilterGrade=this.value; adminFilterChapter='all'; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold">
+                  <option value="all" ${adminFilterGrade==='all'?'selected':''}>ಎಲ್ಲಾ ತರಗತಿ</option>
+                  ${ALL_CLASSES_LIST.map(c=>`<option value="${c.val}" ${adminFilterGrade===c.val?'selected':''}>${c.label}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <select onchange="adminFilterSubject=this.value; adminFilterChapter='all'; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold text-emerald-950">
+                  <option value="all" ${adminFilterSubject==='all'?'selected':''}>ಎಲ್ಲಾ ವಿಷಯ</option>
+                  ${allSubjects.map(s=>`<option value="${s}">${s.split('(')[0]}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <select onchange="adminFilterChapter=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-950">
+                  <option value="all" ${adminFilterChapter==='all'?'selected':''}>ಎಲ್ಲಾ ಪಾಠಗಳು (${availableChapters.length})</option>
+                  ${availableChapters.map(c=>`<option value="${escapeHtml(c)}" ${adminFilterChapter===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <select onchange="adminFilterType=this.value; renderCustomQuestionList();" class="w-full p-1.5 bg-slate-50 border rounded-xl font-bold">
+                  <option value="all" ${adminFilterType==='all'?'selected':''}>ಎಲ್ಲಾ ಪ್ರಕಾರಗಳು</option>
+                  <option value="mcq" ${adminFilterType==='mcq'?'selected':''}>ಬಹು ಆಯ್ಕೆ</option>
+                  <option value="blanks" ${adminFilterType==='blanks'?'selected':''}>ಖಾಲಿ ಜಾಗ</option>
+                  <option value="true_false" ${adminFilterType==='true_false'?'selected':''}>ಸರಿ ಅಥವಾ ತಪ್ಪು</option>
+                  <option value="analogy" ${adminFilterType==='analogy'?'selected':''}>ಸಂಬಂಧ ಕಲ್ಪಿಸಿ</option>
+                  <option value="odd_one_out" ${adminFilterType==='odd_one_out'?'selected':''}>ಗುಂಪಿಗೆ ಸೇರದ ಪದ</option>
+                  <option value="match" ${adminFilterType==='match'?'selected':''}>ಹೊಂದಿಸಿ</option>
+                  <option value="vsa_1m" ${adminFilterType==='vsa_1m'?'selected':''}>೧ ಅಂಕ</option>
+                  <option value="sa_2m" ${adminFilterType==='sa_2m'?'selected':''}>೨ ಅಂಕ</option>
+                  <option value="sa_3m" ${adminFilterType==='sa_3m'?'selected':''}>೩ ಅಂಕ</option>
+                  <option value="la_4m" ${adminFilterType==='la_4m'?'selected':''}>೪ ಅಂಕ</option>
+                  ${customTypeList.length > 0 ? `
+                    <optgroup label="── 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ──">
+                      ${customTypeList.map(ct => `<option value="${ct.key}" ${adminFilterType===ct.key?'selected':''}>${escapeHtml(ct.label)}</option>`).join('')}
+                    </optgroup>
+                  ` : ''}
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between pt-2 border-t border-indigo-100 gap-2">
+              <label class="flex items-center space-x-2 font-extrabold text-slate-800 cursor-pointer">
+                <input type="checkbox" onchange="toggleSelectAllFilteredAdminQuestions(this.checked)" ${allFilteredSelected ? 'checked' : ''} class="w-4 h-4 text-red-600 rounded cursor-pointer" />
+                <span>ಫಿಲ್ಟರ್ ಆದ ಎಲ್ಲಾ (${filteredList.length}) ಪ್ರಶ್ನೆಗಳು</span>
+              </label>
+              
+              <button type="button" onclick="bulkDeleteSelectedQuestions()" class="py-1.5 px-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow flex items-center gap-1.5 text-xs transition cursor-pointer">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>ಆಯ್ಕೆಮಾಡಿದ್ದನ್ನು ಅಳಿಸಿ (${(window.adminSelectedQIds && window.adminSelectedQIds.size) || 0})</span>
+              </button>
+            </div>
+          </div>
+        ` + (filteredList.length === 0 ? `
+          <div class="p-8 bg-slate-50 border-2 border-dashed rounded-2xl text-center font-bold text-slate-500 space-y-1">
+            <div class="text-base font-black text-slate-700">ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ (0 Questions)</div>
+          </div>
+        ` : filteredList.map((q, idx) => {
+          const isChecked = window.adminSelectedQIds && window.adminSelectedQIds.has(q.id);
+          const imgSrc = getAnyQuestionImageSource(q);
+          const subjDisplay = safeString(q.subject).split('(')[0] || 'ವಿಷಯ';
+
+          return `
+            <div class="p-3.5 bg-white border-2 ${isChecked?'border-red-400 bg-red-50/20':'border-slate-200'} rounded-2xl text-xs space-y-2 shadow-sm mb-2 hover:border-indigo-400 transition">
+              <div class="flex items-center justify-between border-b pb-1.5">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" onchange="toggleSingleAdminQuestionSelection('${q.id}', this.checked)" ${isChecked?'checked':''} class="w-4 h-4 text-red-600 rounded cursor-pointer" />
+                  <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type||'1M'} &bull; ${q.marks||1}M</span>
+                  <span class="font-bold text-slate-900">${q.grade||'6'}ನೇ &bull; ${subjDisplay}</span>
+                  <span class="text-indigo-800 font-extrabold bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">&bull; ${escapeHtml(q.chapter||'ಸಾಮಾನ್ಯ')}</span>
+                  ${imgSrc ? `<span class="bg-emerald-100 text-emerald-900 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-300">📷 ಚಿತ್ರ ಸಹಿತ</span>` : ''}
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="openAdminQuestionEditModal('${q.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-[11px] shadow flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-pen-to-square"></i><span>Edit</span>
+                  </button>
+                  <button onclick="deleteQuestionFromBank('${q.id}')" class="px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+              </div>
+
+              <div class="font-black text-slate-900 text-[13.5px] leading-snug pl-6">${idx+1}. ${escapeHtml(cleanQuestionTextForDisplay(q.q))}</div>
+
+              ${imgSrc ? `
+                <div class="pl-6 my-1">
+                  <img src="${imgSrc}" style="max-height: 80px; max-width: 160px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; background: #fff;" />
+                </div>
+              ` : ''}
+
+              ${q.type === 'mcq' || (q.a && q.b) ? `
+                <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-700 pl-6 bg-slate-50 p-2.5 rounded-xl border font-medium">
+                  <div><b>(A)</b> ${escapeHtml(q.a||'-')}</div><div><b>(B)</b> ${escapeHtml(q.b||'-')}</div>
+                  <div><b>(C)</b> ${escapeHtml(q.c||'-')}</div><div><b>(D)</b> ${escapeHtml(q.d||'-')}</div>
+                </div>
+              ` : ''}
+
+              <div class="text-emerald-800 text-[11px] pl-6 font-bold bg-emerald-50/70 p-2 rounded-xl border border-emerald-200">
+                <b>ಉತ್ತರ:</b> ${escapeHtml(q.ans || '')}
+              </div>
+            </div>
+          `;
+        }).join(''));
+      } catch (err) {
+        console.error('QBank display render error:', err);
+      }
+    };
+
+    // ೪. ಜನರೇಟರ್ ಎಂಜಿನ್ (100% ಬ್ರೇಕ್-ಫ್ರೀ ಪೇಪರ್ ಸೃಷ್ಟಿ - Image 2 Fix)
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      try {
+        const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+        const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
+        const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
+        const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+        const selectedMediumStr = (document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+        const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+
+        // ಅವಧಿ ಪರಿಶೀಲನೆ
+        if (isTeacherPro || isSchoolPro) {
+          const activeUser = isTeacherPro 
+            ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+            : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+          if (activeUser) {
+            const expStr = getUserExactDynamicExpiry(activeUser);
+            const daysLeft = calculateRealRemainingDays(expStr);
+
+            if (daysLeft <= 0) {
+              showAccountExpiredRenewalModal(activeUser);
+              return;
+            }
+          }
+        }
+
+        if (isDemo) {
+          let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+          if (dCount >= 1) {
+            showDemoLimitReachedModal();
+            return;
+          }
+          sessionStorage.setItem('wy_demo_gen_count', '1');
+        }
+
+        const schoolName = isDemo ? (isEnglishMedium ? 'Govt. Higher Primary School (Demo Sample)' : 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)') : (document.getElementById('cfg-school-name')?.value.trim() || 'Government School');
+        const grade = document.getElementById('cfg-class')?.value || '6';
+        let rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಜ್ಞಾನ';
+        const part = document.getElementById('cfg-part')?.value || 'all';
+        let rawExamType = document.getElementById('cfg-exam-type')?.value || 'LBA (ಘಟಕ ಪರೀಕ್ಷೆ)';
+        const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 20;
+        const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 15;
+        const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+        let cleanExamType = isEnglishMedium ? getStandardEnglishExamTypeName(rawExamType) : rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+        let cleanSubject = isEnglishMedium ? getStandardEnglishSubjectName(rawSubject) : rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+        const isLBAExam = cleanExamType.includes('ಘಟಕ') || cleanExamType.includes('Unit Test') || cleanExamType.includes('LBA');
+
+        const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+        const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+        if (selectedTypes.length === 0) {
+          alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+          return;
+        }
+
+        let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+        let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+
+        let selectedChapterNamesString = '';
+        if (isEnglishMedium) {
+          selectedChapterNamesString = await getEnglishChapterNamesString(selectedChapters);
+        } else {
+          const uniqueKChaps = Array.from(new Set(selectedChapters.map(c => c.trim())));
+          selectedChapterNamesString = uniqueKChaps.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+        }
+
+        const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+        let pool = qbank.filter(q => {
+          if (!q) return false;
+          const isGradeOk = (String(q.grade || '').replace(/\D/g, '') === String(grade).replace(/\D/g, ''));
+          const isSubjOk = isStrictSubjectMatch(q.subject, rawSubject);
+          const isPartOk = (part === 'all' || q.part === part || !q.part);
+          const isChapterOk = (selectedChapters.length === 0 || selectedChapters.includes(q.chapter));
+          const canonicalType = getCanonicalQuestionType(q);
+          const isTypeOk = selectedTypes.includes(canonicalType) || selectedTypes.includes(q.type);
+          return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+        });
+
+        if (pool.length === 0) {
+          alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+          return;
+        }
+
+        function shufflePool(arr) {
+          let a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        }
+
+        const hasMatchInSelection = selectedTypes.includes('match');
+        let matchQuestions = shufflePool(pool.filter(q => getCanonicalQuestionType(q) === 'match'));
+        let nonMatchPool = pool.filter(q => getCanonicalQuestionType(q) !== 'match');
+
+        let pool1M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 1));
+        let pool2M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 2));
+        let pool3M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) === 3));
+        let pool4M = shufflePool(nonMatchPool.filter(q => getExactQuestionMarks(q) >= 4));
+
+        const canIncludeMatch = hasMatchInSelection && matchQuestions.length > 0 && (targetTotalMarks >= 4);
+        let avail4MCount = pool4M.length + (canIncludeMatch ? 1 : 0);
+
+        const solution = solveExactDiophantineCombo(
+          targetTotalMarks, 
+          targetTotalQuestions, 
+          pool1M.length, 
+          pool2M.length, 
+          pool3M.length, 
+          avail4MCount, 
+          canIncludeMatch
+        );
+
+        let chosenQuestions = [];
+
+        if (solution) {
+          let needed4M = solution.c4;
+          if (canIncludeMatch && needed4M > 0) {
+            chosenQuestions.push(matchQuestions.pop());
+            needed4M--;
+          }
+          while (needed4M > 0 && pool4M.length > 0) {
+            chosenQuestions.push(pool4M.pop());
+            needed4M--;
+          }
+          for (let i = 0; i < solution.c3 && pool3M.length > 0; i++) chosenQuestions.push(pool3M.pop());
+          for (let i = 0; i < solution.c2 && pool2M.length > 0; i++) chosenQuestions.push(pool2M.pop());
+          for (let i = 0; i < solution.c1 && pool1M.length > 0; i++) chosenQuestions.push(pool1M.pop());
+        } else {
+          let curM = 0;
+          if (canIncludeMatch && curM + 4 <= targetTotalMarks) { chosenQuestions.push(matchQuestions.pop()); curM += 4; }
+          while (curM + 2 <= targetTotalMarks && pool2M.length > 0) { chosenQuestions.push(pool2M.pop()); curM += 2; }
+          while (curM + 1 <= targetTotalMarks && pool1M.length > 0) { chosenQuestions.push(pool1M.pop()); curM += 1; }
+          while (curM + 3 <= targetTotalMarks && pool3M.length > 0) { chosenQuestions.push(pool3M.pop()); curM += 3; }
+          while (curM + 4 <= targetTotalMarks && pool4M.length > 0) { chosenQuestions.push(pool4M.pop()); curM += 4; }
+        }
+
+        if (isEnglishMedium) {
+          showToast('🌐 ಪ್ರಶ್ನೆ ಮತ್ತು ಪಾಠಗಳನ್ನು English ಗೆ ಬದಲಿಸಲಾಗುತ್ತಿದೆ...', 'info');
+          chosenQuestions = await Promise.all(chosenQuestions.map(q => translateSingleQuestionObjectToEnglish(q)));
+        }
+
+        appState.activeGeneratedQuestions = chosenQuestions;
+        const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+
+        const professionalHeaderHtml = isEnglishMedium ? `
+          <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+            <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+              <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+                ${escapeHtml(schoolName)}
+              </h1>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                <span>Subject : ${escapeHtml(cleanSubject)}</span>
+                <span>Marks &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+                <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+                <span>Class : ${escapeHtml(grade)}th Standard</span>
+                <span>Date &nbsp;: ${escapeHtml(examDate)}</span>
+              </div>
+            </div>
+            ${isLBAExam ? `
+              <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+                <span>Chapter : ${escapeHtml(selectedChapterNamesString)}</span>
+              </div>
+            ` : ''}
+            <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+          </div>
+        ` : `
+          <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+            <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+              <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+                ${escapeHtml(schoolName)}
+              </h1>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+                <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+                <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+                <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+                <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+              </div>
+            </div>
+            ${isLBAExam ? `
+              <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+                <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span>
+              </div>
+            ` : ''}
+            <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+          </div>
+        `;
+
+        renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+        renderExactThreeBlueprints(chosenQuestions, actualCalculatedMarks);
+
+        const outSec = document.getElementById('output-section');
+        if (outSec) {
+          outSec.classList.remove('hidden');
+          switchOutputTab('paper');
+          outSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        showToast(`✅ ${isEnglishMedium ? 'English Medium Paper Ready!' : `${cleanExamType} ಸಿದ್ಧವಾಗಿದೆ!`}`, 'success');
+      } catch (err) {
+        console.error('Generate Paper Error:', err);
+        alert('⚠️ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸುವಾಗ ದೋಷವಾಗಿದೆ. ದಯವಿಟ್ಟು ಆಯ್ಕೆಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.');
+      }
+    };
+
+    // ತಕ್ಷಣವೇ ಪ್ರಶ್ನೆ ಭಂಡಾರವನ್ನು ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
+    renderCustomQuestionList();
     
   </script>
 </body>
