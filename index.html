@@ -16682,6 +16682,404 @@
       }
     };
 
+    /* ==========================================================================
+       🎯 QUESTION TYPE REASSIGNMENT IN EDIT + DYNAMIC CUSTOM HEADINGS CUSTOMIZER
+       ========================================================================== */
+
+    // ೧. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಎಡಿಟ್ ಮಾಡಲ್‌ನಲ್ಲಿ "ಪ್ರಶ್ನೆ ಪ್ರಕಾರ (Type Change)" ಡ್ರಾಪ್‌ಡೌನ್ ಸೇರ್ಪಡೆ
+    window.openAdminQuestionEditModal = function(qId) {
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      let modal = document.getElementById('admin-q-edit-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-q-edit-modal';
+        modal.className = 'fixed inset-0 z-[75] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const customTypeList = getCustomQuestionTypesList();
+      const currentType = q.type || getCanonicalQuestionType(q);
+      const isMCQ = (currentType === 'mcq' || Boolean(q.a || q.b));
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-pen-to-square text-amber-600 text-lg"></i>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ, ಪ್ರಕಾರ & ಚಿತ್ರ ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">${q.grade}ನೇ ತರಗತಿ &bull; ${q.subject.split('(')[0]}</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="saveAdminQuestionEdit(event, '${q.id}')" class="space-y-3">
+            
+            <!-- ಪಾಠದ ಹೆಸರು -->
+            <div>
+              <label class="block font-bold mb-1">ಪಾಠದ ಹೆಸರು *</label>
+              <input type="text" id="edit-q-chapter" value="${escapeHtml(q.chapter || '')}" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+            </div>
+
+            <!-- 🌟 ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ವರ್ಗಾವಣೆ ಡ್ರಾಪ್‌ಡೌನ್ (CHANGE QUESTION TYPE) -->
+            <div class="p-2.5 bg-indigo-50/80 border-2 border-indigo-300 rounded-xl space-y-1">
+              <div class="flex items-center justify-between">
+                <label class="block font-black text-indigo-950 text-xs">ಪ್ರಶ್ನೆ ಪ್ರಕಾರ / ವಿಭಾಗ (Question Type / Category) *</label>
+                <span class="text-[10px] text-indigo-800 font-bold">ಬೇರೆ ವಿಭಾಗಕ್ಕೆ ವರ್ಗಾಯಿಸಲು ಇಲ್ಲಿ ಆಯ್ಕೆಮಾಡಿ</span>
+              </div>
+              <select id="edit-q-type" onchange="handleAdminEditTypeChange(this.value)" class="w-full p-2 bg-white border border-indigo-300 rounded-lg font-bold text-indigo-950 text-xs focus:outline-none shadow-sm">
+                <option value="mcq" ${currentType==='mcq'?'selected':''}>೧. ಬಹು ಆಯ್ಕೆ (MCQ)</option>
+                <option value="blanks" ${currentType==='blanks'?'selected':''}>೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (Blanks)</option>
+                <option value="true_false" ${currentType==='true_false'?'selected':''}>೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (True/False)</option>
+                <option value="analogy" ${currentType==='analogy'?'selected':''}>೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (Analogy)</option>
+                <option value="odd_one_out" ${currentType==='odd_one_out'?'selected':''}>೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (Odd One Out)</option>
+                <option value="match" ${currentType==='match'?'selected':''}>೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match - 4M)</option>
+                <option value="vsa_1m" ${currentType==='vsa_1m'?'selected':''}>೭. ೧ ಅಂಕದ ಪ್ರಶ್ನೆ (1M VSA)</option>
+                <option value="sa_2m" ${currentType==='sa_2m'?'selected':''}>೮. ೨ ಅಂಕದ ಪ್ರಶ್ನೆ (2M SA)</option>
+                <option value="sa_3m" ${currentType==='sa_3m'?'selected':''}>೯. ೩ ಅಂಕದ ಪ್ರಶ್ನೆ (3M SA)</option>
+                <option value="la_4m" ${currentType==='la_4m'?'selected':''}>೧೦. ೪ ಅಂಕದ ಪ್ರಶ್ನೆ / ಚಿತ್ರ / ನಕ್ಷೆ (4M LA)</option>
+                ${customTypeList.length > 0 ? `
+                  <optgroup label="── 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ──">
+                    ${customTypeList.map(ct => `<option value="${ct.key}" ${currentType===ct.key || q.type===ct.key || q.type===ct.label ? 'selected' : ''}>${escapeHtml(ct.label)}</option>`).join('')}
+                  </optgroup>
+                ` : ''}
+              </select>
+            </div>
+
+            <!-- ಪ್ರಶ್ನೆ ಪಠ್ಯ -->
+            <div>
+              <label class="block font-bold mb-1">ಪ್ರಶ್ನೆ ಪಠ್ಯ *</label>
+              <textarea id="edit-q-text" rows="3" required class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900">${escapeHtml(cleanQuestionTextForDisplay(q.q || ''))}</textarea>
+            </div>
+
+            <!-- 📷 ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ -->
+            <div class="p-3 bg-indigo-50/70 border-2 border-dashed border-indigo-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-indigo-950">📷 ಪ್ರಶ್ನೆಯ ಮುಖ್ಯ ಚಿತ್ರ (Main Diagram - Optional):</label>
+              </div>
+              <input type="file" id="edit-q-image-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-q-image-preview', 'edit-q-image-base64')" class="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+              <input type="hidden" id="edit-q-image-base64" value="${q.image || ''}" />
+              <div id="edit-q-image-preview" class="${q.image ? '' : 'hidden'} text-center">
+                ${q.image ? `<div class="relative inline-block border rounded-xl p-1 bg-white shadow-sm mt-1"><img src="${q.image}" class="max-h-28 rounded-lg mx-auto" /><button type="button" onclick="removeQuestionImage('edit-q-image-preview', 'edit-q-image-base64', 'edit-q-image-file')" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs shadow cursor-pointer">&times;</button></div>` : ''}
+              </div>
+            </div>
+
+            <!-- MCQ ಆಯ್ಕೆಗಳು (A, B, C, D) -->
+            <div id="edit-mcq-options-container" class="${isMCQ ? '' : 'hidden'}">
+              <div class="p-3.5 bg-slate-100 border border-slate-300 rounded-2xl space-y-2">
+                <div class="flex items-center justify-between border-b pb-1.5 border-slate-200">
+                  <label class="font-black text-slate-900 text-xs">ಆಯ್ಕೆಗಳು ಮತ್ತು ಚಿತ್ರಗಳು (A, B, C, D Options):</label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(A) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-a" value="${escapeHtml(q.a || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-a-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-a-preview', 'edit-opt-a-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-a-img" value="${q.imageA || ''}" />
+                    <div id="edit-opt-a-preview" class="${q.imageA ? '' : 'hidden'} text-center">
+                      ${q.imageA ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageA}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-a-preview', 'edit-opt-a-img', 'edit-opt-a-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(B) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-b" value="${escapeHtml(q.b || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-b-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-b-preview', 'edit-opt-b-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-b-img" value="${q.imageB || ''}" />
+                    <div id="edit-opt-b-preview" class="${q.imageB ? '' : 'hidden'} text-center">
+                      ${q.imageB ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageB}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-b-preview', 'edit-opt-b-img', 'edit-opt-b-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(C) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-c" value="${escapeHtml(q.c || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-c-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-c-preview', 'edit-opt-c-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-c-img" value="${q.imageC || ''}" />
+                    <div id="edit-opt-c-preview" class="${q.imageC ? '' : 'hidden'} text-center">
+                      ${q.imageC ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageC}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-c-preview', 'edit-opt-c-img', 'edit-opt-c-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+
+                  <div class="p-2 bg-white border rounded-xl space-y-1">
+                    <b>(D) ಪಠ್ಯ:</b> <input type="text" id="edit-q-opt-d" value="${escapeHtml(q.d || '')}" class="w-full p-1.5 border rounded-lg font-semibold" />
+                    <input type="file" id="edit-opt-d-file" accept="image/*" onchange="processQuestionImageUpload(this, 'edit-opt-d-preview', 'edit-opt-d-img')" class="w-full text-[10px] file:py-0.5 file:px-2 file:rounded file:border-0 file:bg-slate-700 file:text-white cursor-pointer" />
+                    <input type="hidden" id="edit-opt-d-img" value="${q.imageD || ''}" />
+                    <div id="edit-opt-d-preview" class="${q.imageD ? '' : 'hidden'} text-center">
+                      ${q.imageD ? `<div class="relative inline-block border rounded p-1 bg-white mt-1"><img src="${q.imageD}" class="max-h-16 rounded mx-auto" /><button type="button" onclick="removeQuestionImage('edit-opt-d-preview', 'edit-opt-d-img', 'edit-opt-d-file')" class="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] cursor-pointer">&times;</button></div>` : ''}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ಅಂಕಗಳು ಮತ್ತು ಉದ್ದೇಶ -->
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block font-bold mb-1">ಅಂಕಗಳು (Marks) *</label>
+                <input type="number" id="edit-q-marks" value="${q.marks || 1}" min="1" max="20" required class="w-full p-2 bg-slate-50 border rounded-xl font-black text-indigo-900" />
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕಲಿಕೋದ್ದೇಶ</label>
+                <select id="edit-q-obj" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಜ್ಞಾನ" ${q.obj==='ಜ್ಞಾನ'?'selected':''}>ಜ್ಞಾನ</option>
+                  <option value="ತಿಳುವಳಿಕೆ" ${q.obj==='ತಿಳುವಳಿಕೆ'?'selected':''}>ತಿಳುವಳಿಕೆ</option>
+                  <option value="ಅನ್ವಯ" ${q.obj==='ಅನ್ವಯ'?'selected':''}>ಅನ್ವಯ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold mb-1">ಕ್ಲಿಷ್ಟತೆ</label>
+                <select id="edit-q-diff" class="w-full p-2 bg-slate-50 border rounded-xl font-semibold">
+                  <option value="ಸುಲಭ" ${q.diff==='ಸುಲಭ'?'selected':''}>ಸುಲಭ</option>
+                  <option value="ಸಾಧಾರಣ" ${q.diff==='ಸಾಧಾರಣ'?'selected':''}>ಸಾಧಾರಣ</option>
+                  <option value="ಕಠಿಣ" ${q.diff==='ಕಠಿಣ'?'selected':''}>ಕಠಿಣ</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- ಮಾದರಿ ಉತ್ತರ -->
+            <div>
+              <label class="block font-bold text-emerald-950 mb-1">ಮಾದರಿ ಉತ್ತರ (Model Answer) *</label>
+              <textarea id="edit-q-ans" rows="3" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-emerald-950">${escapeHtml(q.ans || '')}</textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('admin-q-edit-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ಸೇವ್ ಮಾಡಿ (Save)</button>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ಎಡಿಟ್‌ನಲ್ಲಿ ಟೈಪ್ ಬದಲಾದಾಗ ಅಂಕ ಆಟೋ-ಅಡ್ಜಸ್ಟ್
+    window.handleAdminEditTypeChange = function(newType) {
+      const marksInput = document.getElementById('edit-q-marks');
+      const mcqBox = document.getElementById('edit-mcq-options-container');
+
+      if (mcqBox) {
+        mcqBox.classList.toggle('hidden', newType !== 'mcq');
+      }
+
+      if (marksInput) {
+        const customList = getCustomQuestionTypesList();
+        const customMatch = customList.find(c => c.key === newType);
+
+        if (customMatch && customMatch.marks) {
+          marksInput.value = customMatch.marks;
+        } else if (newType === 'sa_2m') marksInput.value = '2';
+        else if (newType === 'sa_3m') marksInput.value = '3';
+        else if (newType === 'la_4m' || newType === 'match') marksInput.value = '4';
+        else if (newType === 'mcq' || newType === 'blanks' || newType === 'true_false' || newType === 'analogy' || newType === 'vsa_1m' || newType === 'odd_one_out') marksInput.value = '1';
+      }
+    };
+
+    // ಎಡಿಟ್ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್ (ಹೊಸ ಪ್ರಕಾರದೊಂದಿಗೆ ಸೇವ್)
+    window.saveAdminQuestionEdit = function(e, qId) {
+      e.preventDefault();
+      const q = (appState.qbank || []).find(item => item.id === qId);
+      if (!q) return;
+
+      const newType = document.getElementById('edit-q-type')?.value || q.type;
+
+      q.type = newType; // 🌟 ಹೊಸ ವಿಭಾಗಕ್ಕೆ ವರ್ಗಾವಣೆ
+      q.chapter = document.getElementById('edit-q-chapter').value.trim();
+      q.q = document.getElementById('edit-q-text').value.trim();
+      q.marks = parseInt(document.getElementById('edit-q-marks').value) || 1;
+      q.obj = document.getElementById('edit-q-obj').value;
+      q.diff = document.getElementById('edit-q-diff').value;
+      q.ans = document.getElementById('edit-q-ans').value.trim();
+      q.image = document.getElementById('edit-q-image-base64')?.value || '';
+
+      if (newType === 'mcq') {
+        if (document.getElementById('edit-q-opt-a')) q.a = document.getElementById('edit-q-opt-a').value.trim();
+        if (document.getElementById('edit-q-opt-b')) q.b = document.getElementById('edit-q-opt-b').value.trim();
+        if (document.getElementById('edit-q-opt-c')) q.c = document.getElementById('edit-q-opt-c').value.trim();
+        if (document.getElementById('edit-q-opt-d')) q.d = document.getElementById('edit-q-opt-d').value.trim();
+
+        if (document.getElementById('edit-opt-a-img')) q.imageA = document.getElementById('edit-opt-a-img').value;
+        if (document.getElementById('edit-opt-b-img')) q.imageB = document.getElementById('edit-opt-b-img').value;
+        if (document.getElementById('edit-opt-c-img')) q.imageC = document.getElementById('edit-opt-c-img').value;
+        if (document.getElementById('edit-opt-d-img')) q.imageD = document.getElementById('edit-opt-d-img').value;
+      }
+
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+      pushToFirebaseCloud();
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+      
+      document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+      showToast('✅ ಪ್ರಶ್ನೆ ಮತ್ತು ವಿಭಾಗವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ!', 'success');
+    };
+
+
+    // =========================================================================
+    // ೨. ಹೆಡಿಂಗ್ ತಿದ್ದುಪಡಿ ಮಾಡಲ್‌ನಲ್ಲಿ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳೂ ಡೈನಾಮಿಕ್ ಆಗಿ ಬರುವಂತೆ ಫಿಕ್ಸ್
+    // =========================================================================
+    window.openPaperHeadingsCustomizerModal = function() {
+      let modal = document.getElementById('headings-customizer-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'headings-customizer-modal';
+        modal.className = 'fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      let savedH = {};
+      try {
+        savedH = JSON.parse(localStorage.getItem('withyou_custom_headings') || '{}');
+      } catch (e) { savedH = {}; }
+
+      const customTypeList = getCustomQuestionTypesList();
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-pen-nib text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆಗಳ ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ಸಾಮಾನ್ಯ & ಕಸ್ಟಮ್ ಎಲ್ಲಾ ಪ್ರಕಾರಗಳ ಪೇಪರ್ ಹೆಡಿಂಗ್ ತಿದ್ದಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('headings-customizer-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSavePaperHeadingsCustomizer(event)" class="space-y-3">
+            
+            <div class="space-y-2">
+              <h4 class="font-black text-slate-800 text-xs uppercase border-b pb-1">೧. ಸಾಮಾನ್ಯ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಸೂಚನೆಗಳು</h4>
+              
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೧. ಬಹು ಆಯ್ಕೆ (MCQ):</label>
+                <input type="text" id="h-mcq" value="${escapeHtml(savedH['mcq'] || 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೨. ಬಿಟ್ಟ ಸ್ಥಳ (Blanks):</label>
+                <input type="text" id="h-blanks" value="${escapeHtml(savedH['blanks'] || 'ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (True/False):</label>
+                <input type="text" id="h-true_false" value="${escapeHtml(savedH['true_false'] || 'ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ \'ಸರಿ\' ತಪ್ಪು ಇದ್ದರೆ \'ತಪ್ಪು\' ಎಂದು ಬರೆಯಿರಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (Analogy):</label>
+                <input type="text" id="h-analogy" value="${escapeHtml(savedH['analogy'] || 'ಮೊದಲೆರೆಡು ಪದಗಳಿಗಿರುವ ಸಂಬಂಧದಂತೆ ಮೂರನೇ ಪದಕ್ಕೆ ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (Odd One Out):</label>
+                <input type="text" id="h-odd_one_out" value="${escapeHtml(savedH['odd_one_out'] || 'ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-0.5">೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (Match):</label>
+                <input type="text" id="h-match" value="${escapeHtml(savedH['match'] || 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:')}" class="w-full p-2 border rounded-xl font-bold bg-slate-50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-indigo-950 mb-0.5">೭. ೧ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ (1M) ಹೆಡಿಂಗ್:</label>
+                <input type="text" id="h-vsa_1m" value="${escapeHtml(savedH['vsa_1m'] || 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:')}" class="w-full p-2 border-2 border-indigo-300 rounded-xl font-bold bg-indigo-50/50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-indigo-950 mb-0.5">೮. ೨ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ (2M) ಹೆಡಿಂಗ್:</label>
+                <input type="text" id="h-sa_2m" value="${escapeHtml(savedH['sa_2m'] || 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಅಥವಾ ಎರಡು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:')}" class="w-full p-2 border-2 border-indigo-300 rounded-xl font-bold bg-indigo-50/50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-indigo-950 mb-0.5">೯. ೩ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ (3M) ಹೆಡಿಂಗ್:</label>
+                <input type="text" id="h-sa_3m" value="${escapeHtml(savedH['sa_3m'] || 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:')}" class="w-full p-2 border-2 border-indigo-300 rounded-xl font-bold bg-indigo-50/50" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-indigo-950 mb-0.5">೧೦. ೪ ಅಂಕದ ಪ್ರಶ್ನೆಗಳ (4M) ಹೆಡಿಂಗ್:</label>
+                <input type="text" id="h-la_4m" value="${escapeHtml(savedH['la_4m'] || 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮೂರು ಅಥವಾ ನಾಲ್ಕು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ / ಚಿತ್ರ / ನಕ್ಷೆ:')}" class="w-full p-2 border-2 border-indigo-300 rounded-xl font-bold bg-indigo-50/50" />
+              </div>
+            </div>
+
+            <!-- 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಸೂಚನೆಗಳು (Image 2 Fix) -->
+            ${customTypeList.length > 0 ? `
+              <div class="space-y-2 pt-2 border-t border-purple-200">
+                <h4 class="font-black text-purple-950 text-xs uppercase border-b pb-1">೨. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಸೂಚನೆಗಳು (${customTypeList.length})</h4>
+                ${customTypeList.map((ct) => `
+                  <div class="p-2.5 bg-purple-50/80 border border-purple-300 rounded-xl space-y-1">
+                    <div class="flex items-center justify-between">
+                      <b class="text-purple-950 text-xs">${escapeHtml(ct.label)}</b>
+                      <span class="text-[10px] font-bold bg-white px-2 py-0.5 rounded border text-slate-700">${ct.subject || 'All'}</span>
+                    </div>
+                    <input type="text" id="h-custom-${ct.key}" value="${escapeHtml(ct.heading || '')}" class="w-full p-2 bg-white border border-purple-300 rounded-lg font-bold text-slate-900 text-xs" />
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <div class="flex items-center justify-between pt-3 border-t">
+              <button type="button" onclick="resetPaperHeadingsToDefault()" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">
+                ಮರುಹೊಂದಿಸಿ (Reset)
+              </button>
+
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="document.getElementById('headings-customizer-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+                <button type="submit" class="px-6 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">
+                  <i class="fa-solid fa-floppy-disk"></i> <span>ಹೆಡಿಂಗ್‌ಗಳನ್ನು ಸೇವ್ ಮಾಡಿ</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ಹೆಡಿಂಗ್‌ಗಳ ಸೇವ್ ಹ್ಯಾಂಡ್ಲರ್ (ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಸಮೇತ ಸೇವ್)
+    window.handleSavePaperHeadingsCustomizer = function(e) {
+      e.preventDefault();
+      const keys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+      let headingsObj = {};
+
+      keys.forEach(k => {
+        const inp = document.getElementById('h-' + k);
+        if (inp) headingsObj[k] = inp.value.trim();
+      });
+
+      // 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಅಪ್ಡೇಟ್
+      let customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const custInp = document.getElementById('h-custom-' + ct.key);
+        if (custInp && custInp.value.trim() !== '') {
+          ct.heading = custInp.value.trim();
+        }
+      });
+
+      localStorage.setItem('withyou_custom_headings', JSON.stringify(headingsObj));
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(customList));
+
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_headings.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(headingsObj)
+        });
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customList)
+        });
+      } catch (err) {}
+
+      document.getElementById('headings-customizer-modal')?.classList.add('hidden');
+      showToast('✅ ಎಲ್ಲಾ ಹೆಡಿಂಗ್‌ಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ!', 'success');
+    };
     
   </script>
 </body>
