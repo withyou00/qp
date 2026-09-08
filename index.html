@@ -17358,6 +17358,219 @@
         alert('⚠️ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸುವಾಗ ದೋಷವಾಗಿದೆ: ' + err.message);
       }
     };
+
+/* ==========================================================================
+       🎯 100% BLUEPRINT MARKS SYNCHRONIZER & 24-QUESTION OVERFLOW AUTO-SCALER
+       ========================================================================== */
+
+    // ೧. ೨೪ ಪ್ರಶ್ನೆಗಳಿದ್ದಾಗ ಬಾರ್ಡರ್ ಮೇಲೆ ಅಕ್ಷರ ಹತ್ತದಂತೆ ಕಾಂಪ್ಯಾಕ್ಟ್ ಆಟೋ-ಸ್ಕೇಲಿಂಗ್ CSS
+    (function injectSmartDensityA4PrintCSS() {
+      const styleId = 'a4-smart-density-print-master';
+      let st = document.getElementById(styleId);
+      if (!st) {
+        st = document.createElement('style');
+        st.id = styleId;
+        document.head.appendChild(st);
+      }
+      st.innerHTML = `
+        /* ೨೦+ ಪ್ರಶ್ನೆಗಳಿದ್ದಾಗ (೪೦ ಅಂಕಗಳಿಗೆ) ಬಾರ್ಡರ್ ಒಳಗೆ ಅಚ್ಚುಕಟ್ಟಾಗಿ ಫಿಟ್ ಆಗುವ ಡೆನ್ಸ್ ಕ್ಲಾಸ್ */
+        .dense-exam-paper .q-paper-item-row {
+          gap: 4px !important;
+          margin-bottom: 1.8px !important;
+          line-height: 1.20 !important;
+        }
+        .dense-exam-paper .q-paper-num {
+          font-size: 11.8px !important;
+          min-width: 22px !important;
+        }
+        .dense-exam-paper .q-paper-text {
+          font-size: 11.5px !important;
+          line-height: 1.20 !important;
+        }
+        .dense-exam-paper .compact-section-header {
+          margin-top: 3px !important;
+          margin-bottom: 1px !important;
+        }
+        .dense-exam-paper .compact-section-header span {
+          font-size: 12px !important;
+        }
+        .dense-exam-paper .a4-sheet-container {
+          padding: 5mm 7mm 5mm 7mm !important;
+        }
+      `;
+    })();
+
+    // ೨. ನೀಲನಕ್ಷೆ ಅಂಕಗಳನ್ನು ಪತ್ರಿಕೆಯ ಅಂಕಕ್ಕೆ ೧೦೦% ಮ್ಯಾಥಮೆಟಿಕಲ್ ಆಗಿ ಸಿಂಕ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ರೆಂಡರರ್
+    window.renderExactThreeBlueprints = function(questions, totalMarks) {
+      if (!questions || questions.length === 0) return;
+
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+
+      // ಪ್ರಶ್ನೆಗಳ ಪ್ರಕಾರವಾರು ನಿಖರ ತೂಕ (Strict Canonical Weights)
+      const selMcq = questions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+      const selBlanks = questions.filter(q => getCanonicalQuestionType(q) === 'blanks');
+      const selTrueFalse = questions.filter(q => getCanonicalQuestionType(q) === 'true_false');
+      const selAnalogy = questions.filter(q => getCanonicalQuestionType(q) === 'analogy');
+      const selOddOne = questions.filter(q => getCanonicalQuestionType(q) === 'odd_one_out');
+      const selMatch = questions.filter(q => getCanonicalQuestionType(q) === 'match' || q.matchPairs);
+      const selVsa1M = questions.filter(q => getCanonicalQuestionType(q) === 'vsa_1m');
+      const selSa2M = questions.filter(q => getCanonicalQuestionType(q) === 'sa_2m');
+      const selSa3M = questions.filter(q => getCanonicalQuestionType(q) === 'sa_3m');
+      const selLa4M = questions.filter(q => getCanonicalQuestionType(q) === 'la_4m');
+
+      const customTypeList = getCustomQuestionTypesList();
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      questions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      // 🌟 ಕೋಷ್ಟಕ ೧: ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ (ಕಡ್ಡಾಯ ನಿಖರ ಅಂಕಗಳು)
+      let qTypeRows = [];
+
+      if (selMcq.length > 0) qTypeRows.push({ name: isEnglish ? "Multiple Choice (MCQ)" : "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: selMcq.length, marks: selMcq.length * 1 });
+      if (selBlanks.length > 0) qTypeRows.push({ name: isEnglish ? "Fill in the Blanks" : "ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗ ಭರ್ತಿ", count: selBlanks.length, marks: selBlanks.length * 1 });
+      if (selTrueFalse.length > 0) qTypeRows.push({ name: isEnglish ? "True or False" : "ಸರಿ ಅಥವಾ ತಪ್ಪು", count: selTrueFalse.length, marks: selTrueFalse.length * 1 });
+      if (selAnalogy.length > 0) qTypeRows.push({ name: isEnglish ? "Analogy" : "ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ", count: selAnalogy.length, marks: selAnalogy.length * 1 });
+      if (selOddOne.length > 0) qTypeRows.push({ name: isEnglish ? "Odd One Out" : "ಗುಂಪಿಗೆ ಸೇರದ ಪದ", count: selOddOne.length, marks: selOddOne.length * 1 });
+      if (selMatch.length > 0) qTypeRows.push({ name: isEnglish ? "Match the Following" : "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: 1, marks: 4 }); // 🌟 Match is strictly 4M
+      if (selVsa1M.length > 0) qTypeRows.push({ name: isEnglish ? "One Mark Questions (VSA)" : "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selVsa1M.length, marks: selVsa1M.length * 1 });
+      if (selSa2M.length > 0) qTypeRows.push({ name: isEnglish ? "Two Marks Questions (SA)" : "ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selSa2M.length, marks: selSa2M.length * 2 }); // 🌟 SA is strictly count * 2
+      if (selSa3M.length > 0) qTypeRows.push({ name: isEnglish ? "Three Marks Questions" : "ಮೂರು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selSa3M.length, marks: selSa3M.length * 3 });
+      if (selLa4M.length > 0) qTypeRows.push({ name: isEnglish ? "Four Marks / Diagram / Map" : "ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳು / ಚಿತ್ರ / ನಕ್ಷೆ", count: selLa4M.length, marks: selLa4M.length * 4 });
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ
+      customQuestionsMap.forEach((qList, typeKey) => {
+        const customDef = customTypeList.find(c => c.key === typeKey || c.label === typeKey);
+        const mPerQ = customDef ? (customDef.marks || 1) : getExactQuestionMarks(qList[0]);
+        const lbl = customDef ? customDef.label : (typeKey + ` (${mPerQ}M)`);
+        qTypeRows.push({ name: lbl, count: qList.length, marks: qList.length * mPerQ });
+      });
+
+      // ಒಟ್ಟು ಅಂಕ & ಪ್ರಶ್ನೆಗಳ ಕರಾರುವಾಕ್ ಮೊತ್ತ
+      const totalMarksSum = qTypeRows.reduce((a, b) => a + b.marks, 0);
+      const totalQCount = qTypeRows.reduce((a, b) => a + b.count, 0);
+
+      // 🌟 ಕೋಷ್ಟಕ ೨: ಕಲಿಕೋದ್ದೇಶಗಳ ನಿಖರ ಹಂಚಿಕೆ (Sum = totalMarksSum)
+      let kMarks = Math.round(totalMarksSum * 0.45);
+      let uMarks = Math.round(totalMarksSum * 0.40);
+      let aMarks = totalMarksSum - (kMarks + uMarks);
+
+      // 🌟 ಕೋಷ್ಟಕ ೩: ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ನಿಖರ ಹಂಚಿಕೆ (Sum = totalMarksSum)
+      let easyMarks = Math.round(totalMarksSum * 0.30);
+      let avgMarks = Math.round(totalMarksSum * 0.50);
+      let diffMarks = totalMarksSum - (easyMarks + avgMarks);
+
+      const bpContainer = document.getElementById('rendered-blueprint');
+      if (!bpContainer) return;
+
+      bpContainer.innerHTML = `
+        <div class="a4-sheet-container" style="line-height: 1.4; font-family: 'Anek Kannada', sans-serif;">
+          <h2 style="text-align: center; font-size: 19px; font-weight: 900; color: #000; margin-bottom: 14px;">
+            ${isEnglish ? "Blueprints (Assessment Structure)" : "ನೀಲನಕ್ಷೆಗಳು (Blueprints)"}
+          </h2>
+
+          <!-- 1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ -->
+          <div style="margin-bottom: 14px;">
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">${isEnglish ? "1. Blueprint based on format of questions" : "1. ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}</h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglish ? "Question Formats" : "ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglish ? "Count" : "ಸಂಖ್ಯೆ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglish ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglish ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${qTypeRows.map(row => `
+                  <tr>
+                    <td style="border: 1px solid #000; padding: 3px 8px; text-align: left; font-weight: 600;">${escapeHtml(row.name)}</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${row.count}</td>
+                    <td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${row.marks}</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${Math.round((row.marks / totalMarksSum) * 100)}%</td>
+                  </tr>
+                `).join('')}
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+                  <td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglish ? "Total" : "ಒಟ್ಟು"}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px;">${totalQCount}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px; color: #000; font-size: 13px;">${totalMarksSum}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px;">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 2. ಕಲಿಕೋದ್ದೇಶಗಳು -->
+          <div style="margin-bottom: 14px;">
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">${isEnglish ? "2. Blueprint based on Objectives" : "2. ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}</h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglish ? "Learning Objectives" : "ಕಲಿಕೋದ್ದೇಶಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglish ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglish ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Knowledge" : "ಜ್ಞಾನ (Knowledge)"}</td><td style="border: 1px solid #000; padding: 3px;">${kMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((kMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Understanding" : "ತಿಳುವಳಿಕೆ (Understanding)"}</td><td style="border: 1px solid #000; padding: 3px;">${uMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((uMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Application" : "ಅನ್ವಯ (Application)"}</td><td style="border: 1px solid #000; padding: 3px;">${aMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((aMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglish ? "Total" : "ಒಟ್ಟು"}</td><td style="border: 1.5px solid #000; padding: 4px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 4px;">100%</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 3. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟ -->
+          <div>
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">${isEnglish ? "3. Blueprint based on Difficulty Level" : "3. ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}</h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglish ? "Difficulty Level" : "ಮಟ್ಟ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglish ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglish ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Easy" : "ಸುಲಭ (Easy)"}</td><td style="border: 1px solid #000; padding: 3px;">${easyMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((easyMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Average" : "ಸಾಧಾರಣ (Average)"}</td><td style="border: 1px solid #000; padding: 3px;">${avgMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((avgMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglish ? "Difficult" : "ಕಠಿಣ (Difficult)"}</td><td style="border: 1px solid #000; padding: 3px;">${diffMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((diffMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglish ? "Total" : "ಒಟ್ಟು"}</td><td style="border: 1.5px solid #000; padding: 4px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 4px;">100%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    };
+
+    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (೨೪ ಪ್ರಶ್ನೆಗಳಿದ್ದಾಗ ಬಾರ್ಡರ್ ಮೇಲೆ ಅಕ್ಷರ ಹತ್ತದಂತೆ ಆಟೋ-ಸ್ಕೇಲಿಂಗ್)
+    const originalRenderFullExamPaperForDenseScaling = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      if (typeof originalRenderFullExamPaperForDenseScaling === 'function') {
+        originalRenderFullExamPaperForDenseScaling(headerHtml);
+      }
+
+      const allQuestions = appState.activeGeneratedQuestions || [];
+      const paperWrapper = document.getElementById('rendered-paper');
+      const isDense = (allQuestions.length >= 18);
+
+      // 🌟 ೧೮ ಕ್ಕಿಂತ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳಿದ್ದಾಗ (೪೦ ಅಂಕಗಳಿಗೆ) ಡೆನ್ಸ್ ಕ್ಲಾಸ್ ಆಕ್ಟಿವೇಟ್
+      if (paperWrapper) {
+        if (isDense) {
+          paperWrapper.classList.add('dense-exam-paper');
+        } else {
+          paperWrapper.classList.remove('dense-exam-paper');
+        }
+      }
+    };
+
     
   </script>
 </body>
