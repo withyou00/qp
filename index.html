@@ -21240,6 +21240,422 @@
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
     renderMaster10QuestionFormats();
+
+
+    /* ==========================================================================
+       🌟 HARD AUTO-MIGRATOR & STRICT KANNADA FORMAT LABEL CONVERTER
+       ========================================================================== */
+
+    // ೧. ಇಂಗ್ಲಿಷ್ ಸ್ಲಗ್‌ಗಳ ಮಾಸ್ಟರ್ ಡಿಕ್ಷನರಿ & ವಿಷಯ ಮ್ಯಾಪಿಂಗ್
+    function getStandardFormatMetaFromSlug(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      const dict = {
+        'own_sentence': {
+          knLabel: 'ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬರೆಯಿರಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಳಸಿ ಸ್ವಂತ ವಾಕ್ಯ ರಚಿಸಿ:',
+          enLabel: 'Make Own Sentences (2M)',
+          enHeading: 'Use the following words in your own sentences:',
+          marks: 2, subject: 'kannada'
+        },
+        'who_said_to_whom': {
+          knLabel: 'ಯಾರು ಯಾರಿಗೆ ಹೇಳಿದರು (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಮಾತುಗಳನ್ನು ಯಾರು ಯಾರಿಗೆ ಹೇಳಿದರು ಎಂದು ಬರೆಯಿರಿ:',
+          enLabel: 'Who said to whom (2M)',
+          enHeading: 'Write who said the following words to whom:',
+          marks: 2, subject: 'kannada'
+        },
+        'sentence_joining': {
+          knLabel: 'ವಾಕ್ಯಗಳನ್ನು ಸೇರಿಸಿ ಬರೆಯಿರಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ವಾಕ್ಯಗಳನ್ನು ಸೇರಿಸಿ ಒಂದೇ ವಾಕ್ಯವಾಗಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Combine Sentences (2M)',
+          enHeading: 'Combine the following sentences into a single sentence:',
+          marks: 2, subject: 'kannada'
+        },
+        'split_words': {
+          knLabel: 'ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Split the Words (1M)',
+          enHeading: 'Split the following words:',
+          marks: 1, subject: 'kannada'
+        },
+        'sandhi': {
+          knLabel: 'ಬಿಡಿಸಿ ಸಂಧಿ ಹೆಸರಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಸಂಧಿ ಹೆಸರಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Split and Name Sandhi (1M)',
+          enHeading: 'Split the words and name the Sandhi:',
+          marks: 1, subject: 'kannada'
+        },
+        'antonyms': {
+          knLabel: 'ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ:',
+          enLabel: 'Antonyms (1M)',
+          enHeading: 'Write the antonyms:',
+          marks: 1, subject: 'kannada'
+        },
+        'synonyms': {
+          knLabel: 'ಸಮಾನಾರ್ಥಕ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ಸಮಾನಾರ್ಥಕ ಪದ ಬರೆಯಿರಿ:',
+          enLabel: 'Synonyms (1M)',
+          enHeading: 'Write the synonyms:',
+          marks: 1, subject: 'kannada'
+        },
+        'proverb': {
+          knLabel: 'ಗಾದೆ ಮಾತು ವಿಸ್ತರಣೆ (3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಗಾದೆ ಮಾತನ್ನು ವಿಸ್ತರಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Expand Proverb (3M)',
+          enHeading: 'Expand the following proverb:',
+          marks: 3, subject: 'kannada'
+        },
+        'poem_4lines': {
+          knLabel: '೪ ಸಾಲುಗಳ ಪದ್ಯ (4M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Complete 4-Line Poem (4M)',
+          enHeading: 'Complete the four lines of poem:',
+          marks: 4, subject: 'kannada'
+        },
+        'letter_writing': {
+          knLabel: 'ಪತ್ರ ಲೇಖನ (4M/5M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ವಿಷಯದ ಕುರಿತು ಪತ್ರ ಬರೆಯಿರಿ:',
+          enLabel: 'Letter Writing (5M)',
+          enHeading: 'Write a letter on the following topic:',
+          marks: 5, subject: 'kannada'
+        },
+        'essay': {
+          knLabel: 'ಪ್ರಬಂಧ ರಚನೆ (5M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:',
+          enLabel: 'Essay Writing (5M)',
+          enHeading: 'Write an essay on any one of the following:',
+          marks: 5, subject: 'kannada'
+        },
+        'homogeneous_heterogeneous': {
+          knLabel: 'ಏಕರೂಪ & ಭಿನ್ನರೂಪ ಮಿಶ್ರಣ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನವುಗಳನ್ನು ಏಕರೂಪ ಮತ್ತು ಭಿನ್ನರೂಪ ಮಿಶ್ರಣಗಳಾಗಿ ವಿಂಗಡಿಸಿ:',
+          enLabel: 'Homogeneous & Heterogeneous Mixtures (2M)',
+          enHeading: 'Classify into Homogeneous and Heterogeneous mixtures:',
+          marks: 2, subject: 'science'
+        },
+        'diagram_parts': {
+          knLabel: 'ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ (4M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರವನ್ನು ಬಿಡಿಸಿ, ಭಾಗಗಳನ್ನು ಹೆಸರಿಸಿ:',
+          enLabel: 'Draw Diagram & Label (4M)',
+          enHeading: 'Draw diagram and label parts:',
+          marks: 4, subject: 'science'
+        },
+        'give_reason': {
+          knLabel: 'ವೈಜ್ಞಾನಿಕ ಕಾರಣ ಕೊಡಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ವೈಜ್ಞಾನಿಕ ಕಾರಣ ನೀಡಿ:',
+          enLabel: 'Give Scientific Reasons (2M)',
+          enHeading: 'Give scientific reasons:',
+          marks: 2, subject: 'science'
+        },
+        'map_drawing': {
+          knLabel: 'ಭಾರತದ ನಕ್ಷೆ & ಸ್ಥಳಗಳು (4M)',
+          knHeading: 'ಭಾರತದ ನಕ್ಷೆಯನ್ನು ಬಿಡಿಸಿ, ಕೆಳಗಿನ ಸ್ಥಳಗಳನ್ನು ಗುರುತಿಸಿ:',
+          enLabel: 'Draw Map & Mark Locations (4M)',
+          enHeading: 'Draw map and mark locations:',
+          marks: 4, subject: 'social_science'
+        },
+        'solve_math': {
+          knLabel: 'ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸಿ (2M/3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:',
+          enLabel: 'Solve the Problems (2M/3M)',
+          enHeading: 'Solve the following problems:',
+          marks: 2, subject: 'mathematics'
+        }
+      };
+
+      if (dict[rawKey]) {
+        const item = dict[rawKey];
+        return {
+          isKnown: true,
+          knLabel: item.knLabel,
+          knHeading: item.knHeading,
+          enLabel: item.enLabel,
+          enHeading: item.enHeading,
+          label: isEnglish ? item.enLabel : item.knLabel,
+          heading: isEnglish ? item.enHeading : item.knHeading,
+          marks: item.marks,
+          subject: item.subject
+        };
+      }
+
+      const cleanLabel = rawKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        isKnown: false,
+        knLabel: typeKey,
+        knHeading: `ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        enLabel: cleanLabel,
+        enHeading: `Answer the following (${cleanLabel}):`,
+        label: isEnglish ? cleanLabel : typeKey,
+        heading: isEnglish ? `Answer the following (${cleanLabel}):` : `ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        marks: 1,
+        subject: 'all'
+      };
+    }
+
+    // ೨. ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿರುವ ಹಳೆಯ ಇಂಗ್ಲಿಷ್ ಹೆಸರುಗಳನ್ನು ಕನ್ನಡಕ್ಕೆ ಸ್ವಚ್ಛಗೊಳಿಸುವ ಆಟೋ-ಮೈಗ್ರೇಟರ್
+    function autoMigrateAllEnglishCustomSlugs() {
+      let customList = [];
+      try {
+        customList = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      } catch (e) { customList = []; }
+
+      let modified = false;
+
+      customList.forEach(ct => {
+        if (!ct) return;
+        const rawK = String(ct.key || ct.label || '').trim().toLowerCase().replace(/[\s\-]+/g, '_');
+        const meta = getStandardFormatMetaFromSlug(rawK, false);
+
+        if (meta && meta.isKnown) {
+          if (!containsKannadaText(ct.label) || ct.label === rawK) {
+            ct.label = meta.knLabel;
+            ct.heading = meta.knHeading;
+            ct.marks = meta.marks;
+            ct.subject = meta.subject;
+            modified = true;
+          }
+        }
+      });
+
+      if (modified) {
+        localStorage.setItem('withyou_custom_qtypes', JSON.stringify(customList));
+        try {
+          fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(customList)
+          });
+        } catch (e) {}
+      }
+    }
+
+    // ೩. ಜನರೇಟರ್ Step 3 (ಕನ್ನಡ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳಲ್ಲಿ ೧೦೦% ಕನ್ನಡ ಲೇಬಲ್ ಮಾತ್ರ ಪ್ರದರ್ಶನ)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      // ಡೇಟಾಬೇಸ್ ಕ್ಲೀನಿಂಗ್ ಚಾಲನೆ
+      autoMigrateAllEnglishCustomSlugs();
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಕನ್ನಡ';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+      const sKey = getNormalizedSubjectKey(currentSubj);
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
+      let formats = isEnglish ? [
+        { key: 'mcq', label: '1. Multiple Choice (1M)', isSpecial: false },
+        { key: 'blanks', label: '2. Fill in the Blanks (1M)', isSpecial: false },
+        { key: 'true_false', label: '3. True or False (1M)', isSpecial: false },
+        { key: 'analogy', label: '4. Complete the Analogy (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '5. Odd One Out (1M)', isSpecial: false },
+        { key: 'match', label: '6. Match the Following (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '7. One Mark Questions (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '8. Two Marks Questions (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '9. Three Marks Questions (3M)', isSpecial: false },
+        { key: 'la_4m', label: '10. Long Answer (4M)', isSpecial: false }
+      ] : [
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
+      ];
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ (ಕಡ್ಡಾಯ ಕನ್ನಡ ಲೇಬಲ್ ಜೊತೆಗೆ)
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        if (!ct) return;
+        const meta = getStandardFormatMetaFromSlug(ct.key || ct.label, isEnglish);
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || meta.subject || 'all');
+
+        // 🌟 ವಿಷಯ ಮ್ಯಾಚಿಂಗ್ (ಕನ್ನಡಕ್ಕೆ ಕನ್ನಡ, ವಿಜ್ಞಾನಕ್ಕೆ ವಿಜ್ಞಾನ ಮಾತ್ರ)
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
+          const cleanDisplayLabel = meta.isKnown ? (isEnglish ? meta.enLabel : meta.knLabel) : ct.label;
+          if (!formats.some(f => f.key === ct.key || f.label === cleanDisplayLabel)) {
+            formats.push({
+              key: ct.key,
+              label: cleanDisplayLabel,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      // ಭಂಡಾರದಲ್ಲಿರುವ (qbank) ಇಂಗ್ಲಿಷ್ ಸ್ಲಗ್‌ಗಳ ಶುದ್ಧೀಕರಣ
+      (appState.qbank || []).forEach(q => {
+        if (q && isStrictSubjectMatch(q.subject, currentSubj)) {
+          const rawT = String(q.type || '').trim();
+          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+          
+          if (rawT && !standardKeys.includes(rawT)) {
+            const meta = getStandardFormatMetaFromSlug(rawT, isEnglish);
+            const targetSubjKey = getNormalizedSubjectKey(meta.subject || 'all');
+
+            if (targetSubjKey === 'all' || targetSubjKey === sKey) {
+              const displayLabel = isEnglish ? meta.enLabel : meta.knLabel;
+              if (!formats.some(f => f.key === rawT || f.label === displayLabel)) {
+                formats.push({
+                  key: rawT,
+                  label: displayLabel,
+                  isSpecial: true
+                });
+              }
+            }
+          }
+        }
+      });
+
+      let html = formats.map(fmt => {
+        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಪ್ರಕಾರಗಳ ಮ್ಯಾನೇಜರ್‌ನಲ್ಲೂ ಕನ್ನಡ ಹೆಸರುಗಳ ಪ್ರದರ್ಶನ
+    const originalOpenManageSubjectFormatsModalForKn = window.openManageSubjectFormatsModal;
+    window.openManageSubjectFormatsModal = function() {
+      autoMigrateAllEnglishCustomSlugs();
+      if (typeof originalOpenManageSubjectFormatsModalForKn === 'function') {
+        originalOpenManageSubjectFormatsModalForKn();
+      }
+    };
+
+    // ತಕ್ಷಣವೇ ಡೇಟಾಬೇಸ್ ಕ್ಲೀನ್ ಮಾಡಿ ಸ್ಕ್ರೀನ್ ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    autoMigrateAllEnglishCustomSlugs();
+    renderMaster10QuestionFormats();
+
+    /* ==========================================================================
+       🌐 100% FUTURE-PROOF REALTIME AUTO-TRANSLATOR FOR ANY NEW CUSTOM SLUGS
+       ========================================================================== */
+
+    // ೧. ಯಾವುದೇ ಹೊಸ ಇಂಗ್ಲಿಷ್ ಕೋಡ್ ಅನ್ನು ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರಿಸುವ ಮಾಸ್ಟರ್ ಎಂಜಿನ್
+    async function getOrAutoTranslateUnknownSlug(rawSlug, isEnglish = false) {
+      if (!rawSlug) return { label: 'ಪ್ರಶ್ನೆ ಪ್ರಕಾರ', heading: 'ಉತ್ತರಿಸಿ:', marks: 1 };
+
+      // ಡಿಕ್ಷನರಿಯಲ್ಲಿ ಇದ್ದರೆ ತಕ್ಷಣ ರಿಟರ್ನ್
+      const meta = getStandardFormatMetaFromSlug(rawSlug, isEnglish);
+      if (meta && meta.isKnown) return meta;
+
+      // ಹೊಸ ಪದವಾಗಿದ್ದರೆ ಅಂಡರ್‌ಸ್ಕೋರ್ ತೆಗೆದು ಇಂಗ್ಲಿಷ್ ವಾಕ್ಯ ಮಾಡುವುದು
+      const cleanedEn = String(rawSlug).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
+
+      if (isEnglish) {
+        return {
+          label: `${cleanedEn} (1M)`,
+          heading: `Answer the following (${cleanedEn}):`,
+          marks: 1
+        };
+      }
+
+      // 🌟 ಕನ್ನಡಕ್ಕೆ ಆಟೋ-ಭಾಷಾಂತರ (Realtime Auto-Translate)
+      try {
+        const knTranslated = await translateKannadaTextToEnglish(cleanedEn); // Auto bridge
+        // ಗೂಗಲ್ ಮೂಲಕ ಇಂಗ್ಲಿಷ್ ನಿಂದ ಕನ್ನಡಕ್ಕೆ ಭಾಷಾಂತರ
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=kn&dt=t&q=${encodeURIComponent(cleanedEn)}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data[0] && data[0][0]) {
+            const knText = data[0][0][0].trim();
+            return {
+              label: `${knText} (1M)`,
+              heading: `ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ (${knText}):`,
+              marks: 1
+            };
+          }
+        }
+      } catch (e) {}
+
+      return {
+        label: `${cleanedEn} (1M)`,
+        heading: `ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ಉತ್ತರಿಸಿ (${cleanedEn}):`,
+        marks: 1
+      };
+    }
+
+    // ೨. JSON ಅಪ್ಲೋಡ್ ಆದಾಗ ಯಾವುದೇ ಹೊಸ ಇಂಗ್ಲಿಷ್ ಪ್ರಕಾರವನ್ನು ತಾನಾಗಿಯೇ ಕನ್ನಡಕ್ಕೆ ಸೇವ್ ಮಾಡುವುದು
+    const origHandleExecuteDirectJSONUploadFutureProof = window.handleExecuteDirectJSONUpload;
+    window.handleExecuteDirectJSONUpload = async function() {
+      const textarea = document.getElementById('direct-json-textarea');
+      let rawVal = textarea?.value.trim();
+
+      if (rawVal) {
+        try {
+          rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+          const parsed = JSON.parse(rawVal);
+          if (Array.isArray(parsed)) {
+            let customList = getCustomQuestionTypesList();
+            let modified = false;
+
+            for (let q of parsed) {
+              const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+              const rawT = String(q.type || '').trim();
+
+              if (rawT && !standardKeys.includes(rawT) && !customList.some(c => c.key === rawT || c.label === rawT)) {
+                // ಹೊಸ ಇಂಗ್ಲಿಷ್ ಕೋಡ್ ಆಗಿದ್ದರೆ ಆಟೋ-ಕನ್ನಡ ಲೇಬಲ್ ಪಡೆಯುವುದು
+                const autoMeta = await getOrAutoTranslateUnknownSlug(rawT, false);
+                customList.push({
+                  key: rawT,
+                  label: autoMeta.label,
+                  heading: autoMeta.heading,
+                  marks: q.marks || autoMeta.marks || 1,
+                  subject: q.subject || 'all'
+                });
+                modified = true;
+              }
+            }
+
+            if (modified) {
+              localStorage.setItem('withyou_custom_qtypes', JSON.stringify(customList));
+              try {
+                fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(customList)
+                });
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (typeof origHandleExecuteDirectJSONUploadFutureProof === 'function') {
+        await origHandleExecuteDirectJSONUploadFutureProof();
+      }
+
+      renderMaster10QuestionFormats();
+    };
     
   </script>
 </body>
