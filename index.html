@@ -20823,6 +20823,318 @@
         alert('ದೋಷವಾಗಿದೆ: ' + err.message);
       }
     };
+
+
+    /* ==========================================================================
+       🌟 UNIVERSAL ENGLISH-SLUG TO KANNADA FORMAT LABEL & HEADING AUTO-MAPPER
+       ========================================================================== */
+
+    // ೧. ಇಂಗ್ಲಿಷ್ ಕೋಡ್‌ಗಳನ್ನು ಅಧಿಕೃತ ಕನ್ನಡ ಲೇಬಲ್ & ಪೇಪರ್ ಹೆಡಿಂಗ್‌ಗೆ ಮ್ಯಾಪ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಡಿಕ್ಷನರಿ
+    function getStandardFormatMetaFromSlug(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      const dictionary = {
+        // ಭಾಷಾ ವಿಷಯಗಳು (Languages - Kannada / English / Hindi)
+        'own_sentence': {
+          knLabel: 'ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬರೆಯಿರಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಳಸಿ ಸ್ವಂತ ವಾಕ್ಯ ರಚಿಸಿ:',
+          enLabel: 'Make Own Sentences (2M)',
+          enHeading: 'Use the following words in your own sentences:',
+          marks: 2
+        },
+        'who_said_to_whom': {
+          knLabel: 'ಯಾರು ಯಾರಿಗೆ ಹೇಳಿದರು (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಮಾತುಗಳನ್ನು ಯಾರು ಯಾರಿಗೆ ಹೇಳಿದರು ಎಂದು ಬರೆಯಿರಿ:',
+          enLabel: 'Who said to whom (2M)',
+          enHeading: 'Write who said the following words to whom:',
+          marks: 2
+        },
+        'sentence_joining': {
+          knLabel: 'ವಾಕ್ಯಗಳನ್ನು ಸೇರಿಸಿ ಬರೆಯಿರಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ವಾಕ್ಯಗಳನ್ನು ಸೇರಿಸಿ ಒಂದೇ ವಾಕ್ಯವಾಗಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Combine the Sentences (2M)',
+          enHeading: 'Combine the following sentences into a single sentence:',
+          marks: 2
+        },
+        'split_words': {
+          knLabel: 'ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Split the Words (1M)',
+          enHeading: 'Split the following words:',
+          marks: 1
+        },
+        'sandhi': {
+          knLabel: 'ಬಿಡಿಸಿ ಸಂಧಿ ಹೆಸರಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಿಡಿಸಿ ಸಂಧಿ ಹೆಸರಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Split and Name the Sandhi (1M)',
+          enHeading: 'Split the words and name the Sandhi:',
+          marks: 1
+        },
+        'antonyms': {
+          knLabel: 'ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳನ್ನು ಬರೆಯಿರಿ:',
+          enLabel: 'Antonyms / Opposites (1M)',
+          enHeading: 'Write the antonyms for the following words:',
+          marks: 1
+        },
+        'opposites': {
+          knLabel: 'ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ವಿರುದ್ಧಾರ್ಥಕ ಪದಗಳನ್ನು ಬರೆಯಿರಿ:',
+          enLabel: 'Opposites (1M)',
+          enHeading: 'Write the opposite words:',
+          marks: 1
+        },
+        'synonyms': {
+          knLabel: 'ಸಮಾನಾರ್ಥಕ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ಸಮಾನಾರ್ಥಕ ಪದಗಳನ್ನು ಬರೆಯಿರಿ:',
+          enLabel: 'Synonyms (1M)',
+          enHeading: 'Write the synonyms for the following words:',
+          marks: 1
+        },
+        'rhyming_words': {
+          knLabel: 'ಪ್ರಾಸ ಪದಗಳು (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದಗಳಿಗೆ ಪ್ರಾಸ ಪದಗಳನ್ನು ಬರೆಯಿರಿ:',
+          enLabel: 'Rhyming Words (1M)',
+          enHeading: 'Write rhyming words for the following:',
+          marks: 1
+        },
+        'proverb': {
+          knLabel: 'ಗಾದೆ ಮಾತು ವಿಸ್ತರಣೆ (3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಗಾದೆ ಮಾತನ್ನು ವಿಸ್ತರಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Expand the Proverb (3M)',
+          enHeading: 'Expand the following proverb:',
+          marks: 3
+        },
+        'poem_4lines': {
+          knLabel: '೪ ಸಾಲುಗಳ ಪದ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ (4M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Complete the 4-Line Poem (4M)',
+          enHeading: 'Complete the following four lines of the poem:',
+          marks: 4
+        },
+        'context_reference': {
+          knLabel: 'ಸಂದರ್ಭ ಸಹಿತ ಸ್ವಾರಸ್ಯ ಬರೆಯಿರಿ (3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆಗಳಿಗೆ ಸಂದರ್ಭ ಸಹಿತ ಸ್ವಾರಸ್ಯವನ್ನು ಬರೆಯಿರಿ:',
+          enLabel: 'Explain with Context (3M)',
+          enHeading: 'Explain the following with reference to context:',
+          marks: 3
+        },
+        'letter_writing': {
+          knLabel: 'ಪತ್ರ ಲೇಖನ (4M/5M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ವಿಷಯದ ಕುರಿತು ಪತ್ರ ಬರೆಯಿರಿ:',
+          enLabel: 'Letter Writing (4M/5M)',
+          enHeading: 'Write a letter on the following topic:',
+          marks: 5
+        },
+        'essay': {
+          knLabel: 'ಪ್ರಬಂಧ ರಚನೆ (5M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:',
+          enLabel: 'Essay Writing (5M)',
+          enHeading: 'Write an essay on any one of the following topics:',
+          marks: 5
+        },
+
+        // ವಿಜ್ಞಾನ (Science)
+        'homogeneous_heterogeneous': {
+          knLabel: 'ಏಕರೂಪ & ಭಿನ್ನರೂಪ ಮಿಶ್ರಣ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನವುಗಳನ್ನು ಏಕರೂಪ ಮತ್ತು ಭಿನ್ನರೂಪ ಮಿಶ್ರಣಗಳಾಗಿ ವಿಂಗಡಿಸಿ:',
+          enLabel: 'Homogeneous & Heterogeneous Mixtures (2M)',
+          enHeading: 'Classify the following into Homogeneous and Heterogeneous mixtures:',
+          marks: 2
+        },
+        'diagram_parts': {
+          knLabel: 'ಚಿತ್ರ ಬಿಡಿಸಿ ಭಾಗ ಗುರುತಿಸಿ (4M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರವನ್ನು ಬಿಡಿಸಿ, ಭಾಗಗಳನ್ನು ಹೆಸರಿಸಿ:',
+          enLabel: 'Draw Diagram & Label Parts (4M)',
+          enHeading: 'Draw the diagram and label its parts:',
+          marks: 4
+        },
+        'give_reason': {
+          knLabel: 'ವೈಜ್ಞಾನಿಕ ಕಾರಣ ಕೊಡಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ವೈಜ್ಞಾನಿಕ ಕಾರಣ ನೀಡಿ:',
+          enLabel: 'Give Scientific Reasons (2M)',
+          enHeading: 'Give scientific reasons for the following:',
+          marks: 2
+        },
+        'differences': {
+          knLabel: 'ವ್ಯತ್ಯಾಸಗಳನ್ನು ತಿಳಿಸಿ (2M/3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನವುಗಳಿಗಿರುವ ವ್ಯತ್ಯಾಸಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡಿ:',
+          enLabel: 'Distinguish Between (2M/3M)',
+          enHeading: 'Differentiate between the following:',
+          marks: 2
+        },
+
+        // ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)
+        'map_drawing': {
+          knLabel: 'ಭಾರತದ ನಕ್ಷೆ & ಸ್ಥಳಗಳು (4M)',
+          knHeading: 'ಭಾರತದ ನಕ್ಷೆಯನ್ನು ಬಿಡಿಸಿ, ಕೆಳಗಿನ ಸ್ಥಳಗಳನ್ನು ಗುರುತಿಸಿ:',
+          enLabel: 'Draw Map & Mark Locations (4M)',
+          enHeading: 'Draw the map of India and locate the following places:',
+          marks: 4
+        },
+        'chronology': {
+          knLabel: 'ಕಾಲಾನುಕ್ರಮದಲ್ಲಿ ಬರೆಯಿರಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಐತಿಹಾಸಿಕ ಘಟನೆಗಳನ್ನು ಕಾಲಾನುಕ್ರಮದಲ್ಲಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Arrange in Chronological Order (2M)',
+          enHeading: 'Arrange the following events in chronological order:',
+          marks: 2
+        },
+
+        // ಗಣಿತ (Mathematics)
+        'solve_math': {
+          knLabel: 'ಲೆಕ್ಕಗಳನ್ನು ಬಿಡಿಸಿ (2M/3M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಲೆಕ್ಕಗಳನ್ನು ಹಂತ-ಹಂತವಾಗಿ ಬಿಡಿಸಿ:',
+          enLabel: 'Solve the Problems (2M/3M)',
+          enHeading: 'Solve the following mathematical problems:',
+          marks: 2
+        },
+        'theorem_graph': {
+          knLabel: 'ಪ್ರಮೇಯ ಸಾಧಿಸಿ / ಗ್ರಾಫ್ ರಚಿಸಿ (4M)',
+          knHeading: 'ಪ್ರಮೇಯವನ್ನು ಸಾಧಿಸಿ / ನಕ್ಷೆ (Graph) ರಚಿಸಿ:',
+          enLabel: 'Prove Theorem / Draw Graph (4M)',
+          enHeading: 'Prove the theorem / Draw the graph:',
+          marks: 4
+        }
+      };
+
+      if (dictionary[rawKey]) {
+        const item = dictionary[rawKey];
+        return {
+          label: isEnglish ? item.enLabel : item.knLabel,
+          heading: isEnglish ? item.enHeading : item.knHeading,
+          marks: item.marks
+        };
+      }
+
+      // ಡಿಕ್ಷನರಿಯಲ್ಲಿ ಇಲ್ಲದ ಯಾವುದೇ ಸಾಮಾನ್ಯ ಕೀಗಳಿಗೆ ಕ್ಲೀನ್ ಆಟೋ-ಫಾರ್ಮ್ಯಾಟ್
+      const cleanLabel = rawKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        label: isEnglish ? `${cleanLabel}` : `${typeKey}`,
+        heading: isEnglish ? `Answer the following (${cleanLabel}):` : `ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        marks: 1
+      };
+    }
+
+    // ೨. ಜನರೇಟರ್ Step 3 (ಕನ್ನಡ ಚೆಕ್‌ಬಾಕ್ಸ್‌ಗಳಲ್ಲಿ ಇಂಗ್ಲಿಷ್ ಕೋಡ್ ಬಾರದಂತೆ ಆಟೋ-ಮ್ಯಾಪಿಂಗ್)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+      const sKey = getNormalizedSubjectKey(currentSubj);
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
+      let formats = [
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
+      ];
+
+      // ಅಡ್ಮಿನ್ ಸೇವ್ ಮಾಡಿದ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
+          if (!formats.some(f => f.key === ct.key)) {
+            formats.push({
+              key: ct.key,
+              label: ct.label,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      // 🌟 ಭಂಡಾರದಲ್ಲಿ (qbank) ಇಂಗ್ಲಿಷ್ ಕೋಡ್‌ನಲ್ಲಿರುವ ಪ್ರಶ್ನೆಗಳನ್ನು ಸುಂದರ ಕನ್ನಡ ಲೇಬಲ್‌ಗೆ ಪರಿವರ್ತಿಸಿ ತೋರಿಸುವುದು
+      (appState.qbank || []).forEach(q => {
+        if (isStrictSubjectMatch(q.subject, currentSubj)) {
+          const rawT = String(q.type || '').trim();
+          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+          
+          if (rawT && !standardKeys.includes(rawT) && !formats.some(f => f.key === rawT || f.label === rawT)) {
+            // ಡಿಕ್ಷನರಿಯಿಂದ ಕನ್ನಡ ಲೇಬಲ್ ಪಡೆಯುವುದು
+            const meta = getStandardFormatMetaFromSlug(rawT, false);
+            formats.push({
+              key: rawT,
+              label: meta.label,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      let html = formats.map(fmt => {
+        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್‌ನಲ್ಲಿ ಕಸ್ಟಮ್ / ಇಂಗ್ಲಿಷ್ ಕೋಡ್‌ಗಳಿಗೂ ನಿಖರ Paper Heading ಪ್ರದರ್ಶನ
+    const originalRenderFullExamPaperForAutoHeadings = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+      const customTypeList = getCustomQuestionTypesList();
+      const isEnglish = String(document.getElementById('cfg-medium')?.value || '').toLowerCase().includes('english');
+
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      allQuestions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್ ಸೂಚನೆಯನ್ನು ಡಿಕ್ಷನರಿಯಿಂದ ಪಡೆದು ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+      customQuestionsMap.forEach((qList, typeKey) => {
+        const customDef = customTypeList.find(c => c.key === typeKey || c.label === typeKey);
+        if (!customDef || !customDef.heading) {
+          const autoMeta = getStandardFormatMetaFromSlug(typeKey, isEnglish);
+          if (customDef) {
+            customDef.heading = autoMeta.heading;
+          }
+        }
+      });
+
+      if (typeof originalRenderFullExamPaperForAutoHeadings === 'function') {
+        originalRenderFullExamPaperForAutoHeadings(headerHtml);
+      }
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
