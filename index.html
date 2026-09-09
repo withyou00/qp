@@ -20825,7 +20825,112 @@
     };
 
 
-    /* ==========================================================================
+
+
+/* ==========================================================================
+       🌐 DYNAMIC BILINGUAL STEP-3 FORMAT CHECKBOXES (KANNADA vs ENGLISH MEDIUM)
+       ========================================================================== */
+
+    // ಜನರೇಟರ್ Step 3 (ಮಾಧ್ಯಮಕ್ಕೆ ತಕ್ಕಂತೆ ಕನ್ನಡ / English ಚೆಕ್‌ಬಾಕ್ಸ್ ಲೇಬಲ್‌ಗಳ ಪ್ರದರ್ಶನ)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+      const sKey = getNormalizedSubjectKey(currentSubj);
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
+
+      // 🌟 ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು (ಕನ್ನಡ ಅಥವಾ English ಮಾಧ್ಯಮಕ್ಕೆ ತಕ್ಕಂತೆ)
+      let formats = isEnglish ? [
+        { key: 'mcq', label: '1. Multiple Choice (1M)', isSpecial: false },
+        { key: 'blanks', label: '2. Fill in the Blanks (1M)', isSpecial: false },
+        { key: 'true_false', label: '3. True or False (1M)', isSpecial: false },
+        { key: 'analogy', label: '4. Complete the Analogy (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '5. Odd One Out (1M)', isSpecial: false },
+        { key: 'match', label: '6. Match the Following (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '7. One Mark Questions (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '8. Two Marks Questions (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '9. Three Marks Questions (3M)', isSpecial: false },
+        { key: 'la_4m', label: '10. Long Answer / Diagram / Map (4M)', isSpecial: false }
+      ] : [
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
+      ];
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
+          if (!formats.some(f => f.key === ct.key)) {
+            formats.push({
+              key: ct.key,
+              label: ct.label,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      // ಭಂಡಾರದಲ್ಲಿರುವ ಇಂಗ್ಲಿಷ್ ಸ್ಲಗ್‌ಗಳ ಸ್ವಯಂಚಾಲಿತ ಮ್ಯಾಪಿಂಗ್
+      (appState.qbank || []).forEach(q => {
+        if (isStrictSubjectMatch(q.subject, currentSubj)) {
+          const rawT = String(q.type || '').trim();
+          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+          
+          if (rawT && !standardKeys.includes(rawT) && !formats.some(f => f.key === rawT || f.label === rawT)) {
+            const meta = getStandardFormatMetaFromSlug(rawT, isEnglish);
+            formats.push({
+              key: rawT,
+              label: meta.label,
+              isSpecial: true
+            });
+          }
+        }
+      });
+
+      let html = formats.map(fmt => {
+        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
+            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
+    renderMaster10QuestionFormats();
+
+        /* ==========================================================================
        🌟 UNIVERSAL ENGLISH-SLUG TO KANNADA FORMAT LABEL & HEADING AUTO-MAPPER
        ========================================================================== */
 
@@ -21134,109 +21239,6 @@
     };
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್ ಮಾಡುವುದು
-    renderMaster10QuestionFormats();
-
-/* ==========================================================================
-       🌐 DYNAMIC BILINGUAL STEP-3 FORMAT CHECKBOXES (KANNADA vs ENGLISH MEDIUM)
-       ========================================================================== */
-
-    // ಜನರೇಟರ್ Step 3 (ಮಾಧ್ಯಮಕ್ಕೆ ತಕ್ಕಂತೆ ಕನ್ನಡ / English ಚೆಕ್‌ಬಾಕ್ಸ್ ಲೇಬಲ್‌ಗಳ ಪ್ರದರ್ಶನ)
-    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
-      const container = document.getElementById('step3-formats-container');
-      if (!container) return;
-
-      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
-      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
-      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
-      const sKey = getNormalizedSubjectKey(currentSubj);
-      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
-
-      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs text-slate-800';
-
-      // 🌟 ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು (ಕನ್ನಡ ಅಥವಾ English ಮಾಧ್ಯಮಕ್ಕೆ ತಕ್ಕಂತೆ)
-      let formats = isEnglish ? [
-        { key: 'mcq', label: '1. Multiple Choice (1M)', isSpecial: false },
-        { key: 'blanks', label: '2. Fill in the Blanks (1M)', isSpecial: false },
-        { key: 'true_false', label: '3. True or False (1M)', isSpecial: false },
-        { key: 'analogy', label: '4. Complete the Analogy (1M)', isSpecial: false },
-        { key: 'odd_one_out', label: '5. Odd One Out (1M)', isSpecial: false },
-        { key: 'match', label: '6. Match the Following (4M)', isSpecial: false },
-        { key: 'vsa_1m', label: '7. One Mark Questions (1M)', isSpecial: false },
-        { key: 'sa_2m', label: '8. Two Marks Questions (2M)', isSpecial: false },
-        { key: 'sa_3m', label: '9. Three Marks Questions (3M)', isSpecial: false },
-        { key: 'la_4m', label: '10. Long Answer / Diagram / Map (4M)', isSpecial: false }
-      ] : [
-        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
-        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
-        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
-        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
-        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
-        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
-        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
-        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
-        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
-        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
-      ];
-
-      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ
-      const customList = getCustomQuestionTypesList();
-      customList.forEach(ct => {
-        const ctSubjKey = getNormalizedSubjectKey(ct.subject || 'all');
-        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
-          if (!formats.some(f => f.key === ct.key)) {
-            formats.push({
-              key: ct.key,
-              label: ct.label,
-              isSpecial: true
-            });
-          }
-        }
-      });
-
-      // ಭಂಡಾರದಲ್ಲಿರುವ ಇಂಗ್ಲಿಷ್ ಸ್ಲಗ್‌ಗಳ ಸ್ವಯಂಚಾಲಿತ ಮ್ಯಾಪಿಂಗ್
-      (appState.qbank || []).forEach(q => {
-        if (isStrictSubjectMatch(q.subject, currentSubj)) {
-          const rawT = String(q.type || '').trim();
-          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
-          
-          if (rawT && !standardKeys.includes(rawT) && !formats.some(f => f.key === rawT || f.label === rawT)) {
-            const meta = getStandardFormatMetaFromSlug(rawT, isEnglish);
-            formats.push({
-              key: rawT,
-              label: meta.label,
-              isSpecial: true
-            });
-          }
-        }
-      });
-
-      let html = formats.map(fmt => {
-        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
-        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
-
-        return `
-          <label class="flex items-center space-x-2 p-2.5 rounded-2xl cursor-pointer ${bgClass} transition">
-            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-4 h-4">
-            <span class="${textClass} truncate">${escapeHtml(fmt.label)}</span>
-          </label>
-        `;
-      }).join('');
-
-      if (isOwnerAdmin) {
-        html += `
-          <div class="col-span-1 sm:col-span-2 lg:col-span-3 pt-2">
-            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-2xl shadow-md flex items-center justify-center gap-2 text-xs transition cursor-pointer">
-              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
-              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
-            </button>
-          </div>
-        `;
-      }
-
-      container.innerHTML = html;
-    };
-
-    // ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
     renderMaster10QuestionFormats();
     
   </script>
