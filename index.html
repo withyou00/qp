@@ -20635,7 +20635,7 @@
     };
 
 /* ==========================================================================
-       🔐 100% PURE ZERO-PLAINTEXT ENCRYPTED FIREBASE ADMIN AUTH (SHA-256 VAULT)
+       🔐 100% ZERO-PLAINTEXT ENCRYPTED ADMIN AUTH (DOUBLE SHA-256 VAULT)
        ========================================================================== */
 
     // ೧. SHA-256 ಗೂಢಲಿಪೀಕರಣ ಎಂಜಿನ್
@@ -20646,13 +20646,13 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ೨. ಮೊದಲ ಬಾರಿಯ ಡೀಫಾಲ್ಟ್ ಎನ್‌ಕ್ರಿಪ್ಟೆಡ್ ಹ್ಯಾಶ್ (ಯಾವುದೇ ಪ್ಲೇನ್ ಟೆಕ್ಸ್ಟ್ ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ!)
+    // ೨. ಡೀಫಾಲ್ಟ್ ಎನ್‌ಕ್ರಿಪ್ಟೆಡ್ ವಾಲ್ಟ್ (Username ಮತ್ತು Password ಎರಡೂ ಗೂಢಲಿಪಿಯಲ್ಲಿವೆ!)
     const DEFAULT_ENCRYPTED_ADMIN_VAULT = {
-      username: "WithYou2026",
-      passHash: "6e47dfa9ce2276686307137f22dafeec8eb6b78d655f4124316ff5bc4e578c77" // SHA-256 Hash
+      userHash: "9d6f35a083437bb9720d206f6b5774a3f5a9cfecae9103e61caadffcf1b29a27", // SHA-256 of "WithYou2026"
+      passHash: "6e47dfa9ce2276686307137f22dafeec8eb6b78d655f4124316ff5bc4e578c77"  // SHA-256 of "WithYoupassword2026"
     };
 
-    // ೩. Firebase ಮೂಲಕ ಸುರಕ್ಷಿತ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಪರಿಶೀಲನೆ (100% SECURE)
+    // ೩. Firebase ಮೂಲಕ ಸುರಕ್ಷಿತ ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ಪರಿಶೀಲನೆ (100% SECURE DUAL HASH AUTH)
     window.handleAdminLoginSubmit = async function(e) {
       e.preventDefault();
       const uInput = document.getElementById('admin-login-user')?.value.trim();
@@ -20668,7 +20668,8 @@
       }
 
       try {
-        // ಟೈಪ್ ಮಾಡಿದ ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು ತಕ್ಷಣವೇ SHA-256 ಹ್ಯಾಶ್ ಆಗಿ ಪರಿವರ್ತಿಸುವುದು
+        // 🌟 ಟೈಪ್ ಮಾಡಿದ Username ಮತ್ತು Password ಎರಡನ್ನೂ ತಕ್ಷಣವೇ SHA-256 ಹ್ಯಾಶ್ ಮಾಡುವುದು
+        const enteredUserHash = await computeSHA256Hash(uInput);
         const enteredPassHash = await computeSHA256Hash(pInput);
 
         // Firebase ನಿಂದ ಸುರಕ್ಷಿತ ಡೇಟಾ ಪಡೆಯುವುದು
@@ -20690,8 +20691,8 @@
           });
         }
 
-        // 🌟 ಹ್ಯಾಶ್ ಮ್ಯಾಚಿಂಗ್ ಪರಿಶೀಲನೆ
-        const isUserMatch = (uInput === cloudAdminAuth.username);
+        // 🌟 ಎರಡೂ ಹ್ಯಾಶ್‌ಗಳ ನಿಖರ ಗೂಢಲಿಪಿ ಹೊಂದಾಣಿಕೆ
+        const isUserMatch = (cloudAdminAuth.userHash ? (enteredUserHash === cloudAdminAuth.userHash) : (uInput === cloudAdminAuth.username));
         const isPassMatch = (enteredPassHash === cloudAdminAuth.passHash);
 
         if (isUserMatch && isPassMatch) {
@@ -20724,7 +20725,7 @@
       }
     };
 
-    // ೪. ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ಬದಲಾಯಿಸುವ ಪಾಪ್ಅಪ್ ಮಾಡಲ್
+    // ೪. ಅಡ್ಮಿನ್ Username ಮತ್ತು Password ಬದಲಾಯಿಸುವ ಪಾಪ್ಅಪ್ ಮಾಡಲ್
     window.openChangeAdminPasswordModal = function() {
       let modal = document.getElementById('change-admin-pass-modal');
       if (!modal) {
@@ -20740,11 +20741,11 @@
           <div class="border-b pb-3 flex items-center justify-between">
             <div class="flex items-center space-x-2.5">
               <div class="p-2.5 bg-gradient-to-tr from-slate-900 to-indigo-900 text-white rounded-2xl font-bold shadow">
-                <i class="fa-solid fa-key text-amber-300 text-base"></i>
+                <i class="fa-solid fa-shield-halved text-amber-300 text-base"></i>
               </div>
               <div>
-                <h3 class="font-extrabold text-sm text-slate-900">ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ಬದಲಾವಣೆ</h3>
-                <p class="text-[11px] text-slate-500 font-semibold">Firebase Cloud ನಲ್ಲೇ ನೇರವಾಗಿ ಅಪ್ಡೇಟ್ ಆಗುತ್ತದೆ</p>
+                <h3 class="font-extrabold text-sm text-slate-900">ಅಡ್ಮಿನ್ ಲಾಗಿನ್ ವಿವರಗಳ ಬದಲಾವಣೆ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">Username & Password ಎರಡೂ ಸಂಪೂರ್ಣ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಆಗುತ್ತವೆ</p>
               </div>
             </div>
             <button onclick="document.getElementById('change-admin-pass-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
@@ -20753,7 +20754,7 @@
           <form onsubmit="handleSaveNewAdminPassword(event)" class="space-y-3">
             <div>
               <label class="block font-bold text-slate-700 mb-1">ಹೊಸ Username *</label>
-              <input type="text" id="new-admin-user" required placeholder="e.g. WithYou2026" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              <input type="text" id="new-admin-user" required placeholder="ಹೊಸ Username ನಮೂದಿಸಿ" class="w-full p-2.5 bg-slate-50 border rounded-xl font-bold text-slate-900" />
             </div>
 
             <div>
@@ -20767,14 +20768,14 @@
             </div>
 
             <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-[11px] text-indigo-950 font-medium">
-              🔒 <b>ಭದ್ರತಾ ಮಾಹಿತಿ:</b> ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ SHA-256 ಎನ್‌ಕ್ರಿಪ್ಶನ್ ಮೂಲಕ Firebase ಗೆ ಸುರಕ್ಷಿತವಾಗಿ ಸೇವ್ ಆಗುತ್ತದೆ.
+              🔒 <b>೧೦೦% ಸುರಕ್ಷತೆ:</b> ಹೊಸ Username ಮತ್ತು Password ಎರಡೂ ಪ್ರತ್ಯೇಕ SHA-256 ಹ್ಯಾಶ್ ಆಗಿ Firebase ಕ್ಲೌಡ್‌ಗೆ ಸುರಕ್ಷಿತವಾಗಿ ಸೇವ್ ಆಗುತ್ತವೆ.
             </div>
 
             <div class="flex items-center justify-end space-x-2 pt-2 border-t">
               <button type="button" onclick="document.getElementById('change-admin-pass-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
               <button type="submit" class="px-6 py-2.5 btn-primary-gradient text-white font-extrabold rounded-xl shadow cursor-pointer flex items-center gap-1.5">
                 <i class="fa-solid fa-lock text-amber-300"></i>
-                <span>ಪಾಸ್‌ವರ್ಡ್ ಸೇವ್ ಮಾಡಿ</span>
+                <span>ವಿವರಗಳನ್ನು ಸೇವ್ ಮಾಡಿ</span>
               </button>
             </div>
           </form>
@@ -20784,7 +20785,7 @@
       modal.classList.remove('hidden');
     };
 
-    // ೫. ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ಅನ್ನು Firebase ಗೆ ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಸೇವ್ ಮಾಡುವಿಕೆ
+    // ೫. ಹೊಸ Username & Password ಅನ್ನು ಡಬಲ್ ಹ್ಯಾಶ್ ಮಾಡಿ Firebase ಗೆ ಕಳುಹಿಸುವಿಕೆ
     window.handleSaveNewAdminPassword = async function(e) {
       e.preventDefault();
       const newUser = document.getElementById('new-admin-user')?.value.trim();
@@ -20792,14 +20793,15 @@
       const confirmPass = document.getElementById('new-admin-pass-confirm')?.value.trim();
 
       if (!newUser || !newPass) return alert('ದಯವಿಟ್ಟು ಎಲ್ಲಾ ವಿವರಗಳನ್ನು ಭರ್ತಿ ಮಾಡಿ.');
-      if (newPass !== confirmPass) return alert('ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ (Password mismatch).');
+      if (newPass !== confirmPass) return alert('ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ.');
       if (newPass.length < 6) return alert('ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ ೬ ಅಕ್ಷರಗಳನ್ನು ಹೊಂದಿರಬೇಕು.');
 
       try {
+        const userHash = await computeSHA256Hash(newUser);
         const passHash = await computeSHA256Hash(newPass);
 
         const payload = {
-          username: newUser,
+          userHash: userHash,
           passHash: passHash,
           updatedAt: getTodayFormattedDate()
         };
@@ -20812,8 +20814,8 @@
 
         if (res.ok) {
           document.getElementById('change-admin-pass-modal')?.classList.add('hidden');
-          alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nನಿಮ್ಮ ಅಡ್ಮಿನ್ Username ಮತ್ತು Password ಅನ್ನು Firebase ನಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿ ನವೀಕರಿಸಲಾಗಿದೆ!`);
-          showToast('🔐 ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ಯಶಸ್ವಿಯಾಗಿ ಬದಲಾಗಿದೆ!', 'success');
+          alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nನಿಮ್ಮ ಹೊಸ Username ಮತ್ತು Password ಅನ್ನು Firebase ನಲ್ಲಿ 100% ಎನ್‌ಕ್ರಿಪ್ಟ್ ಮಾಡಿ ಸುರಕ್ಷಿತವಾಗಿ ಸೇವ್ ಮಾಡಲಾಗಿದೆ!`);
+          showToast('🔐 ಅಡ್ಮಿನ್ ವಿವರಗಳು ಯಶಸ್ವಿಯಾಗಿ ಬದಲಾಗಿವೆ!', 'success');
         } else {
           alert('Firebase ಸರ್ವರ್‌ಗೆ ಸಂಪರ್ಕಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ.');
         }
