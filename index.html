@@ -21469,6 +21469,184 @@
         </div>
       `;
     }
+
+
+
+    /* ==========================================================================
+       📱 MOBILE 2-COLUMN COMPACT STEP-3 + SELECT ALL/CLEAR + JUNK PURGE ENGINE
+       ========================================================================== */
+
+    // ೧. ಮೊಬೈಲ್ & ಪಿಸಿ ಎರಡರಲ್ಲೂ custom_... ಕಸದ ಕೀಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಅಳಿಸುವ ಮಾಸ್ಟರ್ ಪರ್ಜರ್
+    function purgeAllPhantomCustomKeysEverywhere() {
+      let customList = [];
+      try {
+        customList = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      } catch (e) { customList = []; }
+
+      // ಕೇವಲ ಶುದ್ಧ ಕನ್ನಡ ಮತ್ತು ಅಧಿಕೃತ ಕೀಗಳನ್ನು ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳುವುದು
+      const cleaned = customList.filter(c => {
+        if (!c || !c.label) return false;
+        const l = String(c.label).trim();
+        const k = String(c.key).trim();
+        
+        // custom_178... ಅಥವಾ fmt_178... ನಂತಹ ಯಾವುದೇ ಕಸವನ್ನು ತಿರಸ್ಕರಿಸುವುದು
+        if (/^custom_\d+/i.test(k) || /^custom_\d+/i.test(l) || /^fmt_\d+/i.test(l) || k.startsWith('fib') || l.startsWith('fib')) {
+          return false;
+        }
+        return true;
+      });
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(cleaned));
+      return cleaned;
+    }
+
+    // ೨. Step 3 ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಎಲ್ಲವನ್ನೂ ಒಂದೇ ಕ್ಲಿಕ್‌ನಲ್ಲಿ Select / Clear ಮಾಡುವ ಬಟನ್‌ಗಳು
+    window.toggleAllQuestionFormats = function(isChecked) {
+      const allFormatBoxes = document.querySelectorAll('input[name="qtype_opt"]');
+      allFormatBoxes.forEach(cb => {
+        cb.checked = isChecked;
+      });
+      showToast(isChecked ? '✅ ಎಲ್ಲಾ ಪ್ರಕಾರಗಳನ್ನು ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ' : 'ಎಲ್ಲಾ ಪ್ರಕಾರಗಳನ್ನು ತೆರವುಗೊಳಿಸಲಾಗಿದೆ', 'info');
+    };
+
+    // ೩. Step 3 ಹೆಡರ್‌ನಲ್ಲಿ [Select All] [Clear] ಬಟನ್‌ಗಳ ಇಂಜೆಕ್ಷನ್
+    (function injectStep3HeaderControls() {
+      const step3TitleRow = document.querySelector('#view-generator .lg\\:col-span-8 > div:last-child .flex.items-center.justify-between');
+      if (step3TitleRow && !document.getElementById('step3-toggle-btns-wrapper')) {
+        const toggleHtml = `
+          <div id="step3-toggle-btns-wrapper" class="flex items-center space-x-1.5">
+            <button type="button" onclick="toggleAllQuestionFormats(true)" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold px-2.5 py-1 rounded-xl border border-emerald-300 cursor-pointer shadow-sm">
+              Select All
+            </button>
+            <button type="button" onclick="toggleAllQuestionFormats(false)" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-xl border border-slate-300 cursor-pointer shadow-sm">
+              Clear
+            </button>
+          </div>
+        `;
+        const oldBadge = step3TitleRow.querySelector('span');
+        if (oldBadge) oldBadge.remove();
+        step3TitleRow.insertAdjacentHTML('beforeend', toggleHtml);
+      }
+    })();
+
+    // ೪. ಜನರೇಟರ್ Step 3 (ಮೊಬೈಲ್‌ನಲ್ಲಿ ೨-ಕಾಲಂ ಕಾಂಪ್ಯಾಕ್ಟ್ ಗ್ರಿಡ್ & ನೋ-ಕಸ್ಟಮ್ ಜಂಕ್)
+    window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
+      const container = document.getElementById('step3-formats-container');
+      if (!container) return;
+
+      // 🌟 ಮೊಬೈಲ್‌ನಲ್ಲೂ custom_ ಕಸವನ್ನು ತಕ್ಷಣ ಡಿಲೀಟ್ ಮಾಡುವುದು
+      const cleanedCustomList = purgeAllPhantomCustomKeysEverywhere();
+
+      const currentSubj = document.getElementById('cfg-subject')?.value || 'ಕನ್ನಡ';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglish = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+      const sKey = getNormalizedSubjectKey(currentSubj);
+      const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+
+      // 🌟 ಮೊಬೈಲ್‌ನಲ್ಲಿ ೨ ಕಾಲಂ & ಸ್ಕ್ರಾಲ್ ಬಾಕ್ಸ್ (ಉದ್ದವಾಗಿ ಹರಿಯದಂತೆ ಕಾಂಪ್ಯಾಕ್ಟ್ ಗ್ರಿಡ್)
+      container.className = 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px] text-slate-800 max-h-64 overflow-y-auto pr-1';
+
+      // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
+      let formats = isEnglish ? [
+        { key: 'mcq', label: '1. Multiple Choice (1M)', isSpecial: false },
+        { key: 'blanks', label: '2. Fill in Blanks (1M)', isSpecial: false },
+        { key: 'true_false', label: '3. True or False (1M)', isSpecial: false },
+        { key: 'analogy', label: '4. Complete Analogy (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '5. Odd One Out (1M)', isSpecial: false },
+        { key: 'match', label: '6. Match Following (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '7. One Mark (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '8. Two Marks (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '9. Three Marks (3M)', isSpecial: false },
+        { key: 'la_4m', label: '10. Long Answer (4M)', isSpecial: false }
+      ] : [
+        { key: 'mcq', label: '೧. ಬಹು ಆಯ್ಕೆ (1M)', isSpecial: false },
+        { key: 'blanks', label: '೨. ಖಾಲಿ ಜಾಗ ಭರ್ತಿ (1M)', isSpecial: false },
+        { key: 'true_false', label: '೩. ಸರಿ ಅಥವಾ ತಪ್ಪು (1M)', isSpecial: false },
+        { key: 'analogy', label: '೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)', isSpecial: false },
+        { key: 'odd_one_out', label: '೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)', isSpecial: false },
+        { key: 'match', label: '೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)', isSpecial: false },
+        { key: 'vsa_1m', label: '೭. ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)', isSpecial: false },
+        { key: 'sa_2m', label: '೮. ೧ ಅಥವಾ ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)', isSpecial: false },
+        { key: 'sa_3m', label: '೯. ೨ ಅಥವಾ ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)', isSpecial: false },
+        { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
+      ];
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ
+      cleanedCustomList.forEach(ct => {
+        if (!ct) return;
+        const meta = getStandardFormatMetaFromSlug(ct.key || ct.label, isEnglish);
+        const ctSubjKey = getNormalizedSubjectKey(ct.subject || meta.subject || 'all');
+
+        if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
+          const cleanDisplayLabel = meta.isKnown ? (isEnglish ? meta.enLabel : meta.knLabel) : ct.label;
+          // ಕಸದ ಕೀಗಳಲ್ಲದಿದ್ದರೆ ಮಾತ್ರ ಸೇರ್ಪಡೆ
+          if (!cleanDisplayLabel.startsWith('custom_') && !cleanDisplayLabel.startsWith('fmt_')) {
+            if (!formats.some(f => f.key === ct.key || f.label === cleanDisplayLabel)) {
+              formats.push({
+                key: ct.key,
+                label: cleanDisplayLabel,
+                isSpecial: true
+              });
+            }
+          }
+        }
+      });
+
+      // ಭಂಡಾರದಲ್ಲಿರುವ ನೈಜ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ (ಕಸದ ಕೀಗಳನ್ನು ಕಟ್ಟುನಿಟ್ಟಾಗಿ ತಿರಸ್ಕರಿಸುವುದು)
+      (appState.qbank || []).forEach(q => {
+        if (q && isStrictSubjectMatch(q.subject, currentSubj)) {
+          const rawT = String(q.type || '').trim();
+          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+          
+          if (rawT && !standardKeys.includes(rawT) && !rawT.startsWith('custom_') && !rawT.startsWith('fmt_')) {
+            const meta = getStandardFormatMetaFromSlug(rawT, isEnglish);
+            const targetSubjKey = getNormalizedSubjectKey(meta.subject || 'all');
+
+            if (targetSubjKey === 'all' || targetSubjKey === sKey) {
+              const displayLabel = isEnglish ? meta.enLabel : meta.knLabel;
+              if (!displayLabel.startsWith('custom_') && !displayLabel.startsWith('fmt_')) {
+                if (!formats.some(f => f.key === rawT || f.label === displayLabel)) {
+                  formats.push({
+                    key: rawT,
+                    label: displayLabel,
+                    isSpecial: true
+                  });
+                }
+              }
+            }
+          }
+        }
+      });
+
+      let html = formats.map(fmt => {
+        const bgClass = fmt.isSpecial ? 'bg-purple-50/90 border-2 border-purple-300 hover:border-purple-500' : 'bg-slate-50 border border-slate-200 hover:border-emerald-400';
+        const textClass = fmt.isSpecial ? 'font-black text-purple-950' : 'font-bold text-slate-900';
+
+        return `
+          <label class="flex items-center space-x-1.5 p-2 rounded-xl cursor-pointer ${bgClass} transition">
+            <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-purple-600 w-3.5 h-3.5 shrink-0">
+            <span class="${textClass} truncate text-[11px] leading-tight">${escapeHtml(fmt.label)}</span>
+          </label>
+        `;
+      }).join('');
+
+      if (isOwnerAdmin) {
+        html += `
+          <div class="col-span-2 sm:col-span-2 lg:col-span-3 pt-2">
+            <button type="button" onclick="openManageSubjectFormatsModal()" class="w-full py-2 px-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black rounded-xl shadow-md flex items-center justify-center gap-1.5 text-xs transition cursor-pointer">
+              <i class="fa-solid fa-circle-plus text-amber-300 text-sm"></i>
+              <span>+ ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರ ಸೇರಿಸಿ (Admin Add Format)</span>
+            </button>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    };
+
+    // ತಕ್ಷಣವೇ ಮೊಬೈಲ್ ಮತ್ತು ಪಿಸಿಯಲ್ಲಿ ಪರ್ಜ್ ನಡೆಸಿ ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
+    purgeAllPhantomCustomKeysEverywhere();
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
