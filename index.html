@@ -21280,6 +21280,115 @@
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್
     renderMaster10QuestionFormats();
+
+
+    /* ==========================================================================
+       📖 COMPREHENSION PASSAGE & SUB-QUESTIONS BEAUTIFUL MULTI-LINE FORMATTER
+       ========================================================================== */
+
+    // ೧. ಗದ್ಯಭಾಗ ಮತ್ತು ಉಪ-ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರತ್ಯೇಕಿಸಿ ಸುಂದರವಾಗಿ ಫಾರ್ಮ್ಯಾಟ್ ಮಾಡುವ ಹೆಲ್ಪರ್
+    function renderFormattedPassageQuestionBlock(rawQText) {
+      if (!rawQText) return '';
+
+      let text = String(rawQText).trim();
+
+      // ಗದ್ಯಭಾಗ ಮತ್ತು ಪ್ರಶ್ನೆಗಳು ಎರಡೂ ಇದ್ದರೆ ಪ್ರತ್ಯೇಕ ಬಾಕ್ಸ್ ವಿನ್ಯಾಸ
+      if (text.includes('ಗದ್ಯಭಾಗ:') || text.includes('ಪ್ರಶ್ನೆಗಳು:') || text.includes('(A)') || text.includes('೧.')) {
+        let parts = text.split(/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i);
+        let passagePart = parts[0] ? parts[0].replace(/^ಗದ್ಯಭಾಗ\s*[\:\.]?/i, '').trim() : '';
+        let questionsPart = parts[1] ? parts[1].trim() : '';
+
+        if (passagePart && questionsPart) {
+          return `
+            <div style="width: 100%; margin-top: 3px;">
+              <!-- 📖 ಗದ್ಯಭಾಗದ ಪ್ರತ್ಯೇಕ ಬೂದು ಬಣ್ಣದ ಬಾಕ್ಸ್ -->
+              <div style="background: #f8fafc; border: 1.5px dashed #94a3b8; border-radius: 8px; padding: 6px 10px; font-size: 11.8px; line-height: 1.4; color: #0f172a; text-align: justify; margin-bottom: 5px;">
+                <b style="color: #1e293b; display: block; margin-bottom: 2px;">📖 ಗದ್ಯಭಾಗ:</b>
+                ${escapeHtml(passagePart)}
+              </div>
+
+              <!-- ❓ ಕೆಳಗಿನ ಉಪ-ಪ್ರಶ್ನೆಗಳು -->
+              <div style="padding-left: 6px; font-size: 11.8px; line-height: 1.35; white-space: pre-line;">
+                ${escapeHtml(questionsPart)}
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // ಸಾಮಾನ್ಯ ಮಲ್ಟಿ-ಲೈನ್ ಟೆಕ್ಸ್ಟ್
+      return `<div style="white-space: pre-line; line-height: 1.35;">${escapeHtml(text)}</div>`;
+    }
+
+    // ೨. ಪ್ರಶ್ನೆ ಪಠ್ಯ ಬಿಲ್ಡರ್‌ನಲ್ಲಿ ಗದ್ಯಭಾಗ ಫಾರ್ಮ್ಯಾಟರ್ ಅಳವಡಿಕೆ
+    const origBuildQuestionItemWithImageForPassage = window.buildQuestionItemWithImage;
+    function buildQuestionItemWithImage(q, num) {
+      const idx = (appState.activeGeneratedQuestions || []).indexOf(q);
+      const isPassageType = (String(q.type || '').includes('ಗದ್ಯ') || String(q.q || '').includes('ಗದ್ಯಭಾಗ'));
+      const imgSrc = getAnyQuestionImageSource(q);
+
+      if (isPassageType) {
+        return `
+          <div style="margin-bottom: 4px; break-inside: avoid; page-break-inside: avoid;">
+            <div class="q-paper-item-row" style="margin-bottom: 2px;">
+              <span class="q-paper-num">${num}.</span>
+              <div style="flex: 1;">
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+            </div>
+            ${renderQuestionDiagramImage(imgSrc)}
+            ${renderFormattedPassageQuestionBlock(q.q)}
+          </div>
+        `;
+      }
+
+      let cleanQ = cleanQuestionTextForDisplay(q.q || '').replace(/\s*\((?:ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ)\)\s*$/gi, '').trim();
+
+      return `
+        <div style="margin-bottom: 3px;">
+          <div class="q-paper-item-row">
+            <span class="q-paper-num">${num}.</span>
+            <span class="q-paper-text">${escapeHtml(cleanQ)}</span>
+            <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+          </div>
+          ${renderQuestionDiagramImage(imgSrc)}
+        </div>
+      `;
+    }
+
+    // ೩. JSON ಅಪ್ಲೋಡ್ ಪ್ರಿವ್ಯೂನಲ್ಲೂ (Image 2 Fix) ಗದ್ಯಭಾಗ ಸುಂದರವಾಗಿ ಕಾಣುವಂತೆ ಫಿಕ್ಸ್
+    const origAnalyzeAndValidatePastedJSONForPassage = window.analyzeAndValidatePastedJSON;
+    window.analyzeAndValidatePastedJSON = function() {
+      if (typeof origAnalyzeAndValidatePastedJSONForPassage === 'function') {
+        origAnalyzeAndValidatePastedJSONForPassage();
+      }
+
+      const cardsContainer = document.getElementById('json-verified-cards-container');
+      if (cardsContainer && stagedValidatedJSONQuestions && stagedValidatedJSONQuestions.length > 0) {
+        cardsContainer.innerHTML = stagedValidatedJSONQuestions.map((q, idx) => `
+          <div class="p-3.5 bg-slate-50 border-2 ${q.isValid ? 'border-slate-200' : 'border-red-400 bg-red-50/20'} rounded-2xl text-xs space-y-2">
+            <div class="flex items-center justify-between border-b pb-1.5 font-bold">
+              <div class="flex items-center space-x-1.5">
+                <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type} &bull; ${q.marks}M</span>
+                <span class="text-slate-800 font-bold">${q.grade}ನೇ &bull; ${q.subject.split('(')[0]}</span>
+                <span class="text-indigo-900 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">&bull; ${q.chapter}</span>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500">${q.obj} &bull; ${q.diff}</span>
+            </div>
+
+            <!-- 🌟 ಗದ್ಯಭಾಗ ಪ್ರತ್ಯೇಕ ಬಾಕ್ಸ್ ಪ್ರದರ್ಶನ -->
+            <div class="font-bold text-slate-900 text-xs leading-relaxed">
+              ${renderFormattedPassageQuestionBlock(q.q)}
+            </div>
+
+            <!-- ಉತ್ತರ -->
+            <div class="text-emerald-950 font-bold bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-300 whitespace-pre-line text-[11px] leading-relaxed">
+              <b class="text-emerald-900 block mb-1">ಉತ್ತರ:</b>${escapeHtml(q.ans || '')}
+            </div>
+          </div>
+        `).join('');
+      }
+    };
     
   </script>
 </body>
