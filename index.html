@@ -21389,6 +21389,86 @@
         `).join('');
       }
     };
+
+
+/* ==========================================================================
+       ✍️ ZERO-CODE VISIBLE: REAL BOLD UNDERLINE PARSER & RICH-TEXT FORMATTER
+       ========================================================================== */
+
+    // ೧. ಯಾವುದೇ <u> ಕೋಡಿಂಗ್ ಕಾಣಿಸದಂತೆ ನೈಜ ಅಡ್ಡಗೆರೆ ಎಳೆಯುವ ಮಾಸ್ಟರ್ ಪಾರ್ಸರ್
+    function renderSafeRichTextWithUnderlines(rawText) {
+      if (!rawText) return '';
+      let text = String(rawText).trim();
+
+      // A. ಮಾರ್ಕ್‌ಡೌನ್ ಅಂಡರ್‌ಸ್ಕೋರ್ (__ಪದ__) ಇದ್ದರೆ <u> ಗೆ ಬದಲಾವಣೆ
+      text = text.replace(/__(.*?)__/g, '<u>$1</u>');
+
+      // B. ಸುರಕ್ಷಿತ HTML ಎಸ್ಕೇಪಿಂಗ್
+      text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+      // C. 🌟 ಕೋಡಿಂಗ್ ಚಿಹ್ನೆಗಳನ್ನು ತೆಗೆದು ದಪ್ಪನೆಯ ಸ್ಪಷ್ಟ ಅಡ್ಡಗೆರೆ ನೀಡುವುದು (2.2px Thick Line)
+      text = text.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/gi, '<u style="text-decoration: underline !important; text-decoration-thickness: 2.2px !important; text-underline-offset: 3.5px !important; font-weight: 900 !important; color: #000000 !important; display: inline !important;">$1</u>');
+      text = text.replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/gi, '<b style="font-weight: 900 !important; color: #000 !important;">$1</b>');
+
+      // D. ಶೀರ್ಷಿಕೆಗಳನ್ನು (ಉದಾ: "ಊರಿಗೊಂದು ವನ") ಸುಂದರವಾಗಿ ಮಧ್ಯಭಾಗಕ್ಕೆ ತರುವುದು
+      text = text.replace(/&quot;(.*?)&quot;/g, '<div style="text-align: center; font-weight: 900; font-size: 13px; margin: 4px 0 2px 0; color: #000;">"$1"</div>');
+
+      return `<div style="white-space: pre-line; line-height: 1.48; font-size: 12.2px; text-align: justify;">${text}</div>`;
+    }
+
+    // ೨. JSON ಅಪ್ಲೋಡ್ ಪ್ರಿವ್ಯೂ ಕಾರ್ಡ್‌ನಲ್ಲಿ (Screenshot Fix) ಕೋಡಿಂಗ್ ಇಲ್ಲದೆ ನೈಜ ಅಂಡರ್‌ಲೈನ್ ಪ್ರದರ್ಶನ
+    const originalAnalyzeAndValidatePastedJSONForCleanUnderline = window.analyzeAndValidatePastedJSON;
+    window.analyzeAndValidatePastedJSON = function() {
+      if (typeof originalAnalyzeAndValidatePastedJSONForCleanUnderline === 'function') {
+        originalAnalyzeAndValidatePastedJSONForCleanUnderline();
+      }
+
+      const cardsContainer = document.getElementById('json-verified-cards-container');
+      if (cardsContainer && stagedValidatedJSONQuestions && stagedValidatedJSONQuestions.length > 0) {
+        cardsContainer.innerHTML = stagedValidatedJSONQuestions.map((q, idx) => `
+          <div class="p-3.5 bg-slate-50 border-2 ${q.isValid ? 'border-slate-200' : 'border-red-400 bg-red-50/20'} rounded-2xl text-xs space-y-2 shadow-sm mb-2">
+            <div class="flex items-center justify-between border-b pb-1.5 font-bold">
+              <div class="flex items-center space-x-1.5">
+                <span class="px-2 py-0.5 bg-indigo-100 text-indigo-900 rounded font-black text-[10px] uppercase">${q.type} &bull; ${q.marks}M</span>
+                <span class="text-slate-800 font-bold">${q.grade}ನೇ &bull; ${q.subject.split('(')[0]}</span>
+                <span class="text-indigo-900 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">&bull; ${q.chapter}</span>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500">${q.obj} &bull; ${q.diff}</span>
+            </div>
+
+            <!-- 🌟 ಕೋಡಿಂಗ್ ಇಲ್ಲದ ನೈಜ ಅಂಡರ್‌ಲೈನ್ ಪ್ರದರ್ಶನ -->
+            <div class="font-bold text-slate-900 text-xs">
+              ${renderSafeRichTextWithUnderlines(q.q)}
+            </div>
+
+            <!-- ಮಾದರಿ ಉತ್ತರ -->
+            <div class="text-emerald-950 font-bold bg-emerald-50/90 p-2.5 rounded-xl border border-emerald-300 whitespace-pre-line text-[11px] leading-relaxed">
+              <b class="text-emerald-900 block mb-1">ಉತ್ತರ:</b>${escapeHtml(q.ans || '')}
+            </div>
+          </div>
+        `).join('');
+      }
+    };
+
+    // ೩. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಮತ್ತು ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲೂ ನೈಜ ಅಂಡರ್‌ಲೈನ್ ಪ್ರದರ್ಶನ
+    const originalBuildQuestionItemForRealUnderline = window.buildQuestionItemWithImage;
+    function buildQuestionItemWithImage(q, num) {
+      const idx = (appState.activeGeneratedQuestions || []).indexOf(q);
+      const imgSrc = getAnyQuestionImageSource(q);
+
+      return `
+        <div style="margin-bottom: 3.5px; break-inside: avoid; page-break-inside: avoid;">
+          <div class="q-paper-item-row" style="margin-bottom: 1.5px;">
+            <span class="q-paper-num">${num}.</span>
+            <div class="q-paper-text" style="flex: 1;">
+              ${renderSafeRichTextWithUnderlines(q.q)}
+            </div>
+            <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+          </div>
+          ${renderQuestionDiagramImage(imgSrc)}
+        </div>
+      `;
+    }
     
   </script>
 </body>
