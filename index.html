@@ -21242,7 +21242,44 @@
     renderMaster10QuestionFormats();
 
 
+/* ==========================================================================
+       🖼️📖 PICTURE & PASSAGE COMPREHENSION COMPOUND QUESTION SUPPORT (4M/5M)
+       ========================================================================== */
 
+    // ಚಿತ್ರ & ಗದ್ಯ ಗ್ರಹಣ ಪ್ರಕಾರವನ್ನು ಡಿಕ್ಷನರಿಗೆ ಸೇರ್ಪಡೆ
+    const origGetStandardFormatMetaFromSlugForComprehension = window.getStandardFormatMetaFromSlug;
+    window.getStandardFormatMetaFromSlug = function(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      if (rawKey === 'passage_image_comprehension' || rawKey === 'ಚಿತ್ರ_ಮತ್ತು_ಗದ್ಯ_ಗ್ರಹಣ' || rawKey === 'ಚಿತ್ರ_ಮತ್ತು_ಗದ್ಯಭಾಗ_ಗ್ರಹಣ' || rawKey.includes('ಗದ್ಯ_ಗ್ರಹಣ') || rawKey.includes('ಚಿತ್ರ_ಗ್ರಹಣ')) {
+        return {
+          isKnown: true,
+          knLabel: 'ಚಿತ್ರ & ಗದ್ಯ ಗ್ರಹಣ (4M/5M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಚಿತ್ರ ಹಾಗೂ ಗದ್ಯಭಾಗವನ್ನು ಓದಿ ಅರ್ಥೈಸಿಕೊಂಡು ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:',
+          enLabel: 'Picture & Passage Comprehension (4M/5M)',
+          enHeading: 'Read the following passage, observe the picture and answer the questions:',
+          marks: 4,
+          subject: 'kannada'
+        };
+      }
+
+      if (typeof origGetStandardFormatMetaFromSlugForComprehension === 'function') {
+        return origGetStandardFormatMetaFromSlugForComprehension(typeKey, isEnglish);
+      }
+
+      return {
+        isKnown: false,
+        knLabel: typeKey,
+        knHeading: `${typeKey}:`,
+        label: typeKey,
+        heading: `${typeKey}:`,
+        marks: 4,
+        subject: 'all'
+      };
+    };
+
+    // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್
+    renderMaster10QuestionFormats();
     
   </script>
 </body>
