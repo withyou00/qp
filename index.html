@@ -21472,33 +21472,50 @@
 
 
 
-    /* ==========================================================================
-       📱 MOBILE 2-COLUMN COMPACT STEP-3 + SELECT ALL/CLEAR + JUNK PURGE ENGINE
+ /* ==========================================================================
+       💎 100% SAFE CUSTOM FORMATS RESTORER & BULLETPROOF STEP-3 CHECKBOX ENGINE
        ========================================================================== */
 
-    // ೧. ಮೊಬೈಲ್ & ಪಿಸಿ ಎರಡರಲ್ಲೂ custom_... ಕಸದ ಕೀಗಳನ್ನು ಸಂಪೂರ್ಣವಾಗಿ ಅಳಿಸುವ ಮಾಸ್ಟರ್ ಪರ್ಜರ್
-    function purgeAllPhantomCustomKeysEverywhere() {
-      let customList = [];
+    // ೧. ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಪೂರ್ಣ ರಕ್ಷಣೆ ಮತ್ತು ಮರುಸ್ಥಾಪಕ (Self-Healing Restorer)
+    window.getCustomQuestionTypesList = function() {
+      let saved = [];
       try {
-        customList = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
-      } catch (e) { customList = []; }
+        saved = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+      } catch (e) { saved = []; }
 
-      // ಕೇವಲ ಶುದ್ಧ ಕನ್ನಡ ಮತ್ತು ಅಧಿಕೃತ ಕೀಗಳನ್ನು ಮಾತ್ರ ಉಳಿಸಿಕೊಳ್ಳುವುದು
-      const cleaned = customList.filter(c => {
-        if (!c || !c.label) return false;
-        const l = String(c.label).trim();
-        const k = String(c.key).trim();
-        
-        // custom_178... ಅಥವಾ fmt_178... ನಂತಹ ಯಾವುದೇ ಕಸವನ್ನು ತಿರಸ್ಕರಿಸುವುದು
-        if (/^custom_\d+/i.test(k) || /^custom_\d+/i.test(l) || /^fmt_\d+/i.test(l) || k.startsWith('fib') || l.startsWith('fib')) {
+      // 🌟 ಕನ್ನಡ ಹೆಸರುಗಳಿರುವ ಎಲ್ಲಾ ನೈಜ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಕಡ್ಡಾಯವಾಗಿ ಉಳಿಸಿಕೊಳ್ಳುವುದು
+      let validList = saved.filter(c => {
+        if (!c) return false;
+        const l = String(c.label || '').trim();
+        // ಕೇವಲ ಹೆಸರೇ ಇಲ್ಲದ ಅಥವಾ ಕೇವಲ ಕಸದ ಕೋಡ್ ಮಾತ್ರವಿದ್ದರೆ ತಿರಸ್ಕರಿಸುವುದು
+        if (!l || /^custom_\d+$/i.test(l) || /^fmt_\d+$/i.test(l) || l === 'fib') {
           return false;
         }
         return true;
       });
 
-      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(cleaned));
-      return cleaned;
-    }
+      // 🌟 ಭಂಡಾರದಲ್ಲಿ (qbank) ಇರುವ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಆಟೋ-ಮರುಸ್ಥಾಪನೆ ಮಾಡುವುದು (Auto-Recover)
+      const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
+      (appState.qbank || []).forEach(q => {
+        if (q && q.type) {
+          const rawT = String(q.type).trim();
+          if (!standardKeys.includes(rawT) && !/^custom_\d+$/i.test(rawT) && !/^fmt_\d+$/i.test(rawT) && rawT !== 'fib') {
+            if (!validList.some(v => v.key === rawT || v.label === rawT || safeCleanMatch(v.label) === safeCleanMatch(rawT))) {
+              validList.push({
+                key: rawT,
+                label: rawT.includes('(') ? rawT : `${rawT} (${q.marks || 1}M)`,
+                heading: `${rawT}:`,
+                marks: q.marks || 1,
+                subject: q.subject || 'all'
+              });
+            }
+          }
+        }
+      });
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(validList));
+      return validList;
+    };
 
     // ೨. Step 3 ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಎಲ್ಲವನ್ನೂ ಒಂದೇ ಕ್ಲಿಕ್‌ನಲ್ಲಿ Select / Clear ಮಾಡುವ ಬಟನ್‌ಗಳು
     window.toggleAllQuestionFormats = function(isChecked) {
@@ -21510,7 +21527,7 @@
     };
 
     // ೩. Step 3 ಹೆಡರ್‌ನಲ್ಲಿ [Select All] [Clear] ಬಟನ್‌ಗಳ ಇಂಜೆಕ್ಷನ್
-    (function injectStep3HeaderControls() {
+    (function injectStep3HeaderControlsSafely() {
       const step3TitleRow = document.querySelector('#view-generator .lg\\:col-span-8 > div:last-child .flex.items-center.justify-between');
       if (step3TitleRow && !document.getElementById('step3-toggle-btns-wrapper')) {
         const toggleHtml = `
@@ -21529,13 +21546,10 @@
       }
     })();
 
-    // ೪. ಜನರೇಟರ್ Step 3 (ಮೊಬೈಲ್‌ನಲ್ಲಿ ೨-ಕಾಲಂ ಕಾಂಪ್ಯಾಕ್ಟ್ ಗ್ರಿಡ್ & ನೋ-ಕಸ್ಟಮ್ ಜಂಕ್)
+    // ೪. ಜನರೇಟರ್ Step 3 (ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸಂಪೂರ್ಣ ರಕ್ಷಣೆ & ಮೊಬೈಲ್ ೨-ಕಾಲಂ ಗ್ರಿಡ್)
     window.renderMaster10QuestionFormats = window.updateStep3CheckboxesDynamically = function() {
       const container = document.getElementById('step3-formats-container');
       if (!container) return;
-
-      // 🌟 ಮೊಬೈಲ್‌ನಲ್ಲೂ custom_ ಕಸವನ್ನು ತಕ್ಷಣ ಡಿಲೀಟ್ ಮಾಡುವುದು
-      const cleanedCustomList = purgeAllPhantomCustomKeysEverywhere();
 
       const currentSubj = document.getElementById('cfg-subject')?.value || 'ಕನ್ನಡ';
       const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
@@ -21543,7 +21557,7 @@
       const sKey = getNormalizedSubjectKey(currentSubj);
       const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
 
-      // 🌟 ಮೊಬೈಲ್‌ನಲ್ಲಿ ೨ ಕಾಲಂ & ಸ್ಕ್ರಾಲ್ ಬಾಕ್ಸ್ (ಉದ್ದವಾಗಿ ಹರಿಯದಂತೆ ಕಾಂಪ್ಯಾಕ್ಟ್ ಗ್ರಿಡ್)
+      // 🌟 ಮೊಬೈಲ್‌ನಲ್ಲಿ ೨ ಕಾಲಂ & ಸ್ಕ್ರಾಲ್ ಬಾಕ್ಸ್
       container.className = 'grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-[11px] text-slate-800 max-h-64 overflow-y-auto pr-1';
 
       // ಸಾರ್ವತ್ರಿಕ ೧೦ ಪ್ರಕಾರಗಳು
@@ -21571,49 +21585,21 @@
         { key: 'la_4m', label: '೧೦. ೩ ಅಥವಾ ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)', isSpecial: false }
       ];
 
-      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ
-      cleanedCustomList.forEach(ct => {
+      // 🌟 ಎಲ್ಲಾ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಸುರಕ್ಷಿತ ಸೇರ್ಪಡೆ (Never lost!)
+      const customList = getCustomQuestionTypesList();
+      customList.forEach(ct => {
         if (!ct) return;
         const meta = getStandardFormatMetaFromSlug(ct.key || ct.label, isEnglish);
         const ctSubjKey = getNormalizedSubjectKey(ct.subject || meta.subject || 'all');
 
         if (ctSubjKey === 'all' || ctSubjKey === sKey || isStrictSubjectMatch(ct.subject, currentSubj)) {
-          const cleanDisplayLabel = meta.isKnown ? (isEnglish ? meta.enLabel : meta.knLabel) : ct.label;
-          // ಕಸದ ಕೀಗಳಲ್ಲದಿದ್ದರೆ ಮಾತ್ರ ಸೇರ್ಪಡೆ
-          if (!cleanDisplayLabel.startsWith('custom_') && !cleanDisplayLabel.startsWith('fmt_')) {
-            if (!formats.some(f => f.key === ct.key || f.label === cleanDisplayLabel)) {
-              formats.push({
-                key: ct.key,
-                label: cleanDisplayLabel,
-                isSpecial: true
-              });
-            }
-          }
-        }
-      });
-
-      // ಭಂಡಾರದಲ್ಲಿರುವ ನೈಜ ಪ್ರಕಾರಗಳ ಸೇರ್ಪಡೆ (ಕಸದ ಕೀಗಳನ್ನು ಕಟ್ಟುನಿಟ್ಟಾಗಿ ತಿರಸ್ಕರಿಸುವುದು)
-      (appState.qbank || []).forEach(q => {
-        if (q && isStrictSubjectMatch(q.subject, currentSubj)) {
-          const rawT = String(q.type || '').trim();
-          const standardKeys = ['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m'];
-          
-          if (rawT && !standardKeys.includes(rawT) && !rawT.startsWith('custom_') && !rawT.startsWith('fmt_')) {
-            const meta = getStandardFormatMetaFromSlug(rawT, isEnglish);
-            const targetSubjKey = getNormalizedSubjectKey(meta.subject || 'all');
-
-            if (targetSubjKey === 'all' || targetSubjKey === sKey) {
-              const displayLabel = isEnglish ? meta.enLabel : meta.knLabel;
-              if (!displayLabel.startsWith('custom_') && !displayLabel.startsWith('fmt_')) {
-                if (!formats.some(f => f.key === rawT || f.label === displayLabel)) {
-                  formats.push({
-                    key: rawT,
-                    label: displayLabel,
-                    isSpecial: true
-                  });
-                }
-              }
-            }
+          const displayLabel = meta.isKnown ? (isEnglish ? meta.enLabel : meta.knLabel) : ct.label;
+          if (displayLabel && !formats.some(f => f.key === ct.key || f.label === displayLabel)) {
+            formats.push({
+              key: ct.key,
+              label: displayLabel,
+              isSpecial: true
+            });
           }
         }
       });
@@ -21644,8 +21630,8 @@
       container.innerHTML = html;
     };
 
-    // ತಕ್ಷಣವೇ ಮೊಬೈಲ್ ಮತ್ತು ಪಿಸಿಯಲ್ಲಿ ಪರ್ಜ್ ನಡೆಸಿ ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
-    purgeAllPhantomCustomKeysEverywhere();
+    // ತಕ್ಷಣವೇ ಮರುಸ್ಥಾಪನೆ ನಡೆಸಿ ರಿಫ್ರೆಶ್ ಮಾಡುವುದು
+    getCustomQuestionTypesList();
     renderMaster10QuestionFormats();
     
   </script>
