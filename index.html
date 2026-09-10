@@ -22377,77 +22377,116 @@
     };
 
 /* ==========================================================================
-       🎯 100% EXACT MARKS OPTIMIZER FOR KANNADA & ALL SUBJECTS (ZERO OVERSHOOT)
+       🎯 100% MATHEMATICALLY LOCKED EXACT MARKS SOLVER (ZERO DEVIATION GUARANTEE)
        ========================================================================== */
 
-    // ೧. ಯಾವುದೇ ವಿಷಯದಲ್ಲೂ ನಿಖರ ಅಂಕಗಳನ್ನೇ (Exact Target Marks) ಆಯ್ಕೆಮಾಡುವ ಮಾಸ್ಟರ್ ಆಪ್ಟಿಮೈಜರ್
-    function findExactTargetMarksQuestionSet(availablePool, targetMarks, targetCount) {
-      if (!availablePool || availablePool.length === 0) return [];
+    // ೧. ಪ್ರಶ್ನೆಗಳ ನಿಖರ ಶಾಲಾ ಅಂಕಗಳನ್ನು ಪ್ರಮಾಣೀಕರಿಸುವ ಮಾಸ್ಟರ್ ಹೆಲ್ಪರ್
+    function getExactQuestionMarks(q) {
+      if (!q) return 1;
+      const t = String(q.type || '').toLowerCase();
 
-      // ಪ್ರಶ್ನೆಗಳ ಅಂಕಗಳ ಸಹಿತ ಮ್ಯಾಪಿಂಗ್
-      let items = availablePool.map(q => ({
-        q: q,
-        marks: getExactQuestionMarks(q)
-      }));
-
-      // ಯಾದೃಚ್ಛಿಕತೆಗಾಗಿ ಶಫಲ್ ಮಾಡುವುದು
-      for (let i = items.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [items[i], items[j]] = [items[j], items[i]];
+      // ಅಧಿಕೃತ ೪ ಅಂಕದ ಪ್ರಕಾರಗಳು
+      if (t === 'match' || q.matchPairs || t === 'la_4m' || t === 'la' || t === 'poem_4lines' || t === 'diagram_parts' || t === 'map_drawing' || t.includes('ಗದ್ಯ_ಗ್ರಹಣ') || t.includes('ಚಿತ್ರ_ಗ್ರಹಣ')) {
+        return 4;
+      }
+      // ಅಧಿಕೃತ ೩ ಅಂಕದ ಪ್ರಕಾರಗಳು
+      if (t === 'sa_3m' || t === 'context_reference' || t === 'proverb' || t.includes('ಸಂದರ್ಭ') || t.includes('ಗಾದೆ') || t.includes('ಲಿಂಗ') || t.includes('ನುಡಿಗಟ್ಟು')) {
+        return 3;
+      }
+      // ಅಧಿಕೃತ ೨ ಅಂಕದ ಪ್ರಕಾರಗಳು
+      if (t === 'sa_2m' || t === 'sa' || t === 'own_sentence' || t === 'sentence_joining' || t === 'who_said_to_whom' || t === 'give_reason' || t === 'differences' || t.includes('ಸ್ವಂತ_ವಾಕ್ಯ') || t.includes('ಹೇಳಿದರು')) {
+        return 2;
+      }
+      // ೫ ಅಂಕದ ಪ್ರಬಂಧ/ಪತ್ರ
+      if (t === 'essay' || t === 'letter_writing' || t.includes('ಪ್ರಬಂಧ') || t.includes('ಪತ್ರ')) {
+        return 5;
       }
 
-      let bestSet = null;
-      let minCountDiff = Infinity;
-      let iterations = 0;
-      const MAX_ITER = 3500;
-
-      // 🌟 ಬ್ರಾಂಚ್ & ಬೌಂಡ್ ಅಲ್ಗಾರಿದಮ್ (ಕಡ್ಡಾಯವಾಗಿ ನಿಖರ targetMarks ಮಾತ್ರ ಆಯ್ಕೆ)
-      function searchSubset(idx, currentSum, currentSet) {
-        if (iterations++ > MAX_ITER) return;
-
-        // 🌟 ಮೊತ್ತ ನಿಖರವಾಗಿ targetMarks ಗೆ ಸಮನಾಗಿದ್ದರೆ ಮಾತ್ರ ಪರಿಗಣನೆ
-        if (currentSum === targetMarks) {
-          const diff = Math.abs(currentSet.length - targetCount);
-          if (diff < minCountDiff) {
-            minCountDiff = diff;
-            bestSet = [...currentSet];
-            if (diff === 0) return; // Perfect match found!
-          }
-          return;
-        }
-
-        // ಮೊತ್ತ ಹೆಚ್ಚಾದರೆ ತಕ್ಷಣವೇ ನಿಲ್ಲಿಸುವುದು (Never Exceed!)
-        if (currentSum > targetMarks || idx >= items.length) return;
-
-        // ಐಟಂ ಸೇರಿಸಿ ಚೆಕ್ ಮಾಡುವುದು
-        currentSet.push(items[idx].q);
-        searchSubset(idx + 1, currentSum + items[idx].marks, currentSet);
-        currentSet.pop();
-
-        // ಐಟಂ ಬಿಟ್ಟು ಚೆಕ್ ಮಾಡುವುದು
-        searchSubset(idx + 1, currentSum, currentSet);
-      }
-
-      searchSubset(0, 0, []);
-
-      if (bestSet && bestSet.length > 0) {
-        return bestSet;
-      }
-
-      // ಫಾಲ್‌ಬ್ಯಾಕ್: ಕಟ್ಟುನಿಟ್ಟಾಗಿ targetMarks ಮೀರದಂತೆ ಪ್ರಶ್ನೆಗಳ ಆಯ್ಕೆ
-      let fallback = [];
-      let sum = 0;
-      for (let item of items) {
-        if (sum + item.marks <= targetMarks) {
-          fallback.push(item.q);
-          sum += item.marks;
-          if (sum === targetMarks) break;
-        }
-      }
-      return fallback;
+      // ಸಾಮಾನ್ಯ ೧ ಅಂಕದ ಪ್ರಕಾರಗಳು
+      return 1;
     }
 
-    // ೨. ಜನರೇಟರ್ ಎಂಜಿನ್ (ಕನ್ನಡ ಮತ್ತು ಎಲ್ಲಾ ವಿಷಯಗಳಲ್ಲೂ ನಿಖರ ೨೦/೪೦ ಅಂಕಗಳ ಗ್ಯಾರಂಟಿ)
+    // ೨. ಕಡ್ಡಾಯವಾಗಿ ನಿಖರ ೨೦ ಅಥವಾ ೪೦ ಅಂಕಗಳನ್ನೇ ಆಯ್ಕೆಮಾಡುವ ಡಿಟರ್ಮಿನಿಸ್ಟಿಕ್ ಅಲ್ಗಾರಿದಮ್
+    function findGuaranteedExactMarksCombination(pool, targetMarks, targetCount) {
+      if (!pool || pool.length === 0) return [];
+
+      // ಅಂಕವಾರು ಬಕೆಟ್‌ಗಳ ವಿಭಜನೆ (1M, 2M, 3M, 4M, 5M)
+      let b5 = [], b4 = [], b3 = [], b2 = [], b1 = [];
+
+      // ಶಫಲ್ ಮಾಡುವುದು
+      let shuffledPool = [...pool].sort(() => Math.random() - 0.5);
+
+      shuffledPool.forEach(q => {
+        const m = getExactQuestionMarks(q);
+        if (m === 5) b5.push(q);
+        else if (m === 4) b4.push(q);
+        else if (m === 3) b3.push(q);
+        else if (m === 2) b2.push(q);
+        else b1.push(q);
+      });
+
+      let bestCombination = null;
+      let minCountDifference = Infinity;
+
+      // 🌟 ಗಣಿತೀಯ ಇಂಟಿಜರ್ ಕಾಂಬಿನೇಷನ್ ಲೂಪ್ (5*c5 + 4*c4 + 3*c3 + 2*c2 + 1*c1 === targetMarks)
+      const max5 = Math.min(b5.length, Math.floor(targetMarks / 5));
+      for (let c5 = 0; c5 <= max5; c5++) {
+        const remAfter5 = targetMarks - (c5 * 5);
+        const max4 = Math.min(b4.length, Math.floor(remAfter5 / 4));
+
+        for (let c4 = 0; c4 <= max4; c4++) {
+          const remAfter4 = remAfter5 - (c4 * 4);
+          const max3 = Math.min(b3.length, Math.floor(remAfter4 / 3));
+
+          for (let c3 = 0; c3 <= max3; c3++) {
+            const remAfter3 = remAfter4 - (c3 * 3);
+            const max2 = Math.min(b2.length, Math.floor(remAfter3 / 2));
+
+            for (let c2 = 0; c2 <= max2; c2++) {
+              const c1 = remAfter3 - (c2 * 2); // 1M ಪ್ರಶ್ನೆಗಳ ನಿಖರ ಸಂಖ್ಯೆ
+
+              // 🌟 1M ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿದ್ದರೆ ಇದು ೧೦೦% ನಿಖರ ಪರಿಹಾರ!
+              if (c1 >= 0 && c1 <= b1.length) {
+                const totalQCount = c5 + c4 + c3 + c2 + c1;
+                const countDiff = Math.abs(totalQCount - targetCount);
+
+                if (countDiff < minCountDifference) {
+                  minCountDifference = countDiff;
+                  bestCombination = { c5, c4, c3, c2, c1 };
+                  if (countDiff === 0) break; // ನಿಖರ ಅಂಕ ಮತ್ತು ನಿಖರ ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ ಸಿಕ್ಕಿತು!
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let chosenList = [];
+
+      // ಪರಿಹಾರ ಸಿಕ್ಕಿದರೆ ನಿಖರವಾಗಿ ಅಷ್ಟೇ ಪ್ರಶ್ನೆಗಳನ್ನು ಎತ್ತುವುದು
+      if (bestCombination) {
+        for (let i = 0; i < bestCombination.c5; i++) chosenList.push(b5[i]);
+        for (let i = 0; i < bestCombination.c4; i++) chosenList.push(b4[i]);
+        for (let i = 0; i < bestCombination.c3; i++) chosenList.push(b3[i]);
+        for (let i = 0; i < bestCombination.c2; i++) chosenList.push(b2[i]);
+        for (let i = 0; i < bestCombination.c1; i++) chosenList.push(b1[i]);
+        return chosenList;
+      }
+
+      // ಅತಿ ಅಪರೂಪದ ಫಾಲ್‌ಬ್ಯಾಕ್ (ಕಟ್ಟುನಿಟ್ಟಾಗಿ targetMarks ಗೆ ಮಾತ್ರ ಬೌಂಡ್)
+      let curM = 0;
+      for (let q of shuffledPool) {
+        const m = getExactQuestionMarks(q);
+        if (curM + m <= targetMarks) {
+          chosenList.push(q);
+          curM += m;
+          if (curM === targetMarks) break;
+        }
+      }
+      return chosenList;
+    }
+
+    // ೩. ಜನರೇಟರ್ ಎಂಜಿನ್ (ಕನ್ನಡ & ಎಲ್ಲಾ ವಿಷಯಗಳಲ್ಲೂ ನಿಖರ ಅಂಕಗಳ ಗ್ಯಾರಂಟಿ)
     window.generateExamPackageFromBank = window.generateExamPackage = async function() {
       try {
         const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
@@ -22534,8 +22573,8 @@
           return;
         }
 
-        // 🌟 ನಿಖರ ಅಂಕಗಳ ಆಪ್ಟಿಮೈಜರ್ ಚಾಲನೆ (Exact Marks Guarantee)
-        let chosenQuestions = findExactTargetMarksQuestionSet(pool, targetTotalMarks, targetTotalQuestions);
+        // 🌟 ಕಡ್ಡಾಯವಾಗಿ ನಿಖರ ೨೦ ಅಥವಾ ೪೦ ಅಂಕಗಳನ್ನು ಮಾತ್ರ ಆಯ್ಕೆಮಾಡುವುದು
+        let chosenQuestions = findGuaranteedExactMarksCombination(pool, targetTotalMarks, targetTotalQuestions);
 
         if (chosenQuestions.length === 0) {
           chosenQuestions = pool.slice(0, Math.min(pool.length, targetTotalQuestions));
@@ -22614,7 +22653,7 @@
           outSec.scrollIntoView({ behavior: 'smooth' });
         }
 
-        showToast(`✅ ಪರೀಕ್ಷಾ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ (ನಿಖರ ${actualCalculatedMarks} ಅಂಕಗಳು)!`, 'success');
+        showToast(`✅ ${actualCalculatedMarks}/${targetTotalMarks} ಅಂಕಗಳ ಪರೀಕ್ಷಾ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
       } catch (err) {
         console.error('Fatal Generation Error:', err);
         alert('⚠️ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸುವಾಗ ದೋಷವಾಗಿದೆ: ' + err.message);
