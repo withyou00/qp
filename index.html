@@ -23067,6 +23067,115 @@
         </div>
       `;
     }
+
+/* ==========================================================================
+       📖 100% COMPLETE UNCUT COMPREHENSION PASSAGE & 4-COLUMN OPTIONS ENGINE
+       ========================================================================== */
+
+    // ಗದ್ಯಭಾಗದ ಯಾವುದೇ ಪದವೂ ಕಟ್ ಆಗದಂತೆ ಪೂರ್ಣವಾಗಿ ಪ್ರದರ್ಶಿಸುವ ಮಾಸ್ಟರ್ ಪಾರ್ಸರ್
+    function renderSideBySideComprehensionBlock(q, num, idx) {
+      const imgSrc = getAnyQuestionImageSource(q);
+      let rawText = String(q.q || '').trim();
+
+      // ಹೆಡಿಂಗ್‌ನ ಪುನರಾವರ್ತನೆಯನ್ನು ಮಾತ್ರ ತೆಗೆದುಹಾಕುವುದು
+      rawText = rawText.replace(/^.*?ಗದ್ಯಭಾಗವನ್ನು\s*ಓದಿ\s*ಅರ್ಥೈಸಿಕೊಂಡು\s*ಕೊಟ್ಟಿರುವ\s*ಬಹುಆಯ್ಕೆ\s*ಪ್ರಶ್ನೆಗಳಿಗೆ\s*ಉತ್ತರಿಸಿ[\:\.\']*\s*/is, '');
+      rawText = rawText.replace(/^.*?ಗದ್ಯಭಾಗ[\:\.\']*\s*/is, '');
+
+      let passageText = '';
+      let questionsText = '';
+
+      // 🌟 ಗದ್ಯಭಾಗ ಮತ್ತು ಪ್ರಶ್ನೆಗಳ ನಿಖರ ವಿಭಜನೆ (ಕಥೆಯ ಯಾವುದೇ ಪದ ಕಟ್ ಆಗುವುದಿಲ್ಲ!)
+      if (/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i.test(rawText)) {
+        const parts = rawText.split(/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i);
+        passageText = parts[0].trim();
+        questionsText = parts.slice(1).join('\n').trim();
+      } else {
+        const qStart = rawText.search(/(?:^|\n|\s{2,})(?=[1-4೧-೪]\.\s*)/);
+        if (qStart > 0) {
+          passageText = rawText.substring(0, qStart).trim();
+          questionsText = rawText.substring(qStart).trim();
+        } else {
+          passageText = rawText;
+        }
+      }
+
+      // ಪ್ರಾರಂಭ ಮತ್ತು ಕೊನೆಯಲ್ಲಿರುವ ಒಂಟಿ ಕೊಟೇಶನ್ ತೆಗೆದುಹಾಕುವುದು
+      passageText = passageText.replace(/^['"]\s*/, '').replace(/\s*['"]$/, '');
+
+      // 🌟 ಉಪ-ಪ್ರಶ್ನೆಗಳು ಮತ್ತು ಆಪ್ಷನ್‌ಗಳನ್ನು ೪ ಸಮತಲ ಕಾಲಂಗಳಲ್ಲಿ ಜೋಡಿಸುವುದು
+      let formattedQuestionsHtml = '';
+      if (questionsText) {
+        const qBlocks = questionsText.split(/(?:^|\n|\s{2,})(?=[1-4೧-೪]\.\s*)/).filter(b => b.trim().length > 3);
+
+        if (qBlocks.length > 0) {
+          formattedQuestionsHtml = qBlocks.map(block => {
+            const b = block.trim();
+            const m = b.match(/^([1-4೧-೪]\.\s*.*?)(?:\s*\(A\)\s*(.*?))(?:\s*\(B\)\s*(.*?))(?:\s*\(C\)\s*(.*?))(?:\s*\(D\)\s*(.*))?$/is);
+
+            if (m) {
+              const qTitle = m[1].replace(/[\:\.]+$/, '').trim();
+              const optA = (m[2] || '').trim();
+              const optB = (m[3] || '').trim();
+              const optC = (m[4] || '').trim();
+              const optD = (m[5] || '').trim();
+
+              return `
+                <div style="margin-bottom: 4px; break-inside: avoid;">
+                  <div style="font-weight: 800; font-size: 11.8px; color: #000; margin-bottom: 1.5px;">${escapeHtml(qTitle)}:</div>
+                  <div style="display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2px 8px !important; font-size: 11.2px !important; padding-left: 14px !important; line-height: 1.3 !important;">
+                    <div>(A) ${escapeHtml(optA)}</div>
+                    <div>(B) ${escapeHtml(optB)}</div>
+                    <div>(C) ${escapeHtml(optC)}</div>
+                    <div>(D) ${escapeHtml(optD)}</div>
+                  </div>
+                </div>
+              `;
+            } else {
+              return `<div style="margin-bottom: 3px; font-weight: 700; font-size: 11.5px;">${escapeHtml(b)}</div>`;
+            }
+          }).join('');
+        } else {
+          formattedQuestionsHtml = `<div style="white-space: pre-line; line-height: 1.35; font-size: 11.5px;">${escapeHtml(questionsText)}</div>`;
+        }
+      }
+
+      return `
+        <div style="margin-bottom: 5px; break-inside: avoid; page-break-inside: avoid; width: 100%;">
+          
+          <div class="q-paper-item-row" style="margin-bottom: 2px;">
+            <span class="q-paper-num">${num}.</span>
+            <div style="flex: 1;">
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+          </div>
+
+          <!-- 🌟 ಎಡಗಡೆ ದೊಡ್ಡ ಚಿತ್ರ + ಬಲಗಡೆ ೧೦೦% ಪೂರ್ಣ ಕಥೆ (UNCUT STORY) -->
+          <div style="display: grid; grid-template-columns: ${imgSrc ? '40% 60%' : '100%'}; gap: 8px; align-items: stretch; margin: 3px 0 5px 0; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px;">
+            
+            ${imgSrc ? `
+              <!-- ಎಡಗಡೆ ದೊಡ್ಡ ಚಿತ್ರ -->
+              <div style="display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 6px; padding: 3px; border: 1px solid #e2e8f0;">
+                <img src="${imgSrc}" style="max-height: 150px; max-width: 100%; object-fit: contain; border-radius: 4px; display: block;" />
+              </div>
+            ` : ''}
+
+            <!-- ಬಲಗಡೆ ೧೦೦% ಪೂರ್ಣ ಗದ್ಯಭಾಗ -->
+            <div style="font-size: 11.4px; line-height: 1.40; color: #0f172a; text-align: justify; padding: 2px 4px;">
+              ${escapeHtml(passageText)}
+            </div>
+          </div>
+
+          <!-- ಕೆಳಭಾಗದಲ್ಲಿ ೪-ಕಾಲಂ ಆಪ್ಷನ್‌ಗಳ ಉಪ-ಪ್ರಶ್ನೆಗಳು -->
+          ${formattedQuestionsHtml ? `
+            <div style="padding-left: 4px; font-size: 11.6px; line-height: 1.35; margin-top: 3px;">
+              <b style="color: #000; display: block; margin-bottom: 2px;">ಪ್ರಶ್ನೆಗಳು:</b>
+              ${formattedQuestionsHtml}
+            </div>
+          ` : ''}
+
+        </div>
+      `;
+    }
     
   </script>
 </body>
