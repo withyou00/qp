@@ -23613,6 +23613,268 @@
 
     // ತಕ್ಷಣವೇ Step 3 ಅಪ್ಡೇಟ್
     renderMaster10QuestionFormats();
+
+
+/* ==========================================================================
+       🎯 2D DUAL-EXACT DIOPHANTINE SOLVER: EXACT MARKS & EXACT QUESTION COUNT LOCK
+       ========================================================================== */
+
+    // ೧. ಅಂಕ ಮತ್ತು ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ ಎರಡನ್ನೂ ೧೦೦% ನಿಖರವಾಗಿ ಲಾಕ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಸಾಲ್ವರ್
+    function findExact2DDiophantineQuestionSet(pool, targetMarks, targetCount) {
+      if (!pool || pool.length === 0) return [];
+
+      // ಅಂಕವಾರು ಬಕೆಟ್‌ಗಳ ವಿಭಜನೆ (1M, 2M, 3M, 4M, 5M)
+      let b5 = pool.filter(q => getExactQuestionMarks(q) === 5);
+      let b4 = pool.filter(q => getExactQuestionMarks(q) === 4);
+      let b3 = pool.filter(q => getExactQuestionMarks(q) === 3);
+      let b2 = pool.filter(q => getExactQuestionMarks(q) === 2);
+      let b1 = pool.filter(q => getExactQuestionMarks(q) === 1);
+
+      // ಶಫಲ್ ಮಾಡುವುದು
+      const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+      b5 = shuffle(b5);
+      b4 = shuffle(b4);
+      b3 = shuffle(b3);
+      b2 = shuffle(b2);
+      b1 = shuffle(b1);
+
+      let bestSolution = null;
+      let highestDiversityScore = -1;
+      let closestFallback = null;
+      let minDeviation = Infinity;
+
+      const max5 = Math.min(b5.length, Math.floor(targetMarks / 5));
+
+      // 🌟 ದ್ವಿಮುಖ ಗಣಿತೀಯ ಸಮೀಕರಣ: (5*c5 + 4*c4 + 3*c3 + 2*c2 + 1*c1 === targetMarks) AND (c5+c4+c3+c2+c1 === targetCount)
+      for (let c5 = max5; c5 >= 0; c5--) {
+        const remM5 = targetMarks - (c5 * 5);
+        const max4 = Math.min(b4.length, Math.floor(remM5 / 4));
+
+        for (let c4 = max4; c4 >= 0; c4--) {
+          const remM4 = remM5 - (c4 * 4);
+          const max3 = Math.min(b3.length, Math.floor(remM4 / 3));
+
+          for (let c3 = max3; c3 >= 0; c3--) {
+            const remM3 = remM4 - (c3 * 3);
+            const max2 = Math.min(b2.length, Math.floor(remM3 / 2));
+
+            for (let c2 = max2; c2 >= 0; c2--) {
+              const remM2 = remM3 - (c2 * 2);
+              const c1 = remM2; // ನಿಖರ ಅಂಕ ತರಲು ಬೇಕಾದ 1M ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ
+
+              if (c1 >= 0 && c1 <= b1.length) {
+                const totalQ = c5 + c4 + c3 + c2 + c1;
+
+                // 🌟 ಅಂಕ ಮತ್ತು ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ ಎರಡೂ ೧೦೦% ಮ್ಯಾಚ್ ಆದ ಪರಿಹಾರ!
+                if (totalQ === targetCount) {
+                  // ವೈವಿಧ್ಯತೆಯ ಸ್ಕೋರ್ (MCQ, 1M, 2M, 3M, 4M ಎಲ್ಲವೂ ಸಮಾನವಾಗಿ ಬರುವಂತೆ ಆದ್ಯತೆ)
+                  let score = (c1 > 0 ? 15 : 0) + (c2 > 0 ? 15 : 0) + (c3 > 0 ? 15 : 0) + (c4 > 0 ? 15 : 0) + (c5 > 0 ? 5 : 0);
+                  if (c1 >= 2 && c2 >= 2) score += 20;
+                  if (c4 >= 1) score += 15;
+
+                  if (score > highestDiversityScore) {
+                    highestDiversityScore = score;
+                    bestSolution = { c1, c2, c3, c4, c5 };
+                  }
+                } else {
+                  // ಕೌಂಟ್ ವ್ಯತ್ಯಾಸ ಕಡಿಮೆ ಇರುವ ಫಾಲ್‌ಬ್ಯಾಕ್
+                  const diff = Math.abs(totalQ - targetCount);
+                  if (diff < minDeviation) {
+                    minDeviation = diff;
+                    closestFallback = { c1, c2, c3, c4, c5 };
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const finalSolution = bestSolution || closestFallback;
+      let chosen = [];
+
+      if (finalSolution) {
+        for (let i = 0; i < finalSolution.c5; i++) chosen.push(b5[i]);
+        for (let i = 0; i < finalSolution.c4; i++) chosen.push(b4[i]);
+        for (let i = 0; i < finalSolution.c3; i++) chosen.push(b3[i]);
+        for (let i = 0; i < finalSolution.c2; i++) chosen.push(b2[i]);
+        for (let i = 0; i < finalSolution.c1; i++) chosen.push(b1[i]);
+        return chosen;
+      }
+
+      return pool.slice(0, Math.min(pool.length, targetCount));
+    }
+
+    // ೨. ಜನರೇಟರ್ ಎಂಜಿನ್ (ದ್ವಿಮುಖ ಸಾಲ್ವರ್ ಅಳವಡಿಕೆ)
+    window.generateExamPackageFromBank = window.generateExamPackage = async function() {
+      try {
+        const isOwnerAdmin = (isAdminLoggedIn || appState.currentUserType === 'admin');
+        const isTeacherPro = (appState.currentUserType === 'teacher' || localStorage.getItem('withyou_logged_teacher') !== null);
+        const isSchoolPro = (appState.currentUserType === 'school' || localStorage.getItem('withyou_logged_school') !== null);
+        const isDemo = (!isOwnerAdmin && !isTeacherPro && !isSchoolPro);
+
+        const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+        const isEnglishMedium = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್');
+
+        // ಅವಧಿ ಪರಿಶೀಲನೆ
+        if (isTeacherPro || isSchoolPro) {
+          const activeUser = isTeacherPro 
+            ? JSON.parse(localStorage.getItem('withyou_logged_teacher') || 'null')
+            : JSON.parse(localStorage.getItem('withyou_logged_school') || 'null');
+
+          if (activeUser) {
+            const expStr = getUserExactDynamicExpiry(activeUser);
+            const daysLeft = calculateRealRemainingDays(expStr);
+
+            if (daysLeft <= 0) {
+              showAccountExpiredRenewalModal(activeUser);
+              return;
+            }
+          }
+        }
+
+        if (isDemo) {
+          let dCount = parseInt(sessionStorage.getItem('wy_demo_gen_count') || '0');
+          if (dCount >= 1) {
+            showDemoLimitReachedModal();
+            return;
+          }
+          sessionStorage.setItem('wy_demo_gen_count', '1');
+        }
+
+        const schoolName = isDemo ? (isEnglishMedium ? 'Govt. Higher Primary School (Demo Sample)' : 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ (ಡೆಮೋ ಮಾದರಿ)') : (document.getElementById('cfg-school-name')?.value.trim() || 'Government School');
+        const grade = document.getElementById('cfg-class')?.value || '6';
+        let rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+        const part = document.getElementById('cfg-part')?.value || 'all';
+        let rawExamType = document.getElementById('cfg-exam-type')?.value || 'SA-1 (ಮಧ್ಯವಾರ್ಷಿಕ)';
+        const targetTotalMarks = parseInt(document.getElementById('cfg-total-marks')?.value) || 80;
+        const targetTotalQuestions = parseInt(document.getElementById('cfg-total-questions')?.value) || 36;
+        const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+        let cleanExamType = isEnglishMedium ? getStandardEnglishExamTypeName(rawExamType) : rawExamType.replace(/\s*\([^)]*\)/g, '').trim();
+        let cleanSubject = isEnglishMedium ? getStandardEnglishSubjectName(rawSubject) : rawSubject.replace(/\s*\([^)]*\)/g, '').trim();
+        const isLBAExam = cleanExamType.includes('ಘಟಕ') || cleanExamType.includes('Unit Test') || cleanExamType.includes('LBA');
+
+        const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+        const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value);
+
+        if (selectedTypes.length === 0) {
+          alert('⚠️ ದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದು ಪ್ರಶ್ನೆ ಪ್ರಕಾರವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+          return;
+        }
+
+        let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+        let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+
+        let selectedChapterNamesString = '';
+        if (isEnglishMedium) {
+          selectedChapterNamesString = await getEnglishChapterNamesString(selectedChapters);
+        } else {
+          const uniqueKChaps = Array.from(new Set(selectedChapters.map(c => String(c).trim())));
+          selectedChapterNamesString = uniqueKChaps.join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+        }
+
+        const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+
+        // 🌟 ಪ್ರಶ್ನೆಗಳ ಪೂಲ್ ಫಿಲ್ಟರ್
+        let pool = qbank.filter(q => {
+          if (!q) return false;
+          const isGradeOk = (String(q.grade || '').replace(/\D/g, '') === String(grade).replace(/\D/g, ''));
+          const isSubjOk = isStrictSubjectMatch(q.subject, rawSubject);
+          const isPartOk = (part === 'all' || q.part === part || !q.part);
+          const isChapterOk = (selectedChapters.length === 0 || selectedChapters.some(sc => safeCleanMatch(sc) === safeCleanMatch(q.chapter)));
+          const isTypeOk = isQuestionTypeMatchedWithSelection(q, selectedTypes);
+          return isGradeOk && isSubjOk && isPartOk && isChapterOk && isTypeOk;
+        });
+
+        if (pool.length === 0) {
+          alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ ಸಂಬಂಧಿಸಿದಂತೆ ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.`);
+          return;
+        }
+
+        // 🌟 ದ್ವಿಮುಖ ಸಾಲ್ವರ್ ಚಾಲನೆ (ನಿಖರ ಅಂಕ ಮತ್ತು ನಿಖರ ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ ಲಾಕ್)
+        let chosenQuestions = findExact2DDiophantineQuestionSet(pool, targetTotalMarks, targetTotalQuestions);
+
+        if (isEnglishMedium) {
+          showToast('🌐 ಪ್ರಶ್ನೆ ಮತ್ತು ಪಾಠಗಳನ್ನು English ಗೆ ಬದಲಿಸಲಾಗುತ್ತಿದೆ...', 'info');
+          chosenQuestions = await Promise.all(chosenQuestions.map(q => translateSingleQuestionObjectToEnglish(q)));
+        }
+
+        appState.activeGeneratedQuestions = chosenQuestions;
+        const actualCalculatedMarks = chosenQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+
+        const professionalHeaderHtml = isEnglishMedium ? `
+          <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+            <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+              <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+                ${escapeHtml(schoolName)}
+              </h1>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                <span>Subject : ${escapeHtml(cleanSubject)}</span>
+                <span>Marks &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+                <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+                <span>Class : ${escapeHtml(grade)}th Standard</span>
+                <span>Date &nbsp;: ${escapeHtml(examDate)}</span>
+              </div>
+            </div>
+            ${isLBAExam ? `
+              <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+                <span>Chapter : ${escapeHtml(selectedChapterNamesString)}</span>
+              </div>
+            ` : ''}
+            <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+          </div>
+        ` : `
+          <div style="width: 100%; margin: 0 0 8px 0; padding: 0; box-sizing: border-box;">
+            <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+              <h1 style="font-size: 22px; font-weight: 900; color: #000; margin: 0; line-height: 1.2;">
+                ${escapeHtml(schoolName)}
+              </h1>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; font-size: 14px; font-weight: 900; color: #000; line-height: 1.7;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+                <span>ವಿಷಯ : ${escapeHtml(cleanSubject)}</span>
+                <span>ಅಂಕ &nbsp;&nbsp;: ${actualCalculatedMarks}</span>
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+                <span style="font-size: 15px;">${escapeHtml(cleanExamType)}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+                <span>ತರಗತಿ : ${escapeHtml(grade)}</span>
+                <span>ದಿನಾಂಕ : ${escapeHtml(examDate)}</span>
+              </div>
+            </div>
+            ${isLBAExam ? `
+              <div style="width: 100%; text-align: center; font-size: 13.5px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 3px; padding-top: 2px;">
+                <span>ಘಟಕದ ಹೆಸರು : ${escapeHtml(selectedChapterNamesString)}</span>
+              </div>
+            ` : ''}
+            <hr style="border: none; border-top: 2px solid #000; margin: 4px 0 10px 0; width: 100%;" />
+          </div>
+        `;
+
+        renderFullExamPaperWithCustomHeader(professionalHeaderHtml);
+
+        const outSec = document.getElementById('output-section');
+        if (outSec) {
+          outSec.classList.remove('hidden');
+          if (typeof switchOutputTab === 'function') switchOutputTab('paper');
+          outSec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        showToast(`✅ ${actualCalculatedMarks} ಅಂಕ & ${chosenQuestions.length} ಪ್ರಶ್ನೆಗಳ ನಿಖರ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ!`, 'success');
+      } catch (err) {
+        console.error('Fatal Generation Error:', err);
+        alert('⚠️ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚಿಸುವಾಗ ದೋಷವಾಗಿದೆ: ' + err.message);
+      }
+    };
+    
     
   </script>
 </body>
