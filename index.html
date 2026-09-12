@@ -24091,6 +24091,219 @@
     // ತಕ್ಷಣವೇ ರಿಫ್ರೆಶ್ ಮಾಡಿ ಬಟನ್‌ಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸುವುದು
     if (typeof renderMaster10QuestionFormats === 'function') renderMaster10QuestionFormats();
     if (typeof renderAdminMasterUnifiedView === 'function' && activeAdminSubTab === 'qbank') renderAdminMasterUnifiedView();
+
+
+    /* ==========================================================================
+       🎯 100% VISIBLE ALL 73 FORMATS: UNIVERSAL TABS & LIVE SEARCH IN MODAL
+       ========================================================================== */
+
+    let manageFormatLiveSearchQuery = '';
+
+    // ೧. ವಿಷಯವಾರು ಟ್ಯಾಬ್‌ಗಳು & ಸರ್ಚ್ ಬಾಕ್ಸ್ ಇರುವ ಸುಧಾರಿತ ಮಾಡಲ್ (73 Formats Full Access)
+    window.openManageSubjectFormatsModal = function() {
+      let modal = document.getElementById('manage-subject-formats-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'manage-subject-formats-modal';
+        modal.className = 'fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      editingCustomQTypeKey = null;
+      const subjects = getSystemSubjects();
+      
+      // ಭಂಡಾರ ಮತ್ತು ಲೋಕಲ್ ಸ್ಟೋರೇಜ್‌ನ ಎಲ್ಲಾ ಪ್ರಕಾರಗಳ ಸಿಂಕ್
+      const customList = syncAllQBankCustomTypesIntoMasterList();
+
+      // ವಿಷಯವಾರು ನಿಖರ ಲೆಕ್ಕಾಚಾರ
+      const countAll = customList.length;
+      const countUniversal = customList.filter(c => {
+        const k = getNormalizedSubjectKey(c.subject);
+        return k === 'all' || !c.subject || c.subject === 'Universal' || c.subject === 'all';
+      }).length;
+      const countKan = customList.filter(c => getNormalizedSubjectKey(c.subject) === 'kannada').length;
+      const countMath = customList.filter(c => getNormalizedSubjectKey(c.subject) === 'mathematics').length;
+      const countSci = customList.filter(c => getNormalizedSubjectKey(c.subject) === 'science').length;
+      const countSoc = customList.filter(c => getNormalizedSubjectKey(c.subject) === 'social_science').length;
+      const countEng = customList.filter(c => getNormalizedSubjectKey(c.subject) === 'english').length;
+
+      // ಫಿಲ್ಟರ್ & ಸರ್ಚ್ ಆದ ಪ್ರಕಾರಗಳ ಲಿಸ್ಟ್
+      const filteredFormats = customList.filter(ct => {
+        const sKey = getNormalizedSubjectKey(ct.subject);
+        let matchTab = true;
+
+        if (activeManageFormatSubjectFilter === 'universal') {
+          matchTab = (sKey === 'all' || !ct.subject || ct.subject === 'Universal');
+        } else if (activeManageFormatSubjectFilter !== 'all') {
+          matchTab = (sKey === activeManageFormatSubjectFilter || isStrictSubjectMatch(ct.subject, activeManageFormatSubjectFilter));
+        }
+
+        let matchSearch = true;
+        if (manageFormatLiveSearchQuery && manageFormatLiveSearchQuery.trim() !== '') {
+          const qStr = manageFormatLiveSearchQuery.toLowerCase();
+          matchSearch = `${safeString(ct.label)} ${safeString(ct.heading)} ${safeString(ct.subject)}`.toLowerCase().includes(qStr);
+        }
+
+        return matchTab && matchSearch;
+      });
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl border space-y-4 text-xs font-sans max-h-[92vh] overflow-y-auto">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-layer-group text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900" id="subfmt-modal-title">ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ & ತಿದ್ದುಪಡಿ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ಒಟ್ಟು <b>${countAll}</b> ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು ಲಭ್ಯವಿವೆ</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openBulkFormatJSONImportModal()" class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-950 font-black rounded-xl border border-purple-400 text-[11px] flex items-center gap-1 shadow-sm cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-purple-700"></i> <span>⚡ ಬಲ್ಕ್ ಇಂಪೋರ್ಟ್ (JSON)</span>
+              </button>
+              <button onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+            </div>
+          </div>
+
+          <!-- Add / Edit Form -->
+          <form id="form-manage-subject-formats" onsubmit="handleSaveOrUpdateSubjectFormat(event)" class="space-y-3 p-3.5 bg-slate-50 border rounded-2xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಸಂಬಂಧಿಸಿದ ವಿಷಯ (Target Subject) *</label>
+                <select id="subfmt-target-subject" class="w-full p-2 bg-white border border-slate-300 rounded-xl font-bold text-indigo-950">
+                  <option value="all">🌐 ಎಲ್ಲಾ ವಿಷಯಗಳಿಗೆ (Universal)</option>
+                  ${subjects.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪ್ರಕಾರದ ಹೆಸರು (Format Label) *</label>
+                <input type="text" id="subfmt-label" required placeholder="e.g. ೧೧. ಪ್ರಬಂಧ ರಚನೆ (5M)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್ ಸೂಚನೆ (Paper Heading) *</label>
+              <input type="text" id="subfmt-heading" required placeholder="e.g. ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-bold text-slate-900" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ನಿಗದಿತ ಅಂಕಗಳು *</label>
+                <input type="number" id="subfmt-marks" value="1" min="1" max="20" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-black text-indigo-900" />
+              </div>
+              <div class="flex items-end gap-1.5">
+                <button type="button" id="subfmt-btn-cancel" onclick="cancelSubjectFormatEdit()" class="hidden px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">
+                  ರದ್ದು
+                </button>
+                <button type="submit" id="subfmt-btn-submit" class="flex-1 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold rounded-xl shadow transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i class="fa-solid fa-plus text-amber-300"></i>
+                  <span>ಪ್ರಕಾರ ಸೇರಿಸಿ</span>
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- 🌟 ವಿಷಯವಾರು ಫಿಲ್ಟರ್ ಟ್ಯಾಬ್‌ಗಳು & ಲೈವ್ ಸರ್ಚ್ ಬಾಕ್ಸ್ -->
+          <div class="space-y-2.5 pt-2 border-t">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h4 class="font-black text-slate-800 text-xs uppercase">ಲಭ್ಯವಿರುವ ಪ್ರಕಾರಗಳು (${filteredFormats.length})</h4>
+              
+              <!-- 🔍 Live Search Box -->
+              <div class="relative w-full sm:w-64">
+                <input type="text" id="manage-format-live-search" value="${escapeHtml(manageFormatLiveSearchQuery)}" oninput="manageFormatLiveSearchQuery=this.value; openManageSubjectFormatsModal();" placeholder="🔍 ಪ್ರಕಾರದ ಹೆಸರು ಟೈಪ್ ಮಾಡಿ ಹುಡುಕಿ..." class="w-full pl-3 pr-7 py-1.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-900 text-xs focus:outline-none" />
+                ${manageFormatLiveSearchQuery ? `<button onclick="manageFormatLiveSearchQuery=''; openManageSubjectFormatsModal();" class="absolute inset-y-0 right-0 pr-2.5 font-bold text-slate-400 hover:text-red-600 cursor-pointer">&times;</button>` : ''}
+              </div>
+            </div>
+
+            <!-- 🌟 Tabs Bar (Universal Tab Included!) -->
+            <div class="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-2xl font-bold text-[11px]">
+              <button type="button" onclick="switchManageFormatSubjectFilter('all')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='all'?'bg-slate-900 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                🔍 ಎಲ್ಲಾ (${countAll})
+              </button>
+              <button type="button" onclick="switchManageFormatSubjectFilter('universal')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='universal'?'bg-indigo-700 text-white shadow':'text-indigo-900 hover:bg-indigo-100'} cursor-pointer">
+                🌐 ಸಾರ್ವತ್ರಿಕ / All (${countUniversal})
+              </button>
+              <button type="button" onclick="switchManageFormatSubjectFilter('kannada')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='kannada'?'bg-purple-600 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                📖 ಕನ್ನಡ (${countKan})
+              </button>
+              <button type="button" onclick="switchManageFormatSubjectFilter('mathematics')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='mathematics'?'bg-blue-600 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                🔢 ಗಣಿತ (${countMath})
+              </button>
+              <button type="button" onclick="switchManageFormatSubjectFilter('science')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='science'?'bg-emerald-600 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                🔬 ವಿಜ್ಞಾನ (${countSci})
+              </button>
+              <button type="button" onclick="switchManageFormatSubjectFilter('social_science')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='social_science'?'bg-amber-600 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                🌍 ಸಮಾಜ (${countSoc})
+              </button>
+              ${countEng > 0 ? `
+                <button type="button" onclick="switchManageFormatSubjectFilter('english')" class="px-3 py-1 rounded-xl transition ${activeManageFormatSubjectFilter==='english'?'bg-teal-600 text-white shadow':'text-slate-600 hover:text-slate-900'} cursor-pointer">
+                  🔤 English (${countEng})
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- List of Filtered Formats -->
+            <div class="space-y-2 max-h-64 overflow-y-auto pr-1 pt-1">
+              ${filteredFormats.length === 0 ? `
+                <div class="p-5 bg-slate-50 border-2 border-dashed rounded-2xl text-center text-slate-400 font-semibold space-y-1">
+                  <div>ಯಾವುದೇ ಪ್ರಕಾರಗಳು ಕಂಡುಬಂದಿಲ್ಲ.</div>
+                  <p class="text-[10px]">ಬೇರೆ ಟ್ಯಾಬ್ ಆಯ್ಕೆಮಾಡಿ ಅಥವಾ ಮೇಲಿನ ಸರ್ಚ್ ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಹುಡುಕಿ.</p>
+                </div>
+              ` : filteredFormats.map((ct) => {
+                const sKey = getNormalizedSubjectKey(ct.subject);
+                let badgeClass = 'bg-slate-100 text-slate-800 border-slate-300';
+                let subjName = '🌐 ಸಾರ್ವತ್ರಿಕ (All)';
+
+                if (sKey === 'kannada') { badgeClass = 'bg-purple-100 text-purple-950 border-purple-300'; subjName = 'ಕನ್ನಡ'; }
+                else if (sKey === 'mathematics') { badgeClass = 'bg-blue-100 text-blue-950 border-blue-300'; subjName = 'ಗಣಿತ'; }
+                else if (sKey === 'science') { badgeClass = 'bg-emerald-100 text-emerald-950 border-emerald-300'; subjName = 'ವಿಜ್ಞಾನ'; }
+                else if (sKey === 'social_science') { badgeClass = 'bg-amber-100 text-amber-950 border-amber-300'; subjName = 'ಸಮಾಜ'; }
+                else if (sKey === 'english') { badgeClass = 'bg-teal-100 text-teal-950 border-teal-300'; subjName = 'English'; }
+
+                return `
+                  <div class="p-3 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-between gap-2 shadow-sm hover:border-purple-400 transition">
+                    <div class="truncate">
+                      <div class="flex items-center gap-1.5">
+                        <b class="text-slate-900 text-xs truncate">${escapeHtml(ct.label)}</b>
+                        <span class="text-[10px] font-black ${badgeClass} px-2 py-0.5 rounded-lg border">${subjName}</span>
+                      </div>
+                      <span class="text-[10px] text-slate-500 truncate block mt-0.5">${escapeHtml(ct.heading || ct.label)} (${ct.marks}M)</span>
+                    </div>
+                    <div class="flex items-center space-x-1 shrink-0">
+                      <button type="button" onclick="loadSubjectFormatIntoForm('${ct.key}')" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-bold text-[11px] cursor-pointer flex items-center gap-1" title="ತಿದ್ದುಪಡಿ ಮಾಡಿ">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Edit</span>
+                      </button>
+                      <button type="button" onclick="deleteCustomQType('${ct.key}')" class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-bold text-[11px] cursor-pointer" title="ಅಳಿಸಿ">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2 border-t">
+            <button type="button" onclick="document.getElementById('manage-subject-formats-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">
+              ಮುಚ್ಚಿ (Close)
+            </button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. ವಿಷಯ ಟ್ಯಾಬ್ ಸ್ವಿಚರ್
+    window.switchManageFormatSubjectFilter = function(targetSubjectKey) {
+      activeManageFormatSubjectFilter = targetSubjectKey;
+      openManageSubjectFormatsModal();
+    };
+
     
   </script>
 </body>
