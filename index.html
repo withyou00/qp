@@ -25381,6 +25381,182 @@
         </div>
       `;
     };
+
+
+/* ==========================================================================
+       🇬🇧 100% PURE ENGLISH GRAMMAR HEADINGS & PASSAGE COMPREHENSION FIX
+       ========================================================================== */
+
+    // ೧. ಇಂಗ್ಲಿಷ್ ವಿಷಯದ ಎಲ್ಲಾ ವ್ಯಾಕರಣ ಪ್ರಕಾರಗಳ ಪರಿಪೂರ್ಣ ಡಿಕ್ಷನರಿ
+    const origGetStandardFormatMetaFromSlugForRainbowFix = window.getStandardFormatMetaFromSlug;
+    window.getStandardFormatMetaFromSlug = function(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      const fullEngDictionary = {
+        'quote_from_memory': {
+          knLabel: '೪ ಸಾಲುಗಳ ಪದ್ಯ ಕಂಠಪಾಠ (4M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಪದ್ಯದ ನಾಲ್ಕು ಸಾಲುಗಳನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Quote from Memory (4M)',
+          enHeading: 'Quote from memory (Complete the 4 lines of the poem):',
+          keyLabel: 'Quote from Memory',
+          marks: 4, subject: 'english'
+        },
+        'rearrange_sentence': {
+          knLabel: 'ವಾಕ್ಯ ಜೋಡಿಸಿ ಬರೆಯಿರಿ (1M)',
+          knHeading: 'ಕೆಳಗಿನ ಪದಗಳನ್ನು ಅರ್ಥಪೂರ್ಣ ವಾಕ್ಯವಾಗಿ ಜೋಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Rearrange Sentence (1M)',
+          enHeading: 'Rearrange the following jumbled words into meaningful sentences:',
+          keyLabel: 'Rearrange Sentence',
+          marks: 1, subject: 'english'
+        },
+        'prepositions': {
+          knLabel: 'Prepositions ಬಳಸಿ (1M)',
+          knHeading: 'ಸೂಕ್ತ Preposition ನಿಂದ ಖಾಲಿ ಜಾಗ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Prepositions (1M)',
+          enHeading: 'Fill in the blanks with suitable prepositions:',
+          keyLabel: 'Prepositions',
+          marks: 1, subject: 'english'
+        },
+        'preposition': {
+          knLabel: 'Prepositions ಬಳಸಿ (1M)',
+          knHeading: 'ಸೂಕ್ತ Preposition ನಿಂದ ಖಾಲಿ ಜಾಗ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Prepositions (1M)',
+          enHeading: 'Fill in the blanks with suitable prepositions:',
+          keyLabel: 'Prepositions',
+          marks: 1, subject: 'english'
+        },
+        'riddle': {
+          knLabel: 'ಒಗಟು ಬಿಡಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಒಗಟನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Riddle (1M)',
+          enHeading: 'Solve the following riddle:',
+          keyLabel: 'Riddle',
+          marks: 1, subject: 'english'
+        },
+        'riddles': {
+          knLabel: 'ಒಗಟು ಬಿಡಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಒಗಟನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Riddle (1M)',
+          enHeading: 'Solve the following riddle:',
+          keyLabel: 'Riddle',
+          marks: 1, subject: 'english'
+        },
+        'passage_comprehension': {
+          knLabel: 'ಗದ್ಯಭಾಗ ಗ್ರಹಣ (2M/3M/4M)',
+          knHeading: 'ಗದ್ಯಭಾಗವನ್ನು ಓದಿ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:',
+          enLabel: 'Passage Comprehension (2M/3M/4M)',
+          enHeading: 'Read the following passage and answer the questions that follow:',
+          keyLabel: 'Passage Comprehension',
+          marks: 2, subject: 'english'
+        },
+        'articles': {
+          knLabel: 'Articles ಬಳಸಿ (1M)',
+          knHeading: 'ಸೂಕ್ತ Articles (a / an / the) ನಿಂದ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Articles (1M)',
+          enHeading: 'Fill in the blanks with appropriate articles (a / an / the):',
+          keyLabel: 'Articles',
+          marks: 1, subject: 'english'
+        },
+        'verb_forms': {
+          knLabel: 'ಕ್ರಿಯಾಪದದ ಸರಿಯಾದ ರೂಪ (1M)',
+          knHeading: 'ಕಂಸದಲ್ಲಿರುವ ಕ್ರಿಯಾಪದದ ಸರಿಯಾದ ರೂಪದಿಂದ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Correct Form of Verbs (1M)',
+          enHeading: 'Fill in the blanks with the correct form of the verbs given in brackets:',
+          keyLabel: 'Correct Form of Verbs',
+          marks: 1, subject: 'english'
+        },
+        'missing_letters': {
+          knLabel: 'ಬಿಟ್ಟುಹೋದ ಅಕ್ಷರಗಳು (1M)',
+          knHeading: 'ಬಿಟ್ಟುಹೋದ ಅಕ್ಷರಗಳನ್ನು ತುಂಬಿ ಪದ ಪೂರ್ಣಗೊಳಿಸಿ:',
+          enLabel: 'Missing Letters (1M)',
+          enHeading: 'Fill in the missing letters to complete the words:',
+          keyLabel: 'Missing Letters',
+          marks: 1, subject: 'english'
+        },
+        'punctuation': {
+          knLabel: 'ವಿರಾಮಚಿಹ್ನೆ ಬಳಸಿ (1M)',
+          knHeading: 'ವಾಕ್ಯದಲ್ಲಿ ಸರಿಯಾದ ವಿರಾಮಚಿಹ್ನೆ ಬಳಸಿ ಪುನಃ ಬರೆಯಿರಿ:',
+          enLabel: 'Punctuation (1M)',
+          enHeading: 'Punctuate the following sentence correctly using capital letters and punctuation marks:',
+          keyLabel: 'Punctuation',
+          marks: 1, subject: 'english'
+        },
+        'parts_of_speech': {
+          knLabel: 'Parts of Speech (1M)',
+          knHeading: 'ಅಡ್ಡಗೆರೆ ಎಳೆದ ಪದದ Parts of Speech ಗುರುತಿಸಿ:',
+          enLabel: 'Parts of Speech (1M)',
+          enHeading: 'Identify the parts of speech of the underlined word:',
+          keyLabel: 'Parts of Speech',
+          marks: 1, subject: 'english'
+        }
+      };
+
+      if (fullEngDictionary[rawKey]) {
+        const item = fullEngDictionary[rawKey];
+        return {
+          isKnown: true,
+          knLabel: item.knLabel,
+          knHeading: item.knHeading,
+          enLabel: item.enLabel,
+          enHeading: item.enHeading,
+          keyLabel: isEnglish ? item.keyLabel : item.knLabel,
+          marks: item.marks,
+          subject: item.subject
+        };
+      }
+
+      if (typeof origGetStandardFormatMetaFromSlugForRainbowFix === 'function') {
+        return origGetStandardFormatMetaFromSlugForRainbowFix(typeKey, isEnglish);
+      }
+
+      const cleanLabel = rawKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        isKnown: false,
+        label: isEnglish ? `${cleanLabel} (1M)` : typeKey,
+        heading: isEnglish ? `Answer the following (${cleanLabel}):` : `ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        keyLabel: isEnglish ? cleanLabel : typeKey,
+        marks: 1,
+        subject: 'all'
+      };
+    };
+
+    // ೨. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರೆಂಡರರ್ (ಸ್ಲಗ್‌ಗಳು ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ಬರದಂತೆ ಸ್ವಚ್ಛಗೊಳಿಸುವಿಕೆ)
+    const origRenderFullExamPaperForSlugCleaner = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+      const currentSubject = document.getElementById('cfg-subject')?.value || 'English';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglishPaper = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್') || (getNormalizedSubjectKey(currentSubject) === 'english');
+
+      const customTypeList = getCustomQuestionTypesList();
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      allQuestions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      // 🌟 ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳ ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ಯಾವುದೇ ಅಂಡರ್‌ಸ್ಕೋರ್ ಕೋಡ್ ಬಾರದಂತೆ ಡಿಕ್ಷನರಿಯಿಂದ ಕ್ಲೀನ್ ಹೆಡಿಂಗ್ ಪಡೆಯುವುದು
+      customQuestionsMap.forEach((qList, typeKey) => {
+        const meta = getStandardFormatMetaFromSlug(typeKey, isEnglishPaper);
+        const customDef = customTypeList.find(c => c.key === typeKey || c.label === typeKey);
+
+        if (customDef) {
+          // ಒಂದು ವೇಳೆ ಸೇವ್ ಆದ ಹೆಡಿಂಗ್‌ನಲ್ಲಿ ಕೋಡ್ (ಅಂಡರ್‌ಸ್ಕೋರ್) ಇದ್ದರೆ ಅಧಿಕೃತ ಹೆಡಿಂಗ್‌ಗೆ ಬದಲಾಯಿಸುವುದು
+          if (!customDef.heading || customDef.heading.includes('_') || customDef.heading === (typeKey + ':')) {
+            customDef.heading = isEnglishPaper ? meta.enHeading : meta.knHeading;
+          }
+        }
+      });
+
+      if (typeof origRenderFullExamPaperForSlugCleaner === 'function') {
+        origRenderFullExamPaperForSlugCleaner(headerHtml);
+      }
+    };
     
   </script>
 </body>
