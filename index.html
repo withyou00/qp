@@ -23875,6 +23875,150 @@
       }
     };
     
+
+    /* ==========================================================================
+       ⚡ BULK QUESTION FORMATS IMPORTER (LABEL + HEADING + MARKS + SUBJECT JSON)
+       ========================================================================== */
+
+    // ೧. ಬಲ್ಕ್ ಪ್ರಕಾರಗಳ ಇಂಪೋರ್ಟ್ ಮಾಡಲ್ (BULK FORMATS JSON MODAL)
+    window.openBulkFormatJSONImportModal = function() {
+      let modal = document.getElementById('bulk-formats-import-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'bulk-formats-import-modal';
+        modal.className = 'fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-layer-group text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900">⚡ ಬಲ್ಕ್ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಇಂಪೋರ್ಟರ್ (Bulk Import Formats)</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">AI ನೀಡಿದ Format Label, Paper Heading, Marks ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('bulk-formats-import-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleExecuteBulkFormatJSONImport(event)" class="space-y-3.5">
+            <div class="p-3 bg-purple-50 border border-purple-300 rounded-2xl text-[11px] text-purple-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> AI ನೀಡಿದ <b>[ { "label": "...", "heading": "...", "marks": 5, "subject": "..." } ]</b> JSON ಕೋಡ್ ಅನ್ನು ಕೆಳಗಿನ ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ. ಇಡೀ ಪುಸ್ತಕದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು ತಕ್ಷಣವೇ ಸಿಸ್ಟಮ್‌ಗೆ ಸೇರ್ಪಡೆಯಾಗುತ್ತವೆ.
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">ಪ್ರಕಾರಗಳ JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ Paste ಮಾಡಿ:</label>
+              <textarea id="bulk-formats-json-textarea" rows="11" placeholder="[ { 'subject': 'ಕನ್ನಡ', 'label': 'ಪ್ರಬಂಧ ರಚನೆ (5M)', 'heading': 'ಈ ಕೆಳಗಿನ ವಿಷಯದ ಕುರಿತು ಪ್ರಬಂಧ ಬರೆಯಿರಿ:', 'marks': 5 }, ... ]" class="w-full p-3.5 bg-slate-50 border-2 border-purple-400 rounded-2xl font-mono text-xs text-slate-900 focus:outline-none focus:border-purple-600 leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('bulk-formats-import-modal').classList.add('hidden')" class="px-4 py-2.5 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-6 py-2.5 btn-primary-gradient text-white font-extrabold rounded-xl shadow-lg flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-amber-300"></i>
+                <span>ಎಲ್ಲಾ ಪ್ರಕಾರಗಳನ್ನು ಸೇರಿಸಿ (Import Formats)</span>
+              </button>
+            </div>
+          </form>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. ಬಲ್ಕ್ ಪ್ರಕಾರಗಳನ್ನು ಪಾರ್ಸ್ ಮಾಡಿ ಸೇವ್ ಮಾಡುವ ಎಂಜಿನ್
+    window.handleExecuteBulkFormatJSONImport = function(e) {
+      e.preventDefault();
+      const textarea = document.getElementById('bulk-formats-json-textarea');
+      let rawVal = textarea ? textarea.value.trim() : '';
+
+      if (!rawVal) return alert('⚠️ ದಯವಿಟ್ಟು AI ನೀಡಿದ JSON ಕೋಡ್ ಅನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+
+      rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+      let parsed = [];
+      try {
+        parsed = JSON.parse(rawVal);
+      } catch (err) {
+        return alert('❌ JSON ಫಾರ್ಮ್ಯಾಟ್ ತಪ್ಪಾಗಿದೆ. ದಯವಿಟ್ಟು ಪೂರ್ಣ [ ... ] ಕೋಡ್ ಅನ್ನು ಕಾಪಿ ಮಾಡಿ ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return alert('⚠️ JSON ನಲ್ಲಿ ಯಾವುದೇ ಪ್ರಕಾರಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      let customList = getCustomQuestionTypesList();
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      parsed.forEach(item => {
+        if (!item || !item.label) return;
+
+        const label = String(item.label).trim();
+        const heading = item.heading ? String(item.heading).trim() : `${label}:`;
+        const marks = parseInt(item.marks) || 1;
+        const subject = item.subject ? String(item.subject).trim() : 'all';
+
+        // ಮೊದಲೇ ಇದ್ದರೆ ಅಪ್ಡೇಟ್, ಇಲ್ಲದಿದ್ದರೆ ಹೊಸ ಸೇರ್ಪಡೆ
+        const existing = customList.find(c => c.label === label || safeCleanMatch(c.label) === safeCleanMatch(label));
+        if (existing) {
+          existing.heading = heading;
+          existing.marks = marks;
+          existing.subject = subject;
+          updatedCount++;
+        } else {
+          const key = 'fmt_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+          customList.push({
+            key,
+            label,
+            heading,
+            marks,
+            subject
+          });
+          addedCount++;
+        }
+      });
+
+      // ಸೇವ್ & Firebase ಸಿಂಕ್
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(customList));
+      try {
+        fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customList)
+        });
+      } catch (err) {}
+
+      document.getElementById('bulk-formats-import-modal')?.classList.add('hidden');
+      alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${addedCount} ಹೊಸ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು ಸೇರ್ಪಡೆಯಾಗಿವೆ ಮತ್ತು ${updatedCount} ಪ್ರಕಾರಗಳು ಅಪ್ಡೇಟ್ ಆಗಿವೆ!`);
+      showToast(`✅ ${addedCount + updatedCount} ಪ್ರಕಾರಗಳನ್ನು ಇಂಪೋರ್ಟ್ ಮಾಡಲಾಗಿದೆ!`, 'success');
+
+      openManageSubjectFormatsModal();
+      renderMaster10QuestionFormats();
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ ಪ್ರಕಾರಗಳ ಮ್ಯಾನೇಜರ್‌ನಲ್ಲಿ "⚡ ಬಲ್ಕ್ ಇಂಪೋರ್ಟ್" ಬಟನ್ ಸೇರ್ಪಡೆ
+    const origOpenManageSubjectFormatsModalForBulkBtn = window.openManageSubjectFormatsModal;
+    window.openManageSubjectFormatsModal = function() {
+      if (typeof origOpenManageSubjectFormatsModalForBulkBtn === 'function') {
+        origOpenManageSubjectFormatsModalForBulkBtn();
+      }
+
+      const modalHeader = document.querySelector('#manage-subject-formats-modal .border-b .flex.items-center.justify-between');
+      if (modalHeader && !document.getElementById('btn-open-bulk-formats-modal')) {
+        const bulkBtn = document.createElement('button');
+        bulkBtn.id = 'btn-open-bulk-formats-modal';
+        bulkBtn.type = 'button';
+        bulkBtn.className = 'text-[11px] bg-purple-100 hover:bg-purple-200 text-purple-950 border border-purple-400 px-3 py-1.5 rounded-xl font-black flex items-center gap-1.5 shadow-sm cursor-pointer ml-auto mr-3';
+        bulkBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-purple-700"></i> <span>⚡ ಬಲ್ಕ್ ಇಂಪೋರ್ಟ್ (JSON)</span>';
+        bulkBtn.onclick = () => openBulkFormatJSONImportModal();
+        modalHeader.insertBefore(bulkBtn, modalHeader.lastElementChild);
+      }
+    };
     
   </script>
 </body>
