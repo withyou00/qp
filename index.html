@@ -24902,6 +24902,358 @@
       applyDemoWatermarkToOutput();
     };
 
+
+    /* ==========================================================================
+       🇬🇧 100% PURE ENGLISH BLUEPRINTS & CLEAN ENGLISH GRAMMAR HEADINGS ENGINE
+       ========================================================================== */
+
+    // ೧. ಇಂಗ್ಲಿಷ್ ವ್ಯಾಕರಣ ಪ್ರಕಾರಗಳ ನಿಖರ ಬೋರ್ಡ್ ಹೆಡಿಂಗ್ ಡಿಕ್ಷನರಿ ವಿಸ್ತರಣೆ
+    const origGetStandardFormatMetaFromSlugForGrammarAll = window.getStandardFormatMetaFromSlug;
+    window.getStandardFormatMetaFromSlug = function(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      const fullEnglishGrammarDict = {
+        'parts_of_speech': {
+          knLabel: 'Parts of Speech ಗುರುತಿಸಿ (1M)',
+          knHeading: 'ಅಡ್ಡಗೆರೆ ಎಳೆದ ಪದದ Parts of Speech ಗುರುತಿಸಿ:',
+          enLabel: 'Parts of Speech (1M)',
+          enHeading: 'Identify the parts of speech of the underlined word:',
+          keyLabel: 'Parts of Speech',
+          marks: 1, subject: 'english'
+        },
+        'articles': {
+          knLabel: 'Articles ಬಳಸಿ (1M)',
+          knHeading: 'ಸೂಕ್ತ Articles (a / an / the) ನಿಂದ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Articles (1M)',
+          enHeading: 'Fill in the blanks with appropriate articles (a / an / the):',
+          keyLabel: 'Articles',
+          marks: 1, subject: 'english'
+        },
+        'riddle': {
+          knLabel: 'ಒಗಟು ಬಿಡಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಒಗಟನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Riddle (1M)',
+          enHeading: 'Solve the following riddle:',
+          keyLabel: 'Riddle',
+          marks: 1, subject: 'english'
+        },
+        'riddles': {
+          knLabel: 'ಒಗಟು ಬಿಡಿಸಿ (1M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ಒಗಟನ್ನು ಬಿಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Riddle (1M)',
+          enHeading: 'Solve the following riddle:',
+          keyLabel: 'Riddle',
+          marks: 1, subject: 'english'
+        },
+        'verb_forms': {
+          knLabel: 'ಕ್ರಿಯಾಪದದ ಸರಿಯಾದ ರೂಪ (1M)',
+          knHeading: 'ಕಂಸದಲ್ಲಿರುವ ಕ್ರಿಯಾಪದದ ಸರಿಯಾದ ರೂಪದಿಂದ ಭರ್ತಿ ಮಾಡಿ:',
+          enLabel: 'Correct Form of Verbs (1M)',
+          enHeading: 'Fill in the blanks with the correct form of the verbs given in brackets:',
+          keyLabel: 'Correct Form of Verbs',
+          marks: 1, subject: 'english'
+        },
+        'picture_description': {
+          knLabel: 'ಚಿತ್ರ ವಿವರಣೆ (4M)',
+          knHeading: 'ಚಿತ್ರವನ್ನು ಗಮನಿಸಿ ವಿವರಣೆ ಬರೆಯಿರಿ:',
+          enLabel: 'Picture Description (4M)',
+          enHeading: 'Study the picture given below and write a description in a paragraph:',
+          keyLabel: 'Picture Description',
+          marks: 4, subject: 'english'
+        },
+        'passage_comprehension': {
+          knLabel: 'ಗದ್ಯಭಾಗ ಗ್ರಹಣ (4M/2M)',
+          knHeading: 'ಗದ್ಯಭಾಗವನ್ನು ಓದಿ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:',
+          enLabel: 'Passage Comprehension (4M/2M)',
+          enHeading: 'Read the passage carefully and answer the questions that follow:',
+          keyLabel: 'Passage Comprehension',
+          marks: 4, subject: 'english'
+        },
+        'rearrange_sentence': {
+          knLabel: 'ವಾಕ್ಯವನ್ನು ಜೋಡಿಸಿ (1M)',
+          knHeading: 'ಕೆಳಗಿನ ಪದಗಳನ್ನು ಅರ್ಥಪೂರ್ಣ ವಾಕ್ಯವಾಗಿ ಜೋಡಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Rearrange the Sentence (1M)',
+          enHeading: 'Rearrange the following jumbled words into a meaningful sentence:',
+          keyLabel: 'Rearrange Sentence',
+          marks: 1, subject: 'english'
+        },
+        'question_tags': {
+          knLabel: 'Question Tag ಸೇರಿಸಿ (1M)',
+          knHeading: 'ವಾಕ್ಯಕ್ಕೆ ಸೂಕ್ತ Question Tag ಸೇರಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Question Tags (1M)',
+          enHeading: 'Add a suitable question tag to the statement:',
+          keyLabel: 'Question Tags',
+          marks: 1, subject: 'english'
+        },
+        'reported_speech': {
+          knLabel: 'Reported Speech ಗೆ ಬದಲಿಸಿ (2M)',
+          knHeading: 'ಈ ಕೆಳಗಿನ ವಾಕ್ಯವನ್ನು Reported Speech ಗೆ ಬದಲಿಸಿ:',
+          enLabel: 'Reported Speech (2M)',
+          enHeading: 'Change the following sentence into reported speech:',
+          keyLabel: 'Reported Speech',
+          marks: 2, subject: 'english'
+        },
+        'active_passive': {
+          knLabel: 'Active / Passive Voice (2M)',
+          knHeading: 'ವಾಕ್ಯದ Voice ಬದಲಿಸಿ ಬರೆಯಿರಿ:',
+          enLabel: 'Active & Passive Voice (2M)',
+          enHeading: 'Change the voice of the following sentence:',
+          keyLabel: 'Active & Passive Voice',
+          marks: 2, subject: 'english'
+        },
+        'degrees_comparison': {
+          knLabel: 'Degrees of Comparison (2M)',
+          knHeading: 'ಸೂಚನೆಯಂತೆ Degree of Comparison ಬದಲಿಸಿ:',
+          enLabel: 'Degrees of Comparison (2M)',
+          enHeading: 'Change the degree of comparison as directed:',
+          keyLabel: 'Degrees of Comparison',
+          marks: 2, subject: 'english'
+        },
+        'prefixes_suffixes': {
+          knLabel: 'Prefixes ಮತ್ತು Suffixes (1M)',
+          knHeading: 'ಮೂಲ ಪದಕ್ಕೆ ಸೂಕ್ತ Prefix ಅಥವಾ Suffix ಸೇರಿಸಿ:',
+          enLabel: 'Prefixes & Suffixes (1M)',
+          enHeading: 'Add a suitable prefix or suffix to form a new word:',
+          keyLabel: 'Prefixes & Suffixes',
+          marks: 1, subject: 'english'
+        }
+      };
+
+      if (fullEnglishGrammarDict[rawKey]) {
+        const item = fullEnglishGrammarDict[rawKey];
+        return {
+          isKnown: true,
+          knLabel: item.knLabel,
+          knHeading: item.knHeading,
+          enLabel: item.enLabel,
+          enHeading: item.enHeading,
+          label: isEnglish ? item.enLabel : item.knLabel,
+          heading: isEnglish ? item.enHeading : item.knHeading,
+          keyLabel: isEnglish ? item.keyLabel : item.knLabel,
+          marks: item.marks,
+          subject: item.subject
+        };
+      }
+
+      if (typeof origGetStandardFormatMetaFromSlugForGrammarAll === 'function') {
+        return origGetStandardFormatMetaFromSlugForGrammarAll(typeKey, isEnglish);
+      }
+
+      const cleanLabel = rawKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        isKnown: false,
+        label: isEnglish ? `${cleanLabel} (1M)` : typeKey,
+        heading: isEnglish ? `Answer the following (${cleanLabel}):` : `ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        keyLabel: isEnglish ? cleanLabel : typeKey,
+        marks: 1,
+        subject: 'all'
+      };
+    };
+
+    // ೨. ನೀಲನಕ್ಷೆ ರೆಂಡರರ್ (ಇಂಗ್ಲಿಷ್ ವಿಷಯಕ್ಕೆ ೧೦೦% ಪರಿಪೂರ್ಣ ಇಂಗ್ಲಿಷ್ ನೀಲನಕ್ಷೆ - Screenshot 3 Fix)
+    window.renderExactThreeBlueprints = function(questions, totalMarks) {
+      if (!questions || questions.length === 0) return;
+
+      const customTypeList = getCustomQuestionTypesList();
+      const currentSubject = document.getElementById('cfg-subject')?.value || 'English';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      
+      // 🌟 ವಿಷಯ ಇಂಗ್ಲಿಷ್ ಅಥವಾ ಮಾಧ್ಯಮ ಇಂಗ್ಲಿಷ್ ಆಗಿದ್ದರೆ ನೀಲನಕ್ಷೆ ೧೦೦% ಇಂಗ್ಲಿಷ್
+      const isEnglishPaper = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್') || (getNormalizedSubjectKey(currentSubject) === 'english');
+
+      const selMcq = questions.filter(q => getCanonicalQuestionType(q) === 'mcq');
+      const selBlanks = questions.filter(q => getCanonicalQuestionType(q) === 'blanks');
+      const selTrueFalse = questions.filter(q => getCanonicalQuestionType(q) === 'true_false');
+      const selAnalogy = questions.filter(q => getCanonicalQuestionType(q) === 'analogy');
+      const selOddOne = questions.filter(q => getCanonicalQuestionType(q) === 'odd_one_out');
+      const selMatch = questions.filter(q => getCanonicalQuestionType(q) === 'match' || q.matchPairs);
+      const selVsa1M = questions.filter(q => getCanonicalQuestionType(q) === 'vsa_1m');
+      const selSa2M = questions.filter(q => getCanonicalQuestionType(q) === 'sa_2m');
+      const selSa3M = questions.filter(q => getCanonicalQuestionType(q) === 'sa_3m');
+      const selLa4M = questions.filter(q => getCanonicalQuestionType(q) === 'la_4m');
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳು
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      questions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      let qTypeRows = [
+        { name: isEnglishPaper ? "Multiple Choice Questions (MCQ)" : "ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳು (MCQ)", count: selMcq.length, marks: selMcq.length * 1 },
+        { name: isEnglishPaper ? "Fill in the Blanks" : "ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗ ಭರ್ತಿ", count: selBlanks.length, marks: selBlanks.length * 1 },
+        { name: isEnglishPaper ? "True or False" : "ಸರಿ ಅಥವಾ ತಪ್ಪು", count: selTrueFalse.length, marks: selTrueFalse.length * 1 },
+        { name: isEnglishPaper ? "Analogy Questions" : "ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ", count: selAnalogy.length, marks: selAnalogy.length * 1 },
+        { name: isEnglishPaper ? "Odd One Out" : "ಗುಂಪಿಗೆ ಸೇರದ ಪದ", count: selOddOne.length, marks: selOddOne.length * 1 },
+        { name: isEnglishPaper ? "Match the Following" : "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ", count: selMatch.length, marks: selMatch.length * 4 },
+        { name: isEnglishPaper ? "One Mark Questions (1M)" : "ಒಂದು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selVsa1M.length, marks: selVsa1M.length * 1 },
+        { name: isEnglishPaper ? "Two Marks Questions (2M)" : "ಎರಡು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selSa2M.length, marks: selSa2M.length * 2 },
+        { name: isEnglishPaper ? "Three Marks Questions (3M)" : "ಮೂರು ವಾಕ್ಯದ ಪ್ರಶ್ನೆಗಳು", count: selSa3M.length, marks: selSa3M.length * 3 },
+        { name: isEnglishPaper ? "Four Marks / Diagram / Map" : "ನಾಲ್ಕು ಅಂಕದ ಪ್ರಶ್ನೆಗಳು / ಚಿತ್ರ / ನಕ್ಷೆ", count: selLa4M.length, marks: selLa4M.length * 4 }
+      ].filter(r => r.count > 0);
+
+      // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ನೀಲನಕ್ಷೆಗೆ ಇಂಗ್ಲಿಷ್/ಕನ್ನಡದಲ್ಲಿ ಸೇರಿಸುವುದು
+      customQuestionsMap.forEach((qList, typeKey) => {
+        const meta = getStandardFormatMetaFromSlug(typeKey, isEnglishPaper);
+        const customDef = customTypeList.find(c => c.key === typeKey || c.label === typeKey);
+        const marksPerQ = getExactQuestionMarks(qList[0]);
+        
+        let rowLabel = isEnglishPaper ? meta.enLabel : (customDef ? customDef.label : meta.knLabel);
+        qTypeRows.push({
+          name: rowLabel,
+          count: qList.length,
+          marks: qList.length * marksPerQ
+        });
+      });
+
+      const totalMarksSum = qTypeRows.reduce((a, b) => a + b.marks, 0);
+      const totalQCount = questions.length;
+
+      let kMarks = Math.round(totalMarksSum * 0.40);
+      let uMarks = Math.round(totalMarksSum * 0.40);
+      let aMarks = totalMarksSum - (kMarks + uMarks);
+
+      let easyMarks = Math.round(totalMarksSum * 0.30);
+      let avgMarks = Math.round(totalMarksSum * 0.50);
+      let diffMarks = totalMarksSum - (easyMarks + avgMarks);
+
+      const bpContainer = document.getElementById('rendered-blueprint');
+      if (!bpContainer) return;
+
+      // 🌟 ೧೦೦% ಇಂಗ್ಲಿಷ್ ನೀಲನಕ್ಷೆ ಕೋಷ್ಟಕಗಳು
+      bpContainer.innerHTML = `
+        <div class="a4-sheet-container ${totalQCount <= 16 ? 'container-airy' : 'container-compact'}" style="line-height: 1.45; font-family: 'Anek Kannada', sans-serif;">
+          <h2 style="text-align: center; font-size: 19px; font-weight: 900; color: #000; margin-bottom: 14px;">
+            ${isEnglishPaper ? "Blueprints (Assessment Structure)" : "ನೀಲನಕ್ಷೆಗಳು (Blueprints)"}
+          </h2>
+
+          <!-- 1. Question Formats Table -->
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">
+              1. ${isEnglishPaper ? "Blueprint based on Question Formats" : "ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglishPaper ? "Question Formats" : "ಪ್ರಶ್ನೆಗಳ ಸ್ವರೂಪ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglishPaper ? "Count" : "ಸಂಖ್ಯೆ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglishPaper ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 18%;">${isEnglishPaper ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${qTypeRows.map(row => `
+                  <tr>
+                    <td style="border: 1px solid #000; padding: 3px 8px; text-align: left; font-weight: 600;">${escapeHtml(row.name)}</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${row.count}</td>
+                    <td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${row.marks}</td>
+                    <td style="border: 1px solid #000; padding: 3px;">${Math.round((row.marks / totalMarksSum) * 100)}%</td>
+                  </tr>
+                `).join('')}
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;">
+                  <td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglishPaper ? "Total" : "ಒಟ್ಟು"}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px;">${totalQCount}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px; font-size: 13.5px; color: #000;">${totalMarksSum}</td>
+                  <td style="border: 1.5px solid #000; padding: 4px;">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 2. Learning Objectives Table -->
+          <div style="margin-bottom: 16px;">
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">
+              2. ${isEnglishPaper ? "Blueprint based on Learning Objectives" : "ಕಲಿಕೋದ್ದೇಶಗಳ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglishPaper ? "Objectives" : "ಕಲಿಕೋದ್ದೇಶಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglishPaper ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglishPaper ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Knowledge" : "ಜ್ಞಾನ (Knowledge)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${kMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((kMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Understanding" : "ತಿಳುವಳಿಕೆ (Understanding)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${uMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((uMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Application" : "ಅನ್ವಯ (Application)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${aMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((aMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglishPaper ? "Total" : "ಒಟ್ಟು"}</td><td style="border: 1.5px solid #000; padding: 4px; font-size: 13.5px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 4px;">100%</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 3. Difficulty Level Table -->
+          <div>
+            <h4 style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px;">
+              3. ${isEnglishPaper ? "Blueprint based on Difficulty Level" : "ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಆಧಾರಿತ ನೀಲನಕ್ಷೆ"}
+            </h4>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12.5px; border: 1.5px solid #000;">
+              <thead>
+                <tr style="background-color: #f8fafc; border-bottom: 1.5px solid #000;">
+                  <th style="border: 1.5px solid #000; padding: 4px; text-align: left;">${isEnglishPaper ? "Difficulty Level" : "ಮಟ್ಟ"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglishPaper ? "Marks" : "ಅಂಕಗಳು"}</th>
+                  <th style="border: 1.5px solid #000; padding: 4px; width: 25%;">${isEnglishPaper ? "Percentage" : "ಶೇಕಡಾವಾರು"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Easy" : "ಸುಲಭ (Easy)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${easyMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((easyMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Average" : "ಸಾಧಾರಣ (Average)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${avgMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((avgMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr><td style="border: 1px solid #000; padding: 3px 8px; text-align: left;">${isEnglishPaper ? "Difficult" : "ಕಠಿಣ (Difficult)"}</td><td style="border: 1px solid #000; padding: 3px; font-weight: bold;">${diffMarks}</td><td style="border: 1px solid #000; padding: 3px;">${Math.round((diffMarks / totalMarksSum) * 100)}%</td></tr>
+                <tr style="font-weight: 900; background-color: #f8fafc; border-top: 1.5px solid #000;"><td style="border: 1.5px solid #000; padding: 4px 8px; text-align: left;">${isEnglishPaper ? "Total" : "ಒಟ್ಟು"}</td><td style="border: 1.5px solid #000; padding: 4px; font-size: 13.5px;">${totalMarksSum}</td><td style="border: 1.5px solid #000; padding: 4px;">100%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    };
+
+    // ೩. ಉತ್ತರ ಪತ್ರಿಕೆಯಲ್ಲಿ ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳಿಗೆ ರೋಮನ್ ಅಂಕಿಗಳು & ಕ್ಲೀನ್ ಹೆಡಿಂಗ್ಸ್
+    const originalRenderFullExamPaperForCleanKeyHeadings = window.renderFullExamPaperWithCustomHeader;
+    window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+      if (typeof originalRenderFullExamPaperForCleanKeyHeadings === 'function') {
+        originalRenderFullExamPaperForCleanKeyHeadings(headerHtml);
+      }
+
+      const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+      const currentSubject = document.getElementById('cfg-subject')?.value || 'English';
+      const selectedMediumStr = String(document.getElementById('cfg-medium')?.value || 'ಕನ್ನಡ').toLowerCase();
+      const isEnglishPaper = selectedMediumStr.includes('english') || selectedMediumStr.includes('ಇಂಗ್ಲಿಷ್') || (getNormalizedSubjectKey(currentSubject) === 'english');
+
+      const customTypeList = getCustomQuestionTypesList();
+      const standardTypesSet = new Set(['mcq', 'blanks', 'true_false', 'analogy', 'odd_one_out', 'match', 'vsa_1m', 'sa_2m', 'sa_3m', 'la_4m']);
+      const customQuestionsMap = new Map();
+
+      allQuestions.forEach(q => {
+        const cType = getCanonicalQuestionType(q);
+        if (!standardTypesSet.has(cType)) {
+          if (!customQuestionsMap.has(cType)) customQuestionsMap.set(cType, []);
+          customQuestionsMap.get(cType).push(q);
+        }
+      });
+
+      // ಉತ್ತರ ಪತ್ರಿಕೆಯ ಕ್ಲೀನ್ ಕೀ ಹೆಡಿಂಗ್ಸ್ ನವೀಕರಣ
+      const keyContainer = document.getElementById('rendered-key');
+      if (keyContainer && customQuestionsMap.size > 0) {
+        let secIndex = 2; // MCQ ನಂತರ ೨ ರಿಂದ ಆರಂಭ
+        customQuestionsMap.forEach((qList, typeKey) => {
+          const meta = getStandardFormatMetaFromSlug(typeKey, isEnglishPaper);
+          const roman = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV"][secIndex++ - 1] || '•';
+          const cleanTitle = isEnglishPaper ? meta.keyLabel : (meta.knLabel || typeKey);
+
+          const allKeyHeads = keyContainer.querySelectorAll('.key-sec-head, div[style*="font-weight: 900"]');
+          allKeyHeads.forEach(head => {
+            if (head.innerText.includes(typeKey) || head.innerText.includes(typeKey.replace(/_/g, ' '))) {
+              head.innerText = `${roman}. ${cleanTitle} Key Answers:`;
+            }
+          });
+        });
+      }
+    };
     
   </script>
 </body>
