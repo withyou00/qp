@@ -25254,6 +25254,133 @@
         });
       }
     };
+
+    /* ==========================================================================
+       🇬🇧 ENGLISH PASSAGE COMPREHENSION, MISSING LETTERS & PUNCTUATION HEADINGS
+       ========================================================================== */
+
+    // ೧. ಇಂಗ್ಲಿಷ್ ವ್ಯಾಕರಣ ಡಿಕ್ಷನರಿಗೆ missing_letters, punctuation, passage ಸೇರ್ಪಡೆ
+    const origGetStandardFormatMetaFromSlugForPassageFix = window.getStandardFormatMetaFromSlug;
+    window.getStandardFormatMetaFromSlug = function(typeKey, isEnglish = false) {
+      const rawKey = String(typeKey || '').toLowerCase().trim().replace(/[\s\-]+/g, '_');
+
+      const extraEngDict = {
+        'passage_comprehension': {
+          knLabel: 'ಗದ್ಯಭಾಗ ಗ್ರಹಣ (3M/4M)',
+          knHeading: 'ಗದ್ಯಭಾಗವನ್ನು ಓದಿ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:',
+          enLabel: 'Passage Comprehension (3M/4M)',
+          enHeading: 'Read the following passage and answer the questions that follow:',
+          keyLabel: 'Passage Comprehension',
+          marks: 3, subject: 'english'
+        },
+        'missing_letters': {
+          knLabel: 'ಬಿಟ್ಟುಹೋದ ಅಕ್ಷರಗಳು (1M)',
+          knHeading: 'ಬಿಟ್ಟುಹೋದ ಅಕ್ಷರಗಳನ್ನು ತುಂಬಿ ಪದ ಪೂರ್ಣಗೊಳಿಸಿ:',
+          enLabel: 'Missing Letters (1M)',
+          enHeading: 'Fill in the missing letters to complete the words:',
+          keyLabel: 'Missing Letters',
+          marks: 1, subject: 'english'
+        },
+        'punctuation': {
+          knLabel: 'ವಿರಾಮಚಿಹ್ನೆ ಬಳಸಿ (1M)',
+          knHeading: 'ವಾಕ್ಯದಲ್ಲಿ ಸರಿಯಾದ ವಿರಾಮಚಿಹ್ನೆ ಬಳಸಿ ಪುನಃ ಬರೆಯಿರಿ:',
+          enLabel: 'Punctuation (1M)',
+          enHeading: 'Punctuate the following sentence correctly using capital letters and punctuation marks:',
+          keyLabel: 'Punctuation',
+          marks: 1, subject: 'english'
+        }
+      };
+
+      if (extraEngDict[rawKey]) {
+        const item = extraEngDict[rawKey];
+        return {
+          isKnown: true,
+          knLabel: item.knLabel,
+          knHeading: item.knHeading,
+          enLabel: item.enLabel,
+          enHeading: item.enHeading,
+          keyLabel: isEnglish ? item.keyLabel : item.knLabel,
+          marks: item.marks,
+          subject: item.subject
+        };
+      }
+
+      if (typeof origGetStandardFormatMetaFromSlugForPassageFix === 'function') {
+        return origGetStandardFormatMetaFromSlugForPassageFix(typeKey, isEnglish);
+      }
+
+      const cleanLabel = rawKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return {
+        isKnown: false,
+        label: isEnglish ? `${cleanLabel} (1M)` : typeKey,
+        heading: isEnglish ? `Answer the following (${cleanLabel}):` : `ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ಉತ್ತರಿಸಿ (${typeKey}):`,
+        keyLabel: isEnglish ? cleanLabel : typeKey,
+        marks: 1,
+        subject: 'all'
+      };
+    };
+
+    // ೨. ಇಂಗ್ಲಿಷ್ ಗದ್ಯಭಾಗ & ಪ್ರಶ್ನೆಗಳನ್ನು ಸುಂದರ ಪೆಟ್ಟಿಗೆಯಲ್ಲಿ ಪ್ರದರ್ಶಿಸುವ ಹೆಲ್ಪರ್
+    const origRenderSideBySideComprehensionBlockForEnglish = window.renderSideBySideComprehensionBlock;
+    window.renderSideBySideComprehensionBlock = function(q, num, idx) {
+      const isEnglish = String(document.getElementById('cfg-medium')?.value || '').toLowerCase().includes('english') || (getNormalizedSubjectKey(document.getElementById('cfg-subject')?.value) === 'english');
+      const imgSrc = getAnyQuestionImageSource(q);
+      let rawText = String(q.q || '').trim();
+
+      // ಇಂಗ್ಲಿಷ್ ಗದ್ಯಭಾಗ ಮತ್ತು ಪ್ರಶ್ನೆಗಳ ಪ್ರತ್ಯೇಕತೆ
+      let passageText = '';
+      let questionsText = '';
+
+      if (/Questions\s*[\:\.]?/i.test(rawText)) {
+        const parts = rawText.split(/Questions\s*[\:\.]?/i);
+        passageText = parts[0].replace(/^.*?Passage\s*[\:\.]?/i, '').trim();
+        questionsText = parts[1] ? parts[1].trim() : '';
+      } else if (/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i.test(rawText)) {
+        const parts = rawText.split(/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i);
+        passageText = parts[0].replace(/^.*?ಗದ್ಯಭಾಗ\s*[\:\.]?/i, '').trim();
+        questionsText = parts[1] ? parts[1].trim() : '';
+      } else {
+        const qStart = rawText.search(/(?:^|\n|\s{2,})(?=[1-4೧-೪]\.\s*)/);
+        if (qStart > 0) {
+          passageText = rawText.substring(0, qStart).replace(/^(?:Passage|ಗದ್ಯಭಾಗ)\s*[\:\.]?/i, '').trim();
+          questionsText = rawText.substring(qStart).trim();
+        } else {
+          passageText = rawText;
+        }
+      }
+
+      passageText = passageText.replace(/^['"]\s*/, '').replace(/\s*['"]$/, '');
+
+      return `
+        <div style="margin-bottom: 5px; break-inside: avoid; page-break-inside: avoid; width: 100%;">
+          <div class="q-paper-item-row" style="margin-bottom: 2px;">
+            <span class="q-paper-num">${num}.</span>
+            <div style="flex: 1;">
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+          </div>
+
+          <!-- 📖 ಸುಂದರ ಗದ್ಯಭಾಗದ ಬಾಕ್ಸ್ (ಚಿತ್ರವಿದ್ದರೆ ಪಕ್ಕದಲ್ಲಿ, ಇಲ್ಲದಿದ್ದರೆ ಪೂರ್ಣ ಅಗಲ) -->
+          <div style="display: grid; grid-template-columns: ${imgSrc ? '38% 62%' : '100%'}; gap: 8px; margin: 3px 0 5px 0; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 6px 10px;">
+            ${imgSrc ? `
+              <div style="display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 6px; padding: 3px; border: 1px solid #e2e8f0;">
+                <img src="${imgSrc}" style="max-height: 140px; max-width: 100%; object-fit: contain; border-radius: 4px;" />
+              </div>
+            ` : ''}
+            <div style="font-size: 11.4px; line-height: 1.40; color: #0f172a; text-align: justify;">
+              ${escapeHtml(passageText)}
+            </div>
+          </div>
+
+          <!-- ❓ ಕೆಳಗಿನ ಉಪ-ಪ್ರಶ್ನೆಗಳು -->
+          ${questionsText ? `
+            <div style="padding-left: 6px; font-size: 11.6px; line-height: 1.38; margin-top: 3px; white-space: pre-line; font-weight: 700; color: #000;">
+              ${escapeHtml(questionsText)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
     
   </script>
 </body>
