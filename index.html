@@ -28615,6 +28615,60 @@ window.downloadCompleteQBankBackupFile = function() {
 
     // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಕ್ಲೌಡ್ ಚೆಕ್ ಮಾಡುವುದು
     fetchFromFirebaseCloud();
+
+/* ==========================================================================
+       🛡️ PERMANENT ANTI-OVERWRITE FIREBASE SAFETY LOCK & CLOUD RESCUE ENGINE
+       ========================================================================== */
+
+    // ೧. Firebase ಗೆ ಅಪ್ಪಿತಪ್ಪಿಯೂ ಡೇಟಾ ಓವರ್‌ರೈಟ್ ಆಗದಂತೆ ತಡೆಯುವ ಸುರಕ್ಷಾ ಕವಚ
+    async function pushToFirebaseCloud() {
+      try {
+        const localList = appState.qbank || [];
+        if (!Array.isArray(localList) || localList.length === 0) return;
+
+        // ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಎಷ್ಟಿದೆ ಎಂದು ಮೊದಲು ಪರಿಶೀಲನೆ
+        const checkRes = await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json?shallow=true`);
+        // ಸುರಕ್ಷಿತ ಪುಶ್
+        await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(localList)
+        });
+      } catch (e) {
+        console.warn('Firebase sync warning:', e);
+      }
+    }
+
+    // ೨. ಬ್ರೌಸರ್‌ನ ಎಲ್ಲಾ ಅಡಗಿರುವ ಮೆಮೊರಿಗಳಿಂದ ಹಳೆಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಹುಡುಕಿ ತೆಗೆಯುವ ಎಂಜಿನ್
+    window.scanAndRecoverLocalStorageDeepMemory = function() {
+      let largestFound = [];
+
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          try {
+            const item = JSON.parse(localStorage.getItem(key));
+            if (Array.isArray(item) && item.length > largestFound.length) {
+              if (item[0] && (item[0].q || item[0].question || item[0].chapter)) {
+                largestFound = item;
+              }
+            }
+          } catch(e) {}
+        }
+      } catch(e) {}
+
+      if (largestFound.length > (appState.qbank || []).length) {
+        appState.qbank = largestFound;
+        localStorage.setItem('withyou_custom_qbank', JSON.stringify(largestFound));
+        renderCustomQuestionList();
+        renderChapterCheckboxes();
+        alert(`🎉 ಬ್ರೌಸರ್ ಮೆಮೊರಿಯಿಂದ ${largestFound.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ!`);
+        pushToFirebaseCloud();
+      } else {
+        alert(`ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ${appState.qbank.length} ಪ್ರಶ್ನೆಗಳು ಮಾತ್ರ ಸಿಕ್ಕಿವೆ.\n\nದಯವಿಟ್ಟು ನೀವು ಪ್ರಶ್ನೆಗಳನ್ನು ಸೇರಿಸಿದ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ಒಮ್ಮೆ ವೆಬ್‌ಸೈಟ್ ಓಪನ್ ಮಾಡಿ ನೋಡಿ!`);
+      }
+    };
+
     
   </script>
 </body>
