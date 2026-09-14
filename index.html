@@ -26940,6 +26940,280 @@
 
     // ತಕ್ಷಣವೇ ಕ್ಲೌಡ್‌ನಿಂದ ಕೋರಿಕೆಗಳನ್ನು ಲೋಡ್ ಮಾಡುವುದು
     fetchPendingRequestsFromCloud();
+
+/* ==========================================================================
+       ✏️ COMPLETE REVIEW, EDIT & APPROVE POPUP MODAL ENGINE (100% WORKING)
+       ========================================================================== */
+
+    // ೧. ಪರಿಶೀಲಿಸಿ ಎಡಿಟ್ ಮಾಡುವ ಪಾಪ್‌ಅಪ್ ಮಾಡಲ್ (REVIEW & EDIT MODAL)
+    window.openReviewAndApproveRequestModal = function(reqId) {
+      const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+      const req = reqList.find(r => r.id === reqId);
+      if (!req) return alert('⚠️ ಈ ಕೋರಿಕೆಯ ವಿವರಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+
+      let modal = document.getElementById('review-approve-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'review-approve-modal';
+        modal.className = 'fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      const isTeacher = (req.type === 'teacher');
+      const subjects = getSystemSubjects();
+      const currentGrades = Array.isArray(req.grades) ? req.grades : ['6', '7', '8'];
+      const currentSubjs = Array.isArray(req.subjects) ? req.subjects : ['ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)'];
+      const tentativeKey = generateGuaranteedUniqueKey(isTeacher ? 'TCH' : 'SCH');
+      const regDate = req.requestedDate || getTodayFormattedDate();
+      const defaultExpDate = calculateCustomExpiryDate(regDate, '1y');
+      const initialFee = req.fee || (isTeacher ? `₹${currentSubjs.length * 100 || 100}` : FEE_SCHOOL_YEARLY);
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <!-- Header -->
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 ${isTeacher ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'} rounded-2xl font-bold shadow-sm">
+                <i class="fa-solid ${isTeacher ? 'fa-user-check' : 'fa-school-circle-check'} text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-black text-sm sm:text-base text-slate-900">ನೋಂದಣಿ ವಿವರ ಪರಿಶೀಲನೆ & ಅನುಮೋದನೆ</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">ವಿವರಗಳನ್ನು ಪರಿಶೀಲಿಸಿ, ತಿದ್ದಿ ನಂತರ ಖಾತೆ ರಚಿಸಿ</p>
+              </div>
+            </div>
+            <button type="button" onclick="document.getElementById('review-approve-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <form onsubmit="handleSaveAndApproveRequest(event, '${req.id}')" class="space-y-3.5">
+            
+            ${isTeacher ? `
+              <!-- 👨‍🏫 ಶಿಕ್ಷಕರ ವಿವರಗಳ ತಿದ್ದುಪಡಿ -->
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಶಿಕ್ಷಕರ ಪೂರ್ಣ ಹೆಸರು *</label>
+                <input type="text" id="rev-name" value="${escapeHtml(req.name || '')}" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡದಲ್ಲಿ) *</label>
+                  <input type="text" id="rev-school" value="${escapeHtml(req.school || '')}" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English ನಲ್ಲಿ) *</label>
+                  <input type="text" id="rev-school-en" value="${escapeHtml(req.schoolEn || req.school || '')}" placeholder="e.g. GHPS Tummaraguddi" class="w-full px-3 py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">WhatsApp ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+                  <input type="tel" id="rev-phone" value="${escapeHtml(req.phone || '')}" required pattern="[0-9]{10}" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label class="block font-bold text-emerald-950 mb-1">ನಿಗದಿಪಡಿಸಿದ ಶುಲ್ಕ (Fee) *</label>
+                  <input type="text" id="rev-fee" value="${escapeHtml(initialFee)}" required class="w-full px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl font-black text-emerald-950 text-xs" />
+                </div>
+              </div>
+
+              <!-- ತರಗತಿಗಳ ಆಯ್ಕೆ -->
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">ಬೋಧಿಸುವ ತರಗತಿಗಳು *</label>
+                <div class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 border rounded-xl">
+                  ${ALL_CLASSES_LIST.map(c => `
+                    <label class="flex items-center space-x-1 cursor-pointer">
+                      <input type="checkbox" name="rev_tch_class" value="${c.val}" class="rounded text-emerald-600" ${currentGrades.includes(c.val)?'checked':''}>
+                      <span class="font-bold text-[11px]">${c.val}ನೇ</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- ವಿಷಯಗಳ ಆಯ್ಕೆ & ಲೈವ್ ಫೀಸ್ -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="font-bold text-slate-700">ಬೋಧಿಸುವ ವಿಷಯಗಳು (೧ ವಿಷಯಕ್ಕೆ ₹100) *</label>
+                  <span class="text-[10px] text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-black">₹100/ವಿಷಯ</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border rounded-xl max-h-24 overflow-y-auto">
+                  ${subjects.map(s => `
+                    <label class="flex items-center space-x-1 cursor-pointer">
+                      <input type="checkbox" name="rev_tch_subj" value="${s}" onchange="updateReviewModalFeeLive()" class="rounded text-emerald-600" ${currentSubjs.includes(s)?'checked':''}>
+                      <span class="truncate font-medium text-[11px]">${s.split('(')[0].trim()}</span>
+                    </label>
+                  `).join('')}
+                </div>
+              </div>
+
+            ` : `
+              <!-- 🏫 ಶಾಲಾ ವಿವರಗಳ ತಿದ್ದುಪಡಿ -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">ಶಾಲೆಯ ಹೆಸರು (ಕನ್ನಡದಲ್ಲಿ) *</label>
+                  <input type="text" id="rev-name" value="${escapeHtml(req.name || '')}" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label class="block font-bold text-indigo-950 mb-1">ಶಾಲೆಯ ಹೆಸರು (English ನಲ್ಲಿ) *</label>
+                  <input type="text" id="rev-school-en" value="${escapeHtml(req.schoolEn || req.nameEn || req.name || '')}" placeholder="e.g. Govt. High School..." class="w-full px-3 py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-bold text-indigo-950" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">DISE ಕೋಡ್ *</label>
+                  <input type="text" id="rev-dise" value="${escapeHtml(req.dise || '')}" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">HM ಹೆಸರು *</label>
+                  <input type="text" id="rev-hm" value="${escapeHtml(req.hm || '')}" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">HM ಮೊಬೈಲ್ ನಂಬರ್ *</label>
+                  <input type="tel" id="rev-phone" value="${escapeHtml(req.hmPhone || req.phone || '')}" required pattern="[0-9]{10}" class="w-full px-3 py-2 bg-slate-50 border rounded-xl font-bold text-xs" />
+                </div>
+                <div>
+                  <label class="block font-bold text-indigo-950 mb-1">ಶಾಲಾ ವಾರ್ಷಿಕ ಶುಲ್ಕ *</label>
+                  <input type="text" id="rev-fee" value="${escapeHtml(req.fee || FEE_SCHOOL_YEARLY)}" required class="w-full px-3 py-2 bg-indigo-50 border border-indigo-300 rounded-xl font-black text-indigo-950 text-xs" />
+                </div>
+              </div>
+            `}
+
+            <!-- 🌟 ವ್ಯಾಲಿಡಿಟಿ ಅವಧಿ ಆಯ್ಕೆ (10 Days, 1 Month, 1 Year) -->
+            <div class="p-3 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block font-black text-amber-950">⏱️ ವ್ಯಾಲಿಡಿಟಿ ಅವಧಿ ನಿಗದಿಪಡಿಸಿ:</label>
+                <div class="flex gap-1 text-[10px] font-bold">
+                  <button type="button" onclick="handleAdminValidityDurationChange('10d', 'rev-regdate', 'rev-expdate')" class="px-2 py-1 bg-white border border-amber-300 rounded hover:bg-amber-200 cursor-pointer">10 ದಿನ</button>
+                  <button type="button" onclick="handleAdminValidityDurationChange('1m', 'rev-regdate', 'rev-expdate')" class="px-2 py-1 bg-white border border-amber-300 rounded hover:bg-amber-200 cursor-pointer">1 ತಿಂಗಳು</button>
+                  <button type="button" onclick="handleAdminValidityDurationChange('1y', 'rev-regdate', 'rev-expdate')" class="px-2 py-1 bg-white border border-amber-300 rounded hover:bg-amber-200 cursor-pointer">1 ವರ್ಷ</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-0.5">ನೋಂದಾಯಿಸಿದ ದಿನಾಂಕ:</label>
+                  <input type="text" id="rev-regdate" value="${regDate}" required class="w-full p-2 bg-white border rounded-lg font-bold text-xs text-slate-800" />
+                </div>
+                <div>
+                  <label class="block font-bold text-emerald-950 mb-0.5">ಮುಕ್ತಾಯ ದಿನಾಂಕ (Expiry Date) *:</label>
+                  <input type="text" id="rev-expdate" value="${defaultExpDate}" required class="w-full p-2 bg-white border-2 border-emerald-500 rounded-lg font-black text-xs text-emerald-950" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Access Key -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">ರಚಿಸಲಾದ Access Key *</label>
+              <input type="text" id="rev-key" value="${tentativeKey}" required class="w-full p-2.5 bg-slate-100 border rounded-xl font-black text-xs font-mono uppercase text-indigo-900" />
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('review-approve-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="submit" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-circle-check text-amber-300"></i>
+                <span>✅ ಖಚಿತಪಡಿಸಿ, Register ಮಾಡಿ & Key ಕಳುಹಿಸಿ</span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. Review Modal ನಲ್ಲಿ ವಿಷಯ ಟಾಗಲ್ ಮಾಡಿದಂತೆ ಲೈವ್ ಫೀಸ್ ಬದಲಾವಣೆ
+    window.updateReviewModalFeeLive = function() {
+      const checkedSubjs = document.querySelectorAll('input[name="rev_tch_subj"]:checked');
+      const feeInput = document.getElementById('rev-fee');
+      if (feeInput) {
+        feeInput.value = `₹${checkedSubjs.length * 100 || 100}`;
+      }
+    };
+
+    // ೩. ಅಂತಿಮವಾಗಿ ಖಾತೆ ಸೃಷ್ಟಿ & ವಾಟ್ಸಾಪ್ ಸಂದೇಶ ರವಾನೆ
+    window.handleSaveAndApproveRequest = async function(e, reqId) {
+      e.preventDefault();
+      const reqList = appState.pendingRequests || JSON.parse(localStorage.getItem('withyou_pending_requests') || '[]');
+      const req = reqList.find(r => r.id === reqId);
+      if (!req) return;
+
+      const isTeacher = (req.type === 'teacher');
+      const name = document.getElementById('rev-name')?.value.trim();
+      const schoolEn = document.getElementById('rev-school-en')?.value.trim() || '';
+      const phone = document.getElementById('rev-phone')?.value.trim();
+      const fee = document.getElementById('rev-fee')?.value.trim();
+      const regDate = document.getElementById('rev-regdate')?.value.trim();
+      const expDate = document.getElementById('rev-expdate')?.value.trim();
+      const accessKey = document.getElementById('rev-key')?.value.trim().toUpperCase();
+
+      if (isTeacher) {
+        const school = document.getElementById('rev-school')?.value.trim();
+        const grades = Array.from(document.querySelectorAll('input[name="rev_tch_class"]:checked')).map(cb => cb.value);
+        const subjects = Array.from(document.querySelectorAll('input[name="rev_tch_subj"]:checked')).map(cb => cb.value);
+
+        if (subjects.length === 0) return alert('ದಯವಿಟ್ಟು ಕನಿಷ್ಠ ಒಂದು ವಿಷಯವನ್ನು ಆಯ್ಕೆಮಾಡಿ.');
+
+        const newTeacher = {
+          id: 'T_' + Date.now(),
+          name,
+          school,
+          schoolEn: schoolEn || school,
+          phone,
+          grades: grades.length > 0 ? grades : ['6', '7', '8'],
+          subjects: subjects,
+          accessKey,
+          registeredDate: regDate,
+          expiryDate: expDate,
+          fee
+        };
+
+        appState.teachers.unshift(newTeacher);
+        localStorage.setItem('kar_qgen_teachers', JSON.stringify(appState.teachers));
+        await pushAuthDataToFirebase();
+        renderRegisteredTeachers();
+
+        sendKeyToTeacherWhatsApp(phone, name, accessKey);
+
+      } else {
+        const dise = document.getElementById('rev-dise')?.value.trim();
+        const hm = document.getElementById('rev-hm')?.value.trim();
+
+        const newSchool = {
+          id: 'SCH_' + Date.now(),
+          name,
+          nameEn: schoolEn || name,
+          schoolEn: schoolEn || name,
+          dise,
+          hm,
+          hmPhone: phone,
+          accessKey,
+          registeredDate: regDate,
+          expiryDate: expDate,
+          fee
+        };
+
+        appState.schools.unshift(newSchool);
+        localStorage.setItem('kar_qgen_schools', JSON.stringify(appState.schools));
+        await pushAuthDataToFirebase();
+        renderRegisteredSchools();
+
+        sendKeyToSchoolWhatsApp(phone, name, accessKey);
+      }
+
+      // ಬಾಕಿ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದುಹಾಕುವುದು
+      appState.pendingRequests = reqList.filter(r => r.id !== reqId);
+      localStorage.setItem('withyou_pending_requests', JSON.stringify(appState.pendingRequests));
+      await pushPendingRequestsToCloud();
+
+      renderPendingRequestsInAdmin();
+      document.getElementById('review-approve-modal')?.classList.add('hidden');
+      
+      showToast(`🎉 ${name} ಅವರ ವಿವರಗಳನ್ನು ತಿದ್ದಿ ಯಶಸ್ವಿಯಾಗಿ ನೋಂದಾಯಿಸಲಾಗಿದೆ!`, 'success');
+    };
+
     
   </script>
 </body>
