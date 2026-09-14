@@ -28479,6 +28479,142 @@ window.downloadCompleteQBankBackupFile = function() {
     qbHeaderRow.insertBefore(backupBtn, recBtn.nextSibling);
   }
 })();  
+
+    /* ==========================================================================
+       🚑 EMERGENCY 7,000+ QUESTIONS DATA RECOVERY & 1-CLICK BACKUP RESTORER
+       ========================================================================== */
+
+    // ೧. Firebase ನಿಂದ ಬೃಹತ್ ೭,೦೦೦+ ಪ್ರಶ್ನೆಗಳನ್ನು ಕಡ್ಡಾಯವಾಗಿ ವಾಪಸ್ ಎಳೆಯುವ ಡೀಪ್ ರಿಕವರಿ ಎಂಜಿನ್
+    window.forceDeepRestoreFromFirebaseCloud = async function() {
+      showToast('⏳ Firebase ನಿಂದ ೭,೦೦೦+ ಪ್ರಶ್ನೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಲಾಗುತ್ತಿದೆ...', 'info');
+
+      try {
+        const res = await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`);
+        if (!res.ok) throw new Error('Cloud fetch failed');
+
+        const cloudData = await res.json();
+        if (!cloudData) {
+          alert('⚠️ Firebase ನಲ್ಲಿ ಡೇಟಾ ಖಾಲಿಯಾಗಿದೆ. ದಯವಿಟ್ಟು ನೀವು ಪ್ರಶ್ನೆಗಳನ್ನು ಸೇರಿಸಿದ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ವೆಬ್‌ಸೈಟ್ ತೆರೆದು "ಬ್ಯಾಕಪ್ ಡೌನ್‌ಲೋಡ್" ಮಾಡಿಕೊಳ್ಳಿ.');
+          return;
+        }
+
+        // ಅರೇ ಅಥವಾ ಕೀ-ವ್ಯಾಲ್ಯೂ ಆಬ್ಜೆಕ್ಟ್ ಎರಡನ್ನೂ ಪೂರ್ಣ ಲಿಸ್ಟ್ ಮಾಡುವುದು
+        let recoveredList = [];
+        if (Array.isArray(cloudData)) {
+          recoveredList = cloudData.filter(Boolean);
+        } else if (typeof cloudData === 'object') {
+          recoveredList = Object.values(cloudData).filter(Boolean);
+        }
+
+        if (recoveredList.length === 0) {
+          alert('⚠️ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಸಿಗಲಿಲ್ಲ.');
+          return;
+        }
+
+        // 🌟 RAM ಮೆಮೊರಿಗೆ ನೇರ ಲೋಡ್ (ಬ್ರೌಸರ್ ಮೆಮೊರಿ ಮಿತಿ ಮೀರಿದರೂ ವರ್ಕ್ ಆಗುತ್ತದೆ)
+        appState.qbank = recoveredList;
+
+        try {
+          localStorage.setItem('withyou_custom_qbank', JSON.stringify(recoveredList));
+        } catch (storageLimitErr) {
+          console.warn('LocalStorage limit exceeded, but data is 100% active in RAM!');
+        }
+
+        renderCustomQuestionList();
+        renderChapterCheckboxes();
+        renderMaster10QuestionFormats();
+
+        alert(`🎉 ಅಭಿನಂದನೆಗಳು!\n\nFirebase ಕ್ಲೌಡ್‌ನಿಂದ ಒಟ್ಟು ${recoveredList.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಮರುಸ್ಥಾಪಿಸಲಾಗಿದೆ!`);
+        showToast(`✅ ಒಟ್ಟು ${recoveredList.length} ಪ್ರಶ್ನೆಗಳು ಮರುಸ್ಥಾಪನೆಯಾಗಿವೆ!`, 'success');
+
+      } catch (err) {
+        console.error('Deep Recovery Error:', err);
+        alert('❌ ಕ್ಲೌಡ್ ರಿಕವರಿ ಸಮಯದಲ್ಲಿ ದೋಷವಾಗಿದೆ: ' + err.message + '\n\nದಯವಿಟ್ಟು ನಿಮ್ಮ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ವೆಬ್‌ಸೈಟ್ ತೆರೆದು ಬ್ಯಾಕಪ್ ಚೆಕ್ ಮಾಡಿ.');
+      }
+    };
+
+    // ೨. ೭,೦೦೦ ಪ್ರಶ್ನೆಗಳನ್ನು ಕಂಪ್ಯೂಟರ್‌ಗೆ ೧-ಕ್ಲಿಕ್‌ನಲ್ಲಿ ಬ್ಯಾಕಪ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡುವ ಫಂಕ್ಷನ್
+    window.exportFullQBankBackupJSON = function() {
+      const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+      
+      if (qbank.length === 0) {
+        return alert('⚠️ ಬ್ಯಾಕಪ್ ಮಾಡಲು ಭಂಡಾರದಲ್ಲಿ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ.');
+      }
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(qbank, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `withyou_qbank_backup_${qbank.length}_questions_${getTodayFormattedDate()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+
+      showToast(`💾 ${qbank.length} ಪ್ರಶ್ನೆಗಳ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ!`, 'success');
+    };
+
+    // ೩. ಬ್ಯಾಕಪ್ ಫೈಲ್‌ನಿಂದ (JSON File) ೧ ಸೆಕೆಂಡ್‌ನಲ್ಲಿ ಪ್ರಶ್ನೆಗಳನ್ನು ವಾಪಸ್ ತರುವುದು
+    window.restoreQBankFromBackupFile = function(inputEl) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const raw = e.target.result;
+          const parsed = JSON.parse(raw);
+
+          if (!Array.isArray(parsed) || parsed.length === 0) {
+            return alert('❌ ತಪ್ಪಾದ ಬ್ಯಾಕಪ್ ಫೈಲ್.');
+          }
+
+          if (confirm(`ಈ ಬ್ಯಾಕಪ್ ಫೈಲ್‌ನಲ್ಲಿರುವ ${parsed.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಭಂಡಾರಕ್ಕೆ ಮರುಸ್ಥಾಪಿಸಬೇಕೇ?`)) {
+            appState.qbank = parsed;
+            try {
+              localStorage.setItem('withyou_custom_qbank', JSON.stringify(parsed));
+            } catch (err) {}
+
+            await pushToFirebaseCloud();
+            renderCustomQuestionList();
+            renderChapterCheckboxes();
+            renderMaster10QuestionFormats();
+
+            alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${parsed.length} ಪ್ರಶ್ನೆಗಳು ಯಶಸ್ವಿಯಾಗಿ ಮರುಸ್ಥಾಪನೆಯಾಗಿವೆ!`);
+            showToast(`✅ ${parsed.length} ಪ್ರಶ್ನೆಗಳು ಮರುಸ್ಥಾಪನೆಯಾಗಿವೆ!`, 'success');
+          }
+        } catch (err) {
+          alert('❌ ಫೈಲ್ ಓದುವಾಗ ದೋಷವಾಗಿದೆ: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ ತುರ್ತು ರಿಕವರಿ ಮತ್ತು ಬ್ಯಾಕಪ್ ಬಟನ್‌ಗಳ ಪ್ರದರ್ಶನ
+    const origRenderAdminMasterUnifiedViewForRecovery = window.renderAdminMasterUnifiedView;
+    window.renderAdminMasterUnifiedView = function() {
+      if (typeof origRenderAdminMasterUnifiedViewForRecovery === 'function') {
+        origRenderAdminMasterUnifiedViewForRecovery();
+      }
+
+      const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2');
+      if (qbHeaderRow && !document.getElementById('btn-emergency-cloud-restore')) {
+        const recoveryBtnsHtml = `
+          <button type="button" id="btn-emergency-cloud-restore" onclick="forceDeepRestoreFromFirebaseCloud()" class="text-xs bg-red-600 hover:bg-red-700 text-white font-black px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 cursor-pointer animate-pulse">
+            <i class="fa-solid fa-cloud-arrow-down"></i> <span>🚑 ತುರ್ತು ಕ್ಲೌಡ್ ರಿಕವರಿ</span>
+          </button>
+          <button type="button" onclick="exportFullQBankBackupJSON()" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-black px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 cursor-pointer" title="ಕಂಪ್ಯೂಟರ್‌ಗೆ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಸೇವ್ ಮಾಡಿ">
+            <i class="fa-solid fa-download"></i> <span>💾 ಬ್ಯಾಕಪ್ ಡೌನ್‌ಲೋಡ್</span>
+          </button>
+          <label class="text-xs bg-blue-700 hover:bg-blue-800 text-white font-black px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 cursor-pointer" title="ಫೈಲ್‌ನಿಂದ ಮರುಸ್ಥಾಪಿಸಿ">
+            <i class="fa-solid fa-upload"></i> <span>⚡ Restore File</span>
+            <input type="file" accept=".json" onchange="restoreQBankFromBackupFile(this)" class="hidden" />
+          </label>
+        `;
+        qbHeaderRow.insertAdjacentHTML('afterbegin', recoveryBtnsHtml);
+      }
+    };
+
+    // ಪೇಜ್ ಲೋಡ್ ಆದಾಗ ಆಟೋಮ್ಯಾಟಿಕ್ ಆಗಿ ಕ್ಲೌಡ್ ಚೆಕ್ ಮಾಡುವುದು
+    fetchFromFirebaseCloud();
     
   </script>
 </body>
