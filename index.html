@@ -28366,6 +28366,119 @@ window.handleSaveAndApproveRequest = function(e, reqId) {
   executeApproveAndRegister(reqId);
 };
 
+
+  /* ==========================================================================
+   🚨 EMERGENCY CLOUD RECOVERY & RESTORATION ENGINE (8000+ QUESTIONS RECOVERY)
+   ========================================================================== */
+
+// ೧. ಕ್ಲೌಡ್‌ನಲ್ಲಿರುವ ಎಲ್ಲಾ ಹಳೆಯ ಬ್ಯಾಕಪ್‌ಗಳು ಮತ್ತು ಪ್ರಶ್ನೆಗಳನ್ನು ಡೀಪ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಹುಡುಕುವ ಫಂಕ್ಷನ್
+window.recoverAllCloudQuestionsDeepScan = async function() {
+  const btn = document.getElementById('btn-emergency-cloud-recover');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ಸ್ಕ್ಯಾನ್ ಆಗುತ್ತಿದೆ...`;
+  }
+
+  showToast('🔍 ಕ್ಲೌಡ್‌ನಲ್ಲಿ ಹಳೆಯ ೮,೦೦೦ ಪ್ರಶ್ನೆಗಳನ್ನು ಹುಡುಕಲಾಗುತ್ತಿದೆ...', 'info');
+
+  let recoveredPool = [];
+
+  // A. Firebase ನ ವಿಭಿನ್ನ ನೋಡ್‌ಗಳಲ್ಲಿ ಹುಡುಕಾಟ
+  const possibleEndpoints = [
+    `${FIREBASE_REST_BASE}/withyou_qbank.json`,
+    `${FIREBASE_REST_BASE}/qbank.json`,
+    `${FIREBASE_REST_BASE}/withyou_custom_qbank.json`,
+    `${FIREBASE_REST_BASE}/master_qbank.json`,
+    `${FIREBASE_REST_BASE}/questions.json`
+  ];
+
+  for (let url of possibleEndpoints) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          const list = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+          if (list.length > recoveredPool.length) {
+            recoveredPool = list;
+          }
+        }
+      }
+    } catch (err) {}
+  }
+
+  // B. ಬ್ರೌಸರ್‌ನ ಹಳೆಯ LocalStorage ಬ್ಯಾಕಪ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸುವುದು
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('qbank') || key.includes('questions') || key.includes('backup'))) {
+        try {
+          const localData = JSON.parse(localStorage.getItem(key));
+          if (Array.isArray(localData) && localData.length > recoveredPool.length) {
+            recoveredPool = localData;
+          }
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+
+  if (recoveredPool.length > (appState.qbank || []).length) {
+    appState.qbank = recoveredPool;
+    try {
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(recoveredPool));
+    } catch (quotaErr) {
+      console.warn('LocalStorage 5MB Quota exceeded, keeping in active memory');
+    }
+
+    renderCustomQuestionList();
+    renderChapterCheckboxes();
+
+    alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${recoveredPool.length} ಪ್ರಶ್ನೆಗಳು ಪತ್ತೆಯಾಗಿ ಭಂಡಾರಕ್ಕೆ ಮರುಸ್ಥಾಪನೆಗೊಂಡಿವೆ!`);
+    showToast(`✅ ${recoveredPool.length} ಪ್ರಶ್ನೆಗಳನ್ನು ಮರಳಿ ತರಲಾಗಿದೆ!`, 'success');
+  } else {
+    alert(`ಪ್ರಸ್ತುತ ಈ ಬ್ರೌಸರ್/ಕ್ಲೌಡ್‌ನಲ್ಲಿ ${appState.qbank.length} ಪ್ರಶ್ನೆಗಳು ಮಾತ್ರ ಲಭ್ಯವಿವೆ.\n\n⚠️ ಪ್ರಮುಖ ಸೂಚನೆ:\nನೀವು ಈ 8000 ಪ್ರಶ್ನೆಗಳನ್ನು ಕಂಪ್ಯೂಟರ್ ಅಥವಾ ಲ್ಯಾಪ್‌ಟಾಪ್‌ನಲ್ಲಿ ಸೇರಿಸಿದ್ದರೆ, ದಯವಿಟ್ಟು ಅದೇ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ವೆಬ್‌ಸೈಟ್ ತೆರೆದು "Sync" ಅಥವಾ "Export Backup" ಕ್ಲಿಕ್ ಮಾಡಿ!`);
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-life-ring text-amber-300"></i> <span>🚨 ಕ್ಲೌಡ್ ರಿಕವರಿ (Restore 8000)</span>`;
+  }
+};
+
+// ೨. ಪ್ರಶ್ನೆ ಭಂಡಾರವನ್ನು ಬ್ಯಾಕಪ್ JSON ಫೈಲ್ ಆಗಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡುವ ಟೂಲ್ (ಭವಿಷ್ಯದಲ್ಲಿ ಎಂದೂ ಕಳೆದುಹೋಗದಂತೆ)
+window.downloadCompleteQBankBackupFile = function() {
+  const qbank = appState.qbank || [];
+  if (qbank.length === 0) return alert('ಭಂಡಾರದಲ್ಲಿ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳಿಲ್ಲ.');
+
+  const blob = new Blob([JSON.stringify(qbank, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `WithYou_QBank_Backup_${getTodayFormattedDate()}_(${qbank.length}_Questions).json`;
+  a.click();
+  showToast('💾 ಬ್ಯಾಕಪ್ ಫೈಲ್ ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ!', 'success');
+};
+
+// ೩. ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ "🚨 ಕ್ಲೌಡ್ ರಿಕವರಿ" ಮತ್ತು "💾 ಡೌನ್‌ಲೋಡ್ ಬ್ಯಾಕಪ್" ಬಟನ್‌ಗಳನ್ನು ಸೇರಿಸುವುದು
+(function injectRecoveryButtonsInAdminToolbar() {
+  const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2, #admin-subview-qbank .card-modern:last-child .flex.flex-wrap.items-center');
+  if (qbHeaderRow && !document.getElementById('btn-emergency-cloud-recover')) {
+    const recBtn = document.createElement('button');
+    recBtn.id = 'btn-emergency-cloud-recover';
+    recBtn.type = 'button';
+    recBtn.className = 'text-xs bg-red-600 hover:bg-red-700 text-white font-black px-3.5 py-1.5 rounded-xl border border-red-500 flex items-center gap-1.5 cursor-pointer shadow-md animate-pulse';
+    recBtn.innerHTML = '<i class="fa-solid fa-life-ring text-amber-300"></i> <span>🚨 ಕ್ಲೌಡ್ ರಿಕವರಿ (Restore 8000)</span>';
+    recBtn.onclick = () => recoverAllCloudQuestionsDeepScan();
+    qbHeaderRow.insertBefore(recBtn, qbHeaderRow.firstChild);
+
+    const backupBtn = document.createElement('button');
+    backupBtn.id = 'btn-download-qbank-backup';
+    backupBtn.type = 'button';
+    backupBtn.className = 'text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1.5 rounded-xl border border-emerald-500 flex items-center gap-1 cursor-pointer shadow-sm';
+    backupBtn.innerHTML = '<i class="fa-solid fa-download text-amber-300"></i> <span>💾 Backup JSON</span>';
+    backupBtn.onclick = () => downloadCompleteQBankBackupFile();
+    qbHeaderRow.insertBefore(backupBtn, recBtn.nextSibling);
+  }
+})();  
     
   </script>
 </body>
