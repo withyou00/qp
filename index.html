@@ -25179,6 +25179,30 @@
     // ತಕ್ಷಣವೇ ಲೈವ್ ರೆಂಡರಿಂಗ್ ಚಾಲನೆ
     renderRegisteredTeachers();
     renderRegisteredSchools();
+
+// =========================================================================
+    // 🎯 100% WORKING: BULK QUESTION FORMATS MANAGER BUTTON & MODAL CONTROLLER
+    // =========================================================================
+    (function ensureFormatManagerButtonVisible() {
+      function injectBtn() {
+        const qbHeaderRow = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2, #admin-subview-qbank .card-modern:last-child .flex.flex-wrap');
+        if (qbHeaderRow && !document.getElementById('btn-admin-manage-subject-formats')) {
+          const fmtBtn = document.createElement('button');
+          fmtBtn.id = 'btn-admin-manage-subject-formats';
+          fmtBtn.type = 'button';
+          fmtBtn.className = 'text-xs bg-purple-100 hover:bg-purple-200 text-purple-950 font-black px-3 py-1.5 rounded-xl border border-purple-400 flex items-center gap-1 cursor-pointer shadow-sm';
+          fmtBtn.innerHTML = '<i class="fa-solid fa-layer-group text-purple-700"></i> <span>🎯 ಪ್ರಕಾರಗಳ ನಿರ್ವಹಣೆ (Bulk Formats)</span>';
+          fmtBtn.onclick = () => openManageSubjectFormatsModal();
+          qbHeaderRow.insertBefore(fmtBtn, qbHeaderRow.firstChild);
+        }
+      }
+      setTimeout(injectBtn, 500);
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.innerText && (e.target.innerText.includes('ಪ್ರಶ್ನೆ ಭಂಡಾರ') || e.target.innerText.includes('Admin'))) {
+          setTimeout(injectBtn, 300);
+        }
+      });
+    })();
     
   </script>
 </body>
