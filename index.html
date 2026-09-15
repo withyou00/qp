@@ -25203,6 +25203,192 @@
         }
       });
     })();
+
+
+// =========================================================================
+    // 📋 BULK QUESTION FORMATS (TYPES) JSON IMPORTER & REVIEW SYSTEM
+    // =========================================================================
+
+    let stagedBulkFormatsJSON = [];
+
+    // ೧. ಬಲ್ಕ್ ಪ್ರಕಾರಗಳ JSON ಇಂಪೋರ್ಟ್ ಮಾಡಲ್ ತೆರೆಯುವುದು
+    window.openBulkFormatJSONImportModal = function() {
+      let modal = document.getElementById('bulk-format-json-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'bulk-format-json-modal';
+        modal.className = 'fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+        document.body.appendChild(modal);
+      }
+
+      stagedBulkFormatsJSON = [];
+
+      modal.innerHTML = `
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-3xl w-full shadow-2xl border space-y-4 max-h-[92vh] overflow-y-auto text-xs font-sans">
+          
+          <div class="border-b pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="p-2.5 bg-gradient-to-tr from-purple-600 to-indigo-600 text-white rounded-2xl font-bold shadow">
+                <i class="fa-solid fa-shapes text-amber-300 text-base"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900">⚡ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಬಲ್ಕ್ JSON ಇಂಪೋರ್ಟರ್</h3>
+                <p class="text-[11px] text-slate-500 font-semibold">AI ನೀಡಿದ ಪ್ರಕಾರಗಳ JSON ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ, ಪರಿಶೀಲಿಸಿ ಸೇವ್ ಮಾಡಿ</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('bulk-format-json-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+          </div>
+
+          <!-- Step 1: Input Area -->
+          <div id="bulk-fmt-step-input" class="space-y-3">
+            <div class="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-[11px] text-purple-950 font-medium">
+              💡 <b>ಮಾಹಿತಿ:</b> ನೀವು AI ನಿಂದ ಪಡೆದ ಪ್ರಕಾರಗಳ (Format Label, Heading, Marks, Subject) <b>[ ... ]</b> JSON ಕೋಡ್ ಅನ್ನು ಇಲ್ಲಿ ಪೇಸ್ಟ್ ಮಾಡಿ ಕೆಳಗಿನ ಹಸಿರು ಬಟನ್ ಒತ್ತಿ.
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">ಪ್ರಕಾರಗಳ JSON ಕೋಡ್ ಇಲ್ಲಿದೆ (Paste here):</label>
+              <textarea id="bulk-fmt-json-textarea" rows="10" placeholder="[ { 'subject': 'ಕನ್ನಡ', 'label': 'ಸ್ವಂತ ವಾಕ್ಯ (2M)', 'heading': 'ಈ ಕೆಳಗಿನ ಪದಗಳನ್ನು ಬಳಸಿ ಸ್ವಂತ ವಾಕ್ಯ ರಚಿಸಿ:', 'marks': 2 } ]" class="w-full p-3 bg-slate-50 border-2 border-purple-300 rounded-2xl font-mono text-xs text-slate-900 focus:outline-none focus:border-purple-600 leading-relaxed"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('bulk-format-json-modal').classList.add('hidden')" class="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-600 cursor-pointer">ರದ್ದು</button>
+              <button type="button" onclick="analyzeAndReviewBulkFormatsJSON()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-magnifying-glass-chart text-amber-300"></i>
+                <span>ಪರಿಶೀಲಿಸಿ (Analyze & Review)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Review & Confirm -->
+          <div id="bulk-fmt-step-preview" class="hidden space-y-3">
+            <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between">
+              <b class="text-emerald-950 font-black text-xs">✅ ಒಟ್ಟು ಗುರುತಿಸಲಾದ ಪ್ರಕಾರಗಳು: <span id="preview-fmt-count" class="text-sm text-emerald-800 font-black">0</span></b>
+              <button type="button" onclick="document.getElementById('bulk-fmt-step-input').classList.remove('hidden'); document.getElementById('bulk-fmt-step-preview').classList.add('hidden');" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs cursor-pointer">
+                <i class="fa-solid fa-arrow-left"></i> ಮತ್ತೆ ಎಡಿಟ್ ಮಾಡಿ
+              </button>
+            </div>
+
+            <div id="preview-fmt-cards-list" class="max-h-72 overflow-y-auto space-y-2 pr-1"></div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t">
+              <button type="button" onclick="document.getElementById('bulk-format-json-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+              <button type="button" onclick="confirmAndSaveBulkFormatsJSON()" class="px-6 py-2.5 btn-emerald-gradient text-white font-extrabold rounded-xl shadow flex items-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-floppy-disk text-amber-300"></i>
+                <span>ಖಚಿತವಾಗಿದೆ, ಕ್ಲೌಡ್‌ಗೆ ಸೇವ್ ಮಾಡಿ (Save to Cloud)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+      modal.classList.remove('hidden');
+    };
+
+    // ೨. JSON ಅನ್ನು ಪರಿಶೀಲಿಸಿ ಪ್ರಿವ್ಯೂ ಕಾರ್ಡ್ ತೋರಿಸುವುದು
+    window.analyzeAndReviewBulkFormatsJSON = function() {
+      const textarea = document.getElementById('bulk-fmt-json-textarea');
+      let rawVal = textarea?.value.trim();
+
+      if (!rawVal) return alert('ದಯವಿಟ್ಟು JSON ಕೋಡ್ ಅನ್ನು ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      rawVal = rawVal.replace(/^```json/i, '').replace(/^```/, '').replace(/```$/, '').trim();
+
+      let parsed = [];
+      try {
+        parsed = JSON.parse(rawVal);
+      } catch (e) {
+        return alert('❌ JSON ಕೋಡ್‌ನಲ್ಲಿ ದೋಷವಿದೆ. ದಯವಿಟ್ಟು [ ನಿಂದ ] ವರೆಗಿನ ವ್ಯಾಲಿಡ್ ಕೋಡ್ ಪೇಸ್ಟ್ ಮಾಡಿ.');
+      }
+
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        return alert('ಯಾವುದೇ ಪ್ರಕಾರಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      // ಡೇಟಾ ಶುದ್ಧೀಕರಣ
+      stagedBulkFormatsJSON = parsed.map((item, i) => ({
+        key: item.key || ('custom_' + Date.now() + '_' + i),
+        subject: item.subject || 'all',
+        label: item.label || item.name || 'ಹೊಸ ಪ್ರಕಾರ',
+        heading: item.heading || item.paperHeading || `${item.label}:`,
+        marks: parseInt(item.marks) || 1
+      }));
+
+      document.getElementById('bulk-fmt-step-input').classList.add('hidden');
+      document.getElementById('bulk-fmt-step-preview').classList.remove('hidden');
+      document.getElementById('preview-fmt-count').innerText = stagedBulkFormatsJSON.length;
+
+      const container = document.getElementById('preview-fmt-cards-list');
+      container.innerHTML = stagedBulkFormatsJSON.map((fmt, idx) => `
+        <div class="p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl space-y-1 text-xs">
+          <div class="flex items-center justify-between font-black">
+            <span class="text-slate-900">${idx + 1}. ${escapeHtml(fmt.label)}</span>
+            <span class="bg-indigo-100 text-indigo-950 px-2 py-0.5 rounded-lg text-[10px] border border-indigo-200">
+              ವಿಷಯ: ${escapeHtml(fmt.subject)} &bull; ${fmt.marks}M
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-600 bg-white p-2 rounded-xl border">
+            <b>ಪತ್ರಿಕೆಯ ಹೆಡಿಂಗ್:</b> ${escapeHtml(fmt.heading)}
+          </div>
+        </div>
+      `).join('');
+    };
+
+    // ೩. ಖಚಿತಪಡಿಸಿ LocalStorage ಮತ್ತು Firebase ಗೆ ಮರ್ಜ್ ಮಾಡುವುದು (ಯಾವುದೂ ಡಿಲೀಟ್ ಆಗಲ್ಲ!)
+    window.confirmAndSaveBulkFormatsJSON = async function() {
+      if (!stagedBulkFormatsJSON || stagedBulkFormatsJSON.length === 0) return;
+
+      let currentList = getCustomQuestionTypesList();
+
+      // ಹಳೆಯದನ್ನು ಅಳಿಸದೆ ಹೊಸದನ್ನು ಮರ್ಜ್ ಮಾಡುವುದು
+      stagedBulkFormatsJSON.forEach(newFmt => {
+        const existingIdx = currentList.findIndex(x => x.key === newFmt.key || safeCleanMatch(x.label) === safeCleanMatch(newFmt.label));
+        if (existingIdx >= 0) {
+          currentList[existingIdx] = newFmt; // ಅಪ್ಡೇಟ್
+        } else {
+          currentList.push(newFmt); // ಹೊಸ ಸೇರ್ಪಡೆ
+        }
+      });
+
+      localStorage.setItem('withyou_custom_qtypes', JSON.stringify(currentList));
+
+      try {
+        await fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(currentList)
+        });
+      } catch (e) {}
+
+      document.getElementById('bulk-format-json-modal')?.classList.add('hidden');
+      renderMaster10QuestionFormats();
+      if (typeof openManageSubjectFormatsModal === 'function' && !document.getElementById('manage-subject-formats-modal')?.classList.contains('hidden')) {
+        openManageSubjectFormatsModal();
+      }
+
+      alert(`🎉 ಒಟ್ಟು ${stagedBulkFormatsJSON.length} ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳು ಯಶಸ್ವಿಯಾಗಿ ಕ್ಲೌಡ್‌ಗೆ ಸೇರ್ಪಡೆಯಾಗಿವೆ!`);
+      showToast('✅ ಪ್ರಕಾರಗಳು ಸೇವ್ ಆಗಿವೆ!', 'success');
+    };
+
+    // ೪. ಅಡ್ಮಿನ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ "📋 ಬಲ್ಕ್ ಪ್ರಕಾರಗಳ JSON" ಬಟನ್ ತೋರಿಸುವುದು
+    (function injectBulkFormatBtn() {
+      function run() {
+        const toolbar = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2, #admin-subview-qbank .card-modern:last-child .flex.flex-wrap');
+        if (toolbar && !document.getElementById('btn-admin-bulk-fmt-json')) {
+          const btn = document.createElement('button');
+          btn.id = 'btn-admin-bulk-fmt-json';
+          btn.type = 'button';
+          btn.className = 'text-xs bg-purple-100 hover:bg-purple-200 text-purple-950 font-black px-3 py-1.5 rounded-xl border border-purple-400 flex items-center gap-1 cursor-pointer shadow-sm';
+          btn.innerHTML = '<i class="fa-solid fa-file-code text-purple-700"></i> <span>📋 ಬಲ್ಕ್ ಪ್ರಕಾರಗಳ JSON</span>';
+          btn.onclick = () => openBulkFormatJSONImportModal();
+          toolbar.insertBefore(btn, toolbar.firstChild);
+        }
+      }
+      setTimeout(run, 600);
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.innerText && (e.target.innerText.includes('ಪ್ರಶ್ನೆ ಭಂಡಾರ') || e.target.innerText.includes('Admin'))) {
+          setTimeout(run, 300);
+        }
+      });
+    })();
     
   </script>
 </body>
