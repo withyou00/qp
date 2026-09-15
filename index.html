@@ -1842,6 +1842,384 @@
       sc++;
       if (sc >= 3) { sc = 0; navigateToSection('admin'); }
     };
+
+  // =========================================================================
+  // 🌟 1. ವಿಷಯಾನುಸಾರ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ಡಿಸ್ಪ್ಲೇ (3 ಕಾಲಂ & ವಿಷಯವಾರು ಕೌಂಟ್)
+  // =========================================================================
+  window.renderMaster10QuestionFormats = function() {
+    const container = document.getElementById('step3-formats-container');
+    if (!container) return;
+
+    const currentSubj = (document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ').toLowerCase();
+    const cleanSubjText = cleanMatchText(currentSubj);
+
+    // ಡಿಫಾಲ್ಟ್ ೧೦ ಪ್ರಕಾರಗಳು
+    let standardFormats = [
+      { key: "mcq", label: "೧. ಬಹು ಆಯ್ಕೆ (1M)", subject: "all" },
+      { key: "blanks", label: "೨. ಖಾಲಿ ಜಾಗ (1M)", subject: "all" },
+      { key: "true_false", label: "೩. ಸರಿ/ತಪ್ಪು (1M)", subject: "all" },
+      { key: "analogy", label: "೪. ಸಂಬಂಧ ಕಲ್ಪಿಸಿ (1M)", subject: "all" },
+      { key: "odd_one_out", label: "೫. ಗುಂಪಿಗೆ ಸೇರದ ಪದ (1M)", subject: "all" },
+      { key: "match", label: "೬. ಹೊಂದಿಸಿ ಬರೆಯಿರಿ (4M)", subject: "all" },
+      { key: "vsa_1m", label: "೭. ೧ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (1M)", subject: "all" },
+      { key: "sa_2m", label: "೮. ೨ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (2M)", subject: "all" },
+      { key: "sa_3m", label: "೯. ೩ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (3M)", subject: "all" },
+      { key: "la_4m", label: "೧೦. ೪ ವಾಕ್ಯದ ಪ್ರಶ್ನೆ (4M)", subject: "all" }
+    ];
+
+    // ಇಂಗ್ಲಿಷ್ ವಿಷಯಕ್ಕೆ ಪ್ರತ್ಯೇಕ ಗ್ರಾಮರ್ ವಿಭಾಗಗಳು
+    if (cleanSubjText.includes('eng')) {
+      standardFormats = [
+        { key: "mcq", label: "MCQ (1M)", subject: "english" },
+        { key: "blanks", label: "Fill in the blanks (1M)", subject: "english" },
+        { key: "opposites", label: "Opposites (1M)", subject: "english" },
+        { key: "rhyming", label: "Rhyming Words (1M)", subject: "english" },
+        { key: "articles", label: "Articles (1M)", subject: "english" },
+        { key: "prepositions", label: "Prepositions (1M)", subject: "english" },
+        { key: "vsa_1m", label: "1-Sentence Answer (1M)", subject: "english" },
+        { key: "sa_2m", label: "2-Sentence Answer (2M)", subject: "english" },
+        { key: "sa_3m", label: "3-Sentence Answer (3M)", subject: "english" },
+        { key: "la_4m", label: "Long Answer (4M)", subject: "english" }
+      ];
+    }
+
+    // ಕಸ್ಟಮ್ ಪ್ರಕಾರಗಳನ್ನು ಸೇರಿಸಿ ವಿಷಯಾನುಸಾರ ಫಿಲ್ಟರ್ ಮಾಡುವುದು
+    const savedCustom = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+    let allApplicable = [...standardFormats];
+
+    savedCustom.forEach(ct => {
+      const appliesTo = cleanMatchText(ct.subject || 'all');
+      if (appliesTo === 'all' || cleanSubjText.includes(appliesTo) || appliesTo.includes(cleanSubjText)) {
+        allApplicable.push({ key: ct.key, label: `${ct.label} (${ct.marks||1}M)`, subject: ct.subject });
+      }
+    });
+
+    // 3 ಕಾಲಂ ಕಾಂಪ್ಯಾಕ್ಟ್ ಗ್ರಿಡ್‌ನಲ್ಲಿ ತಕ್ಷಣ ಪ್ರದರ್ಶನ
+    container.innerHTML = allApplicable.map(fmt => `
+      <label class="flex items-center space-x-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 truncate">
+        <input type="checkbox" name="qtype_opt" value="${fmt.key}" checked class="rounded text-emerald-600 w-4 h-4 shrink-0 cursor-pointer">
+        <span class="font-bold text-[11px] text-slate-800 truncate">${escapeHtml(fmt.label)}</span>
+      </label>
+    `).join('');
+  };
+
+  // =========================================================================
+  // 🌟 2. ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ರಿವ್ಯೂ & 100% ವ್ಯಾಲಿಡೇಟ್ ಆಗುವ JSON IMPORT MODAL
+  // =========================================================================
+  let stagedCustomTypes = [];
+
+  window.openFormatJSONImportModal = function() {
+    let modal = document.getElementById('format-json-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'format-json-modal';
+      modal.className = 'fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-xl w-full shadow-2xl space-y-4 text-xs font-sans max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-2">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-code text-purple-600 text-lg"></i>
+            <b class="text-sm text-slate-900">ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ JSON ಇಂಪೋರ್ಟ್ & ರಿವ್ಯೂ</b>
+          </div>
+          <button onclick="document.getElementById('format-json-modal').classList.add('hidden')" class="text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl flex justify-between items-center">
+          <span class="font-bold text-indigo-950">AI ನಿಂದ ಪ್ರಕಾರಗಳನ್ನು ಪಡೆಯಲು ಪ್ರಾಂಪ್ಟ್:</span>
+          <button type="button" onclick="copyFormatBuilderPrompt()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1">
+            <i class="fa-solid fa-copy"></i> Copy Prompt
+          </button>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">JSON Array ಪೇಸ್ಟ್ ಮಾಡಿ:</label>
+          <textarea id="fmt-json-textarea" rows="6" placeholder='[{"label":"ಪ್ರಬಂಧ ರಚನೆ","heading":"ಪ್ರಬಂಧ ಬರೆಯಿರಿ:","marks":5,"subject":"ಕನ್ನಡ"}]' class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-[11px]"></textarea>
+        </div>
+
+        <button type="button" onclick="validateFormatJSON()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex justify-center items-center gap-1.5 shadow">
+          <i class="fa-solid fa-magnifying-glass-chart text-amber-300"></i>
+          <span>ಪರಿಶೀಲಿಸಿ & 100% Review ಮಾಡಿ</span>
+        </button>
+
+        <div id="fmt-review-box" class="hidden space-y-2 border-t pt-2">
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+              ✓ 100% ವ್ಯಾಲಿಡ್ ಆಗಿದೆ (<span id="fmt-review-count">0</span> ಪ್ರಕಾರಗಳು)
+            </span>
+          </div>
+          <div id="fmt-review-list" class="max-h-36 overflow-y-auto space-y-1.5 pr-1"></div>
+          <button type="button" onclick="confirmSaveStagedFormats()" class="w-full py-2.5 btn-emerald-gradient text-white font-black rounded-xl shadow">
+            ಖಚಿತವಾಗಿದೆ, ಭಂಡಾರಕ್ಕೆ ಸೇರಿಸಿ
+          </button>
+        </div>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+  };
+
+  window.copyFormatBuilderPrompt = function() {
+    const promptText = `ದಯವಿಟ್ಟು ಈ ವಿಷಯದ ಎಲ್ಲಾ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಕೆಳಗಿನ JSON Array ಫಾರ್ಮ್ಯಾಟ್‌ನಲ್ಲಿ ಮಾತ್ರ ಕೊಡಿ:
+[
+  {
+    "label": "ಪ್ರಕಾರದ ಹೆಸರು (ಉದಾ: ಪ್ರಬಂಧ ರಚನೆ)",
+    "heading": "ಪರೀಕ್ಷಾ ಪತ್ರಿಕೆಯ ಸೂಚನೆ (ಉದಾ: ಈ ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಒಂದು ವಿಷಯಕ್ಕೆ ಪ್ರಬಂಧ ಬರೆಯಿರಿ:)",
+    "marks": 5,
+    "subject": "ಕನ್ನಡ"
+  }
+]`;
+    navigator.clipboard.writeText(promptText).then(() => showToast('📋 ಪ್ರಾಂಪ್ಟ್ ಕಾಪಿ ಆಗಿದೆ!', 'success'));
+  };
+
+  window.validateFormatJSON = function() {
+    const raw = document.getElementById('fmt-json-textarea')?.value.trim();
+    if (!raw) return alert('ದಯವಿಟ್ಟು JSON ಪೇಸ್ಟ್ ಮಾಡಿ.');
+
+    try {
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error();
+
+      stagedCustomTypes = arr.filter(x => x.label && x.heading).map(x => ({
+        key: 'custom_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+        label: String(x.label).trim(),
+        heading: String(x.heading).trim(),
+        marks: parseInt(x.marks, 10) || 1,
+        subject: x.subject || 'all'
+      }));
+
+      if (stagedCustomTypes.length === 0) return alert('ಮಾನ್ಯವಾದ ಪ್ರಕಾರಗಳು ಸಿಗಲಿಲ್ಲ.');
+
+      document.getElementById('fmt-review-box').classList.remove('hidden');
+      document.getElementById('fmt-review-count').innerText = stagedCustomTypes.length;
+      document.getElementById('fmt-review-list').innerHTML = stagedCustomTypes.map((c, i) => `
+        <div class="p-2 bg-emerald-50/70 border border-emerald-200 rounded-lg flex justify-between items-center text-[11px]">
+          <div><b>${i+1}. ${escapeHtml(c.label)}</b> (${c.marks}M) &bull; ವಿಷಯ: <b>${escapeHtml(c.subject)}</b></div>
+          <span class="text-emerald-700 font-bold">✓ Ready</span>
+        </div>
+      `).join('');
+
+    } catch (e) {
+      alert('⚠️ ತಪ್ಪಾದ JSON ಫಾರ್ಮ್ಯಾಟ್! ದಯವಿಟ್ಟು ಸರಿಯಾದ JSON Array ಪೇಸ್ಟ್ ಮಾಡಿ.');
+    }
+  };
+
+  window.confirmSaveStagedFormats = function() {
+    if (!stagedCustomTypes || stagedCustomTypes.length === 0) return;
+    let list = JSON.parse(localStorage.getItem('withyou_custom_qtypes') || '[]');
+    list.push(...stagedCustomTypes);
+    localStorage.setItem('withyou_custom_qtypes', JSON.stringify(list));
+
+    try {
+      fetch(`${FIREBASE_REST_BASE}/withyou_custom_qtypes.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(list)
+      });
+    } catch (err) {}
+
+    document.getElementById('format-json-modal')?.classList.add('hidden');
+    renderMaster10QuestionFormats();
+    if (document.getElementById('add-custom-qtype-modal') && !document.getElementById('add-custom-qtype-modal').classList.contains('hidden')) {
+      openAddCustomQTypeModal();
+    }
+    showToast(`🎉 ${stagedCustomTypes.length} ಹೊಸ ಪ್ರಕಾರಗಳು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಕೊಂಡಿವೆ!`, 'success');
+  };
+
+  // =========================================================================
+  // 🌟 3. ಪ್ರಶ್ನೆಗಳ ಇಂಪೋರ್ಟ್ JSON ಬಟನ್ & AI PROMPT COPY MODAL
+  // =========================================================================
+  window.copyQuestionImportAIPrompt = function() {
+    const subj = document.getElementById('bulk-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+    const cls = document.getElementById('bulk-class')?.value || '6';
+    const chap = document.getElementById('bulk-chapter')?.value || 'ಪಾಠದ ಹೆಸರು';
+
+    const p = `ದಯವಿಟ್ಟು ${cls}ನೇ ತರಗತಿಯ '${subj}' ವಿಷಯದ '${chap}' ಪಾಠದ ಎಲ್ಲಾ ಪ್ರಶ್ನೋತ್ತರಗಳನ್ನು ಕೆಳಗಿನ JSON Array ರೂಪದಲ್ಲಿ ಮಾತ್ರ ನೀಡಿ:
+[
+  {
+    "grade": "${cls}",
+    "subject": "${subj}",
+    "chapter": "${chap}",
+    "type": "mcq",
+    "q": "ಪ್ರಶ್ನೆ ಇಲ್ಲಿ ಬರೆಯಿರಿ",
+    "a": "ಆಯ್ಕೆ A", "b": "ಆಯ್ಕೆ B", "c": "ಆಯ್ಕೆ C", "d": "ಆಯ್ಕೆ D",
+    "ans": "(B) ಸರಿಯಾದ ಉತ್ತರ",
+    "marks": 1,
+    "obj": "ಜ್ಞಾನ"
+  }
+]`;
+    navigator.clipboard.writeText(p).then(() => showToast('📋 AI ಪ್ರಶ್ನೆ ಪ್ರಾಂಪ್ಟ್ ಕಾಪಿ ಆಗಿದೆ!', 'success'));
+  };
+
+  // =========================================================================
+  // 🌟 4. ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ರಚನೆಯಲ್ಲಿ "ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ" ಫಿಕ್ಸ್ (ROBUST MATCHER)
+  // =========================================================================
+  window.generateExamPackageFromBank = function() {
+    const schoolName = document.getElementById('cfg-school-name')?.value.trim() || 'ಸರ್ಕಾರಿ ಶಾಲೆ';
+    const grade = document.getElementById('cfg-class')?.value || '6';
+    const rawSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+    const rawExamType = document.getElementById('cfg-exam-type')?.value || 'ಘಟಕ ಪರೀಕ್ಷೆ';
+    const targetMarks = parseInt(document.getElementById('cfg-total-marks')?.value, 10) || 20;
+    const targetQCount = parseInt(document.getElementById('cfg-total-questions')?.value, 10) || 15;
+    const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+    let selectedChapters = Array.from(document.querySelectorAll('input[name="selected_chapter"]:checked')).map(b => b.value.trim());
+    const checkedTypeNodes = document.querySelectorAll('input[name="qtype_opt"]:checked');
+    const selectedTypes = Array.from(checkedTypeNodes).map(cb => cb.value.trim());
+
+    const cleanSelectedSubj = cleanMatchText(rawSubject);
+
+    // ಪ್ರಶ್ನೆಗಳನ್ನು ನಿಖರವಾಗಿ ಮತ್ತು ಫ್ಲೆಕ್ಸಿಬಲ್ ಆಗಿ ಹುಡುಕುವುದು
+    let pool = (appState.qbank || []).filter(q => {
+      const isGrade = String(q.grade) === String(grade) || parseInt(q.grade, 10) === parseInt(grade, 10);
+      const cleanQSubj = cleanMatchText(q.subject);
+      const isSubj = cleanQSubj.includes(cleanSelectedSubj) || cleanSelectedSubj.includes(cleanQSubj) || cleanQSubj.slice(0, 3) === cleanSelectedSubj.slice(0, 3);
+      const isChap = (selectedChapters.length === 0 || selectedChapters.some(c => cleanMatchText(c) === cleanMatchText(q.chapter)));
+      
+      const cType = getCanonicalQuestionType(q);
+      const isType = selectedTypes.length === 0 || selectedTypes.includes(cType) || selectedTypes.includes(q.type);
+
+      return isGrade && isSubj && isChap && isType;
+    });
+
+    if (pool.length === 0) {
+      alert(`⚠️ ಸೂಚನೆ:\n\nಆಯ್ಕೆಮಾಡಿದ ಪಾಠಕ್ಕೆ (${selectedChapters.join(', ') || 'ಘಟಕಗಳು'}) ಪ್ರಶ್ನೆಗಳು ಲಭ್ಯವಿಲ್ಲ.\nದಯವಿಟ್ಟು Step 3 ರಲ್ಲಿ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಆರಿಸಲಾಗಿದೆಯೇ ಮತ್ತು ಭಂಡಾರದಲ್ಲಿ ಆ ಪಾಠದ ಪ್ರಶ್ನೆಗಳಿವೆಯೇ ಪರೀಕ್ಷಿಸಿ.`);
+      return;
+    }
+
+    pool.sort(() => Math.random() - 0.5);
+
+    const p1 = pool.filter(q => (q.marks || 1) === 1);
+    const p2 = pool.filter(q => (q.marks || 1) === 2);
+    const p3 = pool.filter(q => (q.marks || 1) === 3);
+    const p4 = pool.filter(q => (q.marks || 1) >= 4);
+
+    const solution = solveExactDiophantineCombo(targetMarks, targetQCount, p1.length, p2.length, p3.length, p4.length);
+    let chosen = [];
+
+    if (solution) {
+      chosen.push(...p1.slice(0, solution.c1));
+      chosen.push(...p2.slice(0, solution.c2));
+      chosen.push(...p3.slice(0, solution.c3));
+      chosen.push(...p4.slice(0, solution.c4));
+    } else {
+      let curM = 0;
+      for (let q of pool) {
+        const m = q.marks || 1;
+        if (curM + m <= targetMarks && chosen.length < targetQCount) {
+          chosen.push(q);
+          curM += m;
+        }
+      }
+      if (chosen.length === 0) chosen = pool.slice(0, targetQCount);
+    }
+
+    appState.activeGeneratedQuestions = chosen;
+    const totalCalculatedMarks = chosen.reduce((a, b) => a + (b.marks || 1), 0);
+    const cleanSubj = rawSubject.split('(')[0].trim();
+
+    const headerHtml = `
+      <div style="width: 100%; text-align: center; margin-bottom: 6px;">
+        <h1 style="font-size: 20px; font-weight: 900; margin: 0;">${escapeHtml(schoolName)}</h1>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 900; line-height: 1.6; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 8px;">
+        <div><div>ವಿಷಯ: ${escapeHtml(cleanSubj)}</div><div>ಅಂಕ: ${totalCalculatedMarks}</div></div>
+        <div style="text-align: center; font-size: 14px;">${escapeHtml(rawExamType)}</div>
+        <div style="text-align: right;"><div>ತರಗತಿ: ${grade}</div><div>ದಿನಾಂಕ: ${escapeHtml(examDate)}</div></div>
+      </div>
+    `;
+
+    const groups = {
+      mcq: chosen.filter(q => getCanonicalQuestionType(q) === 'mcq'),
+      blanks: chosen.filter(q => getCanonicalQuestionType(q) === 'blanks'),
+      true_false: chosen.filter(q => getCanonicalQuestionType(q) === 'true_false'),
+      analogy: chosen.filter(q => getCanonicalQuestionType(q) === 'analogy'),
+      odd_one_out: chosen.filter(q => getCanonicalQuestionType(q) === 'odd_one_out'),
+      match: chosen.filter(q => getCanonicalQuestionType(q) === 'match'),
+      vsa_1m: chosen.filter(q => getCanonicalQuestionType(q) === 'vsa_1m'),
+      sa_2m: chosen.filter(q => getCanonicalQuestionType(q) === 'sa_2m'),
+      sa_3m: chosen.filter(q => getCanonicalQuestionType(q) === 'sa_3m'),
+      la_4m: chosen.filter(q => getCanonicalQuestionType(q) === 'la_4m')
+    };
+
+    const groupHeadings = {
+      mcq: { title: "ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:", m: 1 },
+      blanks: { title: "ಖಾಲಿ ಜಾಗ ಭರ್ತಿ ಮಾಡಿ:", m: 1 },
+      true_false: { title: "ಸರಿ ಅಥವಾ ತಪ್ಪು ತಿಳಿಸಿ:", m: 1 },
+      analogy: { title: "ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:", m: 1 },
+      odd_one_out: { title: "ಗುಂಪಿಗೆ ಸೇರದ ಪದ ಆರಿಸಿ:", m: 1 },
+      match: { title: "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:", m: 4 },
+      vsa_1m: { title: "ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:", m: 1 },
+      sa_2m: { title: "ಎರಡು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:", m: 2 },
+      sa_3m: { title: "ಮೂರು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:", m: 3 },
+      la_4m: { title: "ನಾಲ್ಕು ವಾಕ್ಯಗಳಲ್ಲಿ ಉತ್ತರಿಸಿ:", m: 4 }
+    };
+
+    const romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+    let rIdx = 0, qNum = 1, kNum = 1;
+    let paperHtml = '', keyHtml = '';
+
+    for (let key in groups) {
+      const list = groups[key];
+      if (list.length > 0) {
+        const h = groupHeadings[key];
+        const totalGroupMarks = list.length * h.m;
+        const roman = romans[rIdx++];
+
+        paperHtml += `
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 3px;">
+              <span>${roman}. ಈ ಕೆಳಗಿನವುಗಳಿಗೆ ${h.title}</span>
+              <span>${h.m}x${list.length}=${totalGroupMarks}</span>
+            </div>
+            <div>${list.map(q => `
+              <div class="q-paper-item-row" style="margin-bottom: 4px;">
+                <span class="q-paper-num">${qNum++}.</span>
+                <div class="q-paper-text">
+                  ${escapeHtml(q.q)}
+                  ${q.image ? `<div style="margin: 4px 0;"><img src="${q.image}" style="max-height: 95px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px;" /></div>` : ''}
+                  ${q.type === 'mcq' ? `
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); font-size: 12px; margin-top: 2px;">
+                      <div>(A) ${escapeHtml(q.a||'')}</div><div>(B) ${escapeHtml(q.b||'')}</div>
+                      <div>(C) ${escapeHtml(q.c||'')}</div><div>(D) ${escapeHtml(q.d||'')}</div>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+            `).join('')}</div>
+          </div>
+        `;
+
+        keyHtml += `
+          <div style="margin-bottom: 6px;">
+            <div style="font-weight: 900; font-size: 12px; margin-bottom: 2px;">${roman}. ${h.title}</div>
+            <div>${list.map(q => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(q.ans || '')}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `;
+      }
+    }
+
+    document.getElementById('rendered-paper').innerHTML = `<div class="a4-sheet-container">${headerHtml}${paperHtml}</div>`;
+    document.getElementById('rendered-key').innerHTML = `<div class="a4-sheet-container">${headerHtml}<h3 style="text-align: center; font-weight: 900; margin-bottom: 8px; font-size: 14px; text-decoration: underline;">ಉತ್ತರ ಪತ್ರಿಕೆ</h3>${keyHtml}</div>`;
+
+    renderExactThreeBlueprints(chosen, totalCalculatedMarks);
+
+    const outSec = document.getElementById('output-section');
+    outSec.classList.remove('hidden');
+    switchOutputTab('paper');
+    outSec.scrollIntoView({ behavior: 'smooth' });
+
+    showToast(`⚡ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಸಿದ್ಧವಾಗಿದೆ! (${totalCalculatedMarks} ಅಂಕಗಳು)`, 'success');
+  };
+
+
+    
   </script>
 </body>
 </html>
