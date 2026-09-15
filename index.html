@@ -23875,6 +23875,31 @@
       }
     };
     
+// 🌟 OVERRIDE PREVIOUS CODE WITH SAFE PATCH METHOD
+    window.pushToFirebaseCloud = async function(specificQuestionsArray = null) {
+      try {
+        const questionsToPush = specificQuestionsArray || appState.qbank || [];
+        if (!questionsToPush || questionsToPush.length === 0) return;
+
+        const patchPayload = {};
+        questionsToPush.forEach((q, idx) => {
+          if (q) {
+            const qId = q.id || ('q_' + Date.now() + '_' + idx);
+            q.id = qId;
+            patchPayload[qId] = q;
+          }
+        });
+
+        await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchPayload)
+        });
+      } catch (e) {
+        console.warn('Firebase PATCH failed:', e);
+      }
+    };
+    pushToFirebaseCloud = window.pushToFirebaseCloud;
     
   </script>
 </body>
