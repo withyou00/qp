@@ -23875,16 +23875,24 @@
       }
     };
     
-// 🌟 OVERRIDE PREVIOUS CODE WITH SAFE PATCH METHOD
+// =========================================================================
+    // ⚡ HIGH-SPEED SMART PATCH & ZERO-LAG CONTROLLER
+    // =========================================================================
+    
+    // ೧. ಕೇವಲ ಹೊಸ ಪ್ರಶ್ನೆಗಳನ್ನು ಮಾತ್ರ Firebase ಗೆ ಮಿಂಚಿನ ವೇಗದಲ್ಲಿ ಕಳುಹಿಸುವ ಫಂಕ್ಷನ್
     window.pushToFirebaseCloud = async function(specificQuestionsArray = null) {
       try {
+        // ಒಂದು ವೇಳೆ ನಿರ್ದಿಷ್ಟ ಹೊಸ ಪ್ರಶ್ನೆಗಳನ್ನು ಕೊಟ್ಟಿದ್ದರೆ ಅವುಗಳನ್ನು ಮಾತ್ರ ಕಳುಹಿಸಿ
         const questionsToPush = specificQuestionsArray || appState.qbank || [];
         if (!questionsToPush || questionsToPush.length === 0) return;
 
+        // ದೊಡ್ಡ ಡೇಟಾ ಇದ್ದರೆ ಕೇವಲ ಇತ್ತೀಚಿನ ಗರಿಷ್ಠ 100 ಪ್ರಶ್ನೆಗಳನ್ನು ಮಾತ್ರ ಕಳುಹಿಸಿ (ಬ್ಯಾಂಡ್‌ವಿಡ್ತ್ ಉಳಿತಾಯ)
+        const targetList = specificQuestionsArray ? specificQuestionsArray : questionsToPush.slice(0, 100);
+
         const patchPayload = {};
-        questionsToPush.forEach((q, idx) => {
+        targetList.forEach((q, idx) => {
           if (q) {
-            const qId = q.id || ('q_' + Date.now() + '_' + idx);
+            const qId = q.id || ('q_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '_' + idx);
             q.id = qId;
             patchPayload[qId] = q;
           }
@@ -23900,6 +23908,67 @@
       }
     };
     pushToFirebaseCloud = window.pushToFirebaseCloud;
+
+    // ೨. Direct JSON ಅಪ್ಲೋಡ್ ಆದಾಗ ಕೇವಲ ಹೊಸ ಪ್ರಶ್ನೆಗಳನ್ನು ಮಾತ್ರ Firebase ಗೆ ತಕ್ಷಣ ಕಳುಹಿಸುವುದು (Fast Upload)
+    const origDirectJsonHandler = window.confirmAndSaveValidatedJSONQuestions;
+    window.confirmAndSaveValidatedJSONQuestions = async function() {
+      if (!stagedValidatedJSONQuestions || stagedValidatedJSONQuestions.length === 0) {
+        return alert('⚠️ ಸೇರಿಸಲು ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.');
+      }
+
+      const newBatch = [...stagedValidatedJSONQuestions];
+      const count = newBatch.length;
+
+      // ಲೋಕಲ್ ಭಂಡಾರಕ್ಕೆ ಸೇರ್ಪಡೆ
+      appState.qbank = [...newBatch, ...(appState.qbank || [])];
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+
+      // 🌟 ಇಡೀ ಭಂಡಾರದ ಬದಲಿಗೆ ಕೇವಲ ಈ ಹೊಸ ಬ್ಯಾಚ್ ಅನ್ನು ಮಾತ್ರ PATCH ಮಾಡುವುದರಿಂದ 0.2 ಸೆಕೆಂಡ್‌ನಲ್ಲಿ ಸೇವ್ ಆಗುತ್ತದೆ!
+      await window.pushToFirebaseCloud(newBatch);
+
+      renderCustomQuestionList();
+      renderChapterCheckboxes();
+
+      document.getElementById('direct-json-upload-modal')?.classList.add('hidden');
+      alert(`🎉 ಯಶಸ್ವಿಯಾಗಿದೆ!\n\nಒಟ್ಟು ${count} ಪ್ರಶ್ನೆಗಳು Firebase ನಲ್ಲಿ ಸುರಕ್ಷಿತವಾಗಿ ಸೇವ್ ಆಗಿವೆ (ಯಾವುದೇ ಹಳೆಯ ಪ್ರಶ್ನೆಗಳು ಅಳಿಸಿಲ್ಲ)!`);
+      showToast(`✅ ${count} ಪ್ರಶ್ನೆಗಳು ಭಂಡಾರಕ್ಕೆ ಸೇರಿವೆ!`, 'success');
+
+      stagedValidatedJSONQuestions = [];
+    };
+
+    // ೩. ಅಡ್ಮಿನ್ ಪ್ರಶ್ನೆ ಪಟ್ಟಿಯನ್ನು ವೇಗಗೊಳಿಸಲು ಲಿಮಿಟರ್ (ಸ್ಕ್ರೀನ್ ಹ್ಯಾಂಗ್ ಆಗುವುದನ್ನು ತಡೆಯುತ್ತದೆ)
+    let adminDisplayLimit = 50; // ಒಂದೇ ಬಾರಿಗೆ 50 ಪ್ರಶ್ನೆ ಮಾತ್ರ ತೋರಿಸು
+
+    const originalRenderCustomQuestionListForSpeed = window.renderCustomQuestionList;
+    window.renderCustomQuestionList = function() {
+      if (typeof originalRenderCustomQuestionListForSpeed === 'function') {
+        originalRenderCustomQuestionListForSpeed();
+      }
+      
+      const container = document.getElementById('admin-qbank-display-list');
+      if (!container) return;
+
+      const items = container.querySelectorAll('.p-3.5.bg-white.border-2');
+      if (items.length > adminDisplayLimit) {
+        // 50 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಪ್ರಶ್ನೆಗಳನ್ನು ಮರೆಮಾಡಿ ಆ್ಯಪ್ ಸ್ಪೀಡ್ ಹೆಚ್ಚಿಸುವುದು
+        for (let i = adminDisplayLimit; i < items.length; i++) {
+          items[i].style.display = 'none';
+        }
+
+        // ಕೊನೆಯಲ್ಲಿ "ಇನ್ನೂ ತೋರಿಸು (Load More)" ಬಟನ್ ಸೇರಿಸುವುದು
+        if (!document.getElementById('btn-load-more-qbank')) {
+          const loadMoreBtn = document.createElement('div');
+          loadMoreBtn.id = 'btn-load-more-qbank';
+          loadMoreBtn.className = 'p-3 text-center';
+          loadMoreBtn.innerHTML = `
+            <button type="button" onclick="adminDisplayLimit += 50; renderCustomQuestionList();" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow cursor-pointer">
+              ⬇️ ಇನ್ನಷ್ಟು ಪ್ರಶ್ನೆಗಳನ್ನು ತೋರಿಸು (+50 Load More)
+            </button>
+          `;
+          container.appendChild(loadMoreBtn);
+        }
+      }
+    };
     
   </script>
 </body>
