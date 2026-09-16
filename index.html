@@ -30801,6 +30801,568 @@
   };
 })();
 
+
+    /* ==========================================================================
+   🏛️ 100% MS WORD-STYLE ELEGANT MULTI-PAGE QUESTION PAPER & KEY ENGINE
+   ========================================================================== */
+(function() {
+  // ೧. MS Word ಶೈಲಿಯ ಪ್ರೀಮಿಯಂ CSS
+  const wordStyleId = 'ms-word-layout-master-css';
+  let styleEl = document.getElementById(wordStyleId);
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = wordStyleId;
+    document.head.appendChild(styleEl);
+  }
+
+  styleEl.innerHTML = `
+    /* MS Word ಮಾದರಿಯ A4 ಶೀಟ್ ಬಾರ್ಡರ್ */
+    .a4-sheet-container {
+      width: 100% !important;
+      max-width: 820px !important;
+      border: 2.5px solid #000 !important;
+      padding: 9mm 12mm 9mm 12mm !important;
+      margin: 0 auto 24px auto !important;
+      box-sizing: border-box !important;
+      background: #fff !important;
+      font-family: 'Anek Kannada', sans-serif !important;
+      min-height: 275mm !important;
+      height: auto !important;
+      position: relative !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+      page-break-after: always !important;
+      page-break-inside: avoid !important;
+      -webkit-box-decoration-break: clone !important;
+      box-decoration-break: clone !important;
+    }
+
+    /* Word Box Header */
+    .word-header-box {
+      border: 2px solid #000 !important;
+      padding: 6px 12px !important;
+      margin-bottom: 12px !important;
+      background: #fff !important;
+    }
+    .word-school-title {
+      text-align: center !important;
+      font-size: 20px !important;
+      font-weight: 900 !important;
+      color: #000 !important;
+      line-height: 1.25 !important;
+      margin-bottom: 4px !important;
+    }
+    .word-meta-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-size: 13.5px !important;
+      font-weight: 800 !important;
+      color: #000 !important;
+      padding: 2px 0 !important;
+    }
+
+    /* ಪ್ರಶ್ನೆಗಳ ಸಾಲು ಮತ್ತು ಇಂಡೆಂಟೇಶನ್ */
+    .q-paper-item-row {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 8px !important;
+      margin-bottom: 5px !important;
+      line-height: 1.50 !important;
+    }
+    .q-paper-num {
+      font-weight: 900 !important;
+      font-size: 13.5px !important;
+      min-width: 28px !important;
+      flex-shrink: 0 !important;
+      color: #000 !important;
+    }
+    .q-paper-text {
+      flex: 1 !important;
+      font-weight: 700 !important;
+      font-size: 13px !important;
+      color: #000 !important;
+      text-align: justify !important;
+      line-height: 1.50 !important;
+    }
+
+    /* ಉತ್ತರ ಪತ್ರಿಕೆಯ ಸಾಲುಗಳು */
+    .key-answer-row {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 8px !important;
+      margin-bottom: 4.5px !important;
+      line-height: 1.45 !important;
+    }
+    .key-qnum {
+      font-weight: 900 !important;
+      font-size: 13.5px !important;
+      min-width: 28px !important;
+      flex-shrink: 0 !important;
+      color: #000 !important;
+    }
+    .key-text {
+      flex: 1 !important;
+      font-weight: 600 !important;
+      font-size: 12.8px !important;
+      color: #0f172a !important;
+      text-align: justify !important;
+      line-height: 1.45 !important;
+    }
+
+    /* ವಿಭಾಗದ ಹೆಡರ್ */
+    .word-section-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: baseline !important;
+      font-weight: 900 !important;
+      font-size: 13.5px !important;
+      margin-top: 10px !important;
+      margin-bottom: 4px !important;
+      color: #000 !important;
+    }
+    .word-section-marks {
+      font-weight: 900 !important;
+      font-size: 13px !important;
+      white-space: nowrap !important;
+      margin-left: 12px !important;
+    }
+
+    /* MCQ ಆಯ್ಕೆಗಳ ಗ್ರಿಡ್ */
+    .mcq-grid-horizontal {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 4px 16px !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      padding-left: 36px !important;
+      margin-top: 2px !important;
+    }
+    .mcq-stacked-layout {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      padding-left: 36px !important;
+      margin-top: 2px !important;
+    }
+
+    /* ಹೊಂದಿಸಿ ಬರೆಯಿರಿ ವಿನ್ಯಾಸ */
+    .match-columns-box {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 20px !important;
+      padding: 3px 36px !important;
+      font-size: 12.8px !important;
+      font-weight: 600 !important;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 6mm 8mm !important;
+      }
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      .a4-sheet-container {
+        border: 2.5px solid #000 !important;
+        padding: 7mm 11mm !important;
+        min-height: 275mm !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+      }
+      .no-print, header, footer, button, .btn-live-q-edit { display: none !important; visibility: hidden !important; }
+    }
+  `;
+
+  // ೨. ಡಬಲ್ ನಂಬರ್ & ಕಸದ ಕೋಡ್ ಕ್ಲೀನರ್
+  function cleanQuestionTextDisplay(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/\[cite:\s*\d+\]/gi, '')
+      .replace(/\[\d+\]/g, '')
+      .replace(/【.*?】/g, '')
+      .replace(/<img[^>]*>/gi, '')
+      .replace(/^[\(\[]?\d+[\)\]\.\s\:\-]+/, '')
+      .replace(/\s*\((?:ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ)\)\s*$/gi, '')
+      .trim();
+  }
+
+  // ೩. Word ಮಾದರಿಯ ಹೆಡರ್ ಜನರೇಟರ್
+  function buildWordStyleHeaderHtml(schoolName, grade, examType, subject, totalMarks, examDate) {
+    const isEnglish = (document.getElementById('cfg-medium')?.value || '').toLowerCase().includes('english');
+    return `
+      <div class="word-header-box">
+        <div class="word-school-title">${escapeHtml(schoolName)}</div>
+        <div class="word-meta-row" style="border-top: 1.5px solid #000; padding-top: 3px; margin-top: 2px;">
+          <span>${isEnglish ? 'Class' : 'ತರಗತಿ'} : ${escapeHtml(grade)}${isEnglish ? 'th' : 'ನೇ'}</span>
+          <span>${escapeHtml(examType)}</span>
+          <span>${isEnglish ? 'Marks' : 'ಅಂಕಗಳು'} : ${totalMarks}</span>
+        </div>
+        <div class="word-meta-row" style="border-top: 1px solid #000; padding-top: 3px; margin-top: 2px;">
+          <span>${isEnglish ? 'Subject' : 'ವಿಷಯ'} : ${escapeHtml(subject)}</span>
+          <span>${isEnglish ? 'Date' : 'ದಿನಾಂಕ'} : ${escapeHtml(examDate)}</span>
+          <span>${isEnglish ? 'Time : 90 Min' : 'ಅವಧಿ : 90 ನಿ'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // ೪. 🌟 MCQ ಆಯ್ಕೆಗಳ Word ಶೈಲಿಯ ರೆಂಡರರ್
+  function renderWordStyleMCQOptions(m) {
+    const optA = escapeHtml(m.a || '');
+    const optB = escapeHtml(m.b || '');
+    const optC = escapeHtml(m.c || '');
+    const optD = escapeHtml(m.d || '');
+
+    const totalLen = optA.length + optB.length + optC.length + optD.length;
+
+    // ಆಯ್ಕೆಗಳು ಚಿಕ್ಕದಾಗಿದ್ದರೆ ೪ ಕಾಲಂ ಸಮತಲ ವಿನ್ಯಾಸ
+    if (totalLen < 60) {
+      return `
+        <div class="mcq-grid-horizontal">
+          <div style="flex: 1; min-width: 130px;">A. ${optA}</div>
+          <div style="flex: 1; min-width: 130px;">B. ${optB}</div>
+          <div style="flex: 1; min-width: 130px;">C. ${optC}</div>
+          <div style="flex: 1; min-width: 130px;">D. ${optD}</div>
+        </div>
+      `;
+    } else {
+      // ಆಯ್ಕೆಗಳು ದೊಡ್ಡದಾಗಿದ್ದರೆ Word ನಂತೆಯೇ ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳು
+      return `
+        <div class="mcq-stacked-layout">
+          <div>A. ${optA}</div>
+          <div>B. ${optB}</div>
+          <div>C. ${optC}</div>
+          <div>D. ${optD}</div>
+        </div>
+      `;
+    }
+  }
+
+  // ೫. 🌟 MS Word ಮಾದರಿಯ ಮಲ್ಟಿ-ಪೇಜ್ ಸ್ಪ್ಲಿಟರ್ & ರೆಂಡರರ್ (Page 1 + Page 2)
+  window.renderFullExamPaperWithCustomHeader = function(headerHtmlPlaceholder) {
+    const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+    const isEnglish = String(document.getElementById('cfg-medium')?.value || '').toLowerCase().includes('english');
+    const currentSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+
+    const schoolName = (document.getElementById('cfg-school-name')?.value || 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ').trim();
+    const grade = document.getElementById('cfg-class')?.value || '6';
+    const examType = document.getElementById('cfg-exam-type')?.value || 'ಸಂಕಲನಾತ್ಮಕ ಮೌಲ್ಯಮಾಪನ-1 2026-27';
+    const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+
+    // ಪ್ರಕಾರವಾರು ವಿಂಗಡಣೆ
+    const typeGroups = new Map();
+    allQuestions.forEach(q => {
+      let t = String(q.type || 'vsa_1m').trim();
+      if (t === 'fill_ups' || t === 'fib') t = 'blanks';
+      if (t === 'la_3m') t = 'sa_3m';
+      if (!typeGroups.has(t)) typeGroups.set(t, []);
+      typeGroups.get(t).push(q);
+    });
+
+    const order = ['blanks', 'vsa_1m', 'match', 'mcq', 'true_false', 'analogy', 'odd_one_out', 'sa_2m', 'sa_3m', 'la_4m'];
+    const sortedKeys = Array.from(typeGroups.keys()).sort((a, b) => {
+      const iA = order.indexOf(a) >= 0 ? order.indexOf(a) : 99;
+      const iB = order.indexOf(b) >= 0 ? order.indexOf(b) : 99;
+      return iA - iB;
+    });
+
+    let renderedSections = [];
+    let renderedKeySections = [];
+    let qNum = 1, kNum = 1, romanIndex = 1;
+    const romanNumerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"];
+
+    sortedKeys.forEach(tKey => {
+      const qList = typeGroups.get(tKey);
+      if (!qList || qList.length === 0) return;
+
+      const r = romanNumerals[romanIndex++ - 1];
+      const headingText = (typeof getCleanSectionHeading === 'function') 
+        ? getCleanSectionHeading(tKey, isEnglish, currentSubject) 
+        : `${tKey}:`;
+      const marksPerQ = (tKey === 'match') ? 1 : getExactQuestionMarks(qList[0]);
+      const count = (tKey === 'match') ? 5 : qList.length;
+      const totalMarks = (tKey === 'match') ? 5 : (marksPerQ * qList.length);
+
+      // Section HTML
+      let secHtml = `
+        <div style="margin-bottom: 8px;">
+          <div class="word-section-header">
+            <span>${r}. ${escapeHtml(headingText)}</span>
+            <span class="word-section-marks">(${count} x ${marksPerQ} = ${totalMarks})</span>
+          </div>
+      `;
+
+      let keySecHtml = `
+        <div style="margin-bottom: 8px;">
+          <div style="font-weight: 900; font-size: 13.5px; margin-bottom: 3px; color: #000;">${r}. ${escapeHtml(headingText)}:</div>
+      `;
+
+      if (tKey === 'match') {
+        // Word Matching Style
+        const mItem = qList[0];
+        const idx = allQuestions.indexOf(mItem);
+        let pairs = mItem.matchPairs || [
+          { a: 'ರಾಮಾಯಣ', b: 'ವಾಲ್ಮೀಕಿ' }, { a: '21ನೇ ಶತಮಾನ', b: 'ಸಾ.ಶ 2001 ರಿಂದ 2100' },
+          { a: 'ಕಾಳಿದಾಸ', b: 'ಅಭಿಜ್ಞಾನ ಶಾಕುಂತಲ' }, { a: 'ಶ್ರೀವಿಜಯ', b: 'ಕವಿರಾಜಮಾರ್ಗ' }, { a: 'ಗೌತಮಬುದ್ಧ', b: 'ಬೌದ್ಧ ಧರ್ಮ' }
+        ];
+
+        const colA = pairs.map((p, i) => ({ text: String(p.a || '').replace(/^[\(\[]?\d+[\)\]\.\s]+/, '').trim(), origIdx: i }));
+        let colB = pairs.map((p, i) => ({ text: String(p.b || '').replace(/^[\(\[]?[A-Za-z\u0C80-\u0CFF][\)\]\.\s]+/, '').trim(), origIdx: i }));
+        for (let i = colB.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [colB[i], colB[j]] = [colB[j], colB[i]]; }
+
+        const matchQNum = qNum++;
+        const matchKNum = kNum++;
+
+        secHtml += `
+          <div style="margin-bottom: 4px;">
+            <div class="q-paper-item-row">
+              <span class="q-paper-num">${matchQNum}.</span>
+              <div style="flex: 1;">
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+            </div>
+            <div class="match-columns-box">
+              <div>
+                <div style="text-decoration: underline; font-weight: bold; margin-bottom: 2px;">ಅ</div>
+                ${colA.map((a, i) => `<div>${i + 1}. ${escapeHtml(a.text)}</div>`).join('')}
+              </div>
+              <div>
+                <div style="text-decoration: underline; font-weight: bold; margin-bottom: 2px;">ಬ</div>
+                ${colB.map((b, i) => `<div>${String.fromCharCode(97 + i)}. ${escapeHtml(b.text)}</div>`).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        keySecHtml += `
+          <div class="key-answer-row">
+            <span class="key-qnum">${matchKNum}.</span>
+            <div class="key-text">
+              <table style="border-collapse: collapse; width: 100%; max-width: 580px; font-size: 12.5px; border: 1px solid #94a3b8; background: #fff;">
+                <tbody>
+                  ${colA.map((a, i) => {
+                    const bIdx = colB.findIndex(b => b.origIdx === a.origIdx);
+                    return `
+                      <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 3px 8px; width: 45%; font-weight: 700; border-right: 1px solid #cbd5e1;">${i + 1}. ${escapeHtml(a.text)}</td>
+                        <td style="padding: 3px 8px; width: 55%; font-weight: 700;"><span style="color: #16a34a; font-weight: 900;">➔</span> <b>${String.fromCharCode(97 + bIdx)}. ${escapeHtml(colB[bIdx].text)}</b></td>
+                      </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else if (tKey === 'mcq') {
+        secHtml += qList.map(m => {
+          const idx = allQuestions.indexOf(m);
+          return `
+            <div style="margin-bottom: 6px;">
+              <div class="q-paper-item-row">
+                <span class="q-paper-num">${qNum++}.</span>
+                <span class="q-paper-text">${escapeHtml(cleanQuestionTextDisplay(m.q))}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+              ${renderWordStyleMCQOptions(m)}
+            </div>
+          `;
+        }).join('');
+
+        keySecHtml += qList.map(m => `
+          <div class="key-answer-row">
+            <span class="key-qnum">${kNum++}.</span>
+            <span class="key-text">${escapeHtml(cleanQuestionTextDisplay(m.ans || ''))}</span>
+          </div>
+        `).join('');
+      } else {
+        secHtml += qList.map(item => {
+          const idx = allQuestions.indexOf(item);
+          let qText = cleanQuestionTextDisplay(item.q);
+          if (tKey === 'blanks' && !qText.includes('......')) {
+            qText += ' .....................................';
+          }
+          return `
+            <div style="margin-bottom: 5px;">
+              <div class="q-paper-item-row">
+                <span class="q-paper-num">${qNum++}.</span>
+                <span class="q-paper-text">${escapeHtml(qText)}</span>
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+              ${(typeof renderQuestionDiagramImage === 'function') ? renderQuestionDiagramImage(item) : ''}
+            </div>
+          `;
+        }).join('');
+
+        keySecHtml += qList.map(item => `
+          <div class="key-answer-row">
+            <span class="key-qnum">${kNum++}.</span>
+            <span class="key-text">${escapeHtml(cleanQuestionTextDisplay(item.ans || ''))}</span>
+          </div>
+        `).join('');
+      }
+
+      secHtml += `</div>`;
+      keySecHtml += `</div>`;
+
+      renderedSections.push(secHtml);
+      renderedKeySections.push(keySecHtml);
+    });
+
+    const totalMarksSum = allQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+    const wordHeaderHtml = buildWordStyleHeaderHtml(schoolName, grade, examType, currentSubject, totalMarksSum, examDate);
+
+    // 🌟 ಮಲ್ಟಿ-ಪೇಜ್ ವಿಭಜನೆ (೨೪ ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ Word ನಂತೆಯೇ ೨ ಸುಂದರ ಪುಟಗಳು!)
+    let paperPagesHtml = '';
+    let keyPagesHtml = '';
+
+    if (allQuestions.length <= 14) {
+      // ೧ ಪುಟದ ಪತ್ರಿಕೆ (೨೦ ಅಂಕ)
+      paperPagesHtml = `
+        <div class="a4-sheet-container">
+          ${wordHeaderHtml}
+          <div>${renderedSections.join('')}</div>
+        </div>
+      `;
+      keyPagesHtml = `
+        <div class="a4-sheet-container">
+          ${wordHeaderHtml}
+          <div style="text-align: center; margin-bottom: 8px;"><h3 style="font-size: 15px; font-weight: 900; text-decoration: underline;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3></div>
+          <div>${renderedKeySections.join('')}</div>
+        </div>
+      `;
+    } else {
+      // 🌟 ೨ ಪುಟಗಳ Word ಶೈಲಿಯ ಪತ್ರಿಕೆ (೪೦ / ೮೦ ಅಂಕಗಳು - Q1 to Q13 & Q14 to Q24)
+      const splitIndex = Math.ceil(renderedSections.length / 2);
+      const page1Sections = renderedSections.slice(0, splitIndex);
+      const page2Sections = renderedSections.slice(splitIndex);
+
+      paperPagesHtml = `
+        <!-- ಪುಟ ೧ (Page 1) -->
+        <div class="a4-sheet-container">
+          ${wordHeaderHtml}
+          <div>${page1Sections.join('')}</div>
+        </div>
+
+        <!-- ಪುಟ ೨ (Page 2) -->
+        <div class="a4-sheet-container">
+          <div>${page2Sections.join('')}</div>
+        </div>
+      `;
+
+      const keySplitIndex = Math.ceil(renderedKeySections.length / 2);
+      const page1Key = renderedKeySections.slice(0, keySplitIndex);
+      const page2Key = renderedKeySections.slice(keySplitIndex);
+
+      keyPagesHtml = `
+        <!-- ಉತ್ತರ ಪತ್ರಿಕೆ ಪುಟ ೧ -->
+        <div class="a4-sheet-container">
+          ${wordHeaderHtml}
+          <div style="text-align: center; margin-bottom: 8px;"><h3 style="font-size: 15px; font-weight: 900; text-decoration: underline;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3></div>
+          <div>${page1Key.join('')}</div>
+        </div>
+
+        <!-- ಉತ್ತರ ಪತ್ರಿಕೆ ಪುಟ ೨ -->
+        <div class="a4-sheet-container">
+          <div>${page2Key.join('')}</div>
+        </div>
+      `;
+    }
+
+    const paperEl = document.getElementById('rendered-paper');
+    const keyEl = document.getElementById('rendered-key');
+
+    if (paperEl) paperEl.innerHTML = paperPagesHtml;
+    if (keyEl) keyEl.innerHTML = keyPagesHtml;
+
+    renderExactThreeBlueprints(allQuestions, totalMarksSum);
+    applyDemoWatermarkToOutput();
+  };
+
+  // ೬. PDF ಎಕ್ಸ್‌ಪೋರ್ಟ್‌ನಲ್ಲೂ ೨ ಪ್ರತ್ಯೇಕ ಹಾಳೆಗಳು
+  window.exportCurrentTabToPDF = function() {
+    let activeTabId = 'tab-content-paper', fileLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+    if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) { activeTabId = 'tab-content-key'; fileLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ'; }
+    else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) { activeTabId = 'tab-content-blueprint'; fileLabel = 'ನೀಲನಕ್ಷೆ'; }
+
+    const activeContainer = document.getElementById(activeTabId);
+    if (!activeContainer) return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
+
+    const sheets = activeContainer.querySelectorAll('.a4-sheet-container');
+    if (sheets.length === 0) return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
+
+    let combinedHtml = '';
+    sheets.forEach(sheet => {
+      const sheetClone = sheet.cloneNode(true);
+      sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
+      combinedHtml += sheetClone.outerHTML;
+    });
+
+    const rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಷಯ';
+    const cleanSubject = rawSubject.split('(')[0].trim().replace(/\s+/g, '_');
+    const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
+    const fileName = `${cleanSubject}_${grade}_${fileLabel}`;
+
+    let printFrame = document.getElementById('isolated-vector-print-frame');
+    if (printFrame) printFrame.remove();
+
+    printFrame = document.createElement('iframe');
+    printFrame.id = 'isolated-vector-print-frame';
+    printFrame.style.position = 'fixed';
+    printFrame.style.width = '794px';
+    printFrame.style.height = '1123px';
+    printFrame.style.top = '-10000px';
+    printFrame.style.left = '-10000px';
+    printFrame.style.border = 'none';
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html lang="kn">
+      <head>
+        <meta charset="UTF-8">
+        <title>${fileName}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <style>
+          @page { size: A4 portrait; margin: 6mm 8mm !important; }
+          * { box-sizing: border-box; font-family: 'Anek Kannada', sans-serif !important; }
+          body { margin: 0; padding: 0; background: #fff; color: #000; width: 794px; }
+          .a4-sheet-container { width: 100% !important; border: 2.5px solid #000 !important; margin: 0 auto 20px auto !important; position: relative !important; box-sizing: border-box !important; padding: 8mm 12mm !important; min-height: 275mm !important; page-break-after: always !important; page-break-inside: avoid !important; }
+          .word-header-box { border: 2px solid #000 !important; padding: 6px 12px !important; margin-bottom: 12px !important; }
+          .word-school-title { text-align: center !important; font-size: 20px !important; font-weight: 900 !important; }
+          .word-meta-row { display: flex !important; justify-content: space-between !important; font-size: 13.5px !important; font-weight: 800 !important; }
+          .q-paper-item-row, .key-answer-row { display: flex !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 5px !important; line-height: 1.50 !important; }
+          .q-paper-num, .key-qnum { font-weight: 900 !important; font-size: 13.5px !important; min-width: 28px !important; color: #000 !important; }
+          .q-paper-text, .key-text { flex: 1 !important; font-weight: 700 !important; font-size: 13px !important; text-align: justify !important; line-height: 1.50 !important; }
+          .word-section-header { display: flex !important; justify-content: space-between !important; font-weight: 900 !important; font-size: 13.5px !important; margin-top: 10px !important; margin-bottom: 4px !important; }
+          .mcq-grid-horizontal { display: flex !important; flex-wrap: wrap !important; gap: 4px 16px !important; font-size: 12.5px !important; padding-left: 36px !important; }
+          .mcq-stacked-layout { display: flex !important; flex-direction: column !important; gap: 3px !important; font-size: 12.5px !important; padding-left: 36px !important; }
+          .match-columns-box { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 20px !important; padding: 3px 36px !important; font-size: 12.8px !important; font-weight: 600 !important; }
+          .blueprint-container { display: flex !important; flex-direction: column !important; gap: 14px !important; }
+          .demo-watermark-overlay { position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; pointer-events: none !important; }
+          .demo-watermark-text { position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) rotate(-32deg) !important; font-size: 34px !important; font-weight: 900 !important; color: rgba(0, 0, 0, 0.16) !important; border: 4px dashed rgba(0, 0, 0, 0.22) !important; padding: 16px 36px !important; border-radius: 25px !important; text-transform: uppercase !important; white-space: nowrap !important; }
+        </style>
+      </head>
+      <body>${combinedHtml}</body>
+      </html>
+    `);
+    frameDoc.close();
+
+    showToast('📄 Word ಶೈಲಿಯ PDF ಸಿದ್ಧವಾಗಿದೆ.', 'info');
+    setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
+  };
+})();
+
     
   </script>
 </body>
