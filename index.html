@@ -28341,6 +28341,177 @@
         }
       }
     };
+
+
+    // =========================================================================
+    // 📖 & 🎼 SMART BEAUTIFIER: PASSAGE COMPREHENSION & POEM COMPLETION FORMATTER
+    // =========================================================================
+
+    // ೧. 🎼 ಪದ್ಯಭಾಗವನ್ನು ಸಾಲು ಸಾಲಾಗಿ ಸುಂದರವಾಗಿ ಜೋಡಿಸುವ ಫಾರ್ಮ್ಯಾಟರ್
+    function formatPoemCompletionLayout(rawText) {
+      if (!rawText) return '';
+      let text = String(rawText).trim();
+
+      // ಸೂಚನೆಯನ್ನು ಪ್ರತ್ಯೇಕಿಸಿ
+      let headingInstruction = "ಕೆಳಗಿನ ಪದ್ಯಭಾಗವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ ಬರೆಯಿರಿ:";
+      text = text.replace(/^.*?ಪದ್ಯಭಾಗವನ್ನು\s*ಪೂರ್ಣಗೊಳಿಸಿ\s*ಬರೆಯಿರಿ[\:\.\s]*/i, '').trim();
+
+      // "ಅಥವಾ" (OR) ಇದ್ದರೆ ೨ ಪದ್ಯಗಳನ್ನಾಗಿ ವಿಭಾಗಿಸುವುದು
+      let stanzas = text.split(/\s*\(?\s*ಅಥವಾ\s*\)?\s*/i);
+
+      const renderSinglePoemStanza = (stText) => {
+        let clean = stText.trim();
+        // ಉದ್ದವಾದ ಡಾಟ್ ಅಥವಾ ಅಂಡರ್‌ಸ್ಕೋರ್‌ಗಳನ್ನು ಸ್ಪಷ್ಟ ಗೆರೆಗಳನ್ನಾಗಿ ಮಾಡುವುದು
+        clean = clean.replace(/\.{4,}/g, ' ................................................................ ');
+        clean = clean.replace(/_{4,}/g, ' ___________________________________ ');
+
+        // ವಾಕ್ಯ/ಸಾಲುಗಳ ತುಂಡುಗಳನ್ನು ಗುರುತಿಸಿ ಪ್ರತ್ಯೇಕ ಸಾಲಿನಲ್ಲಿ ಹಾಕುವುದು
+        let lines = clean.split(/(?<=\?|\.|\!|\-)\s+|(?<=\.{10,})\s+/).filter(l => l.trim().length > 1);
+        
+        if (lines.length < 3) {
+          // ಒಂದು ವೇಳೆ ಸಾಲುಗಳು ತುಂಡಾಗದಿದ್ದರೆ ಡಾಟ್‌ಗಳ ಆಧಾರದ ಮೇಲೆ ೩-೪ ಸಾಲುಗಳಾಗಿ ವಿಂಗಡಿಸಿ
+          lines = clean.replace(/(\.{20,})/g, '\n$1\n').split('\n').filter(Boolean);
+        }
+
+        return `
+          <div style="background: #fff; border: 1.5px dashed #cbd5e1; border-radius: 8px; padding: 8px 16px; margin: 4px 0; font-size: 12.2px; line-height: 1.8; font-weight: 700; color: #000;">
+            ${lines.map(line => `<div style="margin-bottom: 2px;">${escapeHtml(line.trim())}</div>`).join('')}
+          </div>
+        `;
+      };
+
+      return `
+        <div style="width: 100%; margin-top: 2px;">
+          <div style="font-weight: 800; font-size: 12.5px; margin-bottom: 3px; color: #000;">${headingInstruction}</div>
+          ${renderSinglePoemStanza(stanzas[0])}
+          ${stanzas.length > 1 ? `
+            <div style="text-align: center; font-weight: 900; font-size: 12px; margin: 4px 0; color: #475569;">[ ಅಥವಾ ]</div>
+            ${renderSinglePoemStanza(stanzas[1])}
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // ೨. 📖 ಗದ್ಯಭಾಗವನ್ನು ಪ್ರತ್ಯೇಕ ಚೌಕಟ್ಟಿನಲ್ಲಿಟ್ಟು ಪ್ರಶ್ನೆಗಳನ್ನು ಕೆಳಗೆ ಜೋಡಿಸುವ ಫಾರ್ಮ್ಯಾಟರ್
+    function formatPassageComprehensionLayout(rawText) {
+      if (!rawText) return '';
+      let text = String(rawText).trim();
+
+      // ಸೂಚನೆ ಪ್ರತ್ಯೇಕತೆ
+      let headingInstruction = "ಕೆಳಗಿನ ಗದ್ಯಭಾಗವನ್ನು ಓದಿ, ಕೊಟ್ಟಿರುವ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ:";
+      text = text.replace(/^.*?ಗದ್ಯಭಾಗವನ್ನು\s*.*?(?:ಉತ್ತರಿಸಿ|ಬರೆಯಿರಿ)[\:\.\s]*/is, '').trim();
+
+      let passageText = '';
+      let questionsPart = '';
+
+      // ಪ್ರಶ್ನೆಗಳ ಭಾಗವನ್ನು ಬೇರ್ಪಡಿಸುವುದು
+      if (/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i.test(text)) {
+        let parts = text.split(/ಪ್ರಶ್ನೆಗಳು\s*[\:\.]?/i);
+        passageText = parts[0].trim();
+        questionsPart = parts.slice(1).join(' ').trim();
+      } else {
+        // ಪ್ರಶ್ನೆಗಳು: ಪದವಿಲ್ಲದಿದ್ದಾಗ 'ಅ.' ಅಥವಾ '1.' ಇರುವ ಜಾಗ ಗುರುತಿಸುವುದು
+        let qIndex = text.search(/(?=(?:ಅ\.|ಆ\.|ಇ\.|ಈ\.|1\.|2\.|೧\.|೨\.)\s+)/);
+        if (qIndex > 0) {
+          passageText = text.substring(0, qIndex).trim();
+          questionsPart = text.substring(qIndex).trim();
+        } else {
+          passageText = text;
+        }
+      }
+
+      // ಉಪ-ಪ್ರಶ್ನೆಗಳನ್ನು ಪ್ರತ್ಯೇಕ ಸಾಲುಗಳಾಗಿ ವಿಭಜಿಸುವುದು (ಅ. ... ಆ. ...)
+      let formattedQuestionsHtml = '';
+      if (questionsPart) {
+        // ಅ., ಆ., ಇ., 1., 2. ಇವುಗಳ ಮುಂದೆ ಹೊಸ ಸಾಲು ನೀಡುವುದು
+        let qList = questionsPart.split(/(?=(?:ಅ\.|ಆ\.|ಇ\.|ಈ\.|1\.|2\.|3\.|4\.|೧\.|೨\.|೩\.|೪\.)\s+)/).filter(q => q.trim().length > 2);
+
+        formattedQuestionsHtml = `
+          <div style="margin-top: 6px; padding-left: 4px;">
+            <b style="color: #000; font-size: 12.2px; display: block; margin-bottom: 3px;">ಪ್ರಶ್ನೆಗಳು:</b>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              ${qList.map(qItem => `
+                <div style="font-weight: 800; font-size: 12px; color: #0f172a; line-height: 1.4; padding-left: 6px;">
+                  ${escapeHtml(qItem.trim())}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div style="width: 100%; margin-top: 2px;">
+          <div style="font-weight: 800; font-size: 12.5px; margin-bottom: 3px; color: #000;">${headingInstruction}</div>
+          
+          <!-- 🌟 ಗದ್ಯಭಾಗದ ಪ್ರತ್ಯೇಕ ಆಕರ್ಷಕ ನೀಲಿ ಬಾರ್ಡರ್ ಬಾಕ್ಸ್ -->
+          <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 8px 12px; font-size: 11.8px; line-height: 1.5; color: #0f172a; text-align: justify;">
+            ${escapeHtml(passageText)}
+          </div>
+
+          <!-- 🌟 ಕೆಳಗೆ ಸಾಲಾಗಿ ಬರುವ ಉಪ-ಪ್ರಶ್ನೆಗಳು -->
+          ${formattedQuestionsHtml}
+        </div>
+      `;
+    }
+
+    // ೩. 🌟 ಪ್ರಶ್ನೆಗಳ ಪ್ರದರ್ಶನ ಎಂಜಿನ್ ಅಪ್ಡೇಟ್ (Auto Smart Detection)
+    window.buildQuestionItemWithImage = function(q, num) {
+      const allQuestions = (appState.activeGeneratedQuestions || []);
+      const idx = allQuestions.indexOf(q);
+      const qText = String(q.q || '').trim();
+      const qType = String(q.type || '').toLowerCase();
+      const imgSrc = (typeof getAnyQuestionImageSource === 'function') ? getAnyQuestionImageSource(q) : '';
+
+      // A. ಪದ್ಯಭಾಗ ಪೂರ್ಣಗೊಳಿಸಿ (Poem 4 lines)
+      const isPoem = qType === 'poem_4lines' || qText.includes('ಪದ್ಯಭಾಗ') || (qText.includes('ಪದ್ಯ') && (qText.includes('.....') || qText.includes('_____') || qText.includes('ಅಥವಾ')));
+      if (isPoem) {
+        return `
+          <div style="margin-bottom: 6px; break-inside: avoid; page-break-inside: avoid; width: 100%;">
+            <div class="q-paper-item-row" style="margin-bottom: 2px;">
+              <span class="q-paper-num">${num}.</span>
+              <div style="flex: 1;">
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+            </div>
+            ${formatPoemCompletionLayout(qText)}
+          </div>
+        `;
+      }
+
+      // B. ಗದ್ಯಭಾಗ ಗ್ರಹಿಕೆ (Passage Comprehension)
+      const isPassage = qType.includes('passage') || qType.includes('comprehension') || qType.includes('ಗದ್ಯ') || qText.includes('ಗದ್ಯಭಾಗ');
+      if (isPassage) {
+        return `
+          <div style="margin-bottom: 6px; break-inside: avoid; page-break-inside: avoid; width: 100%;">
+            <div class="q-paper-item-row" style="margin-bottom: 2px;">
+              <span class="q-paper-num">${num}.</span>
+              <div style="flex: 1;">
+                <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit" style="float: right;"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              </div>
+            </div>
+            ${renderQuestionDiagramImage(imgSrc)}
+            ${formatPassageComprehensionLayout(qText)}
+          </div>
+        `;
+      }
+
+      // C. ಸಾಮಾನ್ಯ ಪ್ರಶ್ನೆಗಳು
+      let cleanQ = cleanQuestionTextForDisplay(qText).replace(/\s*\((?:ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ)\)\s*$/gi, '').trim();
+
+      return `
+        <div style="margin-bottom: 3.5px; break-inside: avoid; page-break-inside: avoid;">
+          <div class="q-paper-item-row">
+            <span class="q-paper-num">${num}.</span>
+            <div class="q-paper-text" style="flex: 1;">
+              ${(typeof renderSafeRichTextWithUnderlines === 'function') ? renderSafeRichTextWithUnderlines(cleanQ) : escapeHtml(cleanQ)}
+            </div>
+            <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+          </div>
+          ${renderQuestionDiagramImage(imgSrc)}
+        </div>
+      `;
+    };
     
   </script>
 </body>
