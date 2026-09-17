@@ -34994,6 +34994,519 @@
     setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
   };
 })();
+
+/* ==========================================================================
+   🚨 ULTIMATE AUTO-PAGE-MERGER & ZERO-SPLIT DEFENDER (100% SINGLE PAGE LOCK)
+   ========================================================================== */
+(function() {
+  console.log("Activating Permanent Single-Page Lock & Auto-Page Merger...");
+
+  // ೧. ಸಿಂಗಲ್ ಪೇಜ್ CSS ಮತ್ತು ೨ನೇ ಪುಟ ನಿರ್ಬಂಧಕ (CSS Hard-Lock)
+  const nukeStyleId = 'nuke-page2-and-force-single-page-css';
+  let stEl = document.getElementById(nukeStyleId);
+  if (!stEl) {
+    stEl = document.createElement('style');
+    stEl.id = nukeStyleId;
+    document.head.appendChild(stEl);
+  }
+
+  stEl.innerHTML = `
+    /* 🌟 ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ೨ನೇ ಕಂಟೈನರ್ ಸೃಷ್ಟಿಯಾದರೆ ಅದನ್ನು ತಕ್ಷಣ ಮರೆಮಾಚು */
+    #rendered-paper .a4-sheet-container ~ .a4-sheet-container,
+    #print-area .a4-sheet-container ~ .a4-sheet-container {
+      display: none !important;
+    }
+
+    /* 🌟 ಪುಟ ೨ ಮತ್ತು ಮುಂದುವರಿದಿದೆ ಎಂಬ ಫೂಟರ್ ಅನ್ನು ಶಾಶ್ವತವಾಗಿ ನಿಷೇಧಿಸಿ */
+    .page-continue-footer,
+    [class*="continue"],
+    [class*="page2"],
+    div:has(> span:contains("ಮುಂದುವರಿದಿದೆ")) {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+    /* 🌟 ಪರಿಪೂರ್ಣ ೪ ಬದಿಯ ಗಟ್ಟಿ ಮುಚ್ಚಿದ ಬಾರ್ಡರ್ (೧೫-೨೪ ಪ್ರಶ್ನೆಗಳು ೧ ಪುಟದಲ್ಲೇ ಫಿಟ್) */
+    .a4-sheet-container {
+      width: 100% !important;
+      max-width: 810px !important;
+      border: 2.5px solid #000 !important;
+      padding: 5mm 8.5mm 5mm 8.5mm !important;
+      margin: 0 auto 16px auto !important;
+      box-sizing: border-box !important;
+      background: #fff !important;
+      font-family: 'Anek Kannada', sans-serif !important;
+      min-height: 275mm !important;
+      height: auto !important;
+      display: block !important;
+      position: relative !important;
+      overflow: hidden !important;
+      page-break-after: avoid !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* ಹೆಡರ್ */
+    .sp-clean-header {
+      width: 100% !important;
+      margin: 0 0 4px 0 !important;
+      padding: 0 !important;
+      border: none !important;
+    }
+    .sp-school-title {
+      text-align: center !important;
+      font-size: 18px !important;
+      font-weight: 900 !important;
+      color: #000 !important;
+      line-height: 1.15 !important;
+      margin: 0 0 2px 0 !important;
+    }
+    .sp-meta-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      font-size: 12.2px !important;
+      font-weight: 900 !important;
+      color: #000 !important;
+      line-height: 1.4 !important;
+    }
+    .sp-divider-line {
+      border: none !important;
+      border-top: 2px solid #000 !important;
+      margin: 2px 0 5px 0 !important;
+      width: 100% !important;
+    }
+
+    /* ಪ್ರಶ್ನೆ ಸಾಲುಗಳು - ಸ್ಪಷ್ಟ ಮತ್ತು ಕಾಂಪ್ಯಾಕ್ಟ್ */
+    .q-paper-item-row {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 5px !important;
+      margin-bottom: 2px !important;
+      line-height: 1.26 !important;
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+    .q-paper-num {
+      font-weight: 900 !important;
+      font-size: 12.2px !important;
+      min-width: 23px !important;
+      color: #000 !important;
+      flex-shrink: 0 !important;
+    }
+    .q-paper-text {
+      flex: 1 !important;
+      font-weight: 700 !important;
+      font-size: 11.8px !important;
+      color: #000 !important;
+      text-align: justify !important;
+      line-height: 1.26 !important;
+      white-space: pre-line !important;
+    }
+
+    /* ಉತ್ತರ ಪತ್ರಿಕೆ */
+    .key-answer-row {
+      display: flex !important;
+      align-items: flex-start !important;
+      gap: 5px !important;
+      margin-bottom: 2px !important;
+      line-height: 1.25 !important;
+      break-inside: avoid !important;
+    }
+    .key-qnum {
+      font-weight: 900 !important;
+      font-size: 12.2px !important;
+      min-width: 23px !important;
+      color: #000 !important;
+      flex-shrink: 0 !important;
+    }
+    .key-text {
+      flex: 1 !important;
+      font-weight: 600 !important;
+      font-size: 11.5px !important;
+      color: #0f172a !important;
+      text-align: justify !important;
+      line-height: 1.25 !important;
+      white-space: pre-line !important;
+    }
+
+    .compact-section-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: baseline !important;
+      font-weight: 900 !important;
+      font-size: 12.2px !important;
+      margin-top: 4px !important;
+      margin-bottom: 1.5px !important;
+      color: #000 !important;
+      break-inside: avoid !important;
+    }
+
+    .mcq-grid-pro {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 1px 8px !important;
+      font-size: 11.2px !important;
+      padding-left: 28px !important;
+      margin-top: 1px !important;
+      font-weight: 600 !important;
+      break-inside: avoid !important;
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 4mm 6mm !important;
+      }
+      html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #print-area {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .a4-sheet-container {
+        border: 2.5px solid #000 !important;
+        padding: 4.5mm 8mm !important;
+        min-height: 275mm !important;
+        height: auto !important;
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
+  `;
+
+  // ೨. ಡಬಲ್ ನಂಬರ್ & ಕಸದ ಅಕ್ಷರಗಳ ಕ್ಲೀನರ್
+  function cleanQ(text) {
+    if (!text) return '';
+    return String(text)
+      .replace(/\[cite:\s*\d+\]/gi, '')
+      .replace(/\[\d+\]/g, '')
+      .replace(/【.*?】/g, '')
+      .replace(/<img[^>]*>/gi, '')
+      .replace(/^[\(\[]?\d+[\)\]\.\s\:\-]+/, '')
+      .replace(/\s*\((?:ಸುಲಭ|ಸಾಧಾರಣ|ಕಠಿಣ)\)\s*$/gi, '')
+      .trim();
+  }
+
+  function toRoman(n) {
+    const num = parseInt(n, 10) || 1;
+    const lookup = [[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+    let res = '', val = num;
+    for (const [k, v] of lookup) { while (val >= k) { res += v; val -= k; } }
+    return res || 'I';
+  }
+
+  // ೩. 🌟 ಕಟ್ಟುನಿಟ್ಟಾದ ನೈಸರ್ಗಿಕ ಆದ್ಯತೆಯ ಸರದಿ (Strict Order: 1M -> 2M -> 3M -> 4M)
+  window.renderFullExamPaperWithCustomHeader = function(headerHtmlPlaceholder) {
+    const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+    const isEnglish = String(document.getElementById('cfg-medium')?.value || '').toLowerCase().includes('english');
+    const currentSubject = document.getElementById('cfg-subject')?.value || 'ವಿಷಯ';
+
+    const schoolName = (document.getElementById('cfg-school-name')?.value || 'ಸರ್ಕಾರಿ ಕನ್ನಡ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ').trim();
+    const grade = document.getElementById('cfg-class')?.value || '6';
+    const examType = document.getElementById('cfg-exam-type')?.value || '೩ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ 2026-27';
+    const examDate = document.getElementById('cfg-exam-date')?.value || '2026-27';
+    const isLBA = String(examType).includes('LBA') || String(examType).includes('ಘಟಕ');
+
+    let selectedBoxes = document.querySelectorAll('input[name="selected_chapter"]:checked');
+    let selectedChapters = Array.from(selectedBoxes).map(b => b.value);
+    let selectedChapterNamesString = Array.from(new Set(selectedChapters.map(c => String(c).trim()))).join(', ') || 'ಆಯ್ಕೆಮಾಡಿದ ಘಟಕಗಳು';
+
+    // 🌟 ಕ್ರಮಬದ್ಧ ವಿಭಾಗಗಳ ಬಕೆಟ್
+    const typeBuckets = {
+      mcq: [],
+      blanks: [],
+      true_false: [],
+      analogy: [],
+      odd_one_out: [],
+      match: [],
+      vsa_1m: [],
+      sa_2m: [],
+      sa_3m: [],
+      la_4m: []
+    };
+    const customBuckets = new Map();
+
+    allQuestions.forEach(q => {
+      let t = String(q.type || 'vsa_1m').trim().toLowerCase();
+      if (t === 'fill_ups' || t === 'fib') t = 'blanks';
+      if (t === 'la_3m') t = 'sa_3m';
+
+      if (typeBuckets[t]) {
+        typeBuckets[t].push(q);
+      } else if (q.matchPairs || t === 'match') {
+        typeBuckets.match.push(q);
+      } else {
+        const m = (typeof getExactQuestionMarks === 'function') ? getExactQuestionMarks(q) : 1;
+        if (m === 1 && !q.a && t !== 'blanks') typeBuckets.vsa_1m.push(q);
+        else if (m === 2) typeBuckets.sa_2m.push(q);
+        else if (m === 3) typeBuckets.sa_3m.push(q);
+        else if (m >= 4) typeBuckets.la_4m.push(q);
+        else {
+          if (!customBuckets.has(q.type)) customBuckets.set(q.type, []);
+          customBuckets.get(q.type).push(q);
+        }
+      }
+    });
+
+    let paperSectionsHtml = [];
+    let keySectionsHtml = [];
+    let qNum = 1, kNum = 1, sectionCounter = 1;
+
+    function renderSection(tKey, qList, defaultKnHeading, defaultEnHeading, marksPerQ) {
+      if (!qList || qList.length === 0) return;
+      const r = toRoman(sectionCounter++);
+      const heading = (typeof getCleanSectionHeading === 'function')
+        ? getCleanSectionHeading(tKey, isEnglish, currentSubject)
+        : (isEnglish ? defaultEnHeading : defaultKnHeading);
+
+      const totalSectionMarks = (tKey === 'match') ? 4 : (marksPerQ * qList.length);
+
+      if (tKey === 'match') {
+        const mItem = qList[0];
+        const idx = allQuestions.indexOf(mItem);
+        let pairs = mItem.matchPairs || [{ a: 'ಅಂಶ 1', b: 'ಉತ್ತರ 1' }, { a: 'ಅಂಶ 2', b: 'ಉತ್ತರ 2' }, { a: 'ಅಂಶ 3', b: 'ಉತ್ತರ 3' }, { a: 'ಅಂಶ 4', b: 'ಉತ್ತರ 4' }];
+        if (pairs.length > 4) pairs = pairs.slice(0, 4);
+
+        const colA = pairs.map((p, i) => ({ text: String(p.a || '').replace(/^[\(\[]?\d+[\)\]\.\s]+/, '').trim(), origIdx: i }));
+        let colB = pairs.map((p, i) => ({ text: String(p.b || '').replace(/^[\(\[]?[A-Za-z\u0C80-\u0CFF][\)\]\.\s]+/, '').trim(), origIdx: i }));
+        for (let i = colB.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [colB[i], colB[j]] = [colB[j], colB[i]]; }
+
+        paperSectionsHtml.push(`
+          <div>
+            <div class="compact-section-header">
+              <span>${r}. ${escapeHtml(heading)}</span>
+              <span style="font-weight: 900;">(1 x 4 = 4)</span>
+            </div>
+            <div class="q-paper-item-row" style="margin-bottom: 1.5px;">
+              <span class="q-paper-num">${qNum++}.</span>
+              <span class="q-paper-text">${isEnglish ? "Match the following:" : "'ಅ' ಗುಂಪಿನಲ್ಲಿರುವ ಅಂಶಗಳನ್ನು 'ಬ' ಗುಂಪಿನೊಂದಿಗೆ ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:"}</span>
+              <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 1px 24px; font-size: 11.2px; font-weight: 600;">
+              <div><div style="text-decoration: underline; font-weight: bold;">'ಅ' ಗುಂಪು</div>${colA.map((a, i) => `<div>(${i + 1}) ${escapeHtml(a.text)}</div>`).join('')}</div>
+              <div><div style="text-decoration: underline; font-weight: bold;">'ಬ' ಗುಂಪು</div>${colB.map((b, i) => `<div>(${String.fromCharCode(65 + i)}) ${escapeHtml(b.text)}</div>`).join('')}</div>
+            </div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 3px;">
+            <div style="font-weight: 900; font-size: 12px; margin-bottom: 1.5px;">${r}. ಹೊಂದಿಸಿ ಬರೆದ ಸರಿಯಾದ ಉತ್ತರಗಳು:</div>
+            <div class="key-answer-row">
+              <span class="key-qnum">${kNum++}.</span>
+              <div class="key-text">
+                <table style="border-collapse: collapse; width: 100%; max-width: 560px; font-size: 11px; border: 1px solid #94a3b8; background: #fff;">
+                  <tbody>
+                    ${colA.map((a, i) => {
+                      const bIdx = colB.findIndex(b => b.origIdx === a.origIdx);
+                      return `
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                          <td style="padding: 1.5px 5px; width: 45%; font-weight: 700; border-right: 1px solid #cbd5e1;">(${i + 1}) ${escapeHtml(a.text)}</td>
+                          <td style="padding: 1.5px 5px; width: 55%; font-weight: 700;"><span style="color: #16a34a; font-weight: 900;">➔</span> <b>(${String.fromCharCode(65 + bIdx)}) ${escapeHtml(colB[bIdx].text)}</b></td>
+                        </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `);
+      } else if (tKey === 'mcq') {
+        paperSectionsHtml.push(`
+          <div>
+            <div class="compact-section-header">
+              <span>${r}. ${escapeHtml(heading)}</span>
+              <span style="font-weight: 900;">(1 x ${qList.length} = ${qList.length})</span>
+            </div>
+            <div>${qList.map(m => {
+              const idx = allQuestions.indexOf(m);
+              return `
+                <div style="margin-bottom: 2px;">
+                  <div class="q-paper-item-row">
+                    <span class="q-paper-num">${qNum++}.</span>
+                    <span class="q-paper-text">${escapeHtml(cleanQ(m.q))}</span>
+                    <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  </div>
+                  <div class="mcq-grid-pro">
+                    <div>(A) ${escapeHtml(m.a||'')}</div><div>(B) ${escapeHtml(m.b||'')}</div>
+                    <div>(C) ${escapeHtml(m.c||'')}</div><div>(D) ${escapeHtml(m.d||'')}</div>
+                  </div>
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 3px;">
+            <div style="font-weight: 900; font-size: 12px; margin-bottom: 1px;">${r}. ಬಹು ಆಯ್ಕೆಯ ಪ್ರಶ್ನೆಗಳ ಉತ್ತರಗಳು:</div>
+            <div>${qList.map(m => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(cleanQ(m.ans || ''))}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      } else {
+        paperSectionsHtml.push(`
+          <div>
+            <div class="compact-section-header">
+              <span>${r}. ${escapeHtml(heading)}</span>
+              <span style="font-weight: 900;">(${marksPerQ} x ${qList.length} = ${totalSectionMarks})</span>
+            </div>
+            <div>${qList.map(item => {
+              const idx = allQuestions.indexOf(item);
+              const isTF = (tKey === 'true_false');
+              let qText = cleanQ(item.q);
+              if (tKey === 'blanks' && !qText.includes('......')) qText += ' ........................';
+
+              return `
+                <div style="margin-bottom: 2px;">
+                  <div class="q-paper-item-row">
+                    <span class="q-paper-num">${qNum++}.</span>
+                    <span class="q-paper-text">${escapeHtml(qText)}${isTF ? " &nbsp; [ &nbsp;&nbsp;&nbsp;&nbsp; ]" : ""}</span>
+                    <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                  </div>
+                  ${(typeof renderQuestionDiagramImage === 'function') ? renderQuestionDiagramImage(item) : ''}
+                </div>`;
+            }).join('')}</div>
+          </div>
+        `);
+
+        keySectionsHtml.push(`
+          <div style="margin-bottom: 3px;">
+            <div style="font-weight: 900; font-size: 12px; margin-bottom: 1px;">${r}. ${escapeHtml(heading)}:</div>
+            <div>${qList.map(item => `
+              <div class="key-answer-row">
+                <span class="key-qnum">${kNum++}.</span>
+                <span class="key-text">${escapeHtml(cleanQ(item.ans || ''))}</span>
+              </div>
+            `).join('')}</div>
+          </div>
+        `);
+      }
+    }
+
+    // 🌟 ಕ್ರಮಬದ್ಧವಾಗಿ ೧ ಅಂಕದಿಂದ ೪ ಅಂಕದವರೆಗೆ ಜೋಡಿಸುವುದು
+    renderSection('mcq', typeBuckets.mcq, 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:', 'Choose the correct alternative:', 1);
+    renderSection('blanks', typeBuckets.blanks, 'ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:', 'Fill in the blanks with suitable answers:', 1);
+    renderSection('true_false', typeBuckets.true_false, 'ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ \'ಸರಿ\' ತಪ್ಪು ಇದ್ದರೆ \'ತಪ್ಪು\' ಎಂದು ಬರೆಯಿರಿ:', 'State True or False:', 1);
+    renderSection('analogy', typeBuckets.analogy, 'ಮೊದಲೆರೆಡು ಪದಗಳಿಗಿರುವ ಸಂಬಂಧದಂತೆ ಮೂರನೇ ಪದಕ್ಕೆ ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:', 'Complete the analogy:', 1);
+    renderSection('odd_one_out', typeBuckets.odd_one_out, 'ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:', 'Pick out the odd one:', 1);
+    renderSection('match', typeBuckets.match, 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:', 'Match the following:', 4);
+    renderSection('vsa_1m', typeBuckets.vsa_1m, 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:', 'Answer in a sentence each:', 1);
+    renderSection('sa_2m', typeBuckets.sa_2m, 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಅಥವಾ ಎರಡು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:', 'Answer in 2-3 sentences each:', 2);
+    renderSection('sa_3m', typeBuckets.sa_3m, 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:', 'Answer in 5-6 sentences each:', 3);
+    renderSection('la_4m', typeBuckets.la_4m, 'ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮೂರು ಅಥವಾ ನಾಲ್ಕು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ / ಚಿತ್ರ / ನಕ್ಷೆ:', 'Answer in detail / Diagram / Map:', 4);
+
+    customBuckets.forEach((qList, tKey) => {
+      renderSection(tKey, qList, `${tKey}:`, `${tKey}:`, (qList[0]?.marks || 1));
+    });
+
+    const totalMarksSum = allQuestions.reduce((a, b) => a + ((typeof getExactQuestionMarks === 'function') ? getExactQuestionMarks(b) : 1), 0);
+
+    const cleanHeaderHtml = `
+      <div class="sp-clean-header">
+        <div class="sp-school-title">${escapeHtml(schoolName)}</div>
+        <div class="sp-meta-row">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+            <span>${isEnglish ? 'Subject' : 'ವಿಷಯ'} : ${escapeHtml(currentSubject)}</span>
+            <span>${isEnglish ? 'Marks' : 'ಅಂಕ'} &nbsp;&nbsp;: ${totalMarksSum}</span>
+          </div>
+          <div style="display: flex; justify-content: center; align-items: center; flex: 2; text-align: center;">
+            <span style="font-size: 13.2px;">${escapeHtml(examType)}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1; text-align: right;">
+            <span>${isEnglish ? 'Class' : 'ತರಗತಿ'} : ${escapeHtml(grade)}${isEnglish ? 'th' : 'ನೇ'}</span>
+            <span>${isEnglish ? 'Date' : 'ದಿನಾಂಕ'} : ${escapeHtml(examDate)}</span>
+          </div>
+        </div>
+        ${isLBA ? `
+          <div style="width: 100%; text-align: center; font-size: 11.8px; font-weight: 900; color: #000; border-top: 1px dashed #64748b; margin-top: 2px; padding-top: 1px;">
+            <span>${isEnglish ? 'Chapter' : 'ಘಟಕದ ಹೆಸರು'} : ${escapeHtml(selectedChapterNamesString)}</span>
+          </div>
+        ` : ''}
+        <hr class="sp-divider-line" />
+      </div>
+    `;
+
+    const paperEl = document.getElementById('rendered-paper');
+    const keyEl = document.getElementById('rendered-key');
+
+    // 🌟 ಕೇವಲ ೧ ಕಂಟೈನರ್ ಮಾತ್ರ ಇರುತ್ತದೆ (೧೦೦% ಒಂದೇ ಹಾಳೆ)
+    if (paperEl) {
+      paperEl.innerHTML = `
+        <div class="a4-sheet-container">
+          ${cleanHeaderHtml}
+          <div>${paperSectionsHtml.join('')}</div>
+        </div>
+      `;
+    }
+
+    if (keyEl) {
+      keyEl.innerHTML = `
+        <div class="a4-sheet-container">
+          ${cleanHeaderHtml}
+          <div style="text-align: center; margin-bottom: 5px;">
+            <h3 style="font-size: 13.5px; font-weight: 900; text-decoration: underline;">ಉತ್ತರ ಪತ್ರಿಕೆ & ಮೌಲ್ಯಮಾಪನ ಸೂಚಿ</h3>
+          </div>
+          <div>${keySectionsHtml.join('')}</div>
+        </div>
+      `;
+    }
+
+    if (typeof renderExactThreeBlueprints === 'function') {
+      renderExactThreeBlueprints(allQuestions, totalMarksSum);
+    }
+    if (typeof applyDemoWatermarkToOutput === 'function') {
+      applyDemoWatermarkToOutput();
+    }
+  };
+
+  // ೪. 🌟 ಹಳೆಯ ಸ್ಕ್ರಿಪ್ಟ್ ೨ನೇ ಪುಟಕ್ಕೆ ಸ್ಪ್ಲಿಟ್ ಮಾಡುವುದನ್ನು ತಡೆಯುವ ಅಟೋ-ಮರ್ಜರ್ ವಾಚರ್ (AUTO-MERGER DEFENDER)
+  function sanitizeDOMAndMergeAnySplitPages() {
+    const renderedPaper = document.getElementById('rendered-paper');
+    if (!renderedPaper) return;
+
+    const containers = renderedPaper.querySelectorAll('.a4-sheet-container');
+    if (containers.length > 1) {
+      // ೨ನೇ ಪುಟ ಸೃಷ್ಟಿಯಾಗಿದ್ದರೆ, ಅದರ ಎಲ್ಲಾ ವಿಷಯಗಳನ್ನು ಮೊದಲ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ೨ನೇ ಪುಟವನ್ನು ಅಳಿಸು
+      for (let i = 1; i < containers.length; i++) {
+        const extraItems = containers[i].innerHTML;
+        containers[0].insertAdjacentHTML('beforeend', extraItems);
+        containers[i].remove();
+      }
+    }
+
+    // "ಮುಂದುವರಿದಿದೆ" ಅಥವಾ "ಪುಟ ೨" ಪದವಿರುವ ಎಲ್ಲಾ ತಪ್ಪು ಫೂಟರ್‌ಗಳನ್ನು ಡಿಲೀಟ್ ಮಾಡಿ
+    renderedPaper.querySelectorAll('*').forEach(el => {
+      if (el.innerText && (el.innerText.includes('ಮುಂದುವರಿದಿದೆ') || el.innerText.includes('ಪುಟ ೨ ರಲ್ಲಿ'))) {
+        el.remove();
+      }
+    });
+  }
+
+  // ಪ್ರತಿ 300ms ಗೂ ತಪಾಸಣೆ ನಡೆಸಿ ೨ನೇ ಪುಟವನ್ನು ತಡೆಯುವುದು
+  setInterval(sanitizeDOMAndMergeAnySplitPages, 300);
+
+  // ೫. ಬಟನ್ ಮೇಲಿನ ಎಲ್ಲಾ ಹಳೆಯ ಈವೆಂಟ್‌ಗಳನ್ನು ತೆಗೆದು ಕ್ಲೀನ್ ಈವೆಂಟ್ ನೀಡುವುದು
+  const genBtn = document.getElementById('btn-generate');
+  if (genBtn) {
+    const newBtn = genBtn.cloneNode(true);
+    genBtn.parentNode.replaceChild(newBtn, genBtn);
+    newBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (typeof generateExamPackageFromBank === 'function') {
+        generateExamPackageFromBank();
+      }
+      setTimeout(sanitizeDOMAndMergeAnySplitPages, 200);
+      setTimeout(sanitizeDOMAndMergeAnySplitPages, 500);
+    });
+  }
+})();
      
   </script>
 </body>
