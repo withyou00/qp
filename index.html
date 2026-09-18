@@ -29404,6 +29404,265 @@ function renderCompleteOfficialDSERTBlueprintPackage(questions, totalMarks, subj
     </div>
   `;
 }
+
+/* ==========================================================================
+   🎯 100% PERFECT HEADER, PRINT FIX & BLUEPRINT QUESTION COUNT ENGINE
+   ========================================================================== */
+
+// ೧. 🌟 ಅಚ್ಚುಕಟ್ಟಾದ ಅಧಿಕೃತ ಹೆಡರ್ (ಸಂಕೇತ & ಸಮಯವಿಲ್ಲ, ಕೇವಲ ಆಯ್ಕೆಮಾಡಿದ ಪರೀಕ್ಷಾ ಹೆಸರು & ದಿನಾಂಕ)
+function generateOfficialBoardHeader(schoolName, subject, grade, examType, marks, time = "", examDate = "") {
+  const isEnglish = String(subject).toLowerCase().includes('english');
+  const cleanDate = examDate && examDate.trim() !== '' ? escapeHtml(examDate.trim()) : '_____________';
+
+  return `
+    <div style="width: 100%; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+      <!-- ಶಾಲೆಯ ಹೆಸರು ಮತ್ತು ಪರೀಕ್ಷೆಯ ಹೆಸರು -->
+      <div style="text-align: center; margin-bottom: 3px;">
+        <h1 style="font-size: 15pt; font-weight: 900; margin: 0; color: #000; text-transform: uppercase; line-height: 1.2;">
+          ${escapeHtml(schoolName)}
+        </h1>
+        <div style="font-size: 12pt; font-weight: 900; color: #000; margin-top: 2px;">
+          ${escapeHtml(examType)}
+        </div>
+      </div>
+
+      <!-- ವಿಷಯ, ತರಗತಿ, ದಿನಾಂಕ & ಅಂಕಗಳ ಏಕ-ಸಾಲಿನ ಅಚ್ಚುಕಟ್ಟಾದ ಪಟ್ಟಿ -->
+      <table style="width: 100%; border-collapse: collapse; margin-top: 3px;">
+        <tr>
+          <td style="width: 32%; text-align: left; font-weight: 800; font-size: 11pt; color: #000;">
+            ${isEnglish ? 'Subject' : 'ವಿಷಯ'} : <b>${escapeHtml(subject)}</b>
+          </td>
+          <td style="width: 24%; text-align: center; font-weight: 800; font-size: 11pt; color: #000;">
+            ${isEnglish ? 'Class' : 'ತರಗತಿ'} : <b>${grade}${isEnglish ? 'th' : 'ನೇ ತರಗತಿ'}</b>
+          </td>
+          <td style="width: 24%; text-align: center; font-weight: 800; font-size: 11pt; color: #000;">
+            ${isEnglish ? 'Date' : 'ದಿನಾಂಕ'} : <b>${cleanDate}</b>
+          </td>
+          <td style="width: 20%; text-align: right; font-weight: 800; font-size: 11pt; color: #000;">
+            ${isEnglish ? 'Marks' : 'ಗರಿಷ್ಠ ಅಂಕಗಳು'} : <b>${marks}</b>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+}
+
+// ೨. 🌟 ನೀಲನಕ್ಷೆಯಲ್ಲಿ "ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ" ಕಾಲಂ ಸೇರ್ಪಡೆ (DSERT Blueprint Question Counts)
+function renderCompleteOfficialDSERTBlueprintPackage(questions, totalMarks, subject, grade) {
+  const container = document.getElementById('rendered-blueprint');
+  if (!container) return;
+
+  const isEnglish = String(subject).toLowerCase().includes('english');
+  const totalQ = questions.length;
+
+  // ಉದ್ದೇಶವಾರು ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ & ಅಂಕ ಲೆಕ್ಕಾಚಾರ
+  let kCount = questions.filter(q => q.obj === 'ಜ್ಞಾನ').length;
+  let uCount = questions.filter(q => q.obj === 'ತಿಳುವಳಿಕೆ').length;
+  let aCount = questions.filter(q => q.obj === 'ಅನ್ವಯ').length;
+  let sCount = totalQ - (kCount + uCount + aCount);
+  if (sCount < 0) sCount = 0;
+
+  let kMarks = Math.round(totalMarks * 0.25);
+  let uMarks = Math.round(totalMarks * 0.45);
+  let aMarks = Math.round(totalMarks * 0.20);
+  let sMarks = totalMarks - (kMarks + uMarks + aMarks);
+
+  // ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ & ಅಂಕ ಲೆಕ್ಕಾಚಾರ
+  let easyCount = questions.filter(q => q.diff === 'ಸುಲಭ').length;
+  let avgCount = questions.filter(q => q.diff === 'ಸಾಧಾರಣ').length;
+  let diffCount = totalQ - (easyCount + avgCount);
+  if (diffCount < 0) diffCount = 0;
+
+  let easyMarks = Math.round(totalMarks * 0.30);
+  let avgMarks = Math.round(totalMarks * 0.50);
+  let diffMarks = totalMarks - (easyMarks + avgMarks);
+
+  container.innerHTML = `
+    <!-- ಪುಟ ೧: ಉದ್ದೇಶವಾರು ಮತ್ತು ಕ್ಲಿಷ್ಟತೆಯ ನೀಲನಕ್ಷೆ -->
+    <div class="a4-board-sheet" style="margin-bottom: 16px;">
+      <h2 style="text-align: center; font-size: 14pt; font-weight: 900; color: #000; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 4px;">
+        ${grade}ನೇ ತರಗತಿ ${escapeHtml(subject)} - ಅಧಿಕೃತ ನೀಲನಕ್ಷೆ (Blue Print)
+      </h2>
+
+      <!-- ಹಂತ ೧: ಉದ್ದೇಶವಾರು ಅಂಕ & ಪ್ರಶ್ನೆಗಳ ಹಂಚಿಕೆ -->
+      <div style="margin-bottom: 14px;">
+        <h4 style="font-weight: 900; font-size: 11pt; margin-bottom: 3px;">ಹಂತ 1: ಉದ್ದೇಶವಾರು ಅಂಕ ಹಂಚಿಕೆ (Weightage to Objectives)</h4>
+        <table class="blueprint-official-table">
+          <thead>
+            <tr>
+              <th style="width: 8%;">ಕ್ರ.ಸಂ.</th>
+              <th style="width: 34%; text-align: left;">ಉದ್ದೇಶಗಳು</th>
+              <th style="width: 18%;">ಅಂಕಗಳು</th>
+              <th style="width: 20%; background-color: #e2e8f0;">ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ</th>
+              <th style="width: 20%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td style="text-align: left;">ಜ್ಞಾನ (Knowledge)</td><td>${kMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${kCount || Math.round(totalQ * 0.30)}</td><td>25%</td></tr>
+            <tr><td>2</td><td style="text-align: left;">ತಿಳುವಳಿಕೆ (Understanding)</td><td>${uMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${uCount || Math.round(totalQ * 0.45)}</td><td>45%</td></tr>
+            <tr><td>3</td><td style="text-align: left;">ಅನ್ವಯ (Application)</td><td>${aMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${aCount || Math.round(totalQ * 0.15)}</td><td>20%</td></tr>
+            <tr><td>4</td><td style="text-align: left;">ಕೌಶಲ / ನಕ್ಷೆ / ಚಿತ್ರ (Skill)</td><td>${sMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${sCount || Math.max(1, totalQ - (Math.round(totalQ * 0.30) + Math.round(totalQ * 0.45) + Math.round(totalQ * 0.15)))}</td><td>10%</td></tr>
+            <tr style="font-weight: 900; background: #f1f5f9;"><td></td><td style="text-align: left;">ಒಟ್ಟು</td><td>${totalMarks}</td><td style="font-weight: 900; font-size: 11.5pt;">${totalQ}</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ಹಂತ ೨: ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಅಂಕ & ಪ್ರಶ್ನೆಗಳ ಹಂಚಿಕೆ -->
+      <div style="margin-bottom: 14px;">
+        <h4 style="font-weight: 900; font-size: 11pt; margin-bottom: 3px;">ಹಂತ 2: ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟದ ಹಂಚಿಕೆ (Difficulty Level)</h4>
+        <table class="blueprint-official-table">
+          <thead>
+            <tr>
+              <th style="width: 8%;">ಕ್ರ.ಸಂ.</th>
+              <th style="width: 34%; text-align: left;">ಮಟ್ಟ</th>
+              <th style="width: 18%;">ಅಂಕಗಳು</th>
+              <th style="width: 20%; background-color: #e2e8f0;">ಪ್ರಶ್ನೆಗಳ ಸಂಖ್ಯೆ</th>
+              <th style="width: 20%;">ಶೇಕಡಾವಾರು</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td style="text-align: left;">ಸುಲಭ (Easy)</td><td>${easyMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${easyCount || Math.round(totalQ * 0.35)}</td><td>30%</td></tr>
+            <tr><td>2</td><td style="text-align: left;">ಸಾಧಾರಣ (Average)</td><td>${avgMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${avgCount || Math.round(totalQ * 0.50)}</td><td>50%</td></tr>
+            <tr><td>3</td><td style="text-align: left;">ಕಠಿಣ (Difficult)</td><td>${diffMarks}</td><td style="font-weight: 900; background-color: #f8fafc;">${diffCount || Math.max(1, totalQ - (Math.round(totalQ * 0.35) + Math.round(totalQ * 0.50)))}</td><td>20%</td></tr>
+            <tr style="font-weight: 900; background: #f1f5f9;"><td></td><td style="text-align: left;">ಒಟ್ಟು</td><td>${totalMarks}</td><td style="font-weight: 900; font-size: 11.5pt;">${totalQ}</td><td>100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ಪುಟ ೨: ಪ್ರಶ್ನಾವಾರು ವಿಶ್ಲೇಷಣೆ ಕೋಷ್ಟಕ (Question-wise Analysis) -->
+    <div class="a4-board-sheet">
+      <h3 style="text-align: center; font-size: 12.5pt; font-weight: 900; color: #000; margin-bottom: 8px; border-bottom: 1.5px solid #000; padding-bottom: 3px;">
+        ಹಂತ 3: ಪ್ರಶ್ನಾವಾರು ವಿಶ್ಲೇಷಣೆ ಕೋಷ್ಟಕ (Question-wise Analysis)
+      </h3>
+
+      <table class="blueprint-official-table" style="font-size: 9.5pt;">
+        <thead>
+          <tr>
+            <th style="width: 6%;">ಪ್ರಶ್ನೆ ಸಂ.</th>
+            <th style="width: 26%;">ಘಟಕದ ಹೆಸರು</th>
+            <th style="width: 14%;">ಉದ್ದೇಶ</th>
+            <th style="width: 16%;">ನಿರ್ದಿಷ್ಟತೆ</th>
+            <th style="width: 8%;">ಅಂಕ</th>
+            <th style="width: 15%;">ಪ್ರಶ್ನೆಯ ರೂಪ</th>
+            <th style="width: 15%;">ಕ್ಲಿಷ್ಟತೆಯ ಮಟ್ಟ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${questions.map((q, idx) => {
+            const m = getExactQuestionMarks(q);
+            const form = (m === 1 && (q.type === 'mcq' || q.a)) ? 'ವಸ್ತುನಿಷ್ಠ' : (m <= 2 ? 'ಕಿರು ಉತ್ತರ' : 'ದೀರ್ಘ ಉತ್ತರ');
+            const spec = (q.type === 'analogy' || q.type === 'match') ? 'ಸಂಬಂಧ ಕಲ್ಪಿಸುವಿಕೆ' : (m === 1 ? 'ಸ್ಮರಿಸುವಿಕೆ' : (m === 2 ? 'ವಿವರಿಸುವಿಕೆ' : 'ವಿಶ್ಲೇಷಣೆ / ನಕ್ಷೆ'));
+            return `
+              <tr>
+                <td><b>${idx + 1}</b></td>
+                <td style="text-align: left;">${escapeHtml(q.chapter || 'ಸಾಮಾನ್ಯ')}</td>
+                <td>${q.obj || 'ತಿಳುವಳಿಕೆ'}</td>
+                <td>${spec}</td>
+                <td><b>${m}</b></td>
+                <td>${form}</td>
+                <td>${q.diff || 'ಸಾಧಾರಣ'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ೩. 🌟 PDF & Print ಎಕ್ಸ್ಪೋರ್ಟರ್ ದೋಷ ನಿವಾರಣೆ (100% Guaranteed Export)
+window.exportCurrentTabToPDF = function() {
+  let activeTabId = 'tab-content-paper', fileLabel = 'ಪ್ರಶ್ನೆ_ಪತ್ರಿಕೆ';
+  if (!document.getElementById('tab-content-key')?.classList.contains('hidden')) { activeTabId = 'tab-content-key'; fileLabel = 'ಉತ್ತರ_ಪತ್ರಿಕೆ'; }
+  else if (!document.getElementById('tab-content-blueprint')?.classList.contains('hidden')) { activeTabId = 'tab-content-blueprint'; fileLabel = 'ನೀಲನಕ್ಷೆ'; }
+
+  // 🌟 ಎರಡೂ ಕ್ಲಾಸ್ ಹೆಸರುಗಳನ್ನೂ ಪರಿಶೀಲಿಸಿ ಶೀಟ್ ಹುಡುಕುವುದು
+  const activeSheet = document.querySelector(`#${activeTabId} .a4-board-sheet, #${activeTabId} .a4-sheet-container, #${activeTabId}`);
+  if (!activeSheet || activeSheet.innerText.trim() === '') {
+    return alert('ದಯವಿಟ್ಟು ಮೊದಲು ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಯನ್ನು ರಚಿಸಿ.');
+  }
+
+  const sheetClone = activeSheet.cloneNode(true);
+  sheetClone.querySelectorAll('.btn-live-q-edit, .no-print, button').forEach(el => el.remove());
+
+  const rawSubject = document.getElementById('cfg-subject')?.value || 'ವಿಷಯ';
+  const cleanSubject = rawSubject.split('(')[0].trim().replace(/\s+/g, '_');
+  const grade = (document.getElementById('cfg-class')?.value || '6') + 'ನೇ_ತರಗತಿ';
+  const fileName = `${cleanSubject}_${grade}_${fileLabel}`;
+
+  let printFrame = document.getElementById('isolated-vector-print-frame');
+  if (printFrame) printFrame.remove();
+
+  printFrame = document.createElement('iframe');
+  printFrame.id = 'isolated-vector-print-frame';
+  printFrame.style.position = 'fixed';
+  printFrame.style.width = '794px';
+  printFrame.style.height = '1123px';
+  printFrame.style.top = '-10000px';
+  printFrame.style.left = '-10000px';
+  printFrame.style.border = 'none';
+  document.body.appendChild(printFrame);
+
+  const frameDoc = printFrame.contentWindow.document;
+  frameDoc.open();
+  frameDoc.write(`
+    <!DOCTYPE html>
+    <html lang="kn">
+    <head>
+      <meta charset="UTF-8">
+      <title>${fileName}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Anek+Kannada:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 6mm 8mm !important; }
+        * { box-sizing: border-box; font-family: 'Anek Kannada', sans-serif !important; }
+        body { margin: 0; padding: 0; background: #fff; color: #000; width: 794px; }
+        .a4-board-sheet, .a4-sheet-container { width: 100% !important; border: 2px solid #000 !important; padding: 6mm 10mm !important; margin: 0 auto 10px auto !important; box-sizing: border-box !important; page-break-after: always !important; }
+        .board-header-table { width: 100% !important; border-collapse: collapse !important; margin-bottom: 4px !important; }
+        .board-header-table td { padding: 1px 4px !important; font-weight: 800 !important; font-size: 11pt !important; color: #000 !important; }
+        .board-q-row { display: flex !important; align-items: flex-start !important; gap: 6px !important; margin-bottom: 3.5px !important; page-break-inside: avoid !important; }
+        .board-q-num { font-weight: 900 !important; min-width: 26px !important; font-size: 11.5pt !important; color: #000 !important; }
+        .board-q-text { flex: 1 !important; font-weight: 700 !important; font-size: 11pt !important; text-align: justify !important; line-height: 1.38 !important; }
+        .board-sec-heading { display: flex !important; justify-content: space-between !important; align-items: baseline !important; font-weight: 900 !important; font-size: 11.5pt !important; margin-top: 8px !important; margin-bottom: 3px !important; border-bottom: 1px dashed #cbd5e1 !important; padding-bottom: 2px !important; page-break-inside: avoid !important; }
+        .board-match-table { width: 100% !important; max-width: 580px !important; margin: 3px auto !important; border-collapse: collapse !important; font-size: 10.5pt !important; }
+        .board-match-table td { padding: 2px 10px !important; font-weight: 700 !important; }
+        .blueprint-official-table { width: 100% !important; border-collapse: collapse !important; text-align: center !important; font-size: 10pt !important; margin-bottom: 12px !important; border: 1.5px solid #000 !important; }
+        .blueprint-official-table th { border: 1px solid #000 !important; padding: 4px 6px !important; background-color: #f1f5f9 !important; font-weight: 900 !important; }
+        .blueprint-official-table td { border: 1px solid #000 !important; padding: 3px 6px !important; font-weight: 600 !important; }
+        .demo-watermark-overlay { position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important; height: 100% !important; display: flex !important; align-items: center !important; justify-content: center !important; pointer-events: none !important; }
+        .demo-watermark-text { position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) rotate(-32deg) !important; font-size: 34px !important; font-weight: 900 !important; color: rgba(0, 0, 0, 0.16) !important; border: 4px dashed rgba(0, 0, 0, 0.22) !important; padding: 16px 36px !important; border-radius: 25px !important; text-transform: uppercase !important; white-space: nowrap !important; }
+      </style>
+    </head>
+    <body>${sheetClone.outerHTML}</body>
+    </html>
+  `);
+  frameDoc.close();
+
+  showToast('📄 PDF ಸಿದ್ಧವಾಗಿದೆ. "Save as PDF" ಆಯ್ಕೆಮಾಡಿ.', 'info');
+  setTimeout(() => { printFrame.contentWindow.focus(); printFrame.contentWindow.print(); }, 400);
+};
+
+// ೪. 🌟 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಜನರೇಟ್ ಆದಾಗ ಹೊಸ ಹೆಡರ್ ಅಳವಡಿಕೆ
+const origRenderFullExamPaperForHeader = window.renderFullExamPaperWithCustomHeader;
+window.renderFullExamPaperWithCustomHeader = function(headerHtml) {
+  const allQuestions = (appState.activeGeneratedQuestions || []).filter(Boolean);
+  const currentSubject = document.getElementById('cfg-subject')?.value || 'ಸಮಾಜ ವಿಜ್ಞಾನ';
+  const grade = document.getElementById('cfg-class')?.value || '6';
+  const schoolName = document.getElementById('cfg-school-name')?.value || 'ಸರ್ಕಾರಿ ಹಿರಿಯ ಪ್ರಾಥಮಿಕ ಶಾಲೆ';
+  const examType = document.getElementById('cfg-exam-type')?.value || '2ನೇ ರೂಪಣಾತ್ಮಕ ಪರೀಕ್ಷೆ (FA-2)';
+  const examDate = document.getElementById('cfg-exam-date')?.value || '';
+
+  const totalCalculatedMarks = allQuestions.reduce((a, b) => a + getExactQuestionMarks(b), 0);
+  
+  // 🌟 ಹೊಸ ಸರಳೀಕೃತ ಹೆಡರ್ ಬಳಕೆ (No Subject Code, No Time)
+  const officialHeader = generateOfficialBoardHeader(schoolName, currentSubject, grade, examType, totalCalculatedMarks, "", examDate);
+
+  if (typeof origRenderFullExamPaperForHeader === 'function') {
+    origRenderFullExamPaperForHeader(officialHeader);
+  }
+};
   
   </script>
 </body>
