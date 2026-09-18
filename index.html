@@ -28514,7 +28514,354 @@
     };
 
 
+/* ==========================================================================
+   🚀 MASTER HOTFIX: 20-09 LAUNCH READY (AUTO-FORMATTER, ENGLISH HEADINGS & MERGE FIX)
+   ========================================================================== */
 
+// ೧. 🌟 ಚಿತ್ರ 1 ರ ಫಿಕ್ಸ್: ಉಪ-ಪ್ರಶ್ನೆಗಳು (1. 2. 3. 4. / a. b. c.) ಒಂದರ ಕೆಳಗೆ ಒಂದು ಸುಂದರವಾಗಿ ಬರುವ ಪಾರ್ಸರ್
+function formatSubItemsCleanly(text) {
+  if (!text) return '';
+  let str = String(text).trim();
+
+  // 1. 2. 3. ಅಥವಾ a) b) c) ಮುಂತಾದ ಉಪ-ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಹೊಸ ಸಾಲಿಗೆ ತರುವುದು
+  if (/(?:^|\s)(?:[1-4೧-೪]\.|\([a-d]\)|[a-d]\))\s+/i.test(str)) {
+    // 1. 2. 3. 4. ಗಳ ಮುಂದೆ ಲೈನ್ ಬ್ರೇಕ್ ಹಾಕಿ ಪ್ರತ್ಯೇಕ ಸಾಲು ಮಾಡುವುದು
+    let formatted = str.replace(/(?:\s+|\n)(?=[1-4೧-೪]\.\s+)/g, '\n');
+    formatted = formatted.replace(/(?:\s+|\n)(?=[a-d]\)\s+)/gi, '\n');
+
+    let lines = formatted.split('\n').filter(l => l.trim().length > 0);
+    if (lines.length > 1) {
+      return `
+        <div style="margin-top: 2px;">
+          ${lines.map(line => `
+            <div style="font-weight: 700; font-size: 11.8px; line-height: 1.45; margin-bottom: 2.5px; padding-left: 8px;">
+              ${escapeHtml(line.trim())}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+  }
+
+  return `<div style="line-height: 1.35;">${escapeHtml(str)}</div>`;
+}
+
+// ೨. 🌟 ಚಿತ್ರ 1 ರ ಫಿಕ್ಸ್: English ವಿಷಯಕ್ಕೆ ಕಡ್ಡಾಯವಾಗಿ 100% ಇಂಗ್ಲಿಷ್ ಹೆಡಿಂಗ್ ಬರುವಂತೆ ಫಿಕ್ಸ್
+function getCleanSectionHeading(typeKey, isEnglish, currentSubj) {
+  const raw = String(typeKey || '').toLowerCase().trim();
+  const isEngPaper = isEnglish || String(currentSubj || '').toLowerCase().includes('english');
+
+  // ಇಂಗ್ಲಿಷ್ ಹೆಡಿಂಗ್ಸ್ ಡಿಕ್ಷನರಿ
+  const engHeadings = {
+    'mcq': "Four alternatives are given for each question. Choose the correct answer:",
+    'blanks': "Fill in the blanks with suitable words:",
+    'fill_ups': "Fill in the blanks with suitable words:",
+    'fib': "Fill in the blanks with suitable words:",
+    'true_false': "State whether the following statements are True or False:",
+    'analogy': "Complete the analogy based on the first pair:",
+    'odd_one_out': "Pick out the odd word from the following:",
+    'match': "Match the items in Column 'A' with Column 'B':",
+    'vsa_1m': "Answer the following questions in a sentence each:",
+    'sa_2m': "Answer the following questions in two or three sentences each:",
+    'sa_3m': "Answer the following questions in five or six sentences each:",
+    'la_4m': "Answer the following questions in detail / Diagram / Map:",
+    'rearrange': "Rearrange the jumbled words to make meaningful sentences:",
+    'own_sentence': "Use the following words in meaningful sentences of your own:",
+    'who_said_to_whom': "Write who said the following words to whom:",
+    'categorise': "Categorise the given words / Complete the table using given steps:",
+    'frame_question': "Frame questions and answers for the given context / objects:",
+    'opposites': "Write the opposite words for the following:",
+    'rhyming_words': "Write rhyming words for the following:"
+  };
+
+  // ಕನ್ನಡ ಹೆಡಿಂಗ್ಸ್ ಡಿಕ್ಷನರಿ
+  const knHeadings = {
+    'mcq': "ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:",
+    'blanks': "ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:",
+    'fill_ups': "ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:",
+    'fib': "ಖಾಲಿ ಬಿಟ್ಟಿರುವ ಜಾಗಗಳನ್ನು ಸೂಕ್ತ ಉತ್ತರಗಳಿಂದ ಭರ್ತಿ ಮಾಡಿ:",
+    'true_false': "ಈ ಕೆಳಗಿನ ಹೇಳಿಕೆ ಸರಿ ಇದ್ದರೆ 'ಸರಿ' ತಪ್ಪು ಇದ್ದರೆ 'ತಪ್ಪು' ಎಂದು ಬರೆಯಿರಿ:",
+    'analogy': "ಮೊದಲೆರೆಡು ಪದಗಳಿಗಿರುವ ಸಂಬಂಧದಂತೆ ಮೂರನೇ ಪದಕ್ಕೆ ಸಂಬಂಧ ಕಲ್ಪಿಸಿ ಬರೆಯಿರಿ:",
+    'odd_one_out': "ಈ ಕೆಳಗಿನವುಗಳಲ್ಲಿ ಗುಂಪಿಗೆ ಸೇರದ ಪದವನ್ನು ಆರಿಸಿ ಬರೆಯಿರಿ:",
+    'match': "ಹೊಂದಿಸಿ ಬರೆಯಿರಿ:",
+    'vsa_1m': "ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಪದ ಅಥವಾ ಒಂದು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:",
+    'sa_2m': "ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಒಂದು ಅಥವಾ ಎರಡು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:",
+    'sa_3m': "ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಎರಡು ಅಥವಾ ಮೂರು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ:",
+    'la_4m': "ಈ ಕೆಳಗಿನ ಪ್ರಶ್ನೆಗಳಿಗೆ ಮೂರು ಅಥವಾ ನಾಲ್ಕು ವಾಕ್ಯದಲ್ಲಿ ಉತ್ತರಿಸಿ / ಚಿತ್ರ / ನಕ್ಷೆ:",
+    'own_sentence': "ಕೆಳಗೆ ನೀಡಿರುವ ಪದಗಳನ್ನು / ನುಡಿಗಟ್ಟುಗಳನ್ನು ಸ್ವಂತ ವಾಕ್ಯದಲ್ಲಿ ಬಳಸಿ:",
+    'who_said_to_whom': "ಈ ಕೆಳಗಿನ ಮಾತುಗಳನ್ನು ಯಾರು ಯಾರಿಗೆ ಹೇಳಿದರು ಎಂದು ಬರೆಯಿರಿ:"
+  };
+
+  // 🌟 ಪೇಪರ್ ಇಂಗ್ಲಿಷ್ ಆಗಿದ್ದರೆ ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ಕನ್ನಡ ಹೆಡಿಂಗ್ ಬರಲು ಬಿಡಬೇಡಿ
+  if (isEngPaper) {
+    for (let k in engHeadings) {
+      if (raw.includes(k)) return engHeadings[k];
+    }
+    return "Answer the following as directed:";
+  }
+
+  // ಕನ್ನಡ ಪೇಪರ್ ಆಗಿದ್ದಲ್ಲಿ
+  for (let k in knHeadings) {
+    if (raw.includes(k)) return knHeadings[k];
+  }
+
+  const customList = (typeof getCustomQuestionTypesList === 'function') ? getCustomQuestionTypesList() : [];
+  const cMatch = customList.find(c => c.key === typeKey || c.label === typeKey);
+  if (cMatch && cMatch.heading) return cMatch.heading;
+
+  return `${typeKey}:`;
+}
+
+// ೩. 🌟 ಚಿತ್ರ 2 ರ ಫಿಕ್ಸ್: "ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ವಿಲೀನ (Merge)" ಬಗ್ ನಿವಾರಣೆ
+window.openQuestionTypeMergeModal = function() {
+  let modal = document.getElementById('qtype-merge-tool-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'qtype-merge-tool-modal';
+    modal.className = 'fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4';
+    document.body.appendChild(modal);
+  }
+
+  const rawQBank = appState.qbank || [];
+  const typeCounts = new Map();
+  rawQBank.forEach(q => {
+    if (q && q.type) {
+      const t = String(q.type).trim();
+      typeCounts.set(t, (typeCounts.get(t) || 0) + 1);
+    }
+  });
+
+  const allTypes = Array.from(typeCounts.keys()).sort();
+
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 text-xs font-sans">
+      <div class="border-b pb-3 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-code-merge text-purple-600 text-base"></i>
+          <h3 class="font-extrabold text-sm text-slate-900">ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳ ವಿಲೀನ (Merge Types)</h3>
+        </div>
+        <button onclick="document.getElementById('qtype-merge-tool-modal').classList.add('hidden')" class="text-slate-400 text-2xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <form onsubmit="handleExecuteQuestionTypeMerge(event)" class="space-y-3">
+        <div>
+          <label class="block font-bold text-red-900 mb-1">೧. ಬದಲಾಯಿಸಬೇಕಾದ ಹಳೆಯ/ಡೂಪ್ಲಿಕೇಟ್ ಪ್ರಕಾರ (Source Type) *</label>
+          <select id="merge-qtype-source" required class="w-full p-2.5 bg-red-50 border border-red-300 rounded-xl font-bold text-xs">
+            <option value="">-- ಪ್ರಕಾರ ಆರಿಸಿ --</option>
+            ${allTypes.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)} (${typeCounts.get(t)} ಪ್ರಶ್ನೆಗಳು)</option>`).join('')}
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-emerald-950 mb-1">೨. ಸೇರಬೇಕಾದ ಮುಖ್ಯ ಪ್ರಕಾರ (Target Type) *</label>
+          <select id="merge-qtype-target" required class="w-full p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl font-bold text-xs">
+            <option value="mcq">mcq (ಬಹು ಆಯ್ಕೆ - 1M)</option>
+            <option value="blanks">blanks (ಖಾಲಿ ಜಾಗ ಭರ್ತಿ - 1M)</option>
+            <option value="true_false">true_false (ಸರಿ ಅಥವಾ ತಪ್ಪು - 1M)</option>
+            <option value="analogy">analogy (ಸಂಬಂಧ ಕಲ್ಪಿಸಿ - 1M)</option>
+            <option value="odd_one_out">odd_one_out (ಗುಂಪಿಗೆ ಸೇರದ ಪದ - 1M)</option>
+            <option value="match">match (ಹೊಂದಿಸಿ ಬರೆಯಿರಿ - 4M)</option>
+            <option value="vsa_1m">vsa_1m (೧ ಅಂಕದ ಪ್ರಶ್ನೆ - 1M)</option>
+            <option value="sa_2m">sa_2m (೨ ಅಂಕದ ಪ್ರಶ್ನೆ - 2M)</option>
+            <option value="sa_3m">sa_3m (೩ ಅಂಕದ ಪ್ರಶ್ನೆ - 3M)</option>
+            <option value="la_4m">la_4m (೪ ಅಂಕದ ಪ್ರಶ್ನೆ / ಚಿತ್ರ / ನಕ್ಷೆ - 4M)</option>
+          </select>
+        </div>
+
+        <div class="p-2.5 bg-purple-50 border rounded-xl text-[11px] text-purple-950 font-medium">
+          💡 <b>ಮಾಹಿತಿ:</b> ಇದು ಡೂಪ್ಲಿಕೇಟ್ ಆಗಿರುವ ಎಲ್ಲಾ ಹಳೆಯ ಪ್ರಶ್ನೆ ಪ್ರಕಾರಗಳನ್ನು ಒಂದೇ ಸರಿಯಾದ ಪ್ರಕಾರಕ್ಕೆ ತಕ್ಷಣ ವಿಲೀನಗೊಳಿಸುತ್ತದೆ.
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t">
+          <button type="button" onclick="document.getElementById('qtype-merge-tool-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-100 rounded-xl font-bold cursor-pointer">ರದ್ದು</button>
+          <button type="submit" class="px-5 py-2 btn-emerald-gradient text-white font-extrabold rounded-xl shadow cursor-pointer">ವಿಲೀನಗೊಳಿಸಿ (Merge)</button>
+        </div>
+      </form>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+};
+
+// ೪. 🌟 ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲಿ Edit ಕ್ಲಿಕ್ ಮಾಡಿ Save ಮಾಡಿದಾಗ ಫ್ರೀಜ್ ಆಗದಂತೆ ಸೂಪರ್-ಫಾಸ್ಟ್ ಸಿಂಗಲ್ ಐಟಂ ಸೇವರ್
+window.saveAdminQuestionEdit = async function(e, qId) {
+  e.preventDefault();
+  const q = (appState.qbank || []).find(item => item.id === qId);
+  if (!q) return;
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ಸೇವ್ ಆಗುತ್ತಿದೆ...`;
+  }
+
+  try {
+    q.chapter = document.getElementById('edit-q-chapter')?.value.trim() || q.chapter;
+    q.q = document.getElementById('edit-q-text')?.value.trim() || q.q;
+    q.marks = parseInt(document.getElementById('edit-q-marks')?.value) || q.marks || 1;
+    q.obj = document.getElementById('edit-q-obj')?.value || q.obj;
+    q.diff = document.getElementById('edit-q-diff')?.value || q.diff;
+    q.ans = document.getElementById('edit-q-ans')?.value.trim() || q.ans;
+    q.image = document.getElementById('edit-q-image-base64')?.value || q.image || '';
+
+    if (document.getElementById('edit-q-type')) {
+      q.type = document.getElementById('edit-q-type').value;
+    }
+
+    // ಕೇವಲ ಈ ಒಂದು ಪ್ರಶ್ನೆಯನ್ನು ಮಾತ್ರ Firebase ಗೆ PATCH ಮಾಡುವುದರಿಂದ 0.1 ಸೆಕೆಂಡ್ನಲ್ಲಿ ಸೇವ್ ಆಗುತ್ತದೆ
+    const singlePatch = {};
+    singlePatch[q.id] = q;
+
+    await fetch(`${FIREBASE_REST_BASE}/withyou_qbank.json`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(singlePatch)
+    });
+
+    try {
+      localStorage.setItem('withyou_custom_qbank', JSON.stringify(appState.qbank));
+    } catch (e) {}
+
+    document.getElementById('admin-q-edit-modal')?.classList.add('hidden');
+    renderCustomQuestionList();
+    showToast('✅ ಪ್ರಶ್ನೆ ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆಗಿದೆ!', 'success');
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("ಸೇವ್ ಮಾಡುವಾಗ ದೋಷ: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `ಸೇವ್ ಮಾಡಿ (Save)`;
+    }
+  }
+};
+
+// ೫. 🌟 ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಬಿಲ್ಡರ್ ಅಪ್ಡೇಟ್ (Sub-items & Headings Integrated)
+const prevBuildQuestionItemWithImage = window.buildQuestionItemWithImage;
+window.buildQuestionItemWithImage = function(q, num) {
+  const idx = (appState.activeGeneratedQuestions || []).indexOf(q);
+  const cleanQ = cleanQuestionTextForDisplay(q.q || '');
+  const imgSrc = getAnyQuestionImageSource(q);
+
+  return `
+    <div style="margin-bottom: 3.5px; break-inside: avoid;">
+      <div class="q-paper-item-row" style="margin-bottom: 2px;">
+        <span class="q-paper-num">${num}.</span>
+        <div class="q-paper-text">
+          ${formatSubItemsCleanly(cleanQ)}
+        </div>
+        <button type="button" onclick="openPopupQuestionEditor(${idx})" class="btn-live-q-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+      </div>
+      ${renderQuestionDiagramImage(imgSrc)}
+    </div>
+  `;
+};
+
+
+    /* ==========================================================================
+   🚀 1-CLICK AUTOMATIC 15,000+ QUESTION PARTITIONER & DATABASE SPLITTER
+   ========================================================================== */
+
+// ೧. ೧೫,೦೦೦ ಪ್ರಶ್ನೆಗಳನ್ನು Firebase ನಲ್ಲಿ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ವಿಂಗಡಿಸುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.startAutoSplit15kQuestions = async function() {
+  const qbank = appState.qbank || JSON.parse(localStorage.getItem('withyou_custom_qbank') || '[]');
+  
+  if (!qbank || qbank.length === 0) {
+    alert("⚠️ ಪ್ರಶ್ನೆ ಭಂಡಾರದಲ್ಲಿ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ.");
+    return;
+  }
+
+  if (!confirm(`ಒಟ್ಟು ${qbank.length} ಪ್ರಶ್ನೆಗಳನ್ನು ತರಗತಿ (Class 1-10) ಮತ್ತು ವಿಷಯವಾರು Firebase ನಲ್ಲಿ ಆಟೋ-ವಿಂಗಡಣೆ ಮಾಡಬೇಕೇ?\n\n(ನಿಮ್ಮ ಹಳೆಯ ಡೇಟಾ ಯಾವುದೇ ಕಾರಣಕ್ಕೂ ಅಳಿಸುವುದಿಲ್ಲ, ಸುರಕ್ಷಿತವಾಗಿರುತ್ತದೆ!)`)) {
+    return;
+  }
+
+  // ಬಟನ್ ಮೇಲೆ ಲೋಡಿಂಗ್ ಸ್ಟೇಟಸ್
+  const btn = document.getElementById('btn-admin-auto-split-tool');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-amber-300"></i> <span>ವಿಂಗಡಿಸಲಾಗುತ್ತಿದೆ, ದಯವಿಟ್ಟು ಕಾಯಿರಿ...</span>`;
+  }
+
+  showToast('🚀 ಪ್ರಶ್ನೆಗಳ ವಿಂಗಡಣೆ ಆರಂಭವಾಗಿದೆ, ದಯವಿಟ್ಟು ಪೇಜ್ ಕ್ಲೋಸ್ ಮಾಡಬೇಡಿ...', 'info');
+
+  try {
+    const partitioned = {};
+    let count = 0;
+
+    // ೧. ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳನ್ನು ತರಗತಿ & ವಿಷಯವಾರು ಗುಂಪು ಮಾಡುವುದು
+    qbank.forEach(q => {
+      if (!q) return;
+      const grade = String(q.grade || '6').replace(/\D/g, '') || '6';
+      let subj = 'general';
+      const s = String(q.subject || '').toLowerCase();
+      
+      if (s.includes('ಸಮಾಜ') || s.includes('social')) subj = 'social_science';
+      else if (s.includes('ವಿಜ್ಞಾನ') || s.includes('science')) subj = 'science';
+      else if (s.includes('ಗಣಿತ') || s.includes('math')) subj = 'mathematics';
+      else if (s.includes('ಕನ್ನಡ') || s.includes('kannada')) subj = 'kannada';
+      else if (s.includes('english') || s.includes('ಇಂಗ್ಲಿಷ್')) subj = 'english';
+      else if (s.includes('ಹಿಂದಿ') || s.includes('hindi')) subj = 'hindi';
+      else if (s.includes('ಉರ್ದು') || s.includes('urdu')) subj = 'urdu';
+      else if (s.includes('ದೈಹಿಕ') || s.includes('physical')) subj = 'physical_education';
+
+      const path = `class_${grade}/${subj}`;
+      if (!partitioned[path]) partitioned[path] = {};
+      
+      const qId = q.id || ('q_' + Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' + count);
+      q.id = qId;
+      partitioned[path][qId] = q;
+      count++;
+    });
+
+    const totalPaths = Object.keys(partitioned).length;
+    let completedPaths = 0;
+
+    // ೨. Firebase ನಲ್ಲಿ ಪ್ರತ್ಯೇಕ ಫೋಲ್ಡರ್‌ಗಳಿಗೆ PATCH ಮಾಡುವುದು (Zero Data Loss)
+    for (const [path, items] of Object.entries(partitioned)) {
+      await fetch(`${FIREBASE_REST_BASE}/withyou_partitioned_qbank/${path}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(items)
+      });
+      completedPaths++;
+      console.log(`✅ [${completedPaths}/${totalPaths}] ${path} ವಿಭಾಗಕ್ಕೆ ${Object.keys(items).length} ಪ್ರಶ್ನೆಗಳು ವಿಂಗಡಣೆಯಾದವು.`);
+    }
+
+    alert(`🎉 ಅಭಿನಂದನೆಗಳು!\n\nಒಟ್ಟು ${count} ಪ್ರಶ್ನೆಗಳನ್ನು ${totalPaths} ಪ್ರತ್ಯೇಕ ತರಗತಿ ಮತ್ತು ವಿಷಯದ ಫೋಲ್ಡರ್‌ಗಳಾಗಿ Firebase ನಲ್ಲಿ ಯಶಸ್ವಿಯಾಗಿ ವಿಂಗಡಿಸಲಾಗಿದೆ!\n\nಈಗ ನಿಮ್ಮ ಡೇಟಾಬೇಸ್ 100% ಸುಸಜ್ಜಿತವಾಗಿದೆ.`);
+    showToast('✅ ಎಲ್ಲಾ ಪ್ರಶ್ನೆಗಳು ಯಶಸ್ವಿಯಾಗಿ ವಿಂಗಡಣೆಯಾಗಿವೆ!', 'success');
+
+  } catch (err) {
+    console.error("Auto-split error:", err);
+    alert("ವಿಂಗಡಿಸುವಾಗ ದೋಷವಾಗಿದೆ: " + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-bolt text-amber-300"></i> <span>🚀 15,000 ಪ್ರಶ್ನೆಗಳ ಆಟೋ-ವಿಭಜನೆ (Auto-Split)</span>`;
+    }
+  }
+};
+
+// ೨. ಅಡ್ಮಿನ್ ಪ್ಯಾನೆಲ್ ಟೂಲ್‌ಬಾರ್‌ನಲ್ಲಿ "ಆಟೋ-ವಿಭಜನೆ" ಬಟನ್ ಡಿಸ್ಪ್ಲೇ ಮಾಡುವ ಕೋಡ್
+(function injectAutoSplitButtonToAdmin() {
+  function addBtn() {
+    const toolbar = document.querySelector('#admin-subview-qbank .card-modern:last-child .flex.items-center.gap-2, #admin-subview-qbank .card-modern:last-child .flex.flex-wrap, #view-admin .bg-slate-900 .flex.flex-wrap');
+    if (toolbar && !document.getElementById('btn-admin-auto-split-tool')) {
+      const btn = document.createElement('button');
+      btn.id = 'btn-admin-auto-split-tool';
+      btn.type = 'button';
+      btn.className = 'text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black px-3.5 py-2 rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer border border-purple-300';
+      btn.innerHTML = '<i class="fa-solid fa-bolt text-amber-300"></i> <span>🚀 15,000 ಪ್ರಶ್ನೆಗಳ ಆಟೋ-ವಿಭಜನೆ (Auto-Split)</span>';
+      btn.onclick = () => window.startAutoSplit15kQuestions();
+      toolbar.insertBefore(btn, toolbar.firstChild);
+    }
+  }
+
+  setTimeout(addBtn, 600);
+  document.addEventListener('click', (e) => {
+    if (e.target && e.target.innerText && (e.target.innerText.includes('ಪ್ರಶ್ನೆ ಭಂಡಾರ') || e.target.innerText.includes('Admin'))) {
+      setTimeout(addBtn, 300);
+    }
+  });
+})();
     
   </script>
 </body>
