@@ -28862,6 +28862,90 @@ window.startAutoSplit15kQuestions = async function() {
     }
   });
 })();
+
+
+    /* ==========================================================================
+   🤖 100% AUTOMATIC REAL-TIME SMART ROUTER FOR ALL FUTURE QUESTIONS
+   ========================================================================== */
+
+// ೧. ಹೊಸದಾಗಿ ಸೇರಿಸುವ ಯಾವುದೇ ಪ್ರಶ್ನೆಗಳನ್ನು ಆಯಾ ತರಗತಿ & ವಿಷಯಕ್ಕೆ ಆಟೋ-ರೂಟ್ ಮಾಡುವ ಮಾಸ್ಟರ್ ಫಂಕ್ಷನ್
+window.saveNewQuestionsAutoPartitioned = async function(questionsArray) {
+  if (!questionsArray || questionsArray.length === 0) return;
+
+  const partitionedMap = {};
+
+  questionsArray.forEach((q, idx) => {
+    if (!q) return;
+    const grade = String(q.grade || '6').replace(/\D/g, '') || '6';
+    let subj = 'general';
+    const s = String(q.subject || '').toLowerCase();
+
+    if (s.includes('ಸಮಾಜ') || s.includes('social')) subj = 'social_science';
+    else if (s.includes('ವಿಜ್ಞಾನ') || s.includes('science')) subj = 'science';
+    else if (s.includes('ಗಣಿತ') || s.includes('math')) subj = 'mathematics';
+    else if (s.includes('ಕನ್ನಡ') || s.includes('kannada')) subj = 'kannada';
+    else if (s.includes('english') || s.includes('ಇಂಗ್ಲಿಷ್')) subj = 'english';
+    else if (s.includes('ಹಿಂದಿ') || s.includes('hindi')) subj = 'hindi';
+    else if (s.includes('ಉರ್ದು') || s.includes('urdu')) subj = 'urdu';
+    else if (s.includes('ದೈಹಿಕ') || s.includes('physical')) subj = 'physical_education';
+
+    const path = `class_${grade}/${subj}`;
+    if (!partitionedMap[path]) partitionedMap[path] = {};
+
+    const qId = q.id || ('q_' + Date.now() + '_' + Math.floor(Math.random() * 10000) + '_' + idx);
+    q.id = qId;
+    partitionedMap[path][qId] = q;
+  });
+
+  // 🌟 ತರಗತಿ ಮತ್ತು ವಿಷಯದ ಪ್ರತ್ಯೇಕ ಫೋಲ್ಡರ್‌ಗಳಿಗೆ ನೇರ PATCH (ಮಿಂಚಿನ ವೇಗ)
+  try {
+    for (const [path, items] of Object.entries(partitionedMap)) {
+      await fetch(`${FIREBASE_REST_BASE}/withyou_partitioned_qbank/${path}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(items)
+      });
+    }
+  } catch (err) {
+    console.warn("Background auto-partition failed:", err);
+  }
+};
+
+// ೨. JSON ಮೂಲಕ ಬಲ್ಕ್ ಪ್ರಶ್ನೆ ಹಾಕಿದಾಗ ಆಟೋ-ರೂಟ್ ಲಿಂಕ್
+const origConfirmValidatedJSON = window.confirmAndSaveValidatedJSONQuestions;
+window.confirmAndSaveValidatedJSONQuestions = async function() {
+  if (typeof origConfirmValidatedJSON === 'function') {
+    await origConfirmValidatedJSON();
+  }
+  // ಹಿನ್ನೆಲೆಯಲ್ಲಿ ತಾನಾಗಿಯೇ ವಿಷಯವಾರು ಫೋಲ್ಡರ್‌ಗೆ ಸೇವ್ ಆಗುತ್ತದೆ
+  if (stagedValidatedJSONQuestions && stagedValidatedJSONQuestions.length > 0) {
+    window.saveNewQuestionsAutoPartitioned(stagedValidatedJSONQuestions);
+  }
+};
+
+// ೩. AI Import ಮೂಲಕ ಪ್ರಶ್ನೆ ಹಾಕಿದಾಗ ಆಟೋ-ರೂಟ್ ಲಿಂಕ್
+const origConfirmAIImport = window.confirmAndSaveBulkQuestions;
+window.confirmAndSaveBulkQuestions = async function() {
+  const staged = [...stagedParsedQuestions];
+  if (typeof origConfirmAIImport === 'function') {
+    await origConfirmAIImport();
+  }
+  if (staged && staged.length > 0) {
+    window.saveNewQuestionsAutoPartitioned(staged);
+  }
+};
+
+// ೪. Admin Form ನಲ್ಲಿ ಒಂದೊಂದೇ ಪ್ರಶ್ನೆ ಸೇವ್ ಮಾಡಿದಾಗ ಆಟೋ-ರೂಟ್ ಲಿಂಕ್
+const origSaveCustomQuestion = window.handleSaveCustomQuestion;
+window.handleSaveCustomQuestion = function(e) {
+  if (typeof origSaveCustomQuestion === 'function') {
+    origSaveCustomQuestion(e);
+  }
+  const latestQ = (appState.qbank || [])[0];
+  if (latestQ) {
+    window.saveNewQuestionsAutoPartitioned([latestQ]);
+  }
+};
     
   </script>
 </body>
