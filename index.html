@@ -427,6 +427,7 @@
 
     function isMatchQuestion(q) {
       if (!q) return false;
+      if (q.activity) return false;   // ನಲಿಕಲಿ ಚಟುವಟಿಕೆಗಳು (picmatch) 'ಹೊಂದಿಸಿ ಬರೆಯಿರಿ' ಅಲ್ಲ
       const t = String(q.type || '').toLowerCase().trim();
       if (t === 'match' || t === 'matching' || t === 'match_the_following' || t.includes('ಹೊಂದಿಸಿ') || t.includes('ಜೋಡಿಸಿ')) return true;
       if (Array.isArray(q.matchPairs) && q.matchPairs.length > 0) return true;
@@ -23992,7 +23993,7 @@ function wyStrongKeyPart() {
   var SUBJ_OPT = { kannada: 'ಕನ್ನಡ (Kannada)', english: 'English', mathematics: 'ಗಣಿತ (Mathematics)', evs: 'ಪರಿಸರ ಅಧ್ಯಯನ (EVS)', science: 'ವಿಜ್ಞಾನ (Science)', social_science: 'ಸಮಾಜ ವಿಜ್ಞಾನ (Social Science)', hindi: 'ಹಿಂದಿ (Hindi)' };
   var NMMS = { gmat: 'NMMS GMAT (ಪತ್ರಿಕೆ 1 – ಬೌದ್ಧಿಕ ಸಾಮರ್ಥ್ಯ)', sat: 'NMMS SAT (ಪತ್ರಿಕೆ 2 – ಶೈಕ್ಷಣಿಕ ಸಾಮರ್ಥ್ಯ)' };
   // ಪ್ರಶ್ನೆ ಬ್ಯಾಂಕ್‌ನ ಫೈಲ್ ಪಟ್ಟಿ (GitHub ಸಿಗದಿದ್ದರೆ ಬಳಸುವ ಪ್ರತಿ)
-  var SNAPSHOT = ["bilingual_medium/class_5/evs_part2.json", "bilingual_medium/class_5/mathematics_part2.json", "kannada_medium/class_1/kannada_part1.json", "kannada_medium/class_1/kannada_part2.json", "kannada_medium/class_10/english_part2.json", "kannada_medium/class_10/hindi_part2.json", "kannada_medium/class_10/kannada_part2.json", "kannada_medium/class_10/mathematics_part2.json", "kannada_medium/class_10/science_part2.json", "kannada_medium/class_10/social_science_part2.json", "kannada_medium/class_4/english_part2.json", "kannada_medium/class_4/evs_part2.json", "kannada_medium/class_4/kannada_part2.json", "kannada_medium/class_4/mathematics_part2.json", "kannada_medium/class_5/english_part2.json", "kannada_medium/class_5/evs_part2.json", "kannada_medium/class_5/kannada_part2.json", "kannada_medium/class_5/mathematics_part2.json", "kannada_medium/class_6/english_part2.json", "kannada_medium/class_6/hindi_part2.json", "kannada_medium/class_6/kannada_part2.json", "kannada_medium/class_6/mathematics_part2.json", "kannada_medium/class_6/morarji_english.json", "kannada_medium/class_6/morarji_kannada.json", "kannada_medium/class_6/morarji_science.json", "kannada_medium/class_6/morarji_social.json", "kannada_medium/class_6/science_part2.json", "kannada_medium/class_6/social_science_part2.json", "kannada_medium/class_7/english_part2.json", "kannada_medium/class_7/hindi_part2.json", "kannada_medium/class_7/kannada_part2.json", "kannada_medium/class_7/mathematics_part2.json", "kannada_medium/class_7/science_part1.json", "kannada_medium/class_7/science_part2.json", "kannada_medium/class_7/social_science_part2.json", "kannada_medium/class_8/english_part2.json", "kannada_medium/class_8/hindi_part2.json", "kannada_medium/class_8/kannada_part2.json", "kannada_medium/class_8/mathematics_part2.json", "kannada_medium/class_8/nmms_biology.json", "kannada_medium/class_8/nmms_chemistry.json", "kannada_medium/class_8/nmms_civics.json", "kannada_medium/class_8/nmms_geography.json", "kannada_medium/class_8/nmms_gmat.json", "kannada_medium/class_8/nmms_history.json", "kannada_medium/class_8/nmms_maths.json", "kannada_medium/class_8/nmms_physics.json", "kannada_medium/class_8/science_part1.json", "kannada_medium/class_8/science_part2.json", "kannada_medium/class_8/social_science_part2.json", "kannada_medium/class_9/english_part2.json", "kannada_medium/class_9/hindi_part2.json", "kannada_medium/class_9/kannada_part1.json", "kannada_medium/class_9/kannada_part2.json", "kannada_medium/class_9/mathematics_part2.json", "kannada_medium/class_9/science_part1.json", "kannada_medium/class_9/science_part2.json", "kannada_medium/class_9/social_science_part2.json"];
+  var SNAPSHOT = ["bilingual_medium/class_5/evs_part2.json", "bilingual_medium/class_5/mathematics_part2.json", "kannada_medium/class_1/kannada_part1.json", "kannada_medium/class_10/english_part2.json", "kannada_medium/class_10/hindi_part2.json", "kannada_medium/class_10/kannada_part2.json", "kannada_medium/class_10/mathematics_part2.json", "kannada_medium/class_10/science_part2.json", "kannada_medium/class_10/social_science_part2.json", "kannada_medium/class_4/english_part2.json", "kannada_medium/class_4/evs_part2.json", "kannada_medium/class_4/kannada_part2.json", "kannada_medium/class_4/mathematics_part2.json", "kannada_medium/class_5/english_part2.json", "kannada_medium/class_5/evs_part2.json", "kannada_medium/class_5/kannada_part2.json", "kannada_medium/class_5/mathematics_part2.json", "kannada_medium/class_6/english_part2.json", "kannada_medium/class_6/hindi_part2.json", "kannada_medium/class_6/kannada_part2.json", "kannada_medium/class_6/mathematics_part2.json", "kannada_medium/class_6/morarji_english.json", "kannada_medium/class_6/morarji_kannada.json", "kannada_medium/class_6/morarji_science.json", "kannada_medium/class_6/morarji_social.json", "kannada_medium/class_6/science_part2.json", "kannada_medium/class_6/social_science_part2.json", "kannada_medium/class_7/english_part2.json", "kannada_medium/class_7/hindi_part2.json", "kannada_medium/class_7/kannada_part2.json", "kannada_medium/class_7/mathematics_part2.json", "kannada_medium/class_7/science_part1.json", "kannada_medium/class_7/science_part2.json", "kannada_medium/class_7/social_science_part2.json", "kannada_medium/class_8/english_part2.json", "kannada_medium/class_8/hindi_part2.json", "kannada_medium/class_8/kannada_part2.json", "kannada_medium/class_8/mathematics_part2.json", "kannada_medium/class_8/nmms_biology.json", "kannada_medium/class_8/nmms_chemistry.json", "kannada_medium/class_8/nmms_civics.json", "kannada_medium/class_8/nmms_geography.json", "kannada_medium/class_8/nmms_gmat.json", "kannada_medium/class_8/nmms_history.json", "kannada_medium/class_8/nmms_maths.json", "kannada_medium/class_8/nmms_physics.json", "kannada_medium/class_8/science_part1.json", "kannada_medium/class_8/science_part2.json", "kannada_medium/class_8/social_science_part2.json", "kannada_medium/class_9/english_part2.json", "kannada_medium/class_9/hindi_part2.json", "kannada_medium/class_9/kannada_part2.json", "kannada_medium/class_9/mathematics_part2.json", "kannada_medium/class_9/science_part1.json", "kannada_medium/class_9/science_part2.json", "kannada_medium/class_9/social_science_part2.json"];
 
   // ---------- ಸಣ್ಣ ಸಹಾಯಕಗಳು ----------
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -24196,15 +24197,16 @@ function wyStrongKeyPart() {
 
   // ---------- ಪ್ರಶ್ನೆ ಬ್ಯಾಂಕ್‌ನಲ್ಲಿ ಏನಿದೆ (GitHub ಪಟ್ಟಿ) ----------
   var BANK = { files: SNAPSHOT, at: 0 };
-  (function () { var c = lsGet('wy_bank_tree', null); if (c && c.files && c.at > Date.now() - 6 * 3600e3) BANK = c; })();
+  (function () { var c = lsGet('wy_bank_tree2', null); if (c && c.files && c.at > Date.now() - 6 * 3600e3) BANK = c; })();
   async function refreshBank(force) {
     if (!force && BANK.at > Date.now() - 6 * 3600e3) return;
     try {
       var r = await fetch('https://api.github.com/repos/withyou00/withyouqbank/git/trees/main?recursive=1');
       if (!r.ok) return;
       var d = await r.json();
-      var files = (d.tree || []).map(function (x) { return x.path; }).filter(function (p) { return /\.json$/i.test(p) && !/^images\//.test(p); });
-      if (files.length) { BANK = { files: files, at: Date.now() }; lsSet('wy_bank_tree', BANK); }
+      // ಖಾಲಿ (ಪ್ರಶ್ನೆ ಇಲ್ಲದ) ಫೈಲ್‌ಗಳನ್ನು ಲಭ್ಯ ಎಂದು ತೋರಿಸಬಾರದು
+      var files = (d.tree || []).filter(function (x) { return x.type === 'blob' && (x.size == null || x.size > 50); }).map(function (x) { return x.path; }).filter(function (p) { return /\.json$/i.test(p) && !/^images\//.test(p); });
+      if (files.length) { BANK = { files: files, at: Date.now() }; lsSet('wy_bank_tree2', BANK); }
     } catch (e) {}
   }
   function has(path) { return BANK.files.indexOf(path) !== -1; }
@@ -24475,7 +24477,7 @@ function wyStrongKeyPart() {
   // =====================================================================
   // 📊 ಸದಸ್ಯರ Dashboard
   // =====================================================================
-  var DS = { tab: lsGet('wy_dash_med', 'kn') };
+  var DS = { tab: lsGet('wy_dash_med', 'kn'), cls: lsGet('wy_dash_cls', 0) };
   function statusChip(item) {
     if (!available(item)) return '<span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-black">ಶೀಘ್ರದಲ್ಲಿ</span>';
     if (ownsItem(item)) return '<button type="button" data-open="' + item + '" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black">✅ ರಚಿಸಿ →</button>';
@@ -24532,7 +24534,7 @@ function wyStrongKeyPart() {
           (on ? 'bg-emerald-600 text-white border-emerald-600' : ok ? (dis ? 'bg-white text-slate-300 border-slate-200' : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-500') : 'bg-slate-50 text-slate-300 border-slate-100 line-through') + '">' + c + '</button>';
       }).join('') + '</div></div>';
   }
-  function packCards() {
+  function packCards(only) {
     fixPB();
     var medOpts = [['kn', 'ಕನ್ನಡ ಮಾಧ್ಯಮ'], ['en', 'ಇಂಗ್ಲಿಷ್ ಮಾಧ್ಯಮ'], ['bi', 'ದ್ವಿಭಾಷಾ (1–5)']];
     var clsOpts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(function (c) { return PB.m !== 'bi' || c <= 5; }).map(function (c) { return [c, c + 'ನೇ ತರಗತಿ']; });
@@ -24550,7 +24552,8 @@ function wyStrongKeyPart() {
       { t: 'ent', icon: '🎯', name: 'ಪ್ರವೇಶ ಪರೀಕ್ಷೆ', d: 'ಮೊರಾರ್ಜಿ / ಆದರ್ಶ / ಕಿತ್ತೂರು / ಸೈನಿಕ — ಪ್ರತಿಯೊಂದು', f: ['e'] },
       { t: 'cmp', icon: '🚀', name: 'ಸ್ಪರ್ಧಾ ಕಾಂಬೋ', d: 'NMMS (GMAT + SAT) + ಎಲ್ಲಾ ಪ್ರವೇಶ ಪರೀಕ್ಷೆಗಳು', f: [] }
     ];
-    return '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">' + CARDS.map(function (cd) {
+    if (only) CARDS = CARDS.filter(function (cd) { return cd.t === only; });
+    return '<div class="grid grid-cols-1 ' + (only ? '' : 'sm:grid-cols-2 lg:grid-cols-3 ') + 'gap-3">' + CARDS.map(function (cd) {
       var k = builderKey(cd.t);
       var fields = cd.f.map(function (f) {
         if (f === 'm') return sel('wy-pb-m', medOpts, PB.m);
@@ -24568,67 +24571,154 @@ function wyStrongKeyPart() {
       return '<div class="relative p-4 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col gap-2.5">' +
         (cd.tag ? '<span class="absolute -top-2 right-4 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black shadow">' + cd.tag + '</span>' : '') +
         '<div class="flex items-start justify-between gap-2"><div class="flex items-center gap-2"><span class="text-2xl">' + cd.icon + '</span><div><div class="font-black text-sm text-slate-900">' + cd.name + '</div>' +
-        '<div class="text-[11px] font-bold text-slate-500 leading-snug">' + cd.d + '</div></div></div><div class="text-lg font-black text-emerald-700 shrink-0">' + rupee(priceOf(k)) + '</div></div>' +
+        '<div class="text-[11px] font-bold text-slate-500 leading-snug">' + cd.d + '</div></div></div><div class="text-lg font-black text-emerald-700 shrink-0">' + rupee(cd.t === 'st' && PB.sc.length < 2 ? PRICES.st : priceOf(k)) + '</div></div>' +
         (fields ? '<div class="grid grid-cols-' + Math.min(cd.f.length, 3) + ' gap-1.5" data-pb-card="' + cd.t + '">' + fields + '</div>' : '') +
         '<div class="mt-auto flex items-center justify-between gap-2"><span class="text-[10px] font-bold text-slate-400 truncate">' + esc(cd.t === 'st' && PB.sc.length < 2 ? 'ಕನಿಷ್ಠ 2 ತರಗತಿ ಆರಿಸಿ (1 ತರಗತಿಗೆ ವಿಷಯ ಪ್ಯಾಕ್ ಸಾಕು)' : packLabel(k)) + '</span>' +
           (cd.t === 'st' && PB.sc.length < 2 ? '<span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-black">ಕಾರ್ಟ್‌ಗೆ</span>' : packBtn(k, 'ಕಾರ್ಟ್‌ಗೆ')) + '</div></div>';
     }).join('') + '</div>';
   }
-  function catalog() {
+  // ---------- ಸರಳ Dashboard: ① ಮಾಧ್ಯಮ → ② ತರಗತಿ → ③ ವಿಷಯ ----------
+  function firstClassWithPapers(m) {
+    for (var c = 1; c <= 10; c++) if (mediaFor(c).indexOf(m) !== -1 && subjectsFor(c).some(function (s) { return available('r:' + m + ':' + c + ':' + s); })) return c;
+    return m === 'bi' ? 1 : 1;
+  }
+  function stepHead(n, t) { return '<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs font-black flex items-center justify-center">' + n + '</span><span class="text-sm font-black text-slate-800">' + t + '</span></div>'; }
+  function chip(attr, val, on, label, sub) {
+    return '<button type="button" ' + attr + '="' + val + '" class="px-3.5 py-2.5 rounded-2xl text-xs font-black border-2 transition ' +
+      (on ? 'bg-emerald-600 border-emerald-600 text-white shadow' : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400') + '">' + label +
+      (sub ? '<span class="block text-[10px] font-bold ' + (on ? 'text-emerald-100' : 'text-slate-400') + '">' + sub + '</span>' : '') + '</button>';
+  }
+  function rowHtml(item, title, sub) {
+    return '<div class="flex items-center justify-between gap-3 py-3"><div class="min-w-0"><div class="text-sm font-black text-slate-900">' + esc(title) + '</div>' +
+      (sub ? '<div class="text-[11px] font-bold text-slate-500">' + sub + '</div>' : '') + '</div>' + statusChip(item) + '</div>';
+  }
+  function offerHtml(k, text) {
+    if (!k || ownsPack(k)) return '';
+    return '<div class="flex items-center justify-between gap-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200"><span class="text-xs font-bold text-emerald-900">' + text + '</span>' + packBtn(k, 'ಕಾರ್ಟ್‌ಗೆ') + '</div>';
+  }
+  function picker() {
     var m = DS.tab;
+    var medChips = ['kn', 'en', 'bi'].map(function (k) { return chip('data-dtab', k, m === k, MEDIA[k].n, k === 'bi' ? '1–5ನೇ ತರಗತಿ' : ''); }).join('') +
+      chip('data-dtab', 'cmp', m === 'cmp', '🏆 NMMS / ಪ್ರವೇಶ ಪರೀಕ್ಷೆ', '');
+    var out = '<div class="space-y-2">' + stepHead(1, 'ಮಾಧ್ಯಮ ಆರಿಸಿ') + '<div class="flex flex-wrap gap-2">' + medChips + '</div></div>';
+    if (m === 'cmp') {
+      var rows = [['n:gmat', NMMS.gmat, '8ನೇ ತರಗತಿ'], ['n:sat', NMMS.sat, '8ನೇ ತರಗತಿ']]
+        .concat(exams().map(function (e) { return ['e:' + e.id, e.name, (e.classes || []).join(', ') + 'ನೇ ತರಗತಿ']; }));
+      return out + '<div class="space-y-2">' + stepHead(2, 'ಪರೀಕ್ಷೆ ಆರಿಸಿ') + '<div class="divide-y divide-slate-100 px-1">' + rows.map(function (r) { return rowHtml(r[0], r[1], r[2]); }).join('') + '</div>' +
+        offerHtml('cmp', '💡 ಎಲ್ಲಾ ಸ್ಪರ್ಧಾತ್ಮಕ ಪರೀಕ್ಷೆಗಳೂ ಬೇಕೇ? <b>ಸ್ಪರ್ಧಾ ಕಾಂಬೋ</b>') + '</div>';
+    }
     var classes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(function (c) { return mediaFor(c).indexOf(m) !== -1; });
-    var count = function (mm) { var n = 0; regularItems(function (i) { return i.m === mm; }).forEach(function (it) { if (available(it)) n++; }); return n; };
-    var tabs = ['kn', 'en', 'bi'].map(function (k) {
-      return '<button type="button" data-dtab="' + k + '" class="px-3.5 py-2 rounded-xl text-xs font-black ' + (k === m ? 'bg-slate-900 text-white shadow' : 'bg-white text-slate-600 border') + '">' + MEDIA[k].n +
-        ' <span class="ml-1 px-1.5 rounded-md ' + (k === m ? 'bg-white/20' : 'bg-slate-100') + '">' + count(k) + '</span></button>';
-    }).join('');
-    var cards = classes.map(function (c) {
-      var subs = subjectsFor(c);
-      var avail = subs.filter(function (s) { return available('r:' + m + ':' + c + ':' + s); }).length;
-      return '<div class="p-4 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-2.5">' +
-        '<div class="flex items-center justify-between gap-2"><div><div class="font-black text-slate-900">' + c + 'ನೇ ತರಗತಿ</div><div class="text-[10px] font-bold text-slate-500">' + avail + '/' + subs.length + ' ವಿಷಯಗಳ ಪತ್ರಿಕೆ ಲಭ್ಯ</div></div>' +
-        (avail ? packBtn('cls:' + m + ':' + c, 'ತರಗತಿ ಪ್ಯಾಕ್') : '<span class="px-2 py-1 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-black">ಶೀಘ್ರದಲ್ಲಿ</span>') + '</div>' +
-        '<div class="divide-y divide-slate-100">' + subs.map(function (s) {
-          var it = 'r:' + m + ':' + c + ':' + s, pr = parts(m, c, s);
-          return '<div class="flex items-center justify-between gap-2 py-1.5"><div class="min-w-0"><div class="text-xs font-extrabold text-slate-800">' + SUBJ[s] + '</div>' +
-            '<div class="flex gap-1 mt-0.5">' + pr.map(function (ok, i) { return '<span class="text-[9px] font-black px-1.5 rounded ' + (ok ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-300') + '">ಭಾಗ-' + (i + 1) + (ok ? ' ✓' : '') + '</span>'; }).join('') + '</div></div>' +
-            statusChip(it) + '</div>';
-        }).join('') + '</div></div>';
-    }).join('');
-    var comp = [['n:gmat', NMMS.gmat, '8ನೇ ತರಗತಿ · 90 ಅಂಕ'], ['n:sat', NMMS.sat, '8ನೇ ತರಗತಿ · 90 ಅಂಕ']]
-      .concat(exams().map(function (e) { return ['e:' + e.id, e.name, (e.classes || []).join(', ') + 'ನೇ ತರಗತಿ · ' + (e.marks || '') + ' ಅಂಕ']; }))
-      .map(function (x) {
-        return '<div class="flex items-center justify-between gap-2 p-3 rounded-2xl bg-white border border-slate-200"><div class="min-w-0"><div class="text-xs font-extrabold text-slate-800">' + esc(x[1]) + '</div><div class="text-[10px] font-bold text-slate-500">' + esc(x[2]) + '</div></div>' + statusChip(x[0]) + '</div>';
-      }).join('');
-    return '<div class="flex flex-wrap gap-2">' + tabs + '</div>' +
-      (m === 'en' && !count('en') ? '<div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">English ಮಾಧ್ಯಮದ ಪ್ರಶ್ನೆಗಳು ಸೇರ್ಪಡೆಯಾಗುತ್ತಿವೆ. ಈಗ ಖರೀದಿಸಿದರೆ ಬಂದ ತಕ್ಷಣ ತೆರೆಯುತ್ತದೆ.</div>' : '') +
-      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">' + cards + '</div>' +
-      '<h3 class="font-black text-slate-900 pt-3">🏆 ಸ್ಪರ್ಧಾತ್ಮಕ ಪರೀಕ್ಷೆಗಳು</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' + comp + '</div>';
+    if (classes.indexOf(+DS.cls) === -1) DS.cls = firstClassWithPapers(m);
+    var c = +DS.cls;
+    out += '<div class="space-y-2">' + stepHead(2, 'ತರಗತಿ ಆರಿಸಿ') + '<div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">' + classes.map(function (x) {
+      var on = x === c, has = subjectsFor(x).some(function (s) { return available('r:' + m + ':' + x + ':' + s); });
+      return '<button type="button" data-dcls="' + x + '" class="py-2.5 rounded-xl text-sm font-black border-2 ' + (on ? 'bg-emerald-600 border-emerald-600 text-white' : has ? 'bg-white border-slate-200 text-slate-800 hover:border-emerald-400' : 'bg-slate-50 border-slate-100 text-slate-300') + '">' + x + '</button>';
+    }).join('') + '</div></div>';
+    var subs = subjectsFor(c), avail = subs.filter(function (s) { return available('r:' + m + ':' + c + ':' + s); }).length;
+    out += '<div class="space-y-2">' + stepHead(3, c + 'ನೇ ತರಗತಿ — ವಿಷಯ ಆರಿಸಿ') + '<div class="divide-y divide-slate-100 px-1">' + subs.map(function (s) {
+      var pr = parts(m, c, s);
+      var pchip = function (ok, n) { return '<span class="inline-block px-2 py-0.5 mr-1 mt-1 rounded-md text-[10px] font-black ' + (ok ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400') + '">ಭಾಗ-' + n + (ok ? ' ✅ ಲಭ್ಯ' : ' ⏳ ಶೀಘ್ರದಲ್ಲಿ') + '</span>'; };
+      var sub = pr[0] || pr[1] ? pchip(pr[0], 1) + pchip(pr[1], 2) : '';
+      return rowHtml('r:' + m + ':' + c + ':' + s, SUBJ[s], sub);
+    }).join('') + '</div>' +
+      (avail > 1 ? offerHtml('cls:' + m + ':' + c, '💡 ಈ ತರಗತಿಯ <b>ಎಲ್ಲಾ ವಿಷಯ</b> ಬೇಕೇ? ತರಗತಿ ಪ್ಯಾಕ್') : '') +
+      (avail ? '<p class="text-[11px] font-bold text-slate-500 px-1">ಒಂದೇ ವಿಷಯವನ್ನು 2–3 ತರಗತಿಗೆ ಬೋಧಿಸುತ್ತೀರಾ? <button type="button" onclick="wyOpenPackBuilder(\'st\')" class="text-emerald-700 underline font-black">ವಿಷಯ ಶಿಕ್ಷಕ ಪ್ಯಾಕ್ ' + rupee(PRICES.st) + '</button> · ಇಡೀ ಶಾಲೆಗೆ? <button type="button" onclick="wyOpenPackBuilder(\'sch\')" class="text-emerald-700 underline font-black">ಶಾಲಾ ಪ್ಯಾಕ್ ' + rupee(PRICES.sch) + '</button></p>' : '') +
+      '</div>';
+    return out;
+  }
+  function priceList() {
+    var R = [
+      ['sub', 'ವಿಷಯ ಪ್ಯಾಕ್', '1 ತರಗತಿಯ 1 ವಿಷಯ', PRICES.sub],
+      ['st', 'ವಿಷಯ ಶಿಕ್ಷಕ ಪ್ಯಾಕ್', '1 ವಿಷಯ, ನೀವು ಆರಿಸುವ ' + (+PRICES.stn || 3) + ' ತರಗತಿ', PRICES.st],
+      ['cls', 'ತರಗತಿ ಪ್ಯಾಕ್', '1 ತರಗತಿಯ ಎಲ್ಲಾ ವಿಷಯ', PRICES.cls],
+      ['stg', 'ಹಂತ ಪ್ಯಾಕ್', '1–5 / 6–8 / 8–10 ಎಲ್ಲಾ ವಿಷಯ', PRICES.stg],
+      ['sch', 'ಶಾಲಾ ಪ್ಯಾಕ್', '1–10 ಎಲ್ಲಾ ತರಗತಿ, ಎಲ್ಲಾ ವಿಷಯ (ಇನ್ನೊಂದು ಮಾಧ್ಯಮ +' + rupee(PRICES.sch2) + ')', PRICES.sch],
+      ['nmms', 'NMMS ಪ್ಯಾಕ್', 'GMAT + SAT (ಒಂದು ' + rupee(PRICES.nmms1) + ')', PRICES.nmms],
+      ['ent', 'ಪ್ರವೇಶ ಪರೀಕ್ಷೆ', 'ಮೊರಾರ್ಜಿ / ಆದರ್ಶ / ಕಿತ್ತೂರು / ಸೈನಿಕ — ಒಂದು', PRICES.ent],
+      ['cmp', 'ಸ್ಪರ್ಧಾ ಕಾಂಬೋ', 'NMMS + ಎಲ್ಲಾ ಪ್ರವೇಶ ಪರೀಕ್ಷೆ', PRICES.cmp],
+      ['all', 'ಸಂಪೂರ್ಣ ಶಾಲಾ ಪ್ಯಾಕ್', 'ಶಾಲಾ ಪ್ಯಾಕ್ + ಸ್ಪರ್ಧಾ ಕಾಂಬೋ', PRICES.all]
+    ];
+    return '<details class="group bg-white border border-slate-200 rounded-3xl"><summary class="cursor-pointer list-none p-4 flex items-center justify-between"><span class="text-sm font-black text-slate-900">💰 ಎಲ್ಲಾ ದರಗಳು ಮತ್ತು ದೊಡ್ಡ ಪ್ಯಾಕ್‌ಗಳು</span><span class="text-xs font-black text-slate-400 group-open:rotate-180 transition">▼</span></summary>' +
+      '<div class="px-4 pb-4 divide-y divide-slate-100">' + R.map(function (r) {
+        return '<div class="flex items-center justify-between gap-3 py-2.5"><div class="min-w-0"><div class="text-xs font-black text-slate-900">' + r[1] + '</div><div class="text-[11px] font-bold text-slate-500">' + r[2] + '</div></div>' +
+          '<div class="flex items-center gap-2 shrink-0"><b class="text-sm text-emerald-700">' + rupee(r[3]) + '</b>' + (r[0] === 'sub' ? '' : '<button type="button" onclick="wyOpenPackBuilder(\'' + r[0] + '\')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-[10px] font-black">ಆರಿಸಿ</button>') + '</div></div>';
+      }).join('') + '<p class="pt-2 text-[11px] font-bold text-slate-500">ಪ್ರತಿ ಪ್ಯಾಕ್ ತೆರೆದ ದಿನದಿಂದ ' + validityText() + ' ಮಾನ್ಯ. ಕಾರ್ಟ್‌ನಲ್ಲಿ ಉಳಿತಾಯದ ದಾರಿ ಇದ್ದರೆ ನಾವೇ ತಿಳಿಸುತ್ತೇವೆ.</p></div></details>';
+  }
+  window.wyOpenPackBuilder = function (type) {
+    if (!isMember()) return openMemberAuth('register');
+    var names = { st: 'ವಿಷಯ ಶಿಕ್ಷಕ ಪ್ಯಾಕ್', cls: 'ತರಗತಿ ಪ್ಯಾಕ್', stg: 'ಹಂತ ಪ್ಯಾಕ್', sch: 'ಶಾಲಾ ಪ್ಯಾಕ್', all: 'ಸಂಪೂರ್ಣ ಶಾಲಾ ಪ್ಯಾಕ್', nmms: 'NMMS ಪ್ಯಾಕ್', ent: 'ಪ್ರವೇಶ ಪರೀಕ್ಷೆ', cmp: 'ಸ್ಪರ್ಧಾ ಕಾಂಬೋ', sub: 'ವಿಷಯ ಪ್ಯಾಕ್' };
+    modal(head('fa-box-open', names[type] || 'ಪ್ಯಾಕ್', 'ಆಯ್ಕೆ ಮಾಡಿ "ಕಾರ್ಟ್‌ಗೆ" ಒತ್ತಿ', 'from-emerald-600 to-teal-600') + '<div class="p-4"><div id="wy-packs" data-only="' + type + '">' + packCards(type) + '</div>' +
+      '<button type="button" onclick="wyOpenCart()" class="mt-3 w-full py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-black">🛒 ಕಾರ್ಟ್ ನೋಡಿ (<span class="wy-cart-n"></span>)</button></div>');
+    renderCartBadges();
+  };
+  function rerenderPacks() { var w = $('wy-packs'); if (w) w.innerHTML = packCards(w.dataset.only || null); }
+
+  // ---------- 📋 ಒಂದೇ ಮಾಸ್ಟರ್ ಕೋಷ್ಟಕ: ಎಲ್ಲಾ ತರಗತಿ × ವಿಷಯ × ಮಾಧ್ಯಮ ----------
+  function masterTable() {
+    var MN = { kn: 'ಕನ್ನಡ', en: 'English', bi: 'ದ್ವಿಭಾಷಾ' };
+    var ICON = { kannada: '📕', english: '📘', hindi: '📙', mathematics: '🔢', evs: '🌿', science: '🔬', social_science: '🌍' };
+    var cards = [], none = [];
+    for (var c = 1; c <= 10; c++) {
+      var rows = [];
+      subjectsFor(c).forEach(function (s) {
+        var groups = {};   // "ಭಾಗ" ಪಠ್ಯ → ಮಾಧ್ಯಮಗಳು
+        mediaFor(c).forEach(function (m) {
+          var pr = parts(m, c, s); if (!pr[0] && !pr[1]) return;
+          var t = pr[0] && pr[1] ? 'ಭಾಗ 1 ಮತ್ತು 2' : pr[0] ? 'ಭಾಗ 1' : 'ಭಾಗ 2';
+          (groups[t] = groups[t] || []).push(m);
+        });
+        var keys = Object.keys(groups); if (!keys.length) return;
+        rows.push('<div class="flex items-center justify-between gap-2 py-2"><span class="text-sm font-black text-slate-800 whitespace-nowrap">' + ICON[s] + ' ' + SUBJ[s] + '</span>' +
+          '<span class="flex flex-wrap justify-end gap-1">' + keys.map(function (t) {
+            return '<span class="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-black text-emerald-800">' + t + ' · ' + groups[t].map(function (m) { return MN[m]; }).join(', ') + '</span>';
+          }).join('') + '</span></div>');
+      });
+      if (!rows.length) { none.push(c); continue; }
+      var firstM = ['kn', 'bi', 'en'].filter(function (m) { return mediaFor(c).indexOf(m) !== -1 && subjectsFor(c).some(function (s) { return available('r:' + m + ':' + c + ':' + s); }); })[0] || 'kn';
+      cards.push('<button type="button" data-mt="' + firstM + ':' + c + '" class="text-left p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-400 transition flex flex-col justify-start">' +
+        '<div class="w-full flex items-center justify-between mb-1"><span class="text-base font-black text-slate-900">' + c + 'ನೇ ತರಗತಿ</span><span class="text-[11px] font-black text-emerald-700">' + rows.length + ' ವಿಷಯ →</span></div>' +
+        '<div class="w-full divide-y divide-slate-100">' + rows.join('') + '</div></button>');
+    }
+    var comp = [['n:gmat', 'NMMS GMAT'], ['n:sat', 'NMMS SAT']].concat(exams().map(function (e) { return ['e:' + e.id, e.name]; })).filter(function (x) { return available(x[0]); });
+    if (comp.length) cards.push('<button type="button" data-dtab="cmp" class="text-left p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-400 transition flex flex-col justify-start">' +
+      '<div class="w-full flex items-center justify-between mb-1"><span class="text-base font-black text-slate-900">🏆 ಸ್ಪರ್ಧಾತ್ಮಕ ಪರೀಕ್ಷೆ</span><span class="text-[11px] font-black text-emerald-700">' + comp.length + ' →</span></div>' +
+      '<div class="w-full divide-y divide-slate-100">' + comp.map(function (x) { return '<div class="py-2 text-sm font-black text-slate-800">✅ ' + esc(x[1]) + '</div>'; }).join('') + '</div></button>');
+    var enAny = regularItems(function (i) { return i.m === 'en'; }).some(available);
+    var soon = [];
+    if (none.length) soon.push(none.join(', ') + 'ನೇ ತರಗತಿ');
+    if (!enAny) soon.push('English ಮಾಧ್ಯಮ');
+    return '<div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4" id="wy-master">' +
+      '<div><h3 class="text-lg font-black text-slate-900">📋 ಈಗ ಲಭ್ಯವಿರುವ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳು</h3>' +
+      '<p class="text-xs font-bold text-slate-500">ಭಾಗ 1 = FA-1, FA-2, SA-1 · ಭಾಗ 2 = FA-3, FA-4, SA-2 · ತರಗತಿ ಒತ್ತಿದರೆ ಖರೀದಿ ಭಾಗ ತೆರೆಯುತ್ತದೆ</p></div>' +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">' + cards.join('') + '</div>' +
+      (soon.length ? '<div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">⏳ ಶೀಘ್ರದಲ್ಲಿ ಬರಲಿವೆ: ' + soon.join(' · ') + '</div>' : '') +
+      '</div>';
   }
   function renderMemberDashboard() {
     var v = $('view-dashboard'); if (!v || !isMember()) return false;
     var p = MEM.profile || {}, act = activePacks(), pend = MEM.orders.filter(function (o) { return o.status === 'pending'; });
-    var openCount = regularItems().filter(function (i) { return ownsItem(i) && available(i); }).length;
     var mine = act.sort(function (a, b) { return String(MEM.packs[b]).localeCompare(String(MEM.packs[a])); });
-    v.innerHTML = '<div class="space-y-6 pb-16 animate-fade-in" id="wy-member-dash">' +
-      '<div class="hero-gradient-bg text-white rounded-[2rem] p-5 sm:p-8 shadow-2xl border border-slate-700/60 space-y-5">' +
-        '<div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-xs font-bold text-emerald-300">ನಮಸ್ಕಾರ 🙏</p><h2 class="text-xl sm:text-3xl font-black">' + esc(p.name) + '</h2>' +
-        '<p class="text-xs sm:text-sm font-bold text-slate-300">🏫 ' + esc(p.school) + (p.schoolEn ? ' · ' + esc(p.schoolEn) : '') + '</p><p class="text-[11px] font-bold text-slate-400">📱 ' + esc(authInfo().mobile) + '</p></div>' +
-        '<div class="flex flex-wrap gap-2"><button type="button" onclick="navigateToSection(\'generator\')" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-xs shadow-lg">✍️ ಪತ್ರಿಕೆ ರಚಿಸಿ</button>' +
-        '<button type="button" onclick="wyOpenCart()" class="relative px-4 py-2.5 rounded-2xl bg-white text-slate-900 font-black text-xs shadow">🛒 ಕಾರ್ಟ್ <span class="wy-cart-n absolute -top-2 -right-2 min-w-[20px] h-5 px-1 rounded-full bg-rose-600 text-white text-[10px] flex items-center justify-center"></span></button>' +
-        '<button type="button" id="wy-dash-reload" class="px-3 py-2.5 rounded-2xl bg-white/10 border border-white/20 font-black text-xs">🔄 ನವೀಕರಿಸಿ</button></div></div>' +
-        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">' +
-          [[act.length, 'ಸಕ್ರಿಯ ಪ್ಯಾಕ್', 'text-emerald-400'], [openCount, 'ತೆರೆದ ವಿಷಯಗಳು', 'text-cyan-400'], [trialLeft() + '/' + PRICES.trial, 'ಉಚಿತ ಪ್ರಯೋಗ ಬಾಕಿ', 'text-amber-400'], [pend.length, 'ಬಾಕಿ ಆರ್ಡರ್', 'text-rose-400']]
-            .map(function (x) { return '<div class="p-3 bg-white/5 rounded-2xl border border-white/10"><div class="text-2xl font-black ' + x[2] + '">' + x[0] + '</div><div class="text-[11px] font-bold text-slate-300">' + x[1] + '</div></div>'; }).join('') +
-        '</div></div>' +
-      (mine.length || pend.length ? '<section class="space-y-2"><h3 class="font-black text-slate-900">🎫 ನನ್ನ ಪ್ಯಾಕ್‌ಗಳು</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">' +
-        mine.map(function (k) { return '<div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-2"><div><div class="text-xs font-black text-emerald-900">' + esc(packTitle(k)) + '</div><div class="text-[10px] font-bold text-emerald-700">' + esc(packKind(k)) + (packMedium(k) ? ' · ' + esc(packMedium(k)) : '') + '</div></div><span class="text-[10px] font-black text-emerald-800 shrink-0">' + dmy(MEM.packs[k]) + ' ವರೆಗೆ</span></div>'; }).join('') +
-        pend.map(function (o) { return '<div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">⏳ ಆರ್ಡರ್ #' + esc(String(o.id).slice(-6).toUpperCase()) + ' · ' + rupee(o.total) + ' — ' + (o.items || []).map(function (k) { return esc(packTitle(k)); }).join(', ') + ' <span class="block text-[10px]">ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ</span></div>'; }).join('') +
-        '</div></section>' : '<div class="p-4 rounded-3xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">🎁 ನಿಮಗೆ <b>' + trialLeft() + ' ಉಚಿತ ಪ್ರಯೋಗ ಪತ್ರಿಕೆ</b> ಬಾಕಿ ಇವೆ (SAMPLE ಗುರುತಿನೊಂದಿಗೆ). ಪೂರ್ಣ ಬಳಕೆಗೆ ಕೆಳಗಿನ ಪ್ಯಾಕ್ ಆಯ್ಕೆ ಮಾಡಿ.</div>') +
-      '<section class="space-y-3"><div class="flex items-end justify-between gap-2"><h3 class="font-black text-slate-900">📚 ಲಭ್ಯವಿರುವ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆಗಳು</h3><span class="text-[10px] font-bold text-slate-500">ಪ್ರತಿ ವಿಷಯದಲ್ಲಿ: ಘಟಕ · FA-1–4 · SA-1 · SA-2 · ಮೌಖಿಕ · ಕೀ ಉತ್ತರ · ನೀಲನಕ್ಷೆ · OMR</span></div>' +
-        '<div id="wy-catalog" class="space-y-3">' + catalog() + '</div></section>' +
-      '<section class="space-y-3"><h3 class="font-black text-slate-900">💰 ಪ್ಯಾಕ್‌ಗಳು ಮತ್ತು ದರಗಳು <span class="text-[11px] font-bold text-slate-500">(ಪ್ರತಿ ಪ್ಯಾಕ್ ತೆರೆದ ದಿನದಿಂದ ' + validityText() + ')</span></h3><div id="wy-packs">' + packCards() + '</div></section>' +
-      '<div class="text-center"><button type="button" onclick="logoutAnyUser()" class="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black">⏻ Logout</button></div>' +
+    var pills = [];
+    if (trialLeft()) pills.push('<span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-900">🎁 ' + trialLeft() + ' ಉಚಿತ ಪ್ರಯೋಗ ಪತ್ರಿಕೆ ಬಾಕಿ</span>');
+    if (pend.length) pills.push('<span class="px-3 py-1.5 rounded-full bg-sky-100 text-sky-900">⏳ ' + pend.length + ' ಆರ್ಡರ್ ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ</span>');
+    v.innerHTML = '<div class="max-w-3xl mx-auto space-y-5 pb-16 animate-fade-in" id="wy-member-dash">' +
+      '<div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">' +
+        '<div class="flex items-center justify-between gap-3"><h2 class="text-lg font-black text-slate-900 truncate">ನಮಸ್ಕಾರ, ' + esc(p.name) + ' 🙏</h2>' +
+        '<button type="button" id="wy-dash-reload" title="ನವೀಕರಿಸಿ" class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 font-black shrink-0">🔄</button></div>' +
+        '<div class="grid grid-cols-2 gap-2"><button type="button" onclick="navigateToSection(\'generator\')" class="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm shadow">✍️ ಪತ್ರಿಕೆ ರಚಿಸಿ</button>' +
+        '<button type="button" onclick="wyOpenCart()" class="relative py-3 rounded-2xl bg-slate-900 text-white font-black text-sm shadow">🛒 ಕಾರ್ಟ್ <span class="wy-cart-n absolute -top-2 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-rose-600 text-white text-[11px] flex items-center justify-center"></span></button></div>' +
+        (pills.length ? '<div class="flex flex-wrap gap-2 text-[11px] font-black">' + pills.join('') + '</div>' : '') +
+        (mine.length ? '<div class="space-y-1.5"><div class="text-xs font-black text-slate-500">🎫 ನನ್ನ ಪ್ಯಾಕ್‌ಗಳು</div>' + mine.map(function (k) {
+          return '<div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-50 text-xs"><span class="font-black text-emerald-900 truncate">✅ ' + esc(packLabel(k)) + '</span><span class="font-bold text-emerald-700 shrink-0">' + dmy(MEM.packs[k]) + ' ವರೆಗೆ</span></div>';
+        }).join('') + '</div>' : '') +
+      '</div>' +
+      masterTable() +
+      '<div class="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-5" id="wy-picker-card"><h3 class="text-base font-black text-slate-900">📚 ಯಾವ ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ ಬೇಕು?</h3><div id="wy-catalog" class="space-y-5">' + picker() + '</div></div>' +
+      '<div class="grid grid-cols-3 gap-2 text-center">' + [['👆', 'ವಿಷಯ ಆರಿಸಿ "ಕಾರ್ಟ್‌ಗೆ" ಒತ್ತಿ'], ['📲', 'ಕಾರ್ಟ್‌ನಲ್ಲಿ UPI ಮೂಲಕ ಹಣ ಕಳುಹಿಸಿ'], ['✅', 'ಪರಿಶೀಲಿಸಿ ' + validityText() + 'ಕ್ಕೆ ತೆರೆಯುತ್ತೇವೆ']].map(function (x, i) {
+        return '<div class="p-3 rounded-2xl bg-slate-50 border border-slate-200"><div class="text-xl">' + x[0] + '</div><div class="text-[11px] font-bold text-slate-600 leading-snug">' + (i + 1) + '. ' + x[1] + '</div></div>';
+      }).join('') + '</div>' +
+      priceList() +
+      '<div class="text-center"><button type="button" onclick="logoutAnyUser()" class="px-4 py-2 rounded-xl text-slate-500 text-xs font-black hover:text-rose-600">⏻ Logout</button></div>' +
       '</div>';
     bindDash(v);
     renderCartBadges();
@@ -24640,21 +24730,26 @@ function wyStrongKeyPart() {
   }
   // ಒಂದೇ ಕ್ಲಿಕ್ ಕೇಳುಗ (ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ + ಲಾಕ್ ಬ್ಯಾನರ್)
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-add],[data-dtab],[data-open]'); if (!t) return;
+    var t = e.target.closest && e.target.closest('[data-add],[data-dtab],[data-open],[data-dcls],[data-mt]'); if (!t) return;
+    if (t.dataset.mt) {
+      DS.tab = t.dataset.mt.split(':')[0]; DS.cls = +t.dataset.mt.split(':')[1]; lsSet('wy_dash_med', DS.tab); lsSet('wy_dash_cls', DS.cls);
+      var pc = $('wy-catalog'); if (pc) { pc.innerHTML = picker(); $('wy-picker-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      return;
+    }
+    if (t.dataset.dcls) { DS.cls = +t.dataset.dcls; lsSet('wy_dash_cls', DS.cls); var cc = $('wy-catalog'); if (cc) cc.innerHTML = picker(); return; }
     if (t.dataset.add) { window.wyCartAdd(t.dataset.add); return; }
-    if (t.dataset.dtab) { DS.tab = t.dataset.dtab; lsSet('wy_dash_med', DS.tab); var c = $('wy-catalog'); if (c) c.innerHTML = catalog(); return; }
+    if (t.dataset.dtab) { DS.tab = t.dataset.dtab; lsSet('wy_dash_med', DS.tab); var c = $('wy-catalog'); if (c) c.innerHTML = picker(); if (t.closest('#wy-master') && $('wy-picker-card')) $('wy-picker-card').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (t.dataset.open) openInGenerator(t.dataset.open);
   }, true);
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-pbc]'); if (!b || b.disabled) return;
     var c = +b.dataset.pbc, i = PB.sc.indexOf(c);
     if (i === -1) PB.sc.push(c); else PB.sc.splice(i, 1);
-    fixPB(); var w = $('wy-packs'); if (w) w.innerHTML = packCards();
+    fixPB(); rerenderPacks();
   }, true);
   window.wyPickSubjectTeacher = function (m, c, s) {
     PB.m = m; PB.ss = s; PB.sc = [+c]; fixPB();
-    try { navigateToSection('dashboard'); } catch (e) {}
-    setTimeout(function () { var w = $('wy-packs'); if (w) { w.innerHTML = packCards(); var card = w.querySelector('[data-pb-card="st"]'); (card || w).scrollIntoView({ behavior: 'smooth', block: 'center' }); } toast('ನೀವು ಬೋಧಿಸುವ ಇನ್ನೂ ತರಗತಿಗಳನ್ನು ಆರಿಸಿ, ನಂತರ "ಕಾರ್ಟ್‌ಗೆ" ಒತ್ತಿ.'); }, 300);
+    window.wyOpenPackBuilder('st');
   };
   document.addEventListener('change', function (e) {
     var key = e.target && e.target.dataset && e.target.dataset.pb; if (!key) return;
@@ -24662,7 +24757,7 @@ function wyStrongKeyPart() {
     if (key === 'c') PB.g = (+PB.c <= 5) ? 'p' : (+PB.c <= 7 ? 'u' : (PB.g === 'u' && +PB.c === 8 ? 'u' : 'h'));
     if (key === 'g' && STAGES[PB.g].c.indexOf(+PB.c) === -1) PB.c = STAGES[PB.g].c[0];
     fixPB();
-    var w = $('wy-packs'); if (w) w.innerHTML = packCards();
+    rerenderPacks();
   });
   function openInGenerator(item) {
     var p = item.split(':');
@@ -24711,16 +24806,14 @@ function wyStrongKeyPart() {
     var e = examById(p[1]); return e ? e.name : p[1];
   }
   function lockOptions(item) {
-    return packsFor(item).filter(function (k) { return !/^all:/.test(k) || k === 'all:' + (item.split(':')[1] === 'en' ? 'en' : 'kn'); })
-      .slice(0, 6).map(function (k) {
-        var inCart = cartGet().some(function (a) { return covers(a, k); });
-        return '<button type="button" ' + (inCart ? 'onclick="wyOpenCart()"' : 'data-add="' + k + '"') + ' class="text-left p-2.5 rounded-xl border ' + (inCart ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white hover:border-emerald-500') + '">' +
-          '<div class="text-[11px] font-black text-slate-900">' + esc(packKind(k)) + ' <span class="text-emerald-700">' + rupee(priceOf(k)) + '</span></div>' +
-          '<div class="text-[10px] font-bold text-slate-500 leading-tight">' + (inCart ? '🛒 ಕಾರ್ಟ್‌ನಲ್ಲಿದೆ' : esc(packTitle(k))) + '</div></button>';
-      }).join('') + (item.split(':')[0] === 'r' ? (function () { var p = item.split(':');
-        return '<button type="button" onclick="wyPickSubjectTeacher(\'' + p[1] + '\',' + p[2] + ',\'' + p[3] + '\')" class="text-left p-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:border-emerald-500">' +
-          '<div class="text-[11px] font-black text-slate-900">ವಿಷಯ ಶಿಕ್ಷಕ ಪ್ಯಾಕ್ <span class="text-emerald-700">' + rupee(PRICES.st) + '</span></div>' +
-          '<div class="text-[10px] font-bold text-slate-500 leading-tight">' + esc(SUBJ[p[3]]) + ' — ಇದೂ ಸೇರಿ ಯಾವುದೇ ' + (+PRICES.stn || 3) + ' ತರಗತಿ</div></button>'; })() : '');
+    var p = item.split(':');
+    var ks = p[0] === 'r' ? ['sub:' + p[1] + ':' + p[2] + ':' + p[3], 'cls:' + p[1] + ':' + p[2]] : p[0] === 'n' ? ['nmms:' + p[1], 'nmms'] : ['ent:' + p[1], 'cmp'];
+    var names = p[0] === 'r' ? ['ಈ ವಿಷಯ ಮಾತ್ರ', 'ಈ ತರಗತಿಯ ಎಲ್ಲಾ ವಿಷಯ'] : p[0] === 'n' ? ['ಈ ಪತ್ರಿಕೆ ಮಾತ್ರ', 'GMAT + SAT ಎರಡೂ'] : ['ಈ ಪರೀಕ್ಷೆ ಮಾತ್ರ', 'ಎಲ್ಲಾ ಸ್ಪರ್ಧಾತ್ಮಕ ಪರೀಕ್ಷೆ'];
+    return ks.map(function (k, i) {
+      var inCart = cartGet().some(function (a) { return covers(a, k); });
+      return '<button type="button" ' + (inCart ? 'onclick="wyOpenCart()"' : 'data-add="' + k + '"') + ' class="text-left p-3 rounded-xl border-2 ' + (inCart ? 'border-indigo-300 bg-indigo-50 text-slate-900' : 'border-white/20 bg-white text-slate-900 hover:border-emerald-400') + '">' +
+        '<div class="text-xs font-black">' + names[i] + '</div><div class="text-base font-black text-emerald-700">' + (inCart ? '🛒 ಕಾರ್ಟ್‌ನಲ್ಲಿದೆ' : rupee(priceOf(k))) + '</div></button>';
+    }).join('');
   }
   function updateLockBanner() {
     var host = $('cfg-subject'); if (!host) return;
@@ -24743,7 +24836,8 @@ function wyStrongKeyPart() {
       '<div class="text-[11px] font-bold text-slate-300">' + (pend ? '⏳ ನಿಮ್ಮ ಆರ್ಡರ್ ಪರಿಶೀಲನೆಯಲ್ಲಿದೆ. ತೆರೆದ ತಕ್ಷಣ ಇಲ್ಲಿ ✅ ಆಗುತ್ತದೆ.' :
         (trialLeft() ? '🎁 ' + trialLeft() + ' ಉಚಿತ ಪ್ರಯೋಗ ಬಾಕಿ — "ರಚಿಸಿ" ಒತ್ತಿದರೆ SAMPLE ಗುರುತಿನೊಂದಿಗೆ ಪತ್ರಿಕೆ ಬರುತ್ತದೆ.' : 'ಉಚಿತ ಪ್ರಯೋಗ ಮುಗಿದಿದೆ. ಕೆಳಗಿನ ಯಾವುದಾದರೂ ಪ್ಯಾಕ್ ಆಯ್ಕೆ ಮಾಡಿ.')) + '</div></div></div>' +
       (available(it) ? '' : '<div class="text-[11px] font-bold text-amber-300">ಈ ವಿಷಯದ ಪ್ರಶ್ನೆಗಳು ಇನ್ನೂ ಸೇರ್ಪಡೆಯಾಗುತ್ತಿವೆ.</div>') +
-      '<div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">' + lockOptions(it) + '</div>' +
+      '<div class="grid grid-cols-2 gap-2">' + lockOptions(it) + '</div>' +
+      (it.split(':')[0] === 'r' ? '<p class="text-[11px] font-bold text-slate-300">ಒಂದೇ ವಿಷಯ 2–3 ತರಗತಿಗೆ? <button type="button" onclick="wyPickSubjectTeacher(\'' + it.split(':')[1] + '\',' + it.split(':')[2] + ',\'' + it.split(':')[3] + '\')" class="underline text-emerald-300 font-black">ವಿಷಯ ಶಿಕ್ಷಕ ಪ್ಯಾಕ್ ' + rupee(PRICES.st) + '</button> · <button type="button" onclick="navigateToSection(\'dashboard\')" class="underline text-slate-200">ಇತರ ಆಯ್ಕೆಗಳು</button></p>' : '') +
       '<button type="button" onclick="wyOpenCart()" class="w-full py-2 rounded-xl bg-emerald-500 text-slate-950 text-xs font-black">🛒 ಕಾರ್ಟ್ ನೋಡಿ (<span class="wy-cart-n"></span>)</button></div>';
     renderCartBadges();
   }
@@ -25089,6 +25183,230 @@ function wyStrongKeyPart() {
       adminSend('PATCH', '/members/' + m + '/profile', { school: kn.trim(), schoolEn: en.trim() }).then(function () { toast('ಉಳಿಸಲಾಗಿದೆ'); renderMembers(true); }).catch(function (x) { toast(errMsg(x), true); });
     }
   }, true);
+})();
+
+// =========================================================================
+// 🎨 ನಲಿಕಲಿ (1–3ನೇ ತರಗತಿ) ಚಟುವಟಿಕೆ ಪ್ರಶ್ನೆಗಳು — ಹೆಚ್ಚು ಜಾಗ, ದೊಡ್ಡ ಚಿತ್ರ
+// JSON ನಲ್ಲಿ "activity" ಕೊಟ್ಟರೆ ಮಾತ್ರ ಬಳಕೆ (ಇಲ್ಲದಿದ್ದರೆ ಹಳೆಯಂತೆಯೇ):
+//   copy · letters · picword · picmatch · color · draw · circle · count
+// =========================================================================
+(function installNalikaliActivities() {
+  var RAW_BASE = 'https://raw.githubusercontent.com/withyou00/withyouqbank/main/';
+  var KN = ['೦', '೧', '೨', '೩', '೪', '೫', '೬', '೭', '೮', '೯'];
+  function kn(n) { return String(n).replace(/\d/g, function (d) { return KN[d]; }); }
+  var EN_NUM = false;   // English ಪತ್ರಿಕೆಯಲ್ಲಿ 1, 2, 3 ಸಂಖ್ಯೆಗಳು
+  function nn(n) { return EN_NUM ? String(n) : kn(n); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function isUrl(s) { s = String(s || '').trim(); return /^https?:\/\//i.test(s) || /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(s) || /^images\//i.test(s); }
+  function imgUrl(s) {
+    s = String(s || '').trim();
+    var md = s.match(/!?\[[^\]]*\]\(([^)\s]+)\)/); if (md) s = md[1];
+    if (/^\/\//.test(s)) s = 'https:' + s;
+    if (/^http:\/\//i.test(s)) s = s.replace(/^http:/i, 'https:');
+    if (!/^https?:\/\//i.test(s)) s = RAW_BASE + s.replace(/^\/+/, '');
+    if (/(blogger\.googleusercontent\.com|bp\.blogspot\.com)/i.test(s)) s = s.replace(/\/s\d{2,3}(-c)?\//, '/s1600/');
+    var drv = s.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{10,})/i);
+    if (drv) s = 'https://drive.google.com/thumbnail?id=' + drv[1] + '&sz=w1600';
+    return s.replace(/ /g, '%20');
+  }
+  // ಸಿದ್ಧ ರೇಖಾಚಿತ್ರಗಳು (ಬಣ್ಣ ತುಂಬಲು / ಆಕಾರ ಗುರುತಿಸಲು): "shape:star" ಇತ್ಯಾದಿ
+  var SH = {
+    circle: '<circle cx="50" cy="50" r="40"/>',
+    square: '<rect x="12" y="12" width="76" height="76"/>',
+    rectangle: '<rect x="5" y="25" width="90" height="50"/>',
+    triangle: '<polygon points="50,8 92,88 8,88"/>',
+    star: '<polygon points="50,6 61,38 95,38 67,58 78,92 50,71 22,92 33,58 5,38 39,38"/>',
+    heart: '<path d="M50 88 C10 60 5 35 20 20 C33 8 47 14 50 28 C53 14 67 8 80 20 C95 35 90 60 50 88 Z"/>',
+    house: '<polygon points="50,8 92,45 8,45"/><rect x="18" y="45" width="64" height="47"/><rect x="42" y="62" width="16" height="30"/><rect x="24" y="54" width="12" height="12"/><rect x="64" y="54" width="12" height="12"/>',
+    tree: '<rect x="43" y="62" width="14" height="32"/><circle cx="50" cy="38" r="28"/>',
+    sun: '<circle cx="50" cy="50" r="20"/><path d="M50 5v15M50 80v15M5 50h15M80 50h15M18 18l11 11M71 71l11 11M18 82l11-11M71 29l11-11"/>',
+    flower: '<circle cx="50" cy="30" r="12"/><circle cx="68" cy="42" r="12"/><circle cx="62" cy="62" r="12"/><circle cx="38" cy="62" r="12"/><circle cx="32" cy="42" r="12"/><circle cx="50" cy="48" r="9"/>',
+    fish: '<ellipse cx="45" cy="50" rx="32" ry="20"/><polygon points="76,50 95,32 95,68"/><circle cx="28" cy="45" r="3"/>',
+    apple: '<path d="M50 30 C30 18 10 32 15 58 C20 85 40 92 50 85 C60 92 80 85 85 58 C90 32 70 18 50 30 Z"/><path d="M50 30 C50 20 55 12 60 8"/><path d="M52 22 C62 12 75 15 75 15 C70 25 60 26 52 22 Z"/>',
+    ball: '<circle cx="50" cy="50" r="40"/><path d="M10 50 C35 35 65 65 90 50"/><path d="M50 10 C35 35 65 65 50 90"/>',
+    kite: '<polygon points="50,5 85,45 50,85 15,45"/><path d="M50 5v80M15 45h70M50 85 C45 92 55 95 50 99"/>',
+    butterfly: '<ellipse cx="30" cy="35" rx="20" ry="18"/><ellipse cx="70" cy="35" rx="20" ry="18"/><ellipse cx="33" cy="68" rx="15" ry="14"/><ellipse cx="67" cy="68" rx="15" ry="14"/><rect x="47" y="25" width="6" height="55" rx="3"/>',
+    umbrella: '<path d="M10 50 C10 15 90 15 90 50 Z"/><path d="M50 50 v35 C50 95 38 95 38 85"/>',
+    leaf: '<path d="M15 85 C15 35 50 10 90 10 C90 55 60 85 15 85 Z"/><path d="M15 85 L70 30"/>',
+    cup: '<path d="M20 25 h50 v45 C70 85 20 85 20 70 Z"/><path d="M70 35 C90 35 90 60 70 60"/>'
+  };
+  function svgShape(name, cls) {
+    var body = SH[String(name).toLowerCase()]; if (!body) return '<span class="wyk-word">' + esc(name) + '</span>';
+    return '<svg viewBox="0 0 100 100" class="' + (cls || 'wyk-svg') + '" fill="none" stroke="#000" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">' + body + '</svg>';
+  }
+  function isShape(v) { return /^shape:/i.test(String(v || '').trim()); }
+  function isPictureText(v) { var t = String(v || '').trim(); return t && t.length <= 24 && !/[A-Za-z\u0C80-\u0CFF0-9]/.test(t); }   // ಎಮೋಜಿ ಮಾತ್ರ
+  function img(s, cls) {
+    if (isShape(s)) return svgShape(String(s).trim().slice(6), 'wyk-svg ' + (cls || ''));
+    if (!isUrl(s)) return '<span class="wyk-emoji ' + (cls || '') + '">' + esc(s) + '</span>';
+    return '<img src="' + esc(imgUrl(s)) + '" class="' + (cls || 'wyk-img') + '" alt="" loading="eager">';
+  }
+  function cell(v, cls) { return (isUrl(v) || isShape(v) || isPictureText(v)) ? img(v, cls) : '<span class="wyk-word">' + esc(v) + '</span>'; }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function isEnglishPaper(rawSubj) { return /english/i.test(rawSubj || '') || (document.getElementById('cfg-medium') || {}).value === 'english_medium'; }
+  function lineHtml(en) { return en ? '<div class="wyk-4line"><i></i><i></i><i></i></div>' : '<div class="wyk-2line"></div>'; }
+  function list(v) { return Array.isArray(v) ? v : (v == null || v === '' ? [] : [v]); }
+
+  // ---------- ಪ್ರತಿ ಚಟುವಟಿಕೆಯ ಒಳಭಾಗ ----------
+  var R = {
+    copy: function (it, en) {
+      var words = list(it.words), n = Math.max(1, Math.min(4, +it.lines || 2));
+      var long = words.some(function (w) { return String(w).trim().split(/\s+/).length > 2; });
+      return '<div class="wyk-grid ' + (long ? 'wyk-cols-1' : 'wyk-cols-2') + '">' + words.map(function (w, i) {
+        var rows = ''; for (var k = 0; k < n; k++) rows += lineHtml(en);
+        return '<div class="wyk-copy"><div class="wyk-copy-word">' + (long ? nn(i + 1) + '. ' : '') + esc(w) + '</div>' + rows + '</div>';
+      }).join('') + '</div>';
+    },
+    letters: function (it) {
+      var t = Math.max(0, Math.min(6, it.trace == null ? 3 : +it.trace)), b = Math.max(0, Math.min(6, it.boxes == null ? 3 : +it.boxes));
+      return list(it.letters).map(function (L) {
+        var s = '<div class="wyk-letter-row"><span class="wyk-letter">' + esc(L) + '</span>';
+        for (var i = 0; i < t; i++) s += '<span class="wyk-letter wyk-trace">' + esc(L) + '</span>';
+        for (var j = 0; j < b; j++) s += '<span class="wyk-letter wyk-empty"></span>';
+        return s + '</div>';
+      }).join('');
+    },
+    picword: function (it, en) {
+      var items = list(it.items), help = list(it.help);
+      return (help.length ? '<div class="wyk-help">( ' + shuffle(help).map(esc).join(' , ') + ' )</div>' : '') +
+        '<div class="wyk-grid wyk-cols-' + (items.length === 4 ? 4 : 3) + '">' + items.map(function (x, i) {
+          return '<div class="wyk-card"><div class="wyk-num">' + nn(i + 1) + '</div><div class="wyk-imgbox">' + img(x.img || x.image || x.q) + '</div>' + lineHtml(en) + '</div>';
+        }).join('') + '</div>';
+    },
+    picmatch: function (it) {
+      var pairs = list(it.pairs).map(function (p) { return { a: p.img || p.a || p.left, b: p.word || p.b || p.right }; });
+      var right = shuffle(pairs.map(function (p) { return p.b; }));
+      return '<table class="wyk-match"><tbody>' + pairs.map(function (p, i) {
+        return '<tr><td class="wyk-m-l"><span class="wyk-m-in">' + nn(i + 1) + '. ' + cell(p.a, 'wyk-img wyk-img-m') + '</span></td><td class="wyk-m-dot">●</td><td class="wyk-m-gap"></td><td class="wyk-m-dot">●</td><td class="wyk-m-r">' + cell(right[i], 'wyk-img wyk-img-m') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    },
+    color: function (it) {
+      if (list(it.shapes).length) {
+        return '<div class="wyk-grid wyk-cols-' + (list(it.shapes).length === 1 ? 1 : list(it.shapes).length >= 3 ? 3 : 2) + '">' + list(it.shapes).map(function (sh) {
+          var nm = typeof sh === 'string' ? sh : sh.shape, lbl = typeof sh === 'string' ? '' : (sh.label || '');
+          return '<div class="wyk-card wyk-colorcard">' + svgShape(nm, 'wyk-svg-big') + (lbl ? '<div class="wyk-color-lbl">' + esc(lbl) + '</div>' : '') + '</div>';
+        }).join('') + '</div>';
+      }
+      var h = Math.max(40, Math.min(200, +it.height || 95));
+      return '<div class="wyk-bigbox" style="height:' + h + 'mm">' + (it.img ? img(it.img, 'wyk-img-big') : '') + '</div>';
+    },
+    draw: function (it) {
+      var h = Math.max(30, Math.min(200, +it.height || 70));
+      return (it.img ? '<div class="wyk-example">ಉದಾಹರಣೆ: ' + img(it.img, 'wyk-img wyk-img-s') + '</div>' : '') + '<div class="wyk-bigbox" style="height:' + h + 'mm"></div>';
+    },
+    circle: function (it) {
+      return list(it.rows).map(function (r, i) {
+        return '<div class="wyk-circle-row"><div class="wyk-circle-q">' + nn(i + 1) + '. ' + esc(r.q || '') + '</div><div class="wyk-circle-opts">' +
+          list(r.options).map(function (o) { return '<span class="wyk-opt">' + cell(o, 'wyk-img wyk-img-m') + '</span>'; }).join('') + '</div></div>';
+      }).join('');
+    },
+    count: function (it) {
+      return '<div class="wyk-grid wyk-cols-2">' + list(it.items).map(function (x, i) {
+        var n = Math.max(1, Math.min(20, +x.n || +x.ans || 1)), pics = '';
+        for (var k = 0; k < n; k++) pics += img(x.img, 'wyk-img wyk-img-c');
+        return '<div class="wyk-count"><div class="wyk-num">' + nn(i + 1) + '</div><div class="wyk-count-pics">' + pics + '</div><span class="wyk-letter wyk-empty"></span></div>';
+      }).join('') + '</div>';
+    }
+  };
+  var DEFAULT_Q = {
+    copy: 'ಸುಂದರವಾಗಿ ನಕಲು ಮಾಡಿ ಬರೆ', letters: 'ಅಕ್ಷರಗಳನ್ನು ತಿದ್ದಿ ಬರೆ', picword: 'ಚಿತ್ರ ನೋಡಿ ಹೆಸರು ಬರೆ', picmatch: 'ಚಿತ್ರ ಮತ್ತು ಪದವನ್ನು ಗೆರೆ ಎಳೆದು ಹೊಂದಿಸು',
+    color: 'ಚಿತ್ರಕ್ಕೆ ಬಣ್ಣ ತುಂಬು', draw: 'ಚಿತ್ರ ಬಿಡಿಸು', circle: 'ಸರಿಯಾದದ್ದಕ್ಕೆ ಸುತ್ತು ಹಾಕು', count: 'ಎಣಿಸಿ ಸಂಖ್ಯೆ ಬರೆ'
+  };
+  function actOf(it) { var a = String((it && it.activity) || '').toLowerCase().trim(); return R[a] ? a : ''; }
+  function autoAns(it) {
+    var a = actOf(it);
+    if (it.ans) return it.ans;
+    if (a === 'picword' || a === 'count') return list(it.items).map(function (x, i) { return kn(i + 1) + '. ' + (x.ans != null ? x.ans : x.n); }).join(', ');
+    if (a === 'picmatch') return list(it.pairs).map(function (p, i) { return kn(i + 1) + ' - ' + (p.word || p.b || p.right || ''); }).join(', ');
+    if (a === 'circle') return list(it.rows).map(function (r, i) { var o = list(r.options)[(+r.ans || 1) - 1]; return kn(i + 1) + '. ' + (o && !isUrl(o) ? o : (+r.ans || 1) + 'ನೇ ಆಯ್ಕೆ'); }).join(', ');
+    return 'ಚಟುವಟಿಕೆ ಆಧಾರಿತ — ಶಿಕ್ಷಕರು ವೀಕ್ಷಿಸಿ ಅಂಕ ನೀಡುವುದು';
+  }
+  window.wyNalikaliActivityAnswer = autoAns;
+
+  // ---------- ಶೈಲಿ ----------
+  var st = document.createElement('style');
+  st.id = 'wy-nk-activity-styles';
+  st.textContent = [
+    // ಇಡೀ ಚಟುವಟಿಕೆಯನ್ನು ಮುಂದಿನ ಪುಟಕ್ಕೆ ತಳ್ಳದೆ, ಒಳಗಿನ ಸಾಲು/ಕಾರ್ಡ್‌ಗಳ ನಡುವೆ ಪುಟ ಬದಲಾಗಲಿ (ದೊಡ್ಡ ಖಾಲಿ ಜಾಗ ಬರದಂತೆ)
+    'html body #rendered-paper .nk-section-block.wyk-block, html body .nk-section-block.wyk-block{break-inside:auto !important;page-break-inside:auto !important}',
+    '.wyk-block .nk-section-head{break-after:avoid !important;page-break-after:avoid !important}',
+    '.wyk-copy,.wyk-letter-row,.wyk-card,.wyk-match tr,.wyk-circle-row,.wyk-count,.wyk-bigbox,.wyk-help{break-inside:avoid !important;page-break-inside:avoid !important}',
+    '.wyk-block>*{width:100%;box-sizing:border-box}.wyk-grid{display:grid;width:100%}@media print{.wyk-block,.wyk-grid{orphans:1;widows:1}.wyk-grid{display:block !important;width:100% !important}.wyk-grid>*{display:inline-block;vertical-align:top;box-sizing:border-box;margin:0 0 4mm}.wyk-cols-2>*{width:48.5%;margin-right:3%}.wyk-cols-2>*:nth-child(2n){margin-right:0}.wyk-cols-3>*{width:31.3%;margin-right:3%}.wyk-cols-3>*:nth-child(3n){margin-right:0}.wyk-cols-4>*{width:23%;margin-right:2.66%}.wyk-cols-4>*:nth-child(4n){margin-right:0}.wyk-cols-1>*{width:100%}}',
+    '.wyk-grid{display:grid;gap:4mm 6mm;margin-top:2mm}.wyk-cols-1{grid-template-columns:1fr}.wyk-cols-2{grid-template-columns:1fr 1fr}.wyk-cols-3{grid-template-columns:repeat(3,1fr)}.wyk-cols-4{grid-template-columns:repeat(4,1fr)}',
+    '.wyk-copy-word{font-size:16pt;font-weight:900;margin-bottom:1mm}',
+    '.wyk-2line{height:12mm;border-top:1.6px solid #000;border-bottom:1.6px solid #000;margin:1.5mm 0 3mm;background:#fafafa}',
+    '.wyk-4line{height:13mm;position:relative;margin:1.5mm 0 3mm;border-top:1px solid #000;border-bottom:1.6px solid #000}.wyk-4line i{position:absolute;left:0;right:0;border-top:1px dashed #64748b}.wyk-4line i:nth-child(1){top:33%}.wyk-4line i:nth-child(2){top:66%;border-top:1.4px solid #dc2626}.wyk-4line i:nth-child(3){display:none}',
+    '.wyk-letter-row{display:flex;flex-wrap:wrap;gap:3mm;align-items:center;margin:2.5mm 0}',
+    '.wyk-letter{width:17mm;height:17mm;display:inline-flex;align-items:center;justify-content:center;font-size:30pt;font-weight:900;border:1.6px solid #000;border-radius:2mm;line-height:1}',
+    '.wyk-trace{color:#cbd5e1;border-style:dashed}.wyk-empty{border-style:solid;background:#fff}',
+    '.wyk-help{margin:1mm 0 2mm;padding:1.5mm 3mm;border:1.4px dashed #000;border-radius:2mm;font-size:13pt;font-weight:900;text-align:center}',
+    '.wyk-card{border:1.4px solid #000;border-radius:3mm;padding:2mm;position:relative}.wyk-num{font-size:11pt;font-weight:900}',
+    '.wyk-imgbox{height:30mm;display:flex;align-items:center;justify-content:center}.wyk-img{max-height:28mm;max-width:100%;object-fit:contain}',
+    '.wyk-match{width:100%;border-collapse:collapse;margin-top:2mm}.wyk-match td{padding:2.5mm 1mm;vertical-align:middle}.wyk-m-l{width:34%;font-weight:900;font-size:13pt}.wyk-m-r{width:34%;font-weight:900;font-size:14pt}.wyk-m-dot{width:5mm;font-size:12pt;text-align:center}.wyk-m-gap{width:auto}',
+    '.wyk-m-in{display:inline-flex;align-items:center;gap:2mm}.wyk-img-m{max-height:22mm;max-width:38mm;vertical-align:middle}.wyk-word{font-size:15pt;font-weight:900}',
+    '.wyk-bigbox{border:1.8px solid #000;border-radius:3mm;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-top:2mm}.wyk-img-big{max-width:96%;max-height:96%;object-fit:contain;filter:grayscale(1) contrast(1.2)}',
+    '.wyk-emoji{font-size:30pt;line-height:1.1;display:inline-block}.wyk-img-c.wyk-emoji{font-size:16pt}.wyk-img-m.wyk-emoji{font-size:26pt}',
+    '.wyk-svg{width:20mm;height:20mm;display:inline-block;vertical-align:middle}.wyk-svg.wyk-img-c{width:9mm;height:9mm}.wyk-svg-big{width:100%;height:48mm;display:block}',
+    '.wyk-colorcard{text-align:center}.wyk-color-lbl{font-size:13pt;font-weight:900;margin-top:1mm}',
+    '.wyk-example{font-size:11pt;font-weight:800;display:flex;align-items:center;gap:2mm}.wyk-img-s{max-height:18mm}',
+    '.wyk-circle-row{display:flex;flex-wrap:wrap;align-items:center;gap:3mm;margin:3mm 0;padding-bottom:2mm;border-bottom:1px dashed #94a3b8}.wyk-circle-q{font-size:13pt;font-weight:900;min-width:45%}.wyk-circle-opts{display:flex;gap:6mm;flex-wrap:wrap}.wyk-opt{padding:2mm 3mm}',
+    '.wyk-count{display:flex;align-items:center;gap:3mm;border:1.4px solid #000;border-radius:3mm;padding:2mm}.wyk-count-pics{flex:1;display:flex;flex-wrap:wrap;gap:1.5mm}.wyk-img-c{max-height:11mm;max-width:11mm}',
+    '@media print{.wyk-trace{color:#cbd5e1 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.wyk-4line i:nth-child(2){-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+  ].join('\n');
+  document.head.appendChild(st);
+
+  // ---------- ಹಳೆಯ ನಲಿಕಲಿ ರೆಂಡರರ್‌ನ ಮೇಲೆ ----------
+  var prevW = window.renderDedicatedNalikaliWorksheet;
+  if (typeof prevW === 'function') {
+    window.renderDedicatedNalikaliWorksheet = function (allQuestions, actualMarks, rawSubj, grade) {
+      var r = prevW.apply(this, arguments);
+      try {
+        if (!(allQuestions || []).some(actOf)) return r;
+        var paper = document.getElementById('rendered-paper'); if (!paper) return r;
+        var blocks = paper.querySelectorAll('.nk-section-block');
+        if (blocks.length !== allQuestions.length) return r;
+        var en = isEnglishPaper(rawSubj); EN_NUM = en;
+        allQuestions.forEach(function (it, i) {
+          var a = actOf(it); if (!a) return;
+          var b = blocks[i], roman = (b.querySelector('.nk-section-title b') || {}).textContent || (i + 1) + '.';
+          var marks = +it.marks || 0;
+          b.classList.add('wyk-block');
+          b.innerHTML = '<div class="nk-section-head"><span class="nk-section-title"><b>' + esc(roman) + '</b> ' + esc(String(it.q || DEFAULT_Q[a]).split('\n')[0]) + '</span>' +
+            '<span class="nk-section-marks">' + (en ? marks + ' Marks' : kn(marks) + ' ಅಂಕ') + '</span></div>' + R[a](it, en);
+        });
+      } catch (e) { console.warn('nalikali activity render', e); }
+      return r;
+    };
+  }
+  var prevK = window.renderDedicatedNalikaliKeyAnswers;
+  if (typeof prevK === 'function') {
+    window.renderDedicatedNalikaliKeyAnswers = function (allQuestions) {
+      var args = Array.prototype.slice.call(arguments);
+      try {
+        args[0] = (allQuestions || []).map(function (it) {
+          if (!actOf(it)) return it;
+          return Object.assign({}, it, { type: 'vsa_1m', q: String(it.q || DEFAULT_Q[actOf(it)]).split('\n')[0], ans: autoAns(it) });
+        });
+      } catch (e) {}
+      var r = prevK.apply(this, args);
+      try {
+        if (!(allQuestions || []).some(actOf)) return r;
+        var key = document.getElementById('rendered-key');
+        var secs = key ? Array.prototype.filter.call(key.querySelectorAll('div'), function (d) { return /1\.5px solid (rgb\(203, 213, 225\)|#cbd5e1)/i.test(d.getAttribute('style') || '') && /margin-bottom: 8px/.test(d.getAttribute('style') || ''); }) : [];
+        if (secs.length === allQuestions.length) allQuestions.forEach(function (it, i) {
+          if (!actOf(it)) return;
+          var sec = secs[i], hd = sec.firstElementChild, spans = hd ? hd.querySelectorAll('span, b') : [];
+          if (spans.length) spans[spans.length - 1].textContent = kn(+it.marks || 0) + ' ಅಂಕ';
+          while (hd && hd.nextSibling) sec.removeChild(hd.nextSibling);
+          var d = document.createElement('div');
+          d.setAttribute('style', 'font-size:11pt;font-weight:700;color:#0f172a;padding:4px 6px;');
+          d.textContent = autoAns(it);
+          sec.appendChild(d);
+        });
+      } catch (e) {}
+      return r;
+    };
+  }
 })();
 </script>
 </body>
