@@ -26766,6 +26766,18 @@ function wyStrongKeyPart() {
     try { generateExamPackageFromBank = window.generateExamPackageFromBank; } catch (e) {}
   }
 })();
+
+// =========================================================================
+// 🖨️ ನೀಲನಕ್ಷೆ ಮುದ್ರಣ: ಹಂತ 5 (ಮಾಸ್ಟರ್ ಕೋಷ್ಟಕ) ಹಿಂದಿನ ಪುಟದಲ್ಲಿ ಜಾಗವಿದ್ದರೆ ಅಲ್ಲೇ ಬರಲಿ
+// (ಜಾಗ ಸಾಲದಿದ್ದರೆ ಮಾತ್ರ ಮುಂದಿನ ಪುಟಕ್ಕೆ — ಕೋಷ್ಟಕ ಎರಡು ಪುಟಗಳಲ್ಲಿ ಹರಿಯುವುದಿಲ್ಲ)
+// =========================================================================
+(function installBlueprintPrintFlow() {
+  var css = document.createElement('style');
+  css.textContent = '@media print{' +
+    'html body #rendered-blueprint .a4-board-sheet:not(:first-child){page-break-before:auto !important;break-before:auto !important;page-break-inside:avoid !important;break-inside:avoid !important;margin-top:4mm !important}' +
+    '}';
+  document.head.appendChild(css);
+})();
 </script>
 </body>
 </html>
