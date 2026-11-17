@@ -25175,6 +25175,8 @@ function wyStrongKeyPart() {
   // =====================================================================
   var ADM = { members: {}, orders: [], q: '', ostat: 'pending' };
   async function adminGet(path) { var r = await fetch(FB + path + '.json?t=' + Date.now()); if (!r.ok) throw new Error('DB ' + r.status); return r.json(); }
+  function paidOf(o) { return o && o.paid != null && o.paid !== '' ? (+o.paid || 0) : (+(o || {}).total || 0); }
+  function hasApproved(m) { return ADM.orders.some(function (o) { return o.mob === m && o.status === 'done'; }); }
   async function adminSend(method, path, val) {
     var r = await fetch(FB + path + '.json', { method: method, headers: { 'Content-Type': 'application/json' }, body: val === undefined ? undefined : JSON.stringify(val) });
     if (!r.ok) throw new Error('DB ' + r.status); return r.json();
@@ -25242,7 +25244,7 @@ function wyStrongKeyPart() {
   async function renderOrders(reload) {
     var v = $('adm-view-orders'); if (!v) return;
     if (reload) { loading(v); try { await adminLoad(); } catch (e) { return admErr(v, e); } }
-    var mon = today().slice(0, 7), sum = function (l) { return l.reduce(function (a, o) { return a + (+o.total || 0); }, 0); };
+    var mon = today().slice(0, 7), sum = function (l) { return l.reduce(function (a, o) { return a + paidOf(o); }, 0); };
     var done = ADM.orders.filter(function (o) { return o.status === 'done'; });
     var list = ADM.orders.filter(function (o) { return ADM.ostat === 'all' || o.status === ADM.ostat; });
     var cnt = function (s) { return ADM.orders.filter(function (o) { return o.status === s; }).length; };
@@ -25259,9 +25261,11 @@ function wyStrongKeyPart() {
           '<div class="text-[11px] font-bold text-slate-500">🏫 ' + esc(o.school || prof.school) + ' · 📱 <a class="underline" href="https://wa.me/91' + esc(o.mob) + '" target="_blank" rel="noopener">' + esc(o.mob) + '</a></div>' +
           '<div class="text-[10px] font-bold text-slate-400">#' + esc(String(o.id).slice(-6).toUpperCase()) + ' · ' + esc(String(o.at).slice(0, 16).replace('T', ' ')) + '</div></div>' +
           '<div class="text-right"><div class="text-lg font-black text-emerald-700">' + rupee(o.total) + '</div>' +
+          (o.admin ? '<div class="text-[10px] font-black text-indigo-700">Admin ನೇರವಾಗಿ ಕೊಟ್ಟದ್ದು</div>' : '') +
+          (o.status === 'done' ? '<div class="text-[11px] font-black text-slate-800">ಬಂದ ಹಣ: ' + rupee(paidOf(o)) + ' <button type="button" data-opaid="' + esc(o.mob + '/' + o.id) + '" title="ಬದಲಿಸಿ">✏️</button></div>' : '') +
           (o.sub ? '<div class="text-[10px] font-bold text-slate-500">' + rupee(o.sub) + (o.coupon ? ' − ' + esc(o.coupon) + ' ' + rupee(o.couponOff) : '') + (o.ref ? ' − ಸ್ನೇಹಿತ (' + esc(o.ref) + (ADM.members[o.ref] ? '' : ' ⚠️ ಸದಸ್ಯರಲ್ಲ') + ') ' + rupee(o.refOff) : '') + (o.creditUsed ? ' − ಬಹುಮಾನ ' + rupee(o.creditUsed) : '') + '</div>' : '') + '<div class="text-[11px] font-black ' + (o.utr ? 'text-slate-700' : 'text-slate-400') + '">UTR: ' + esc(o.utr || '—') + '</div></div></div>' +
           '<ul class="text-xs font-bold text-slate-700 list-disc pl-5">' + (o.items || []).map(function (k) { return '<li>' + esc(packLabel(k)) + '</li>'; }).join('') + '</ul>' +
-          (o.status === 'pending' ? '<div class="flex flex-wrap items-center gap-2 pt-1"><label class="text-[11px] font-bold text-slate-500">ಮಾನ್ಯತೆ: <input type="date" data-exp="' + esc(o.mob + '/' + o.id) + '" value="' + yearEnd() + '" data-def="' + yearEnd() + '" class="px-2 py-1 border rounded-lg text-xs font-bold"></label>' +
+          (o.status === 'pending' ? '<div class="flex flex-wrap items-center gap-2 pt-1"><label class="text-[11px] font-bold text-slate-500">ಬಂದ ಹಣ ₹ <input type="number" min="0" data-paid="' + esc(o.mob + '/' + o.id) + '" value="' + esc(o.total) + '" class="w-20 px-2 py-1 border rounded-lg text-xs font-bold"></label><label class="text-[11px] font-bold text-slate-500">ಮಾನ್ಯತೆ: <input type="date" data-exp="' + esc(o.mob + '/' + o.id) + '" value="' + yearEnd() + '" data-def="' + yearEnd() + '" class="px-2 py-1 border rounded-lg text-xs font-bold"></label>' +
             '<button type="button" data-approve="' + esc(o.mob + '/' + o.id) + '" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black">✅ ಹಣ ಬಂದಿದೆ — ತೆರೆಯಿರಿ</button>' +
             '<button type="button" data-reject="' + esc(o.mob + '/' + o.id) + '" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black">❌ ತಿರಸ್ಕರಿಸಿ</button></div>'
             : '<div class="text-[11px] font-black ' + (o.status === 'done' ? 'text-emerald-700' : 'text-rose-600') + '">' + (o.status === 'done' ? '✅ ತೆರೆಯಲಾಗಿದೆ' + (o.expiry ? ' · ' + dmy(o.expiry) + ' ವರೆಗೆ' : '') : '❌ ತಿರಸ್ಕರಿಸಲಾಗಿದೆ') + '</div>') +
@@ -25280,6 +25284,7 @@ function wyStrongKeyPart() {
             return '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black ' + (live ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-slate-100 text-slate-400 line-through') + '">' + esc(packLabel(k)) + ' · ' + dmy(packs[k]) +
               ' <button type="button" data-mpedit="' + esc(m + '|' + k) + '" title="ಬದಲಿಸಿ" class="text-indigo-700">✏️</button> <button type="button" data-mrev="' + esc(m + '|' + k) + '" title="ತೆಗೆ" class="text-rose-600">✕</button></span>';
           }).join('') : '<span class="text-[11px] font-bold text-slate-400">ಯಾವ ಪ್ಯಾಕ್ ಇಲ್ಲ</span>') + '</div>' +
+          (Object.keys(packs).some(function (k) { return String(packs[k]) >= t; }) && !hasApproved(m) ? '<div class="p-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900">⚠️ ಪ್ಯಾಕ್ ಇದೆ, ಆದರೆ ಅನುಮೋದಿತ ಆರ್ಡರ್ ಇಲ್ಲ — ಆದ್ದರಿಂದ "ಸಕ್ರಿಯ ಸದಸ್ಯರು" ಪಟ್ಟಿಯಲ್ಲಿ ಕಾಣುವುದಿಲ್ಲ. ನಿಜವಾಗಿ ಕೊಟ್ಟದ್ದಾದರೆ <button type="button" data-mrecord="' + m + '" class="underline font-black">ಸಕ್ರಿಯಕ್ಕೆ ಸೇರಿಸಿ</button>, ಇಲ್ಲವಾದರೆ ✕ ಒತ್ತಿ ಪ್ಯಾಕ್ ತೆಗೆಯಿರಿ.</div>' : '') +
           '<button type="button" data-mgrant="' + m + '" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-black">+ ಪ್ಯಾಕ್ ಕೊಡಿ</button><div id="wy-grant-' + m + '"></div><div id="wy-pedit-' + m + '"></div></div>';
   }
   async function refreshMemberViews() { try { await adminLoad(); } catch (e) {} renderMembers(false); renderActiveMembers(false); }
@@ -25287,18 +25292,38 @@ function wyStrongKeyPart() {
   async function renderActiveMembers(reload) {
     var uv = $('adm-view-users'); if (!uv) return;
     if (reload) { try { await adminLoad(); } catch (e) { return; } }
-    var t = today();
-    var mobs = Object.keys(ADM.members).filter(function (m) { var pk = ADM.members[m].packs || {}; return Object.keys(pk).some(function (k) { return String(pk[k]) >= t; }); })
+    var old = $('wy-active-mem'); if (old) old.remove();
+    var list = $('wy-users-list'); if (!list) return;
+    list.querySelectorAll('[data-wymem]').forEach(function (e) { e.remove(); });
+    var t = today(), in30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+    // ಸಕ್ರಿಯ = ನೀವು ಅನುಮೋದಿಸಿದ (ಅಥವಾ Admin ನೇರವಾಗಿ ಕೊಟ್ಟ) ಆರ್ಡರ್ ಇರುವವರು ಮಾತ್ರ
+    var mobs = Object.keys(ADM.members).filter(function (m) { var pk = ADM.members[m].packs || {}; return hasApproved(m) && Object.keys(pk).length; })
       .sort(function (a, b) { return String((ADM.members[a].profile || {}).name || '').localeCompare(String((ADM.members[b].profile || {}).name || '')); });
-    var box = $('wy-active-mem');
-    if (!box) { box = document.createElement('details'); box.id = 'wy-active-mem'; box.open = true; box.className = 'p-3 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-2'; uv.insertBefore(box, uv.firstChild); }
-    box.innerHTML = '<summary class="cursor-pointer text-sm font-black text-emerald-900">🆕 ಹೊಸ ವ್ಯವಸ್ಥೆಯಲ್ಲಿ ಪ್ಯಾಕ್ ಖರೀದಿಸಿದ ಸದಸ್ಯರು (' + mobs.length + ') <span class="text-[11px] font-bold text-emerald-700">· ಮೊಬೈಲ್ + ಪಾಸ್‌ವರ್ಡ್ ಲಾಗಿನ್ · ಪ್ಯಾಕ್ ಇಲ್ಲದ ನೋಂದಣಿಗಳು "ಹೊಸ ಸದಸ್ಯರು" ಟ್ಯಾಬ್‌ನಲ್ಲಿ</span></summary>' +
-      (mobs.length ? '<div class="space-y-2 pt-2">' + mobs.map(memberCardHtml).join('') + '</div>' : '<div class="text-[11px] font-bold text-slate-500 pt-2">ಇನ್ನೂ ಯಾರೂ ಖರೀದಿಸಿಲ್ಲ.</div>');
-    // ಟ್ಯಾಬ್ ಎಣಿಕೆ: ಹಳೆಯ Key ಖಾತೆಗಳು (ನಕಲು ಬಿಟ್ಟು) + ಹೊಸ ಸದಸ್ಯರು
-    var oldN = uv.querySelectorAll('#wy-users-list [data-cat]:not([data-dup="1"])').length;
+    var tpl = document.createElement('template');
+    mobs.forEach(function (m) {
+      tpl.innerHTML = memberCardHtml(m);
+      var el = tpl.content.firstElementChild, rec = ADM.members[m], pk = rec.packs || {}, p = rec.profile || {};
+      var dates = Object.keys(pk).map(function (k) { return String(pk[k]); }), maxD = dates.sort().pop() || '';
+      el.setAttribute('data-wymem', '1');
+      el.setAttribute('data-cat', p.role === 'school' ? 'school' : 'teacher');
+      el.setAttribute('data-q', el.getAttribute('data-memq'));
+      el.setAttribute('data-exp', maxD < t ? '1' : '0');
+      el.setAttribute('data-soon', Object.keys(pk).some(function (k) { var d = String(pk[k]); return d >= t && d <= in30; }) ? '1' : '0');
+      el.className = el.className.replace('border ', 'border-2 border-emerald-200 ');
+      el.querySelector('.text-sm.font-black').insertAdjacentHTML('beforeend', ' <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">📱 ಮೊಬೈಲ್ ಲಾಗಿನ್ ಸದಸ್ಯರು</span>');
+      list.insertBefore(el, list.firstChild);
+    });
+    // ಚಿಪ್ ಎಣಿಕೆಗಳು: ಹಳೆಯ + ಹೊಸ ಒಟ್ಟಿಗೆ
+    var cards = Array.from(list.querySelectorAll('[data-cat]')).filter(function (e) { return e.dataset.dup !== '1'; });
+    var cnt = function (f) { return cards.filter(f).length; };
+    var setC = function (id, n) { var b = $(id), sp = b && b.querySelector('span'); if (sp) sp.textContent = n; };
+    setC('wy-ucat-all', cards.length);
+    ['teacher', 'school', 'competitive'].forEach(function (c) { setC('wy-ucat-' + c, cnt(function (e) { return e.dataset.cat === c; })); });
+    setC('wy-ust-expired', cnt(function (e) { return e.dataset.exp === '1'; }));
+    setC('wy-ust-soon', cnt(function (e) { return e.dataset.soon === '1'; }));
     var tab = $('adm-tab-users');
-    if (tab) tab.innerHTML = '<i class="fa-solid fa-users"></i> ಸಕ್ರಿಯ ಸದಸ್ಯರು (' + (oldN + mobs.length) + ')';
-    filterActiveMembers();
+    if (tab) tab.innerHTML = '<i class="fa-solid fa-users"></i> ಸಕ್ರಿಯ ಸದಸ್ಯರು (' + cards.length + ')';
+    if (window.wyApplyUserFilter) window.wyApplyUserFilter();
   }
   function filterActiveMembers() {
     var q = String((($('wy-users-search') || {}).value) || '').toLowerCase().trim();
@@ -25312,33 +25337,37 @@ function wyStrongKeyPart() {
     var p = k.split(':'), t = p[0];
     if (['sub', 'st', 'cls', 'stg', 'sch', 'all'].indexOf(t) === -1) return k;
     if ((t === 'sch' || t === 'all') && md === 'bi') return 'stg:bi:p';   // ದ್ವಿಭಾಷಾ = 1–5 ಮಾತ್ರ
-    if (t === 'stg' && p[1] === 'bi' && md !== 'bi' && p[2] === 'p') return 'sch:' + md;
     p[1] = md; return p.join(':');
   }
-  function packEditForm(m, k) {
-    var box = $('wy-pedit-' + m); if (!box) return;
-    var hasMed = ['sub', 'st', 'cls', 'stg', 'sch', 'all'].indexOf(k.split(':')[0]) !== -1, cur = k.split(':')[1];
+  function packEditForm(m, k, el) {
+    var card = el && el.closest ? el.closest('[data-memq]') : null;
+    var box = (card && card.querySelector('#wy-pedit-' + m)) || $('wy-pedit-' + m); if (!box) return;
+    var packs = (ADM.members[m] || {}).packs || {};
+    var hasMed = ['sub', 'st', 'cls', 'stg', 'sch', 'all'].indexOf(k.split(':')[0]) !== -1;
     var S = 'px-2 py-1.5 border rounded-lg text-xs font-bold';
-    var exp = String(((ADM.members[m] || {}).packs || {})[k] || '');
-    box.innerHTML = '<div class="mt-2 p-3 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2"><div class="text-[11px] font-black text-indigo-900">✏️ ' + esc(packLabel(k)) + ' — ಬದಲಿಸಿ</div><div class="flex flex-wrap gap-2 items-center">' +
-      (hasMed ? '<select data-pe="m" class="' + S + '">' + ['kn', 'en', 'bi'].map(function (x) { return '<option value="' + x + '"' + (x === cur ? ' selected' : '') + '>' + MEDIA[x].n + '</option>'; }).join('') + '</select>' : '') +
-      '<label class="text-[11px] font-bold">ಕೊನೆಯ ದಿನ <input data-pe="x" type="date" value="' + esc(exp) + '" class="' + S + '"></label>' +
-      '<label class="text-[11px] font-bold flex items-center gap-1"><input data-pe="keep" type="checkbox"> ಹಳೆಯದನ್ನೂ ಉಳಿಸಿ (ಎರಡೂ ಮಾಧ್ಯಮ ಬೇಕಿದ್ದರೆ)</label></div>' +
+    var exp = String(packs[k] || '');
+    var meds = ['kn', 'en', 'bi'], keyOf = function (md) { return withMedium(k, md); };
+    box.innerHTML = '<div class="mt-2 p-3 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2"><div class="text-[11px] font-black text-indigo-900">✏️ ' + esc(packLabel(k)) + ' — ಬದಲಿಸಿ</div>' +
+      (hasMed ? '<div class="flex flex-wrap gap-3 items-center text-xs font-bold"><span class="text-[11px] text-slate-600">ಮಾಧ್ಯಮ (ಬೇಕಾದಷ್ಟು ಟಿಕ್ ಮಾಡಿ):</span>' + meds.map(function (md) {
+          var kk = keyOf(md), ok = itemsOf(kk).length > 0, on = kk === k || packs[kk] != null;
+          return '<label class="flex items-center gap-1 ' + (ok ? '' : 'opacity-40') + '"><input type="checkbox" data-pe-med="' + md + '"' + (on ? ' checked' : '') + (ok ? '' : ' disabled') + '> ' + MEDIA[md].n + (md === 'bi' ? ' (1–5)' : '') + '</label>';
+        }).join('') + '</div>' : '') +
+      '<label class="text-[11px] font-bold block">ಕೊನೆಯ ದಿನ <input data-pe="x" type="date" value="' + esc(exp) + '" class="' + S + '"></label>' +
       '<div class="flex items-center justify-between gap-2"><span data-pe="pv" class="text-[11px] font-black text-slate-700"></span><span class="flex gap-1"><button type="button" data-pe="cancel" class="px-3 py-1.5 rounded-xl bg-white border text-xs font-black">ರದ್ದು</button><button type="button" data-pe="go" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-black">💾 ಉಳಿಸಿ</button></span></div></div>';
     function q(n) { return box.querySelector('[data-pe="' + n + '"]'); }
-    function nk() { return q('m') ? withMedium(k, q('m').value) : k; }
-    function upd() { var x = nk(); q('pv').textContent = itemsOf(x).length ? '→ ' + packLabel(x) + (q('keep').checked && x !== k ? ' (ಹಳೆಯದೂ ಉಳಿಯುತ್ತದೆ)' : '') : '⚠️ ಈ ಮಾಧ್ಯಮಕ್ಕೆ ಈ ಪ್ಯಾಕ್ ಸಾಧ್ಯವಿಲ್ಲ (ದ್ವಿಭಾಷಾ 1–5 ಮಾತ್ರ)'; }
+    function picked() { return hasMed ? Array.from(box.querySelectorAll('[data-pe-med]:checked')).map(function (c) { return keyOf(c.dataset.peMed); }) : [k]; }
+    function upd() { var L = picked(); q('pv').textContent = L.length ? '→ ' + L.map(packLabel).join(' + ') : '⚠️ ಕನಿಷ್ಠ ಒಂದು ಮಾಧ್ಯಮ ಟಿಕ್ ಮಾಡಿ'; }
     box.addEventListener('change', upd); upd();
     q('cancel').onclick = function () { box.innerHTML = ''; };
     q('go').onclick = async function () {
-      var x = nk(), d = q('x').value;
-      if (!itemsOf(x).length) return toast('ಈ ಸಂಯೋಜನೆ ಸಾಧ್ಯವಿಲ್ಲ', true);
+      var L = picked(), d = q('x').value;
+      if (!L.length) return toast('ಕನಿಷ್ಠ ಒಂದು ಮಾಧ್ಯಮ ಟಿಕ್ ಮಾಡಿ', true);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return toast('ಕೊನೆಯ ದಿನ ಆರಿಸಿ', true);
       try {
-        var body = {}; body[x] = d;
+        var body = {}; L.forEach(function (x) { body[x] = d; });
         await adminSend('PATCH', '/members/' + m + '/packs', body);
-        if (x !== k && !q('keep').checked) await adminSend('DELETE', '/members/' + m + '/packs/' + k);
-        toast('✅ ' + packLabel(x) + ' · ' + dmy(d)); refreshMemberViews();
+        if (hasMed) for (var i = 0; i < meds.length; i++) { var kk = keyOf(meds[i]); if (L.indexOf(kk) === -1 && (packs[kk] != null || kk === k)) await adminSend('DELETE', '/members/' + m + '/packs/' + kk); }
+        toast('✅ ' + L.map(packLabel).join(' + ') + ' · ' + dmy(d)); refreshMemberViews();
       } catch (e) { toast(errMsg(e), true); }
     };
   }
@@ -25356,8 +25385,9 @@ function wyStrongKeyPart() {
       (mobs.length ? mobs.map(memberCardHtml).join('') : '<div class="p-8 text-center bg-slate-50 border rounded-2xl text-slate-500 font-bold text-xs">ಇನ್ನೂ ಹೊಸ ನೋಂದಣಿ ಇಲ್ಲ.</div>');
     var qi = $('wy-mem-q'); if (qi) qi.oninput = function () { ADM.q = qi.value; var pos = qi.selectionStart; renderMembers(false); var n = $('wy-mem-q'); n.focus(); n.setSelectionRange(pos, pos); };
   }
-  function grantForm(m) {
-    var box = $('wy-grant-' + m); if (!box) return;
+  function grantForm(m, el) {
+    var card = el && el.closest ? el.closest('[data-memq]') : null;
+    var box = (card && card.querySelector('#wy-grant-' + m)) || $('wy-grant-' + m); if (!box) return;
     var types = [['sub', 'ವಿಷಯ ಪ್ಯಾಕ್'], ['st', 'ವಿಷಯ ಶಿಕ್ಷಕ'], ['cls', 'ತರಗತಿ'], ['stg', 'ಹಂತ'], ['sch', 'ಶಾಲಾ'], ['all', 'ಸಂಪೂರ್ಣ'], ['nmms', 'NMMS'], ['ent', 'ಪ್ರವೇಶ'], ['cmp', 'ಸ್ಪರ್ಧಾ ಕಾಂಬೋ']];
     var S = 'px-2 py-1.5 border rounded-lg text-xs font-bold';
     box.innerHTML = '<div class="mt-2 p-3 rounded-2xl bg-slate-50 border grid grid-cols-2 sm:grid-cols-4 gap-1.5">' +
@@ -25370,6 +25400,7 @@ function wyStrongKeyPart() {
       '<select data-g="n" class="' + S + '"><option value="">GMAT + SAT</option><option value="gmat">GMAT</option><option value="sat">SAT</option></select>' +
       '<select data-g="e" class="' + S + '">' + exams().map(function (e) { return '<option value="' + esc(e.id) + '">' + esc(e.name) + '</option>'; }).join('') + '</select>' +
       '<input data-g="x" type="date" value="' + yearEnd() + '" class="' + S + '">' +
+      '<label class="col-span-2 sm:col-span-4 text-[11px] font-bold text-slate-600">ಪಡೆದ ಹಣ ₹ <input data-g="amt" type="number" min="0" placeholder="ಉಚಿತವಾದರೆ 0" class="' + S + ' w-28"> <span class="text-slate-400">(ಆದಾಯದ ಲೆಕ್ಕಕ್ಕೆ; ಈ ಸದಸ್ಯರು ಸಕ್ರಿಯ ಪಟ್ಟಿಗೆ ಸೇರುತ್ತಾರೆ)</span></label>' +
       '<div class="col-span-2 sm:col-span-4 flex items-center justify-between gap-2"><span data-g="preview" class="text-[11px] font-black text-slate-700"></span><button type="button" data-g="go" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-black">✅ ಕೊಡಿ</button></div></div>';
     function val(n) { return box.querySelector('[data-g="' + n + '"]').value; }
     function key() {
@@ -25388,7 +25419,14 @@ function wyStrongKeyPart() {
     box.querySelector('[data-g="go"]').onclick = async function () {
       var k = key(); if (!itemsOf(k).length) return toast('ಸಂಯೋಜನೆ ಸರಿಯಿಲ್ಲ', true);
       var body = {}; body[k] = val('x');
-      try { await adminSend('PATCH', '/members/' + m + '/packs', body); toast('✅ ' + packLabel(k) + ' ಕೊಡಲಾಗಿದೆ'); refreshMemberViews(); } catch (e) { toast(errMsg(e), true); }
+      var amt = val('amt'); if (amt === '') { if (!confirm('ಪಡೆದ ಹಣ ಬರೆದಿಲ್ಲ. ಉಚಿತವಾಗಿ (₹0) ಕೊಡುತ್ತಿದ್ದೀರಾ?')) return; amt = 0; }
+      var pr = (ADM.members[m] || {}).profile || {};
+      try {
+        await adminSend('PATCH', '/members/' + m + '/packs', body);
+        await adminSend('PUT', '/orders/' + m + '/adm' + Date.now().toString(36), { items: [k], total: priceOf(k), paid: Math.max(0, +amt || 0), status: 'done', admin: true,
+          at: new Date().toISOString(), doneAt: new Date().toISOString(), expiry: val('x'), name: pr.name || '', school: pr.school || '', mobile: m, role: pr.role || 'teacher' });
+        toast('✅ ' + packLabel(k) + ' ಕೊಡಲಾಗಿದೆ'); refreshMemberViews();
+      } catch (e) { toast(errMsg(e), true); }
     };
   }
   async function decideOrder(ref, ok) {
@@ -25403,7 +25441,9 @@ function wyStrongKeyPart() {
         var body = {}; (o.items || []).forEach(function (k) { body[k] = manual ? exp : yearEnd(have[k]); });
         exp = Object.keys(body).map(function (k) { return body[k]; }).sort().pop() || exp;
         await adminSend('PATCH', '/members/' + mob + '/packs', body);
-        await adminSend('PATCH', '/orders/' + mob + '/' + id, { status: 'done', doneAt: new Date().toISOString(), expiry: exp });
+        var pin = document.querySelector('[data-paid="' + ref + '"]'), upd = { status: 'done', doneAt: new Date().toISOString(), expiry: exp };
+        if (pin && pin.value !== '' && +pin.value !== +o.total) upd.paid = Math.max(0, +pin.value || 0);
+        await adminSend('PATCH', '/orders/' + mob + '/' + id, upd);
         toast('✅ ' + (o.name || mob) + ' ಅವರ ಪ್ಯಾಕ್ ತೆರೆಯಲಾಗಿದೆ');
         try {
           if (o.creditUsed) { var bc = Math.max(0, (+(ADM.members[mob] || {}).credit || 0) - o.creditUsed); await adminSend('PUT', '/members/' + mob + '/credit', bc); if (ADM.members[mob]) ADM.members[mob].credit = bc; }
@@ -25440,7 +25480,7 @@ function wyStrongKeyPart() {
     // ಆದಾಯ: ಕಳೆದ 6 ತಿಂಗಳು
     var months = [];
     for (var i = 5; i >= 0; i--) { var dt = new Date(); dt.setDate(1); dt.setMonth(dt.getMonth() - i); months.push(dt.toISOString().slice(0, 7)); }
-    var rev = months.map(function (m) { return done.filter(function (o) { return String(o.doneAt || o.at).slice(0, 7) === m; }).reduce(function (a, o) { return a + (+o.total || 0); }, 0); });
+    var rev = months.map(function (m) { return done.filter(function (o) { return String(o.doneAt || o.at).slice(0, 7) === m; }).reduce(function (a, o) { return a + paidOf(o); }, 0); });
     var maxRev = Math.max.apply(null, rev.concat([1]));
     // ಹೆಚ್ಚು ಮಾರಾಟವಾದ ಪ್ಯಾಕ್ ಪ್ರಕಾರ
     var kinds = {};
@@ -25458,6 +25498,12 @@ function wyStrongKeyPart() {
     var wa = function (m, msg) { return '<a target="_blank" rel="noopener" href="https://wa.me/91' + esc(m) + '?text=' + encodeURIComponent(msg) + '" class="px-2 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-black whitespace-nowrap">WhatsApp</a>'; };
     var card = function (title, body, cls) { return '<div class="p-4 bg-white border ' + (cls || 'border-slate-200') + ' rounded-2xl space-y-2"><div class="text-xs font-black text-slate-800">' + title + '</div>' + body + '</div>'; };
     var tileS = function (n, l, sub) { return '<div class="p-3 bg-white border rounded-2xl"><div class="text-xl font-black text-slate-900">' + n + '</div><div class="text-[11px] font-bold text-slate-500">' + l + '</div>' + (sub ? '<div class="text-[10px] font-bold text-slate-400">' + sub + '</div>' : '') + '</div>'; };
+    try {
+      var apN = mems.filter(function (x) { return hasApproved(x.mob) && Object.keys(x.packs || {}).length; }).length;
+      Array.from(box.querySelectorAll('div')).filter(function (d) { return d.children.length >= 2 && /ಒಟ್ಟು ಬಳಕೆದಾರರು/.test((d.children[0] || {}).textContent || ''); }).slice(0, 1).forEach(function (tl) {
+        var num = tl.children[1]; if (num && !tl.dataset.wyMem) { tl.dataset.wyMem = '1'; num.textContent = (+num.textContent || 0) + apN; tl.insertAdjacentHTML('beforeend', '<div class="text-[10px] font-bold opacity-75">ಇದರಲ್ಲಿ ಮೊಬೈಲ್ ಲಾಗಿನ್ ಸದಸ್ಯರು: ' + apN + '</div>'); }
+      });
+    } catch (e) {}
     var el = document.createElement('div'); el.id = 'wy-sales-report'; el.className = 'space-y-3 pt-2';
     el.innerHTML = '<h3 class="font-black text-sm text-slate-900 pt-2 border-t">🛒 ಮಾರಾಟ ಮತ್ತು ಹೊಸ ಸದಸ್ಯರು</h3>' +
       '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">' +
@@ -25557,13 +25603,28 @@ function wyStrongKeyPart() {
     v.appendChild(box); draw();
   }
   document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-ost],[data-ost-reload],[data-approve],[data-reject],[data-mgrant],[data-mrev],[data-mtrial],[data-medit],[data-mpedit]'); if (!t) return;
-    if (t.dataset.mpedit) { var pe = t.dataset.mpedit.split('|'); return packEditForm(pe[0], pe.slice(1).join('|')); }
+    var t = e.target.closest && e.target.closest('[data-ost],[data-ost-reload],[data-approve],[data-reject],[data-mgrant],[data-mrev],[data-mtrial],[data-medit],[data-mpedit],[data-opaid],[data-mrecord]'); if (!t) return;
+    if (t.dataset.opaid) {
+      var or = t.dataset.opaid.split('/'), oo = ADM.orders.filter(function (x) { return x.mob === or[0] && x.id === or[1]; })[0]; if (!oo) return;
+      var nv = prompt('ನಿಜವಾಗಿ ಬಂದ ಹಣ ₹ (ಉಚಿತವಾದರೆ 0):', paidOf(oo)); if (nv == null) return;
+      nv = Math.max(0, +String(nv).replace(/[^0-9.]/g, '') || 0);
+      adminSend('PATCH', '/orders/' + or[0] + '/' + or[1], { paid: nv }).then(function () { oo.paid = nv; toast('ಉಳಿಸಲಾಗಿದೆ'); renderOrders(false); }).catch(function (x) { toast(errMsg(x), true); });
+      return;
+    }
+    if (t.dataset.mrecord) {   // ಹಳೆಯದಾಗಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಪ್ಯಾಕ್: ಸಕ್ರಿಯ ಪಟ್ಟಿಗೆ ಸೇರಿಸಲು ದಾಖಲೆ
+      var mm = t.dataset.mrecord, rec0 = ADM.members[mm] || {}, pr0 = rec0.profile || {}, live0 = Object.keys(rec0.packs || {}).filter(function (k) { return String(rec0.packs[k]) >= today(); });
+      var av = prompt('ಇವರು ನಿಜವಾಗಿ ಖರೀದಿಸಿದವರೇ? ಪಡೆದ ಹಣ ₹ ಬರೆಯಿರಿ (ಉಚಿತವಾದರೆ 0):', ''); if (av == null) return;
+      adminSend('PUT', '/orders/' + mm + '/adm' + Date.now().toString(36), { items: live0, total: live0.reduce(function (a, k) { return a + priceOf(k); }, 0), paid: Math.max(0, +av || 0), status: 'done', admin: true,
+        at: new Date().toISOString(), doneAt: new Date().toISOString(), expiry: live0.map(function (k) { return rec0.packs[k]; }).sort().pop() || '', name: pr0.name || '', school: pr0.school || '', mobile: mm, role: pr0.role || 'teacher' })
+        .then(function () { toast('✅ ಸಕ್ರಿಯ ಪಟ್ಟಿಗೆ ಸೇರಿಸಲಾಗಿದೆ'); refreshMemberViews(); }).catch(function (x) { toast(errMsg(x), true); });
+      return;
+    }
+    if (t.dataset.mpedit) { var pe = t.dataset.mpedit.split('|'); return packEditForm(pe[0], pe.slice(1).join('|'), t); }
     if (t.dataset.ost) { ADM.ostat = t.dataset.ost; renderOrders(false); }
     else if (t.dataset.ostReload) renderOrders(true);
     else if (t.dataset.approve) busy(t, function () { return decideOrder(t.dataset.approve, true); });
     else if (t.dataset.reject) decideOrder(t.dataset.reject, false);
-    else if (t.dataset.mgrant) grantForm(t.dataset.mgrant);
+    else if (t.dataset.mgrant) grantForm(t.dataset.mgrant, t);
     else if (t.dataset.mrev) {
       var mk = t.dataset.mrev.split('|');
       if (!confirm(packLabel(mk[1]) + ' — ಈ ಪ್ಯಾಕ್ ತೆಗೆಯಲೇ?')) return;
