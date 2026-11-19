@@ -21060,7 +21060,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
   var INDEX_KEY = 'wy_local_saved_papers_master';
   var LEGACY_PREFIX = 'wy_local_saved_papers_';
   var BLOB_PREFIX = 'wy_paper_blob_';
-  var MAX_PAPERS = 10;
+  var MAX_PAPERS = 300;   // ಈ ಸಾಧನದಲ್ಲಿ (IndexedDB) — Firebase ಗೆ ಏನೂ ಹೋಗುವುದಿಲ್ಲ
   var DB_NAME = 'wy_papers_db', STORE = 'papers';
 
   var memBlobs = {};      // IndexedDB/localStorage ಎರಡೂ ವಿಫಲವಾದರೆ (ಈ session ಗೆ ಮಾತ್ರ)
@@ -21093,6 +21093,13 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
   }
   function putBlob(rec) {
     return idbRun('readwrite', function (st) { return st.put(rec); }).then(function () { return 'idb'; }).catch(function () {
+      // ಸಂಗ್ರಹ ತುಂಬಿದ್ದರೆ ಅತಿ ಹಳೆಯ ಕೆಲವನ್ನು ತೆಗೆದು ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನ
+      var drop = idx.filter(function (m) { return m.id !== rec.id && !m.pin; }).slice(-Math.max(5, Math.round(idx.length / 10)));
+      if (!drop.length || rec.id === '__index__') throw new Error('full');
+      var ids = drop.map(function (m) { return m.id; });
+      idx = idx.filter(function (m) { return ids.indexOf(m.id) === -1; });
+      return Promise.all(ids.map(delBlob)).then(function () { persistIndex(); return idbRun('readwrite', function (st) { return st.put(rec); }); }).then(function () { return 'idb'; });
+    }).catch(function () {
       try { localStorage.setItem(BLOB_PREFIX + rec.id, JSON.stringify(rec)); return 'ls'; }
       catch (e) { memBlobs[rec.id] = rec; return 'mem'; }
     });
@@ -21143,6 +21150,11 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
   }
 
   window.getSavedPapersListFromStorage = function () { return idx.slice(); };
+  function trimToMax() {
+    for (var i = idx.length - 1; idx.length > MAX_PAPERS && i >= 0; i--) {
+      if (!idx[i].pin) { var old = idx.splice(i, 1)[0]; delBlob(old.id); }
+    }
+  }
 
   function refreshUI() {
     try { if (typeof window.refreshTopNavSavedPapersButton === 'function') window.refreshTopNavSavedPapersButton(); } catch (e) {}
@@ -21177,7 +21189,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
         }
       });
       // ಹತ್ತಕ್ಕಿಂತ ಹೆಚ್ಚಿದ್ದರೆ ಹಳೆಯದನ್ನು ತೆಗೆಯಿರಿ
-      while (idx.length > MAX_PAPERS) { var old = idx.pop(); delBlob(old.id); }
+      trimToMax();
       purgeLegacyKeys();
       persistIndex();
       refreshUI();
@@ -21227,6 +21239,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
       savedAt: now.toLocaleDateString('kn-IN', { month: 'short', day: 'numeric' }) + ' ' + now.toLocaleTimeString('kn-IN', { hour: '2-digit', minute: '2-digit' }),
       title: grade + 'ನೇ ತರಗತಿ ' + subj,
       subject: subj, grade: grade,
+      medium: val('cfg-medium', ''),
       examType: val('cfg-exam-type', 'ಪರೀಕ್ಷೆ'), examDate: val('cfg-exam-date', ''),
       totalMarks: marks, questionsCount: q.length, set: set
     };
@@ -21246,10 +21259,10 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     return putBlob(built.rec).then(function (where) {
       // ಅದೇ ಪತ್ರಿಕೆ ಮತ್ತೆ ಬಂದರೆ ಹಳೆಯ ನಕಲು ಬದಲಿಸಿ
       var removed = [];
-      idx = idx.filter(function (m) { if (m.sig && m.sig === built.meta.sig) { removed.push(m.id); return false; } return true; });
+      idx = idx.filter(function (m) { if (m.sig && m.sig === built.meta.sig) { removed.push(m.id); if (m.note) built.meta.note = m.note; if (m.pin) built.meta.pin = m.pin; return false; } return true; });
       removed.forEach(delBlob);
       idx.unshift(built.meta);
-      while (idx.length > MAX_PAPERS) { var old = idx.pop(); delBlob(old.id); }   // FIFO
+      trimToMax();   // FIFO (📌 ಪಿನ್ ಮಾಡಿದವು ಉಳಿಯುತ್ತವೆ)
       persistIndex();
       refreshUI();
       if (typeof showToast === 'function') {
@@ -21402,6 +21415,179 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     try { if (typeof window.openSavedPapersHistoryModal === 'function') window.openSavedPapersHistoryModal(); } catch (e) {}
     if (typeof showToast === 'function') showToast('🧹 ಎಲ್ಲಾ ಪತ್ರಿಕೆಗಳನ್ನು ಕ್ಲಿಯರ್ ಮಾಡಲಾಗಿದೆ.', 'info');
   };
+
+  // ---------------- 📚 ಹೊಸ ಲೈಬ್ರರಿ: ಹುಡುಕಾಟ, ಫಿಲ್ಟರ್, ಟಿಪ್ಪಣಿ, ಪಿನ್, ಬ್ಯಾಕಪ್ ----------------
+  var HS = { q: '', cls: '', sub: '', show: 30 };
+  function hEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function idxOf(id) { for (var i = 0; i < idx.length; i++) if (String(idx[i].id) === String(id)) return i; return -1; }
+  function pad2(n) { return ('0' + n).slice(-2); }
+  function whenOf(m) { var d = new Date(+m.id); return isNaN(d) ? (m.savedAt || '') : pad2(d.getDate()) + '-' + pad2(d.getMonth() + 1) + '-' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+  function clsOf(m) { return String(m.grade || '').replace(/\D/g, ''); }
+  function subOf(m) { return String(m.subject || '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/^🌟\s*/, '').trim(); }
+  function filtered() {
+    var q = HS.q.trim().toLowerCase();
+    return idx.filter(function (m) {
+      if (HS.cls && clsOf(m) !== HS.cls) return false;
+      if (HS.sub && subOf(m) !== HS.sub) return false;
+      if (!q) return true;
+      return [m.title, m.subject, m.examType, m.examDate, m.note, whenOf(m), m.set].join(' ').toLowerCase().indexOf(q) !== -1;
+    }).sort(function (a, b) { return (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || (b.id || 0) - (a.id || 0); });
+  }
+  function cardHtml(m) {
+    var id = hEsc(m.id);
+    return '<div class="p-3 bg-slate-50 border ' + (m.pin ? 'border-amber-300 bg-amber-50/40' : 'border-slate-200') + ' rounded-2xl space-y-2 hover:border-indigo-300 hover:bg-white transition">' +
+      '<div class="flex flex-wrap items-start justify-between gap-2">' +
+        '<div class="min-w-0"><h4 class="font-black text-sm text-slate-900 leading-snug">' + (m.pin ? '📌 ' : '') + hEsc(m.title) + '</h4>' +
+        '<div class="flex flex-wrap gap-1 mt-1 text-[10px] font-bold">' +
+          '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">' + hEsc(String(m.examType || '').split(' (')[0]) + '</span>' +
+          (m.set ? '<span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">SET ' + hEsc(m.set) + '</span>' : '') +
+          '<span class="bg-white border text-slate-600 px-2 py-0.5 rounded-full">🎯 ' + hEsc(m.totalMarks) + ' ಅಂಕ · ' + hEsc(m.questionsCount) + ' ಪ್ರಶ್ನೆ</span>' +
+          (m.examDate ? '<span class="bg-white border text-slate-600 px-2 py-0.5 rounded-full">📅 ' + hEsc(m.examDate) + '</span>' : '') +
+        '</div>' +
+        (m.note ? '<div class="mt-1 text-[11px] font-bold text-indigo-800">📝 ' + hEsc(m.note) + '</div>' : '') +
+        '</div>' +
+        '<span class="text-[10px] text-slate-500 font-bold whitespace-nowrap">🕒 ' + hEsc(whenOf(m)) + '</span>' +
+      '</div>' +
+      '<div class="flex flex-wrap items-center justify-end gap-1.5">' +
+        '<button type="button" data-h-pin="' + id + '" title="ಪಿನ್ — ಹಳೆಯದು ಅಳಿಸುವಾಗ ಇದು ಉಳಿಯುತ್ತದೆ" class="px-2.5 py-1.5 bg-white border rounded-xl text-xs font-bold cursor-pointer hover:bg-amber-50">' + (m.pin ? '📌 ಪಿನ್ ತೆಗೆ' : '📌 ಪಿನ್') + '</button>' +
+        '<button type="button" data-h-note="' + id + '" class="px-2.5 py-1.5 bg-white border rounded-xl text-xs font-bold cursor-pointer hover:bg-indigo-50">✏️ ಟಿಪ್ಪಣಿ</button>' +
+        '<button type="button" data-h-del="' + id + '" class="px-2.5 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold cursor-pointer hover:bg-rose-100">🗑</button>' +
+        '<button type="button" data-h-open="' + id + '" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow cursor-pointer">👁 ತೆರೆಯಿರಿ / ಪ್ರಿಂಟ್</button>' +
+      '</div></div>';
+  }
+  function renderList() {
+    var box = document.getElementById('wy-hist-list'); if (!box) return;
+    var list = filtered();
+    var cnt = document.getElementById('wy-hist-count');
+    if (cnt) cnt.textContent = (list.length === idx.length ? idx.length + ' ಪತ್ರಿಕೆಗಳು' : list.length + ' / ' + idx.length + ' ಪತ್ರಿಕೆಗಳು') + ' (ಗರಿಷ್ಠ ' + MAX_PAPERS + ')';
+    if (!idx.length) {
+      box.innerHTML = '<div class="p-10 text-center bg-slate-50 border border-slate-200 rounded-2xl text-slate-500 font-bold text-xs space-y-2"><div class="text-3xl">📭</div><p>ಇನ್ನೂ ಯಾವುದೇ ಪತ್ರಿಕೆಗಳು ಉಳಿಸಲ್ಪಟ್ಟಿಲ್ಲ.</p><p class="text-[11px] text-slate-400">ಪತ್ರಿಕೆ ರಚಿಸಿದ ತಕ್ಷಣ ಇಲ್ಲಿ ಉಳಿಯುತ್ತದೆ.</p></div>';
+      return;
+    }
+    if (!list.length) { box.innerHTML = '<div class="p-6 text-center text-slate-500 font-bold text-xs">🔍 ಹೊಂದುವ ಪತ್ರಿಕೆ ಇಲ್ಲ.</div>'; return; }
+    box.innerHTML = list.slice(0, HS.show).map(cardHtml).join('') +
+      (list.length > HS.show ? '<button type="button" data-h-more="1" class="w-full py-2 bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-xl text-xs font-black cursor-pointer">⬇ ಇನ್ನಷ್ಟು ತೋರಿಸಿ (' + (list.length - HS.show) + ' ಉಳಿದಿವೆ)</button>' : '');
+  }
+  function optList(vals, cur, allLabel, fmt) {
+    return '<option value="">' + allLabel + '</option>' + vals.map(function (v) { return '<option value="' + hEsc(v) + '"' + (v === cur ? ' selected' : '') + '>' + hEsc(fmt ? fmt(v) : v) + '</option>'; }).join('');
+  }
+  window.openSavedPapersHistoryModal = function () {
+    var wrapper = document.getElementById('auth-modal-wrapper');
+    if (!wrapper) { wrapper = document.createElement('div'); wrapper.id = 'auth-modal-wrapper'; document.body.appendChild(wrapper); }
+    wrapper.className = 'fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto';
+    wrapper.style.display = 'flex';
+    var classes = [], subs = [];
+    idx.forEach(function (m) { var c = clsOf(m), s = subOf(m); if (c && classes.indexOf(c) === -1) classes.push(c); if (s && subs.indexOf(s) === -1) subs.push(s); });
+    classes.sort(function (a, b) { return a - b; }); subs.sort();
+    if (HS.cls && classes.indexOf(HS.cls) === -1) HS.cls = '';
+    if (HS.sub && subs.indexOf(HS.sub) === -1) HS.sub = '';
+    var selC = 'px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold';
+    wrapper.innerHTML =
+      '<div id="wy-hist-modal" class="bg-white rounded-3xl p-5 sm:p-6 space-y-3 max-w-2xl w-full shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">' +
+        '<div class="flex items-center justify-between border-b pb-3 gap-2">' +
+          '<div class="flex items-center gap-3"><div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow">📂</div>' +
+          '<div><h3 class="font-black text-base text-slate-900 leading-tight">ಉಳಿಸಿದ ಪತ್ರಿಕೆಗಳು</h3><p id="wy-hist-count" class="text-[11px] text-slate-500 font-bold"></p></div></div>' +
+          '<button type="button" onclick="closeAuthModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-black cursor-pointer">✕</button>' +
+        '</div>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2">' +
+          '<input id="wy-hist-q" type="search" value="' + hEsc(HS.q) + '" placeholder="🔍 ಹುಡುಕಿ: ವಿಷಯ, ಪರೀಕ್ಷೆ, ಟಿಪ್ಪಣಿ, ದಿನಾಂಕ…" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">' +
+          '<select id="wy-hist-cls" class="' + selC + '">' + optList(classes, HS.cls, 'ಎಲ್ಲಾ ತರಗತಿ', function (c) { return c + 'ನೇ ತರಗತಿ'; }) + '</select>' +
+          '<select id="wy-hist-sub" class="' + selC + '">' + optList(subs, HS.sub, 'ಎಲ್ಲಾ ವಿಷಯ') + '</select>' +
+        '</div>' +
+        '<div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">' +
+          '<button type="button" data-h-export="1" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-xl cursor-pointer hover:bg-indigo-100">⬇ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಡೌನ್‌ಲೋಡ್</button>' +
+          '<button type="button" data-h-import="1" class="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl cursor-pointer hover:bg-emerald-100">⬆ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಸೇರಿಸಿ</button>' +
+          '<input id="wy-hist-file" type="file" accept=".json,application/json" class="hidden">' +
+          (idx.length ? '<button type="button" onclick="window.clearAllSavedPapersHistory()" class="ml-auto px-2.5 py-1.5 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 hover:bg-rose-100 cursor-pointer">🗑 ಎಲ್ಲಾ ಅಳಿಸಿ</button>' : '') +
+        '</div>' +
+        '<p class="text-[10.5px] leading-snug font-semibold text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-xl p-2">💡 ಪತ್ರಿಕೆಗಳು <b>ಈ ಕಂಪ್ಯೂಟರ್/ಮೊಬೈಲ್‌ನ ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ</b> ಉಳಿಯುತ್ತವೆ (ಗರಿಷ್ಠ ' + MAX_PAPERS + '). ಬೇರೆ ಸಾಧನಕ್ಕೆ ಬೇಕಾದರೆ "ಬ್ಯಾಕಪ್ ಫೈಲ್ ಡೌನ್‌ಲೋಡ್" ಮಾಡಿ, ಆ ಸಾಧನದಲ್ಲಿ "ಬ್ಯಾಕಪ್ ಫೈಲ್ ಸೇರಿಸಿ". ಮುಖ್ಯ ಪತ್ರಿಕೆಗಳನ್ನು 📌 ಪಿನ್ ಮಾಡಿ — ಅವು ಸ್ವಯಂ ಅಳಿಸುವುದಿಲ್ಲ. ✏️ ಟಿಪ್ಪಣಿಯಲ್ಲಿ ಶಿಕ್ಷಕರ ಹೆಸರು/ವಿಭಾಗ ಬರೆಯಬಹುದು.</p>' +
+        '<div id="wy-hist-list" class="space-y-2.5"></div>' +
+      '</div>';
+    renderList();
+  };
+  function bindHistUI() {
+    if (window.__wyHistBound) return; window.__wyHistBound = true;
+    document.addEventListener('input', function (e) {
+      if (e.target && e.target.id === 'wy-hist-q') { HS.q = e.target.value; HS.show = 30; renderList(); }
+    }, true);
+    document.addEventListener('change', function (e) {
+      var t = e.target; if (!t) return;
+      if (t.id === 'wy-hist-cls') { HS.cls = t.value; HS.show = 30; renderList(); }
+      else if (t.id === 'wy-hist-sub') { HS.sub = t.value; HS.show = 30; renderList(); }
+      else if (t.id === 'wy-hist-file' && t.files && t.files[0]) { importFile(t.files[0]); t.value = ''; }
+    }, true);
+    document.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest && e.target.closest('#wy-hist-modal [data-h-open],#wy-hist-modal [data-h-del],#wy-hist-modal [data-h-pin],#wy-hist-modal [data-h-note],#wy-hist-modal [data-h-more],#wy-hist-modal [data-h-export],#wy-hist-modal [data-h-import]');
+      if (!b) return;
+      var d = b.dataset, i;
+      if (d.hMore) { HS.show += 30; renderList(); return; }
+      if (d.hExport) { exportPapers(); return; }
+      if (d.hImport) { var f = document.getElementById('wy-hist-file'); if (f) f.click(); return; }
+      if (d.hOpen != null) { i = idxOf(d.hOpen); if (i !== -1) window.loadSavedPaperDirectly(i); return; }
+      if (d.hDel != null) { i = idxOf(d.hDel); if (i !== -1 && confirm('"' + idx[i].title + '" ಪತ್ರಿಕೆಯನ್ನು ಅಳಿಸಬೇಕೇ?')) window.deleteSingleSavedPaper(i); return; }
+      if (d.hPin != null) { i = idxOf(d.hPin); if (i === -1) return; if (idx[i].pin) delete idx[i].pin; else idx[i].pin = 1; persistIndex(); renderList(); return; }
+      if (d.hNote != null) {
+        i = idxOf(d.hNote); if (i === -1) return;
+        var v = prompt('ಟಿಪ್ಪಣಿ (ಉದಾ: ಶಿಕ್ಷಕರ ಹೆಸರು, 7ಎ ವಿಭಾಗ):', idx[i].note || '');
+        if (v === null) return;
+        v = String(v).trim().slice(0, 80);
+        if (v) idx[i].note = v; else delete idx[i].note;
+        persistIndex(); renderList(); return;
+      }
+    }, true);
+  }
+  bindHistUI();
+
+  function exportPapers() {
+    var list = filtered();
+    if (!list.length) { if (typeof showToast === 'function') showToast('ಬ್ಯಾಕಪ್ ಮಾಡಲು ಪತ್ರಿಕೆ ಇಲ್ಲ.', 'error'); return; }
+    if (typeof showToast === 'function') showToast('⏳ ' + list.length + ' ಪತ್ರಿಕೆಗಳ ಬ್ಯಾಕಪ್ ಸಿದ್ಧವಾಗುತ್ತಿದೆ…', 'info');
+    Promise.all(list.map(function (m) { return getBlob(m.id).then(function (rec) { return rec ? { meta: m, rec: rec } : null; }); })).then(function (rows) {
+      rows = rows.filter(Boolean);
+      var data = { app: 'wy-qp-papers', v: 1, exportedAt: new Date().toISOString(), papers: rows };
+      var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      var d = new Date(), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'withyou-papers-' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + '.json';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+      if (typeof showToast === 'function') showToast('✅ ' + rows.length + ' ಪತ್ರಿಕೆಗಳ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಡೌನ್‌ಲೋಡ್ ಆಯಿತು.', 'success');
+    }).catch(function () { if (typeof showToast === 'function') showToast('⚠️ ಬ್ಯಾಕಪ್ ಮಾಡಲಾಗಲಿಲ್ಲ.', 'error'); });
+  }
+  function importFile(file) {
+    var rd = new FileReader();
+    rd.onload = function () {
+      var data; try { data = JSON.parse(rd.result); } catch (e) { data = null; }
+      if (!data || data.app !== 'wy-qp-papers' || !Array.isArray(data.papers)) { if (typeof showToast === 'function') showToast('⚠️ ಇದು With You ಪತ್ರಿಕೆ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಅಲ್ಲ.', 'error'); return; }
+      var have = {}, sigs = {};
+      idx.forEach(function (m) { have[m.id] = 1; if (m.sig) sigs[m.sig] = 1; });
+      var todo = data.papers.filter(function (p) {
+        var m = p && p.meta, r = p && p.rec;
+        if (!m || !r || !m.id || String(r.id) !== String(m.id) || m.id === '__index__') return false;
+        if (!(r.html && typeof r.html === 'object') && !Array.isArray(r.questionsSnapshot)) return false;
+        if (have[m.id] || (m.sig && sigs[m.sig])) return false;
+        have[m.id] = 1; if (m.sig) sigs[m.sig] = 1;
+        return true;
+      });
+      var keys = ['id', 'sig', 'savedAt', 'title', 'subject', 'grade', 'medium', 'examType', 'examDate', 'totalMarks', 'questionsCount', 'set', 'note', 'pin', 'legacy'];
+      var added = 0;
+      todo.reduce(function (pr, p) {
+        return pr.then(function () {
+          return putBlob(p.rec).then(function (where) {
+            if (where !== 'idb' && where !== 'ls') return;
+            var m = {}; keys.forEach(function (k) { if (p.meta[k] != null) m[k] = p.meta[k]; });
+            idx.push(m); added++;
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        idx.sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
+        trimToMax(); persistIndex(); refreshUI();
+        window.openSavedPapersHistoryModal();
+        if (typeof showToast === 'function') showToast(added ? '✅ ' + added + ' ಪತ್ರಿಕೆಗಳನ್ನು ಸೇರಿಸಲಾಗಿದೆ' + (data.papers.length - added ? ' (' + (data.papers.length - added) + ' ಈಗಾಗಲೇ ಇದ್ದವು)' : '') + '.' : 'ಎಲ್ಲಾ ಪತ್ರಿಕೆಗಳು ಈಗಾಗಲೇ ಇಲ್ಲಿ ಇವೆ.', added ? 'success' : 'info');
+      });
+    };
+    rd.readAsText(file);
+  }
 
   // ---------------- ಪ್ರಾರಂಭ ----------------
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
@@ -26211,6 +26397,27 @@ function wyStrongKeyPart() {
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fire(el) { if (el) el.dispatchEvent(new Event('change', { bubbles: true })); }
   function opts(sel) { return sel ? Array.from(sel.options).filter(function (o) { return !o.disabled && !o.hidden && o.style.display !== 'none'; }) : []; }
+  var MED_ALL = [['kannada_medium', 'ಕನ್ನಡ ಮಾಧ್ಯಮ'], ['english_medium', 'ಇಂಗ್ಲಿಷ್ ಮಾಧ್ಯಮ'], ['bilingual_medium', 'ದ್ವಿಭಾಷಾ (1–5ನೇ)']];
+  function sessionMediums() {
+    try {
+      if (sessionStorage.getItem('wy_is_admin') === 'true') return null;
+      var s = JSON.parse(localStorage.getItem('wy_active_session') || 'null');
+      if (!s || !s.isLoggedIn) return null;
+      var v = s.allowedMediums; if (v == null || v === '') return null;
+      var arr = Array.isArray(v) ? v : (typeof v === 'object' ? Object.keys(v).map(function (k) { return v[k]; }) : String(v).split(','));
+      arr = arr.map(function (x) { return String(x || '').trim(); }).filter(function (x) { return MED_ALL.some(function (m) { return m[0] === x; }); });
+      return arr.length ? arr : null;
+    } catch (e) { return null; }
+  }
+  function accountMediums(med) {
+    var al = sessionMediums();
+    var present = med ? Array.from(med.options).map(function (o) { return o.value; }) : [];
+    return MED_ALL.filter(function (m) {
+      if (al) return al.indexOf(m[0]) !== -1;
+      return m[0] === 'bilingual_medium' || present.indexOf(m[0]) !== -1;
+    });
+  }
+  function clsNums(sel) { return opts(sel).map(function (o) { return [o.value, parseInt(String(o.value).replace(/\D/g, '')) || 0]; }); }
   function toast(m, bad) { if (window.wyStoreToast) window.wyStoreToast(m, bad); else alert(m); }
   var QMAP = { 10: 8, 15: 12, 20: 15, 25: 16, 30: 20, 40: 24, 50: 28, 60: 32, 80: 38, 100: 45 };
   var ENTRANCE_RX = /NMMS|ಮೊರಾರ್ಜಿ|ಆದರ್ಶ|ಕಿತ್ತೂರು|ಸೈನಿಕ|ಪ್ರವೇಶ ಪರೀಕ್ಷೆ|KREIS/i;
@@ -26289,7 +26496,9 @@ function wyStrongKeyPart() {
     var qn = (($('cfg-total-questions') || {}).value || '');
     // ---- ಆಯ್ಕೆ ಪಟ್ಟಿ (Mitra toolbar) ----
     var f = [];
-    if (medOpts.length > 1) f.push(field('ಮಾಧ್ಯಮ', selHtml('med', medOpts.map(function (o) { return [o.value, o.textContent.replace(/\(.*?\)/g, '').trim()]; }), med.value)));
+    // ಖಾತೆಗೆ ಒಂದಕ್ಕಿಂತ ಹೆಚ್ಚು ಮಾಧ್ಯಮ ಇದ್ದರೆ ಮಾಧ್ಯಮ ಆಯ್ಕೆ ಯಾವಾಗಲೂ ಕಾಣಬೇಕು (ದ್ವಿಭಾಷಾ 6+ ತರಗತಿಯಲ್ಲಿ ಪಟ್ಟಿಯಿಂದ ತೆಗೆದರೂ)
+    var medList = accountMediums(med);
+    if (medList.length > 1) f.push(field('ಮಾಧ್ಯಮ', selHtml('med', medList, med && med.value)));
     f.push(field('ತರಗತಿ', selHtml('cls', opts(cls).map(function (o) { return [o.value, classLabel(o.value) + 'ನೇ ತರಗತಿ']; }), cls && cls.value), 'w-cls'));
     f.push(field('ವಿಷಯ', selHtml('sub', opts(sub).filter(function (o) { return o.value; }).map(function (o) { return [o.value, shortSubject(o.textContent || o.value)]; }), sub && sub.value), 'w-sub'));
     if (!isEntrance) {
@@ -26360,9 +26569,32 @@ function wyStrongKeyPart() {
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t || !t.dataset || !t.dataset.qg || !t.closest || !t.closest('#wy-qg')) return;
     var v = t.value, k = t.dataset.qg;
-    if (k === 'med') { var md = $('cfg-medium'); md.value = v; fire(md); setTimeout(function () { applyExamDefaults(true); later(300); }, 250); }
+    if (k === 'med') {
+      var md = $('cfg-medium');
+      if (v === 'bilingual_medium' && grade() > 5) {
+        // ದ್ವಿಭಾಷಾ 1–5ನೇ ತರಗತಿಗೆ ಮಾತ್ರ → 5ಕ್ಕಿಂತ ಕೆಳಗಿನ (ಅತಿ ಹತ್ತಿರದ) ತರಗತಿಗೆ ಬದಲಿಸಿ
+        var low = clsNums($('cfg-class')).filter(function (c) { return c[1] >= 1 && c[1] <= 5; });
+        if (!low.length) { toast('ದ್ವಿಭಾಷಾ ಮಾಧ್ಯಮ 1–5ನೇ ತರಗತಿಗೆ ಮಾತ್ರ. ನಿಮ್ಮ ಖಾತೆಯಲ್ಲಿ ಆ ತರಗತಿಗಳಿಲ್ಲ.', true); later(50); return; }
+        var cl2 = $('cfg-class'), sb2 = $('cfg-subject'), prevSub2 = sb2 && sb2.value;
+        cl2.value = low[low.length - 1][0]; fire(cl2);
+        setTimeout(function () {
+          try { if (window.handleMediumOrClassChange) window.handleMediumOrClassChange(); } catch (e) {}
+          var md2 = $('cfg-medium');
+          if (md2 && Array.from(md2.options).some(function (o) { return o.value === 'bilingual_medium' && !o.disabled; })) { md2.value = 'bilingual_medium'; fire(md2); }
+          setTimeout(function () {
+            var s2 = $('cfg-subject');
+            if (s2 && prevSub2 && Array.from(s2.options).some(function (o) { return o.value === prevSub2; }) && s2.value !== prevSub2) { s2.value = prevSub2; fire(s2); }
+            applyExamDefaults(true); later(300);
+          }, 250);
+        }, 250);
+        toast('ದ್ವಿಭಾಷಾ ಮಾಧ್ಯಮ 1–5ನೇ ತರಗತಿಗೆ ಮಾತ್ರ — ' + low[low.length - 1][1] + 'ನೇ ತರಗತಿಗೆ ಬದಲಿಸಲಾಗಿದೆ.');
+        return;
+      }
+      md.value = v; fire(md); setTimeout(function () { applyExamDefaults(true); later(300); }, 250);
+    }
     else if (k === 'cls') {
       var cl = $('cfg-class'), sb0 = $('cfg-subject'), prevSub = sb0 && sb0.value;
+      if (($('cfg-medium') || {}).value === 'bilingual_medium' && (parseInt(String(v).replace(/\D/g, '')) || 0) > 5) toast('ದ್ವಿಭಾಷಾ 1–5ನೇ ತರಗತಿಗೆ ಮಾತ್ರ — ' + classLabel(v) + 'ನೇ ತರಗತಿಗೆ ಇತರ ಮಾಧ್ಯಮ ಆಯ್ಕೆಯಾಗಿದೆ.');
       cl.value = v; fire(cl);
       setTimeout(function () {
         var s = $('cfg-subject');
@@ -26511,6 +26743,16 @@ function wyStrongKeyPart() {
     } catch (e) {} finally { busy = false; }
   }
   window.wyRefreshKeySession = refresh;
+  // ಲಾಗಿನ್ ಆದ ತಕ್ಷಣವೂ ಅದೇ ಮೂಲದಿಂದ (accounts) ವಿವರ — ಲಾಗಿನ್ ಮತ್ತು refresh ನಂತರ ಒಂದೇ ತರಗತಿ/ಮಾಧ್ಯಮ
+  ['handleTeacherLoginSubmit', 'handleSchoolLoginSubmit', 'handleCompetitiveLoginSubmit'].forEach(function (fn) {
+    var prev = window[fn]; if (typeof prev !== 'function') return;
+    window[fn] = async function () {
+      var r = await prev.apply(this, arguments);
+      try { var s = sess(); if (s && s.isLoggedIn && s.acct) { last = 0; setTimeout(function () { refresh(true); }, 300); } } catch (e) {}
+      return r;
+    };
+    try { if (fn === 'handleTeacherLoginSubmit') handleTeacherLoginSubmit = window[fn]; else if (fn === 'handleSchoolLoginSubmit') handleSchoolLoginSubmit = window[fn]; else handleCompetitiveLoginSubmit = window[fn]; } catch (e) {}
+  });
   setTimeout(function () { refresh(true); }, 1500);
   setInterval(function () { refresh(false); }, 10 * 60e3);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(false); });
