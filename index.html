@@ -20757,13 +20757,15 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
   function mean(a, k) { var t = 0; a.forEach(function (o) { t += o[k]; }); return t / a.length; }
   function median(arr) { var s = arr.slice().sort(function (a, b) { return a - b; }); return s[(s.length / 2) | 0]; }
 
+  var perCol = Math.ceil(totalQ / 4);
+  function primaryGrid() {
   // ---- 8. ಕಾಲಮ್‌ಗಳು: 16 ಲಂಬ ಸಾಲುಗಳು (4 ಬ್ಲಾಕ್ × A,B,C,D) ----
   var numBlocks = 4;
   var colsAll = clusterBy(bubbles, 'x', d * 0.45);
   var maxCnt = 0; colsAll.forEach(function (g) { if (g.length > maxCnt) maxCnt = g.length; });
   var colsG = colsAll.filter(function (g) { return g.length >= maxCnt * 0.5; });
   if (colsG.length !== numBlocks * 4) {
-    return { ok: false, reason: 'ಕಾಲಮ್‌ಗಳ ಸಂಖ್ಯೆ ಹೊಂದಿಕೆಯಾಗಿಲ್ಲ', cols: colsG.length, expected: numBlocks * 4, d: d, found: bubbles.length };
+    return { ok: false, reason: 'ಕಾಲಮ್‌ಗಳ ಸಂಖ್ಯೆ ಹೊಂದಿಕೆಯಾಗಿಲ್ಲ', cols: colsG.length, expected: numBlocks * 4, d: d, found: bubbles.length, theta: theta, sizes: colsAll.map(function (g) { return g.length; }) };
   }
   colsG.sort(function (a, b) { return mean(a, 'x') - mean(b, 'x'); });
 
@@ -20862,6 +20864,144 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     }
   });
   if (problems.length || ambiguous) return { ok: false, reason: 'ಸಾಲುಗಳ ಸ್ಥಾನ ಖಚಿತವಾಗಿಲ್ಲ', problems: problems.slice(0, 5), d: d };
+  return { qMap: qMap };
+  }
+
+  // ---- 8b. ಪರ್ಯಾಯ: ಫೋಟೋ ಓರೆ/ದೃಷ್ಟಿಕೋನ (perspective) ಹೆಚ್ಚಿದ್ದಾಗ — A,B,C,D ಸರಪಳಿಗಳಿಂದ ಜಾಲರಿ ----
+  function chainGrid() {
+    function headerAbove(c, lpx, extra) {
+      extra = extra || 0;
+      var p0 = c.pts[0], p3 = c.pts[3], ux = c.sx / c.sl, uy = c.sy / c.sl, nx = -uy, ny = ux;  // n = ಕೆಳಗಿನ ದಿಕ್ಕು
+      var bg = ringBg(p0) || 200, best = 0;
+      for (var f = 0.55 + extra; f <= 1.15 + extra; f += 0.1) {
+        var t = 0, k = 0;
+        for (var a = -0.3; a <= 1.3; a += 0.05) {
+          var x = p0.cx + (p3.cx - p0.cx) * a - nx * lpx * f, y = p0.cy + (p3.cy - p0.cy) * a - ny * lpx * f;
+          var xi = Math.round(x), yi = Math.round(y);
+          if (xi < 0 || yi < 0 || xi >= W || yi >= H) continue;
+          k++; if (gray[yi * W + xi] < bg * 0.5) t++;
+        }
+        if (k && t / k > best) best = t / k;
+      }
+      return best;
+    }
+    var n = bubbles.length, k2, right = new Array(n), left = new Array(n);
+    for (k2 = 0; k2 < n; k2++) {
+      var b0 = bubbles[k2], best = -1, bd = 1e9;
+      for (var j2 = 0; j2 < n; j2++) {
+        if (j2 === k2) continue;
+        var o2 = bubbles[j2], dx = o2.cx - b0.cx, dy = o2.cy - b0.cy;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < d * 1.05 || dist > d * 1.95 || dx <= 0 || Math.abs(dy) > dx * 0.45) continue;
+        if (dist < bd) { bd = dist; best = j2; }
+      }
+      right[k2] = best;
+    }
+    for (k2 = 0; k2 < n; k2++) if (right[k2] >= 0) { if (left[right[k2]] === undefined) left[right[k2]] = k2; else left[right[k2]] = -2; }
+    var chains = [];
+    for (k2 = 0; k2 < n; k2++) {
+      if (left[k2] !== undefined) continue;          // ಸರಪಳಿಯ ಮೊದಲ ವೃತ್ತ ಮಾತ್ರ
+      var ch = [k2], cur = k2;
+      while (right[cur] >= 0 && left[right[cur]] === cur && ch.length < 6) { cur = right[cur]; ch.push(cur); }
+      if (ch.length !== 4) continue;
+      var pts = ch.map(function (ix) { return bubbles[ix]; });
+      var sx = (pts[3].cx - pts[0].cx) / 3, sy = (pts[3].cy - pts[0].cy) / 3, sl = Math.sqrt(sx * sx + sy * sy);
+      var okEven = pts.every(function (pp, ii) { var ex = pts[0].cx + sx * ii, ey = pts[0].cy + sy * ii; return Math.abs(pp.cx - ex) + Math.abs(pp.cy - ey) < sl * 0.35; });
+      if (!okEven) continue;
+      chains.push({ pts: pts, cx: (pts[0].cx + pts[3].cx) / 2, cy: (pts[0].cy + pts[3].cy) / 2, sx: sx, sy: sy, sl: sl });
+    }
+    if (chains.length < Math.max(8, totalQ * 0.7)) return { ok: false, reason: 'ಸರಪಳಿ ಸಾಕಾಗಿಲ್ಲ', chains: chains.length };
+    // ಸಾಮಾನ್ಯ ದಿಕ್ಕು
+    var msx = 0, msy = 0; chains.forEach(function (c) { msx += c.sx; msy += c.sy; });
+    var th = Math.atan2(msy, msx), c_ = Math.cos(th), s_ = Math.sin(th);
+    chains.forEach(function (c) { c.t = c.cx * c_ + c.cy * s_; c.u = -c.cx * s_ + c.cy * c_; });
+    var spc = median(chains.map(function (c) { return c.sl; }));
+    // ಬ್ಲಾಕ್‌ಗಳು: ದಿಕ್ಕಿನ ಉದ್ದಕ್ಕೆ ದೊಡ್ಡ ಅಂತರ
+    var blocks = clusterBy(chains, 't', spc * 2.2).filter(function (g) { return g.length >= 2; });
+    if (blocks.length !== 4) return { ok: false, reason: 'ಬ್ಲಾಕ್ ಹೊಂದಿಕೆಯಾಗಿಲ್ಲ', blocks: blocks.length };
+    blocks.sort(function (a, b) { return mean(a, 't') - mean(b, 't'); });
+    var info = [], allGaps = [];
+    for (var bI = 0; bI < 4; bI++) {
+      var exp = Math.max(0, Math.min(perCol, totalQ - bI * perCol));
+      var list = blocks[bI].slice().sort(function (a, b) { return a.u - b.u; });
+      for (var gI = 1; gI < list.length; gI++) allGaps.push(list[gI].u - list[gI - 1].u);
+      info.push({ list: list, exp: exp });
+    }
+    var lp = median(allGaps.filter(function (g) { return g > spc * 0.6; }));
+    if (!lp) return { ok: false, reason: 'ಸಾಲು ಅಂತರ ಸಿಗಲಿಲ್ಲ' };
+    // ಗ್ರಿಡ್‌ನ ಮೇಲೆ/ಕೆಳಗೆ ದೂರದ ಬೇರೆ ಸರಪಳಿಗಳನ್ನು (ಉದಾ: SET ವೃತ್ತಗಳು) ತೆಗೆಯುವುದು
+    info.forEach(function (bi) {
+      var L = bi.list;
+      while (L.length > 1 && (L[1].u - L[0].u) > lp * 1.6) L.shift();
+      while (L.length > 1 && (L[L.length - 1].u - L[L.length - 2].u) > lp * 1.6) L.pop();
+    });
+    var tops = info.filter(function (bi) { return bi.list.length >= 2; }).map(function (bi) { return bi.list[0].u; });
+    if (tops.length < 3) return { ok: false, reason: 'ಬ್ಲಾಕ್‌ಗಳು ಸಾಕಾಗಿಲ್ಲ' };
+    var refTop = median(tops);
+    var qm = {};
+    for (bI = 0; bI < 4; bI++) {
+      var bi = info[bI], idxs = [];
+      // ಮೊದಲ ಸಾಲು ನಿಜವಾಗಿಯೂ 1ನೇ ಸಾಲೇ? — ಅದರ ಮೇಲೆ ಕಪ್ಪು ಶೀರ್ಷಿಕೆ ಪಟ್ಟಿ ಇರಬೇಕು (ಇಲ್ಲದಿದ್ದರೆ ಸಾಲು ತಪ್ಪಬಹುದು → ಮರು ಸ್ಕ್ಯಾನ್)
+      // ಮೊದಲ ಸಾಲು ಕಾಣೆಯಾಗಿದ್ದರೆ: ಶೀರ್ಷಿಕೆ ಪಟ್ಟಿ 1 ಅಥವಾ 2 ಸಾಲು ಮೇಲಿದ್ದರೆ ಅಷ್ಟು ಸಾಲು ಕಾಣೆ
+      var offR = -1;
+      for (var mS = 0; mS <= 2; mS++) { if (headerAbove(bi.list[0], lp, mS) >= 0.45) { offR = mS; break; } }
+      if (offR < 0) return { ok: false, reason: 'ಮೊದಲ ಸಾಲು ಖಚಿತವಿಲ್ಲ', block: bI };
+      var ok2 = true;
+      // ಅನುಕ್ರಮ ಅಂತರದಿಂದ ಸಾಲು ಸಂಖ್ಯೆ (perspective ನಿಂದ ಅಂತರ ಸ್ವಲ್ಪ ಬದಲಾದರೂ ತಪ್ಪಾಗದಂತೆ)
+      bi.list.forEach(function (c, k) {
+        var r;
+        if (k === 0) r = offR;
+        else {
+          var gl = (c.u - bi.list[k - 1].u) / (k > 1 ? Math.min(lp * 1.15, Math.max(lp * 0.85, bi.list[k - 1].u - bi.list[k - 2].u)) : lp);
+          r = idxs[k - 1] + Math.max(1, Math.round(gl));
+          if (Math.abs(gl - Math.round(gl)) > 0.3) ok2 = false;
+        }
+        if (r >= bi.exp) ok2 = false;
+        idxs.push(r);
+      });
+      if (!ok2) return { ok: false, reason: 'ಸಾಲು ಹೊಂದಿಕೆ ಖಚಿತವಿಲ್ಲ', block: bI };
+      for (var z = 1; z < idxs.length; z++) if (idxs[z] === idxs[z - 1]) return { ok: false, reason: 'ಎರಡು ಸರಪಳಿ ಒಂದೇ ಸಾಲು', block: bI };
+      if (bi.list.length < Math.min(2, bi.exp)) return { ok: false, reason: 'ಬ್ಲಾಕ್‌ನಲ್ಲಿ ಸರಪಳಿ ಕಡಿಮೆ', block: bI };
+      bi.list.forEach(function (c, k) { qm[bI * perCol + idxs[k] + 1] = c.pts.map(function (pp) { return { cx: pp.cx, cy: pp.cy, r: pp.r }; }); });
+      // ಕಾಣೆಯಾದ ಸಾಲುಗಳು: ಪ್ರತಿ ಆಯ್ಕೆಗೆ (A..D) ಸಾಲು ಸಂಖ್ಯೆ → ಸ್ಥಾನ ರೇಖೀಯ ಹೊಂದಾಣಿಕೆ
+      if (bi.list.length < bi.exp) {
+        var fit = [0, 1, 2, 3].map(function (o) {
+          var n2 = idxs.length, sx2 = 0, sxx = 0, sX = 0, sXx = 0, sY = 0, sYx = 0;
+          idxs.forEach(function (ix, k) { var pp = bi.list[k].pts[o]; sx2 += ix; sxx += ix * ix; sX += pp.cx; sXx += pp.cx * ix; sY += pp.cy; sYx += pp.cy * ix; });
+          var den = n2 * sxx - sx2 * sx2;
+          var bx = den ? (n2 * sXx - sx2 * sX) / den : 0, by = den ? (n2 * sYx - sx2 * sY) / den : lp;
+          return { ax: (sX - bx * sx2) / n2, bx: bx, ay: (sY - by * sx2) / n2, by: by };
+        });
+        for (var ix3 = 0; ix3 < bi.exp; ix3++) {
+          var qn4 = bI * perCol + ix3 + 1;
+          if (qm[qn4]) continue;
+          // ಹತ್ತಿರದ ಎರಡು ಪತ್ತೆಯಾದ ಸಾಲುಗಳಿಂದ (perspective ನಲ್ಲೂ ನಿಖರ)
+          var below = [], above = [];
+          idxs.forEach(function (ix, k) { if (ix > ix3) below.push(k); else above.push(k); });
+          var k1, k2;
+          if (above.length && below.length) { k1 = above[above.length - 1]; k2 = below[0]; }
+          else if (below.length >= 2) { k1 = below[0]; k2 = below[1]; }
+          else if (above.length >= 2) { k1 = above[above.length - 2]; k2 = above[above.length - 1]; }
+          if (k1 === undefined) { qm[qn4] = fit.map(function (f) { return { est: true, cx: f.ax + f.bx * ix3, cy: f.ay + f.by * ix3, r: d / 2 }; }); continue; }
+          var i1 = idxs[k1], i2 = idxs[k2], tt = (ix3 - i1) / (i2 - i1);
+          qm[qn4] = [0, 1, 2, 3].map(function (o) {
+            var p1 = bi.list[k1].pts[o], p2 = bi.list[k2].pts[o];
+            return { est: true, cx: p1.cx + (p2.cx - p1.cx) * tt, cy: p1.cy + (p2.cy - p1.cy) * tt, r: d / 2 };
+          });
+        }
+      }
+    }
+    theta = th; cs_ = c_; sn_ = s_;
+    Object.keys(qm).forEach(function (kq) { qm[kq].forEach(function (bb) { bb.x = bb.cx * cs_ + bb.cy * sn_; bb.y = -bb.cx * sn_ + bb.cy * cs_; }); });
+    return { qMap: qm, chain: true };
+  }
+  var gridRes = primaryGrid();
+  if (!gridRes.qMap) {
+    var fbRes = chainGrid();
+    if (!fbRes.qMap) { gridRes.alt = fbRes; return gridRes; }
+    gridRes = fbRes;
+  }
+  var qMap = gridRes.qMap;
 
   var detectedBubbles = 0;
   Object.keys(qMap).forEach(function (k) { qMap[k].forEach(function (bb) { if (bb && !bb.est) detectedBubbles++; }); });
@@ -20869,15 +21009,29 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
   if (coverage < 0.8) return { ok: false, reason: 'ಹಾಳೆ ಸ್ಪಷ್ಟವಾಗಿ ಕಾಣುತ್ತಿಲ್ಲ', coverage: coverage, d: d };
 
   // ---- 10. ಪ್ರತಿ ವೃತ್ತದ ಒಳಗಿನ ಕಪ್ಪುತನ (ink score) ----
+  function ringBg(bb) {
+    var r1 = bb.r * 1.28, r2 = bb.r * 1.55, vals = [];
+    for (var a = 0; a < 48; a++) {
+      var ang = a * Math.PI / 24;
+      for (var rr2 = r1; rr2 <= r2; rr2 += 1.5) {
+        var xx = Math.round(bb.cx + Math.cos(ang) * rr2), yy = Math.round(bb.cy + Math.sin(ang) * rr2);
+        if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        vals.push(gray[yy * W + xx]);
+      }
+    }
+    if (vals.length < 10) return 0;
+    vals.sort(function (a, b) { return a - b; });
+    return vals[(vals.length * 0.75) | 0];
+  }
   function inkScore(bb) {
-    var rr = Math.max(2, bb.r * 0.62), t = 0, s = 0;
+    var rr = Math.max(2, bb.r * 0.62), t = 0, s = 0, rb = ringBg(bb);
     var x0 = Math.floor(bb.cx - rr), x1 = Math.ceil(bb.cx + rr), y0 = Math.floor(bb.cy - rr), y1 = Math.ceil(bb.cy + rr);
     for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) {
       if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
       var ddx = xx - bb.cx, ddy = yy - bb.cy;
       if (ddx * ddx + ddy * ddy > rr * rr) continue;
       var ii = yy * W + xx;
-      var bg = Math.max(meanImg[ii], 1);
+      var bg = Math.max(rb || meanImg[ii], meanImg[ii] * 0.9, 1);
       s += Math.max(0, 1 - gray[ii] / bg); t++;
     }
     return t ? s / t : 0;
@@ -20926,7 +21080,35 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     else answers[qn3] = 'MULTI';
     detail[qn3] = row.map(function (bb) { return +bb.ink.toFixed(2); });
   }
-  return { ok: true, upsideDown: (barBelow > barAbove + 0.2), sqAbove: +barAbove.toFixed(2), sqBelow: +barBelow.toFixed(2), answers: answers, detail: detail, d: d, theta: theta, baseline: baseline, thr: thr, coverage: coverage };
+  // ---- 11. ಪ್ರಶ್ನೆಪತ್ರಿಕೆ ಶ್ರೇಣಿ (SET A/B/C/D) ವೃತ್ತ ಓದುವುದು (ಗ್ರಿಡ್‌ನ ಮೇಲೆ, ಸಮಾನ ಅಂತರದ 4 ವೃತ್ತಗಳು) ----
+  var setMark = null;
+  try {
+    var used = []; Object.keys(qMap).forEach(function (k) { qMap[k].forEach(function (bb) { used.push(bb); }); });
+    var pitch = (gy1 - gy0) / Math.max(1, perCol - 1);
+    var extra = bubbles.filter(function (b) {
+      var bx = b.cx * cs_ + b.cy * sn_, by = -b.cx * sn_ + b.cy * cs_;
+      b.x = bx; b.y = by;
+      return by < gy0 - pitch * 1.2 && by > gy0 - pitch * 8 && !used.some(function (u) { return Math.abs(u.cx - b.cx) < 2 && Math.abs(u.cy - b.cy) < 2; });
+    });
+    var rowsS = clusterBy(extra, 'y', d * 0.5);
+    rowsS.forEach(function (rw0) {
+      if (setMark || rw0.length < 4) return;
+      rw0.sort(function (a, b) { return a.x - b.x; });
+      // ಸಮಾನ ಅಂತರದ 4 ವೃತ್ತಗಳ ಗುಂಪು (ಬಲದಿಂದ ಹುಡುಕಾಟ) — ಪಕ್ಕದ ಬೇರೆ ಆಕಾರಗಳನ್ನು ಬಿಡುವುದು
+      var rw = null;
+      for (var st = rw0.length - 4; st >= 0 && !rw; st--) {
+        var c4 = rw0.slice(st, st + 4);
+        var h1 = c4[1].x - c4[0].x, h2 = c4[2].x - c4[1].x, h3 = c4[3].x - c4[2].x, hm = (h1 + h2 + h3) / 3;
+        if (hm >= d * 1.6 && hm <= d * 3.2 && Math.max(h1, h2, h3) <= hm * 1.25 && Math.min(h1, h2, h3) >= hm * 0.75) rw = c4;
+      }
+      if (!rw) return;
+      var inks = rw.map(function (b) { return inkScore(b); });
+      var mx = Math.max.apply(null, inks), on = [];
+      inks.forEach(function (v, ii) { if (v >= thr && v >= mx * 0.55) on.push(ii); });
+      setMark = on.length === 1 ? 'ABCD'[on[0]] : (on.length ? 'MULTI' : 'BLANK');
+    });
+  } catch (e) { setMark = null; }
+  return { ok: true, upsideDown: (barBelow > barAbove + 0.2), sqAbove: +barAbove.toFixed(2), sqBelow: +barBelow.toFixed(2), answers: answers, detail: detail, d: d, theta: theta, baseline: baseline, thr: thr, coverage: coverage, set: setMark, chain: !!gridRes.chain };
 }
 
 
@@ -20955,7 +21137,9 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
 
   function scanOMRImage(img, totalQ) {
     var bases = [img];
-    if (img.W > img.H * 1.1) { bases = [rot90cw(img.gray, img.W, img.H), rot90ccw(img.gray, img.W, img.H)]; }
+    // ಅಗಲವಾದ ಚಿತ್ರ → ಮೊದಲು ತಿರುಗಿಸಿ ಪ್ರಯತ್ನ; ಎತ್ತರದ ಚಿತ್ರ → ಮೊದಲು ಹಾಗೆಯೇ. ಎರಡೂ ಸಂದರ್ಭದಲ್ಲಿ ಉಳಿದ ದಿಕ್ಕುಗಳನ್ನೂ ಪ್ರಯತ್ನಿಸುತ್ತದೆ
+    if (img.W > img.H * 1.1) bases = [rot90cw(img.gray, img.W, img.H), rot90ccw(img.gray, img.W, img.H), img];
+    else bases = [img, rot90cw(img.gray, img.W, img.H), rot90ccw(img.gray, img.W, img.H)];
     var optsList = [{}, { ratio: 0.88, diff: 12, dilate: 1 }];
     var last = { ok: false, reason: 'ಹಾಳೆ ಪತ್ತೆಯಾಗಿಲ್ಲ' };
     for (var b = 0; b < bases.length; b++) {
@@ -20988,12 +21172,72 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     if (badge) { badge.className = 'text-[10px] bg-rose-100 text-rose-800 font-black px-2 py-0.5 rounded-full'; badge.innerText = '❌ ಮತ್ತೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ'; }
     var saveBtn = document.getElementById('btn-save-omr-record'); if (saveBtn) saveBtn.disabled = true;
     omrScannerState.currentResult = null;
+    var det = document.getElementById('omr-res-detail'); if (det) det.innerHTML = '';
     if (typeof showToast === 'function') {
       showToast('⚠️ OMR ಹಾಳೆಯನ್ನು ನಿಖರವಾಗಿ ಓದಲಾಗಲಿಲ್ಲ (' + (reason || '') + '). ಹಾಳೆ ಪೂರ್ತಿ ಕಾಣುವಂತೆ, ನೇರವಾಗಿ, ಸಾಕಷ್ಟು ಬೆಳಕಿನಲ್ಲಿ, ಫೋಕಸ್ ಆಗಿ ಮತ್ತೊಮ್ಮೆ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.', 'error');
     }
   }
 
+  // ---------- ಕೀ ಉತ್ತರ (A/B/C/D) — (A), (a), (1)–(4), ಎ/ಬಿ/ಸಿ/ಡಿ, ಅ/ಆ/ಇ/ಈ, ಅಥವಾ ಆಯ್ಕೆಯ ಪಠ್ಯ ----------
+  var KMAP = { a: 'A', b: 'B', c: 'C', d: 'D', '1': 'A', '2': 'B', '3': 'C', '4': 'D', 'ಎ': 'A', 'ಬಿ': 'B', 'ಸಿ': 'C', 'ಡಿ': 'D', 'ಅ': 'A', 'ಆ': 'B', 'ಇ': 'C', 'ಈ': 'D' };
+  function normTxt(t) { return String(t == null ? '' : t).replace(/<[^>]*>/g, '').replace(/^\s*[\(\[]?\s*(ಎ|ಬಿ|ಸಿ|ಡಿ|[A-Da-d1-4ಅಆಇಈ])\s*[\)\].:]\s*/, '').replace(/[\s.,;:!?'"`()\[\]{}-]+/g, '').toLowerCase(); }
+  function answerLetter(q) {
+    if (!q) return null;
+    var raw = String(q.ans != null ? q.ans : (q.answer != null ? q.answer : '')).trim();
+    if (!raw) return null;
+    var m = raw.match(/^[\(\[]?\s*(ಎ|ಬಿ|ಸಿ|ಡಿ|[A-Da-d1-4ಅಆಇಈ])\s*(?:[\)\].:]|$)/);
+    if (m) return KMAP[m[1].toLowerCase()] || KMAP[m[1]] || null;
+    // ಆಯ್ಕೆಯ ಪಠ್ಯದೊಂದಿಗೆ ಹೋಲಿಕೆ
+    var opts = Array.isArray(q.options) ? q.options : [q.a, q.b, q.c, q.d];
+    var n = normTxt(raw), hit = null, cnt = 0;
+    if (n) opts.forEach(function (o, i) { if (i < 4 && o != null && normTxt(o) === n) { hit = 'ABCD'[i]; cnt++; } });
+    if (cnt === 1) return hit;
+    var m2 = raw.toUpperCase().match(/\(([A-D])\)/);
+    return m2 ? m2[1] : null;
+  }
+  window.wyOMRAnswerLetter = answerLetter;
+  window.buildCurrentCorrectAnswersList = function (list) {
+    list = list || (typeof appState !== 'undefined' && appState.activeGeneratedQuestions) || [];
+    var keyMap = {};
+    list.forEach(function (q, i) { keyMap[i + 1] = answerLetter(q); });
+    return keyMap;
+  };
+  try { buildCurrentCorrectAnswersList = window.buildCurrentCorrectAnswersList; } catch (e) {}
+  function keyForSet(setCode) {
+    var cur = (typeof appState !== 'undefined' && appState.currentExamSet) || 'A';
+    var act = (typeof appState !== 'undefined' && appState.activeGeneratedQuestions) || [];
+    if (!setCode || setCode === cur) return window.buildCurrentCorrectAnswersList(act);
+    var base = cur === 'A' ? act : ((appState.baseGeneratedQuestions && appState.baseGeneratedQuestions.length) ? appState.baseGeneratedQuestions : null);
+    if (!base || base.length !== act.length || typeof generateJumbledSetQuestions !== 'function') return null;
+    return window.buildCurrentCorrectAnswersList(generateJumbledSetQuestions(base, setCode));
+  }
+
+  function showDetail(totalQ, student, keyMap) {
+    var host = document.getElementById('omr-res-detail');
+    if (!host) {
+      var g = document.getElementById('omr-cnt-correct');
+      var box = g && g.closest('.grid');
+      if (!box) return;
+      host = document.createElement('div');
+      host.id = 'omr-res-detail';
+      host.className = 'mt-2 grid grid-cols-5 sm:grid-cols-6 gap-1 text-[10px] font-black max-h-48 overflow-y-auto';
+      box.parentNode.insertBefore(host, box.nextSibling);
+    }
+    var h = '';
+    for (var q = 1; q <= totalQ; q++) {
+      var a = student[q], k = keyMap[q], cls, txt;
+      if (!k) { cls = 'bg-slate-100 text-slate-500 border-slate-200'; txt = (a === 'BLANK' ? '–' : a) + ' (ಕೀ?)'; }
+      else if (a === 'BLANK') { cls = 'bg-amber-50 text-amber-800 border-amber-200'; txt = '– (' + k + ')'; }
+      else if (a === 'MULTI') { cls = 'bg-rose-50 text-rose-700 border-rose-200'; txt = '2+ ✗ (' + k + ')'; }
+      else if (a === k) { cls = 'bg-emerald-50 text-emerald-800 border-emerald-200'; txt = a + ' ✓'; }
+      else { cls = 'bg-rose-50 text-rose-700 border-rose-200'; txt = a + ' ✗ (' + k + ')'; }
+      h += '<div class="px-1 py-0.5 rounded border text-center ' + cls + '">' + q + ': ' + txt + '</div>';
+    }
+    host.innerHTML = h;
+  }
+
   window.processOMRCanvasImage = function (canvas) {
+    var curSet = (typeof appState !== 'undefined' && appState.currentExamSet) || 'A';
     var keyMap = omrScannerState.correctAnswersMap || {};
     var totalQ = Object.keys(keyMap).length;
     if (!canvas || !canvas.width || !canvas.height || totalQ < 4) { showScanFailure(totalQ || 0, 'ಕೀ ಉತ್ತರಗಳು ಇಲ್ಲ'); return; }
@@ -21001,22 +21245,38 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     var img;
     try { img = toGrayFromCanvas(canvas, 1500); } catch (e) { showScanFailure(totalQ, 'ಚಿತ್ರ ಓದಲಾಗಲಿಲ್ಲ'); return; }
 
+    // ಮುದ್ರಿತ OMR ಹಾಳೆಯಲ್ಲಿ ಕನಿಷ್ಠ 20, ಗರಿಷ್ಠ 100 ಸಾಲುಗಳಿರುತ್ತವೆ — ಅದೇ ವಿನ್ಯಾಸದಲ್ಲಿ ಓದಿ, ಪತ್ರಿಕೆಯ ಪ್ರಶ್ನೆಗಳನ್ನು ಮಾತ್ರ ತಿದ್ದುವುದು
+    var sheetQ = Math.min(Math.max(totalQ, 20), 100);
+    if (totalQ > 100) totalQ = 100;
     var res;
-    try { res = scanOMRImage(img, totalQ); } catch (err) { console.error('OMR scan error', err); res = { ok: false, reason: 'ದೋಷ' }; }
+    try { res = scanOMRImage(img, sheetQ); } catch (err) { console.error('OMR scan error', err); res = { ok: false, reason: 'ದೋಷ' }; }
     window.__lastOMRScan = res;
     if (!res.ok) { showScanFailure(totalQ, res.reason); return; }
 
-    var correctCount = 0, wrongCount = 0, blankCount = 0, multiCount = 0;
+    // ಹಾಳೆಯಲ್ಲಿ ಗುರುತಿಸಿದ SET ಪ್ರಕಾರ ಕೀ (ಇಲ್ಲದಿದ್ದರೆ ಈಗ ತೆರೆದಿರುವ SET)
+    var usedSet = curSet, setNote = '';
+    if (res.set && /^[ABCD]$/.test(res.set)) {
+      if (res.set !== curSet) {
+        var k2 = keyForSet(res.set);
+        if (k2) { keyMap = k2; usedSet = res.set; setNote = 'ಹಾಳೆಯ SET ' + res.set + ' ಪ್ರಕಾರ ತಿದ್ದಲಾಗಿದೆ'; }
+        else setNote = '⚠️ ಹಾಳೆಯಲ್ಲಿ SET ' + res.set + ' — ಆದರೆ ಆ SET ನ ಕೀ ಸಿಗಲಿಲ್ಲ; SET ' + curSet + ' ಪ್ರಕಾರ ತಿದ್ದಲಾಗಿದೆ';
+      } else setNote = 'SET ' + curSet;
+    } else if (res.set === 'MULTI') setNote = '⚠️ SET ಎರಡು ಗುರುತು — SET ' + curSet + ' ಪ್ರಕಾರ ತಿದ್ದಲಾಗಿದೆ';
+
+    var correctCount = 0, wrongCount = 0, blankCount = 0, multiCount = 0, noKey = 0;
     var student = {};
     for (var q = 1; q <= totalQ; q++) {
       var a = res.answers[q] || 'BLANK';
       student[q] = a;
-      if (a === 'BLANK') blankCount++;                       // ಗುರುತಿಸದ್ದು: ಬಿಟ್ಟಿರುವ
-      else if (a === 'MULTI') { wrongCount++; multiCount++; } // ಡಬಲ್ ಗುರುತು: ತಪ್ಪು
-      else if (a === (keyMap[q] || 'A')) correctCount++;
+      var key = keyMap[q];
+      if (!key) { noKey++; continue; }                        // ಕೀ ಇಲ್ಲದ ಪ್ರಶ್ನೆ: ತಿದ್ದುವುದಿಲ್ಲ
+      if (a === 'BLANK') blankCount++;                         // ಗುರುತಿಸದ್ದು: ಬಿಟ್ಟಿರುವ
+      else if (a === 'MULTI') { wrongCount++; multiCount++; }  // ಡಬಲ್ ಗುರುತು: ತಪ್ಪು
+      else if (a === key) correctCount++;
       else wrongCount++;
     }
-    var percentage = Math.round((correctCount / totalQ) * 100);
+    var evalQ = totalQ - noKey;
+    var percentage = evalQ ? Math.round((correctCount / evalQ) * 100) : 0;
     var grade;
     if (percentage >= 85) grade = 'A+ (ಅತ್ಯುತ್ತಮ)';
     else if (percentage >= 70) grade = 'A (ಉತ್ತಮ)';
@@ -21025,27 +21285,76 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     else grade = 'C (ಕಲಿಕಾ ಕೊರತೆ)';
 
     setText('omr-res-score', String(correctCount));
-    setText('omr-res-grade', percentage + '% - ' + grade);
+    setText('omr-res-grade', percentage + '% - ' + grade + (setNote ? ' · ' + setNote : '') + (noKey ? ' · ಕೀ ಇಲ್ಲದ ಪ್ರಶ್ನೆ: ' + noKey : ''));
     setText('omr-cnt-correct', String(correctCount));
     setText('omr-cnt-wrong', String(wrongCount));
     setText('omr-cnt-blank', String(blankCount));
     var badge = document.getElementById('omr-scan-badge');
     if (badge) {
       badge.className = 'text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-full';
-      badge.innerText = '✓ ನೈಜ OMR ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣಗೊಂಡಿದೆ' + (multiCount ? ' (ಡಬಲ್ ಗುರುತು: ' + multiCount + ')' : '');
+      badge.innerText = '✓ ಮೌಲ್ಯಮಾಪನ ಪೂರ್ಣ' + (multiCount ? ' (ಡಬಲ್ ಗುರುತು: ' + multiCount + ')' : '');
     }
+    try { showDetail(totalQ, student, keyMap); } catch (e) {}
     try { playScannerAudioBeep(true); } catch (e) {}
 
     omrScannerState.currentResult = {
-      totalQ: totalQ, score: correctCount, percentage: percentage, grade: grade,
-      set: (typeof appState !== 'undefined' && appState.currentExamSet) || 'A',
-      detectedAnswers: student, multiMarked: multiCount
+      totalQ: evalQ, score: correctCount, percentage: percentage, grade: grade,
+      set: usedSet, detectedAnswers: student, multiMarked: multiCount
     };
     var saveBtn = document.getElementById('btn-save-omr-record'); if (saveBtn) saveBtn.disabled = false;
     if (typeof showToast === 'function') {
-      showToast('⚡ OMR ಮೌಲ್ಯಮಾಪನ: ' + correctCount + ' ಸರಿ, ' + wrongCount + ' ತಪ್ಪು, ' + blankCount + ' ಬಿಟ್ಟಿರುವ' + (multiCount ? ' (ಡಬಲ್ ಗುರುತು ' + multiCount + ' → ತಪ್ಪು)' : ''), 'success');
+      showToast('⚡ OMR ಮೌಲ್ಯಮಾಪನ: ' + correctCount + ' ಸರಿ, ' + wrongCount + ' ತಪ್ಪು, ' + blankCount + ' ಬಿಟ್ಟಿರುವ' + (multiCount ? ' (ಡಬಲ್ ಗುರುತು ' + multiCount + ' → ತಪ್ಪು)' : '') + (setNote ? ' · ' + setNote : ''), 'success');
     }
   };
+
+  // 60ಕ್ಕಿಂತ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳ OMR (ಉದಾ: NMMS 90) ಒಂದೇ A4 ಪುಟದಲ್ಲಿ ಬರುವಂತೆ ಸಾಲುಗಳ ಅಂತರ ಕಡಿಮೆ
+  (function () {
+    try {
+      var st = document.createElement('style');
+      st.textContent = '.omr-dense .omr-grid-table td{padding:2px 2px !important}.omr-dense .omr-grid-table th{padding-top:3px !important;padding-bottom:3px !important}';
+      document.head.appendChild(st);
+    } catch (e) {}
+    var prevOMR = window.renderOfficialGovernmentOMRSheet;
+    if (typeof prevOMR !== 'function') return;
+    window.renderOfficialGovernmentOMRSheet = function (totalQuestions) {
+      var r = prevOMR.apply(this, arguments);
+      try {
+        var n = Math.min(Math.max(parseInt(totalQuestions) || 40, 20), 100);
+        var c = document.querySelector('#rendered-omr .omr-sheet-container');
+        if (c) c.classList.toggle('omr-dense', n > 60);
+      } catch (e) {}
+      return r;
+    };
+    try { renderOfficialGovernmentOMRSheet = window.renderOfficialGovernmentOMRSheet; } catch (e) {}
+  })();
+
+  // ಸ್ಕ್ಯಾನರ್ ತೆರೆಯುವಾಗ: ಕೀ ಗುರುತಿಸಲಾಗದ ಪ್ರಶ್ನೆಗಳಿದ್ದರೆ ಮೊದಲೇ ತಿಳಿಸುವುದು
+  var prevOpenScanner = window.openLiveOMRScannerModal;
+  if (typeof prevOpenScanner === 'function') {
+    window.openLiveOMRScannerModal = function () {
+      var r = prevOpenScanner.apply(this, arguments);
+      try {
+        var km = omrScannerState.correctAnswersMap || {}, miss = Object.keys(km).filter(function (k) { return !km[k]; });
+        var g = document.getElementById('omr-res-grade');
+        if (miss.length && g) {
+          var w = document.createElement('div');
+          w.className = 'mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-bold text-amber-900';
+          w.textContent = '⚠️ ' + miss.length + ' ಪ್ರಶ್ನೆಗಳಿಗೆ A/B/C/D ಕೀ ಉತ್ತರ ಇಲ್ಲ (ಉದಾ: ' + miss.slice(0, 8).join(', ') + (miss.length > 8 ? '…' : '') + ') — ಅವುಗಳನ್ನು ತಿದ್ದುವುದಿಲ್ಲ, ಅಂಕಕ್ಕೆ ಸೇರುವುದಿಲ್ಲ.';
+          g.parentNode.appendChild(w);
+        }
+        var tip = document.getElementById('omr-target-box');
+        if (tip && !document.getElementById('omr-scan-tip')) {
+          var t = document.createElement('div');
+          t.id = 'omr-scan-tip';
+          t.className = 'text-[11px] font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-2 mt-2';
+          t.innerHTML = '📌 ನಿಖರ ಸ್ಕ್ಯಾನ್‌ಗೆ: ಹಾಳೆಯನ್ನು ಮೇಜಿನ ಮೇಲೆ ಚಪ್ಪಟೆಯಾಗಿ ಇಟ್ಟು, ಮೇಲಿನಿಂದ ನೇರವಾಗಿ, ಸಾಕಷ್ಟು ಬೆಳಕಿನಲ್ಲಿ, <b>ಎಲ್ಲಾ ವೃತ್ತಗಳು ಮತ್ತು ಕಪ್ಪು ಶೀರ್ಷಿಕೆ ಪಟ್ಟಿ</b> ಕಾಣುವಂತೆ ಫೋಟೋ ತೆಗೆಯಿರಿ. ವಿದ್ಯಾರ್ಥಿಗಳು ವೃತ್ತವನ್ನು ಪೂರ್ತಿ ಕಪ್ಪು ಮಾಡಬೇಕು (✓ ಅಥವಾ ✗ ಓದುವುದಿಲ್ಲ). ಸ್ಕ್ಯಾನ್ ನಂತರ ಕೆಳಗಿನ ಪ್ರಶ್ನೆವಾರು ಪಟ್ಟಿಯನ್ನು ಒಮ್ಮೆ ನೋಡಿ.';
+          var vp = tip.parentNode; vp.parentNode.insertBefore(t, vp.nextSibling);
+        }
+      } catch (e) {}
+      return r;
+    };
+    try { openLiveOMRScannerModal = window.openLiveOMRScannerModal; } catch (e) {}
+  }
   try { processOMRCanvasImage = window.processOMRCanvasImage; } catch (e) {}
 
 })();
