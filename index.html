@@ -21571,6 +21571,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
       idx = idx.filter(function (m) { if (m.sig && m.sig === built.meta.sig) { removed.push(m.id); if (m.note) built.meta.note = m.note; if (m.pin) built.meta.pin = m.pin; return false; } return true; });
       removed.forEach(delBlob);
       idx.unshift(built.meta);
+      setCurrent(built.meta.id);
       trimToMax();   // FIFO (📌 ಪಿನ್ ಮಾಡಿದವು ಉಳಿಯುತ್ತವೆ)
       persistIndex();
       refreshUI();
@@ -21581,6 +21582,101 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
     });
   }
   window.saveCurrentPaperToLibrary = saveCurrentPaper;
+
+  // ---------------- ✏️ ತಿದ್ದಿದ ಬದಲಾವಣೆಗಳು ಅದೇ ಉಳಿಕೆಗೆ ಸ್ವಯಂ ಸೇರುವುದು ----------------
+  // ಜನರೇಟ್ ನಂತರ ಪ್ರಶ್ನೆ ಬದಲಿಸಿದರೆ / ಪತ್ರಿಕೆಯಲ್ಲಿ ನೇರವಾಗಿ ಬರೆದರೆ / SET ಬದಲಿಸಿದರೆ — ಹೊಸ ನಕಲು ಮಾಡದೆ ಅದೇ ಪತ್ರಿಕೆಯನ್ನು ನವೀಕರಿಸುತ್ತದೆ
+  var currentId = null, lastHash = '', liveTimer = null, liveObs = null, liveBusy = false, toldEdit = {};
+  function snapHash() {
+    var h = captureHtml(), q = appState.activeGeneratedQuestions || [];
+    return hashStr(Object.keys(h).sort().map(function (k) { return k + ':' + h[k]; }).join('|') + '#' + JSON.stringify(q) + '#' + (appState.currentExamSet || 'A'));
+  }
+  function setCurrent(id) {
+    currentId = id;
+    try { ensureLiveObserver(); } catch (e) {}
+    setTimeout(function () { try { lastHash = snapHash(); } catch (e) {} }, 0);
+  }
+  function updateCurrent() {
+    clearTimeout(liveTimer);
+    if (!currentId || pending || liveBusy) return Promise.resolve(false);
+    var i = -1; for (var k = 0; k < idx.length; k++) if (idx[k].id === currentId) { i = k; break; }
+    if (i === -1) { currentId = null; return Promise.resolve(false); }   // ಬಳಕೆದಾರರು ಅಳಿಸಿದ್ದರೆ ಮತ್ತೆ ಸೇರಿಸುವುದಿಲ್ಲ
+    var h; try { h = snapHash(); } catch (e) { return Promise.resolve(false); }
+    if (h === lastHash) return Promise.resolve(false);
+    var built = buildRecord();
+    if (!built) return Promise.resolve(false);
+    var old = idx[i], id = old.id;
+    built.rec.id = id; built.meta.id = id;
+    built.meta.savedAt = old.savedAt;
+    built.meta.editedAt = Date.now();
+    if (old.note) built.meta.note = old.note;
+    if (old.pin) built.meta.pin = old.pin;
+    liveBusy = true;
+    return putBlob(built.rec).then(function (where) {
+      liveBusy = false;
+      if (where !== 'idb' && where !== 'ls' && where !== 'mem') return false;
+      var j = -1; for (var k2 = 0; k2 < idx.length; k2++) if (idx[k2].id === id) { j = k2; break; }
+      if (j === -1) return false;
+      idx[j] = built.meta;
+      // ಅದೇ ವಿಷಯದ ಬೇರೆ ನಕಲು ಇದ್ದರೆ ತೆಗೆದುಹಾಕಿ
+      idx = idx.filter(function (m) { if (m.id !== id && m.sig && m.sig === built.meta.sig && !m.pin) { delBlob(m.id); return false; } return true; });
+      lastHash = h;
+      persistIndex(); refreshUI();
+      if (!toldEdit[id] && typeof showToast === 'function') { toldEdit[id] = 1; showToast('💾 ನೀವು ಮಾಡಿದ ಬದಲಾವಣೆಗಳು ಉಳಿಸಿದ ಪತ್ರಿಕೆಯಲ್ಲೂ ನವೀಕರಿಸಲಾಗುತ್ತಿದೆ.', 'success'); }
+      return true;
+    }).catch(function (e) { liveBusy = false; console.warn('Paper update error', e); return false; });
+  }
+  window.wyUpdateCurrentSavedPaper = updateCurrent;
+  function scheduleLive() {
+    if (!currentId || pending) return;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(updateCurrent, 1800);
+  }
+  function ensureLiveObserver() {
+    if (liveObs) return;
+    var target = document.getElementById('output-section');
+    if (!target) return;
+    try {
+      liveObs = new MutationObserver(function (muts) {
+        for (var m = 0; m < muts.length; m++) {
+          var t = muts[m].target; t = t && (t.nodeType === 1 ? t : t.parentElement);
+          if (t && t.closest && t.closest('[id^="rendered-"]') && !t.closest('#rendered-quiz-panel')) { scheduleLive(); return; }
+        }
+      });
+      liveObs.observe(target, { childList: true, subtree: true, characterData: true });
+    } catch (e) { liveObs = null; }
+  }
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (t && t.closest && t.closest('[id^="rendered-"]')) scheduleLive();
+  }, true);
+  // ಪ್ರಿಂಟ್ ಮಾಡುವ ಮೊದಲು ತಕ್ಷಣ ಉಳಿಸಿ
+  window.addEventListener('beforeprint', function () { try { updateCurrent(); } catch (e) {} });
+  try {
+    var prevPrint = window.print;
+    window.print = function () { try { updateCurrent(); } catch (e) {} return prevPrint.apply(window, arguments); };
+  } catch (e) {}
+  setTimeout(ensureLiveObserver, 0);
+  document.addEventListener('DOMContentLoaded', ensureLiveObserver);
+  // ಪ್ರಶ್ನೆ ಬದಲಿಸಿದಾಗ ಮೂಲ ಪಟ್ಟಿಯನ್ನೂ (base) ಬದಲಿಸಿ — ಇಲ್ಲದಿದ್ದರೆ SET B/C/D ನೋಡಿದಾಗ ಅಥವಾ ಉಳಿಕೆ ತೆರೆದಾಗ ಹಳೆಯ ಪ್ರಶ್ನೆ ಬರುತ್ತಿತ್ತು
+  ['swapQuestionWithBankItem', 'saveManualQuestionEditSubmit'].forEach(function (fn) {
+    var prevFn = window[fn];
+    if (typeof prevFn !== 'function') return;
+    window[fn] = function (targetIdx) {
+      var act = appState.activeGeneratedQuestions || [], oldK = null;
+      try { oldK = JSON.stringify(act[targetIdx]); } catch (e) {}
+      var r = prevFn.apply(this, arguments);
+      try {
+        var nq = (appState.activeGeneratedQuestions || [])[targetIdx], base = appState.baseGeneratedQuestions;
+        if (nq && oldK && Array.isArray(base) && base !== appState.activeGeneratedQuestions) {
+          for (var j = 0; j < base.length; j++) {
+            if (base[j] === nq) break;
+            if (JSON.stringify(base[j]) === oldK) { base[j] = clone(nq); break; }
+          }
+        }
+      } catch (e) {}
+      scheduleLive();
+      return r;
+    };
+  });
 
   // ---------------- ಜನರೇಟ್ ಆದಾಗ ಆಟೋ-ಸೇವ್ (ಸಮಯದ ಊಹೆ ಇಲ್ಲದೆ — DOM ಬದಲಾವಣೆ ನೋಡಿ) ----------------
   var pending = false, pendingSince = 0, refQ = null, refHtml = '', debTimer = null, fbTimer = null, observer = null;
@@ -21622,6 +21718,8 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
 
   var prevGen = window.generateExamPackageFromBank;
   window.generateExamPackageFromBank = function () {
+    try { if (currentId) updateCurrent(); } catch (e) {}
+    currentId = null; clearTimeout(liveTimer);
     armSave();
     try {
       return (typeof prevGen === 'function') ? prevGen.apply(this, arguments) : undefined;
@@ -21680,6 +21778,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
         appState.baseGeneratedQuestions = clone(appState.activeGeneratedQuestions);
         if (typeof renderFullExamPaperWithCustomHeader === 'function') renderFullExamPaperWithCustomHeader(rec.headerHtml || meta.headerHtml || '');
         showOutput();
+        ensureLiveObserver(); setCurrent(meta.id);
         if (typeof showToast === 'function') showToast('📂 "' + meta.title + '" ತೆರೆಯಲಾಗಿದೆ (ಹಳೆಯ ಉಳಿಕೆ)', 'success');
         return;
       }
@@ -21697,6 +21796,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
       });
       highlightSet(appState.currentExamSet);
       showOutput();
+      ensureLiveObserver(); setCurrent(meta.id);
       if (typeof showToast === 'function') showToast('📂 "' + meta.title + '" ಪತ್ರಿಕೆ (ಉತ್ತರ ಪತ್ರಿಕೆ, ನೀಲನಕ್ಷೆ, OMR, SET ಸಹಿತ) ತೆರೆಯಲಾಗಿದೆ!', 'success');
     }).catch(function (e) {
       console.warn('Open saved paper error', e);
@@ -21755,7 +21855,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
         '</div>' +
         (m.note ? '<div class="mt-1 text-[11px] font-bold text-indigo-800">📝 ' + hEsc(m.note) + '</div>' : '') +
         '</div>' +
-        '<span class="text-[10px] text-slate-500 font-bold whitespace-nowrap">🕒 ' + hEsc(whenOf(m)) + '</span>' +
+        '<span class="text-[10px] text-slate-500 font-bold whitespace-nowrap text-right">🕒 ' + hEsc(whenOf(m)) + (m.editedAt ? '<br><span class="text-indigo-600">✏️ ತಿದ್ದಿದ್ದು: ' + hEsc(whenOf({ id: m.editedAt })) + '</span>' : '') + '</span>' +
       '</div>' +
       '<div class="flex flex-wrap items-center justify-end gap-1.5">' +
         '<button type="button" data-h-pin="' + id + '" title="ಪಿನ್ — ಹಳೆಯದು ಅಳಿಸುವಾಗ ಇದು ಉಳಿಯುತ್ತದೆ" class="px-2.5 py-1.5 bg-white border rounded-xl text-xs font-bold cursor-pointer hover:bg-amber-50">' + (m.pin ? '📌 ಪಿನ್ ತೆಗೆ' : '📌 ಪಿನ್') + '</button>' +
@@ -21878,7 +21978,7 @@ function omrDetectCore(gray, W, H, totalQ, opts) {
         have[m.id] = 1; if (m.sig) sigs[m.sig] = 1;
         return true;
       });
-      var keys = ['id', 'sig', 'savedAt', 'title', 'subject', 'grade', 'medium', 'examType', 'examDate', 'totalMarks', 'questionsCount', 'set', 'note', 'pin', 'legacy'];
+      var keys = ['id', 'sig', 'savedAt', 'editedAt', 'title', 'subject', 'grade', 'medium', 'examType', 'examDate', 'totalMarks', 'questionsCount', 'set', 'note', 'pin', 'legacy'];
       var added = 0;
       todo.reduce(function (pr, p) {
         return pr.then(function () {
