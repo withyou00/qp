@@ -23726,12 +23726,19 @@ function wyStrongKeyPart() {
   setTimeout(syncMediumOption, 500);
 
   // ---------- ೨. ಲೋಡ್ ಆದ GitHub ಫೈಲ್‌ಗಳ ದಾಖಲೆ (english_medium ಪ್ರತಿ ಹುಡುಕಲು) ----------
-  var loadedFiles = [];
+  var loadedFiles = [], attemptedFiles = [];
   var prevFetch = window.fetch;
   window.fetch = async function (input, init) {
+    var url0 = '';
+    try { url0 = (typeof input === 'string') ? input : (input && input.url) || ''; } catch (e) {}
+    try {   // ಕನ್ನಡ ಮಾಧ್ಯಮದ ಫೈಲ್ ಇಲ್ಲದಿದ್ದರೂ ದ್ವಿಭಾಷಾ ಫೈಲ್ ಹುಡುಕಲು — ಪ್ರಯತ್ನಿಸಿದ ಹೆಸರುಗಳ ದಾಖಲೆ
+      if (url0.indexOf(RAW_HOST) !== -1 && /\/kannada_medium\/class_\d+\/[^\/?]+\.json(\?|$)/.test(url0)) {
+        var c0 = url0.replace(/\?.*$/, ''); if (attemptedFiles.indexOf(c0) === -1) attemptedFiles.push(c0);
+      }
+    } catch (e) {}
     var res = await prevFetch.apply(this, arguments);
     try {
-      var url = (typeof input === 'string') ? input : (input && input.url) || '';
+      var url = url0;
       if (url.indexOf(RAW_HOST) !== -1 && /\/kannada_medium\/.+\.json(\?|$)/.test(url) && res && res.ok) {
         var clean = url.replace(/\?.*$/, '');
         if (loadedFiles.indexOf(clean) === -1) loadedFiles.push(clean);
@@ -23886,11 +23893,20 @@ function wyStrongKeyPart() {
 
   var prevLoad = window.loadQuestionsFromGitHub;
   window.loadQuestionsFromGitHub = async function (medium, grade, rawSubject, part) {
-    loadedFiles = [];
+    loadedFiles = []; attemptedFiles = [];
     var wantBi = medium === BI || mediumVal() === BI;
     var args = Array.prototype.slice.call(arguments);
     if (medium === BI) args[0] = 'kannada_medium';           // ಮೊದಲು ಕನ್ನಡ ಮಾಧ್ಯಮದ ಫೈಲ್ (ಫೈಲ್ ಹೆಸರು ತಿಳಿಯಲು + ಸಾಮಾನ್ಯ ಪಾಠಗಳು)
-    var r = await prevLoad.apply(this, args);
+    // ಕನ್ನಡ ಮಾಧ್ಯಮದ ಫೈಲ್ ಸಿಗದಿದ್ದಾಗಿನ "ಸಿಗಲಿಲ್ಲ" ಸಂದೇಶವನ್ನು ತಡೆಹಿಡಿಯುವುದು — ದ್ವಿಭಾಷಾ ಫೈಲ್ ಸಿಕ್ಕರೆ ತೋರಿಸುವುದಿಲ್ಲ
+    var heldToasts = [], realToast = (typeof showToast === 'function') ? showToast : null;
+    if (wantBi && realToast) {
+      var holder = function (m, t) { if (t === 'error') { heldToasts.push([m, t]); return; } return realToast.apply(this, arguments); };
+      window.showToast = holder; try { showToast = holder; } catch (e) {}
+    }
+    var r;
+    try { r = await prevLoad.apply(this, args); }
+    finally { if (wantBi && realToast) { window.showToast = realToast; try { showToast = realToast; } catch (e) {} } }
+    function replayHeld() { heldToasts.forEach(function (x) { try { realToast(x[0], x[1]); } catch (e) {} }); heldToasts = []; }
     if (!wantBi) return r;
     if ((document.getElementById('cfg-subject') || {}).value !== rawSubject) return r;
     var isLang = isLanguageSubject(rawSubject);
@@ -23898,7 +23914,13 @@ function wyStrongKeyPart() {
     var g = parseInt(String(grade).replace(/\D/g, '')) || gradeNum();
     var kannadaAll = appState.activeSubjectQuestions || [];
     var kannadaFiles = loadedFiles.slice();
-    var bi = kannadaFiles.length ? await fetchBilingualFiles(kannadaFiles) : { found: [], questions: [], fromKannada: null };
+    var biSources = kannadaFiles;
+    if (!biSources.length) {
+      // ಕನ್ನಡ ಮಾಧ್ಯಮದಲ್ಲಿ ಈ ತರಗತಿಯ ಫೈಲ್ ಇಲ್ಲ (ಉದಾ: 2ನೇ ತರಗತಿ) → ಅದೇ ಹೆಸರಿನ bilingual_medium ಫೈಲ್ ನೇರವಾಗಿ
+      biSources = attemptedFiles.filter(function (u) { return u.indexOf('/kannada_medium/class_' + g + '/') !== -1; });
+    }
+    var bi = biSources.length ? await fetchBilingualFiles(biSources) : { found: [], questions: [], fromKannada: null };
+    if (bi.found.length) heldToasts = []; else replayHeld();
     if ((document.getElementById('cfg-subject') || {}).value !== rawSubject) return r;
 
     var pool = [], note = '';
