@@ -26746,6 +26746,13 @@ function wyStrongKeyPart() {
         for (var k = 0; k < n; k++) pics += img(pic(x), 'wyk-img wyk-img-c');
         return '<div class="wyk-count"><div class="wyk-num">' + nn(i + 1) + '</div><div class="wyk-count-pics">' + pics + '</div><span class="wyk-letter wyk-empty"></span></div>';
       }).join('') + '</div>';
+    },
+    // ಒಂದೇ ಸೂಚನೆಯ ಹಲವು ಚಟುವಟಿಕೆಗಳು ಒಂದೇ ಶೀರ್ಷಿಕೆಯ ಕೆಳಗೆ (೧, ೨, ೩ ...)
+    multi: function (it, en) {
+      return list(it.parts).map(function (p, i) {
+        var a = actOf(p); if (a === 'multi') a = '';
+        return '<div class="wyk-part"><div class="wyk-part-h"><b>' + nn(i + 1) + '.</b> ' + esc(p.__sub || '') + '</div>' + (a ? R[a](p, en) : '') + '</div>';
+      }).join('');
     }
   };
   var DEFAULT_Q = {
@@ -26789,6 +26796,7 @@ function wyStrongKeyPart() {
     '.wyk-missing{display:inline-flex;align-items:center;justify-content:center;width:22mm;height:18mm;border:1.4px dashed #94a3b8;border-radius:2mm;color:#94a3b8;font-size:9pt;font-weight:800}',
     '.wyk-emoji{font-size:30pt;line-height:1.1;display:inline-block}.wyk-img-c.wyk-emoji{font-size:16pt}.wyk-img-m.wyk-emoji{font-size:26pt}',
     '.wyk-svg{width:20mm;height:20mm;display:inline-block;vertical-align:middle}.wyk-svg.wyk-img-c{width:9mm;height:9mm}.wyk-svg-big{width:100%;height:48mm;display:block}',
+    '.wyk-part{margin:1.5mm 0 3mm;break-inside:avoid;page-break-inside:avoid}.wyk-part-h{font-size:12.5pt;font-weight:900;margin:1mm 0}.wyk-part .wyk-bigbox{margin-top:1mm}',
     '.wyk-colorcard{text-align:center}.wyk-color-lbl{font-size:13pt;font-weight:900;margin-top:1mm}',
     '.wyk-example{font-size:11pt;font-weight:800;display:flex;align-items:center;gap:2mm}.wyk-img-s{max-height:18mm}',
     '.wyk-circle-row{display:flex;flex-wrap:wrap;align-items:center;gap:3mm;margin:3mm 0;padding-bottom:2mm;border-bottom:1px dashed #94a3b8}.wyk-circle-q{font-size:13pt;font-weight:900;min-width:45%}.wyk-circle-opts{display:flex;gap:6mm;flex-wrap:wrap}.wyk-opt{padding:2mm 3mm}',
@@ -26841,7 +26849,7 @@ function wyStrongKeyPart() {
           if (spans.length) spans[spans.length - 1].textContent = kn(+it.marks || 0) + ' ಅಂಕ';
           while (hd && hd.nextSibling) sec.removeChild(hd.nextSibling);
           var d = document.createElement('div');
-          d.setAttribute('style', 'font-size:11pt;font-weight:700;color:#0f172a;padding:4px 6px;');
+          d.setAttribute('style', 'font-size:11pt;font-weight:700;color:#0f172a;padding:4px 6px;' + (actOf(it) === 'multi' ? 'white-space:pre-line;' : ''));
           d.textContent = autoAns(it);
           sec.appendChild(d);
         });
@@ -28467,6 +28475,335 @@ function wyRobustParse(raw) {
     var hero = t.closest('.m-welcome.wy3d-has');
     if (hero && !(e.relatedTarget && hero.contains(e.relatedTarget))) { var sc = hero.querySelector('.wy3d-scene'); if (sc) { sc.style.setProperty('--rx', '0deg'); sc.style.setProperty('--ry', '0deg'); } }
   }, { passive: true });
+})();
+
+
+// =========================================================================
+// 🧩 1–3ನೇ ತರಗತಿ: ಒಂದೇ ಸೂಚನೆಯ ಪ್ರಶ್ನೆಗಳು ಬೇರೆ ಬೇರೆ ವಿಭಾಗಗಳಾಗಿ ಪುನರಾವರ್ತನೆ ಆಗದಂತೆ
+//  ① ಆಯ್ಕೆ ಮಾಡುವಾಗಲೇ ಬೇರೆ ಬೇರೆ ರೀತಿಯ ಪ್ರಶ್ನೆಗಳಿಗೆ ಆದ್ಯತೆ (ಅದೇ ಪ್ರಕಾರ + ಅದೇ ಅಂಕ — ಒಟ್ಟು ಅಂಕ ಬದಲಾಗದು)
+//  ② ಆದರೂ ಉಳಿದರೆ, ಒಂದೇ ಶೀರ್ಷಿಕೆಯ ಕೆಳಗೆ ಒಟ್ಟುಗೂಡಿಸಿ ತೋರಿಸುವುದು (ಅಂಕಗಳ ಮೊತ್ತದೊಂದಿಗೆ)
+//  ಪ್ರಶ್ನೆಗಳ ಪಟ್ಟಿ (edit / swap / ಉಳಿಸಿದ ಪತ್ರಿಕೆ) ಬದಲಾಗುವುದಿಲ್ಲ — ಪತ್ರಿಕೆಯ ತೋರಿಕೆ ಮಾತ್ರ
+// =========================================================================
+(function installSameHeadingMerge() {
+  if (window.__wyMergeHeads) return; window.__wyMergeHeads = true;
+  var KN = ['೦', '೧', '೨', '೩', '೪', '೫', '೬', '೭', '೮', '೯'];
+  function kn(n) { return String(n).replace(/\d/g, function (d) { return KN[d]; }); }
+  function list(v) { return Array.isArray(v) ? v : (v == null || v === '' ? [] : [v]); }
+  function act(q) { return String((q && q.activity) || '').toLowerCase().trim(); }
+  function ctype(q) { try { return (typeof getCanonicalQuestionType === 'function') ? getCanonicalQuestionType(q) : (q.type || ''); } catch (e) { return q.type || ''; } }
+  function marksOf(q) { try { return (typeof getExactQuestionMarks === 'function') ? getExactQuestionMarks(q) : (+q.marks || 0); } catch (e) { return +q.marks || 0; } }
+  function grade() { return parseInt(String((document.getElementById('cfg-class') || {}).value || '').replace(/\D/g, '')) || 0; }
+
+  // ಸೂಚನೆ = ಮೊದಲ ಸಾಲು; "ಸೂಚನೆ: ವಿಷಯ" ಆದರೆ ":" ಮುಂಚಿನ ಭಾಗ; ಕೊನೆಯ "(ಪದ, ಪದ)" ಪದಕೋಶ ಬೇರೆ
+  function instr(q) {
+    var first = String((q && q.q) || '').split('\n')[0].trim();
+    var prefix = first, suffix = '', bank = '';
+    var m = first.match(/^(.{6,}?)\s*[:：](?!\d)\s*(.+)$/);
+    if (m && !/\d$/.test(m[1])) { prefix = m[1]; suffix = m[2].trim(); }
+    var b = prefix.match(/\s*\(([^()]*,[^()]*)\)\s*[.।]?\s*$/);
+    if (b) { bank = b[1].trim(); prefix = prefix.slice(0, b.index); }
+    prefix = prefix.replace(/^\s*(?:[\d೦-೯]{1,2}|[IVXivx]{1,4})\s*[.)]\s*/, '').replace(/[\s.।!?]+$/, '').trim();
+    return { prefix: prefix, suffix: suffix, bank: bank, first: first };
+  }
+  function famKey(q) {
+    var p = instr(q).prefix.toLowerCase().replace(/\s+/g, ' ');
+    if (p.length < 4) return '';
+    return act(q) + '|' + p;   // ಅಂಕ/ಪ್ರಕಾರ ಬೇರೆ ಇದ್ದರೂ ಸೂಚನೆ ಒಂದೇ ಆದರೆ ಒಂದೇ ಗುಂಪು
+  }
+  window.wyQuestionFamily = famKey;
+
+  // ---------- ⓪ 1–3ನೇ ತರಗತಿ: ಪ್ರಶ್ನೆಯ ನಿಜವಾದ ಅಂಕ (JSON "marks") ----------
+  // ಹಿಂದೆ 6 ಜೋಡಿ ಹೊಂದಿಸುವಿಕೆ / 6 ಖಾಲಿ ಜಾಗದ ಪ್ರಶ್ನೆಯನ್ನು 1 ಅಥವಾ 4 ಅಂಕ ಎಂದು ಎಣಿಸುತ್ತಿತ್ತು → ಒಟ್ಟು ಅಂಕ ತಪ್ಪು
+  var prevExact = window.getExactQuestionMarks;
+  if (typeof prevExact === 'function') {
+    window.getExactQuestionMarks = function (q) {
+      try {
+        var g = grade();
+        if (g >= 1 && g <= 3 && q) { var m = parseInt(q.marks, 10); if (m >= 1 && m <= 100) return m; }
+      } catch (e) {}
+      return prevExact.apply(this, arguments);
+    };
+    try { getExactQuestionMarks = window.getExactQuestionMarks; } catch (e) {}
+  }
+
+  // ---------- ① 1–3ನೇ ತರಗತಿ: ನಿಖರ ಅಂಕ + ಬೇರೆ ಬೇರೆ ರೀತಿಯ ಪ್ರಶ್ನೆಗಳು + ಹೊಸ ಪ್ರಶ್ನೆಗಳಿಗೆ ಆದ್ಯತೆ ----------
+  function usedKeys() {
+    try { return new Set((typeof getUsedQuestionIdsList === 'function' ? getUsedQuestionIdsList() : []) || []); } catch (e) { return new Set(); }
+  }
+  function qKey(q) { try { return (typeof getQuestionUniqueKey === 'function') ? getQuestionUniqueKey(q) : (q.id || q.q); } catch (e) { return q.id || q.q; } }
+  function shuffled(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  // ಕೊಟ್ಟ ಪ್ರಶ್ನೆಗಳಿಂದ ನಿಖರ d ಅಂಕ (ಕಡಿಮೆ ಪ್ರಶ್ನೆಗಳು); ಸಾಧ್ಯವಿಲ್ಲದಿದ್ದರೆ null
+  function fillExact(items, d) {
+    if (d === 0) return [];
+    if (d < 0) return null;
+    // 0/1 ಆಯ್ಕೆ: ಪ್ರತಿ ಪ್ರಶ್ನೆ ಒಮ್ಮೆ ಮಾತ್ರ (ಮೊತ್ತ s ಗೆ ಕನಿಷ್ಠ ಪ್ರಶ್ನೆಗಳ ಪಟ್ಟಿ)
+    var best = new Array(d + 1); best[0] = [];
+    for (var i = 0; i < items.length; i++) {
+      var m = items[i].m;
+      for (var s = d; s >= m; s--) {
+        if (best[s - m] && (!best[s] || best[s - m].length + 1 < best[s].length)) best[s] = best[s - m].concat(i);
+      }
+    }
+    return best[d] ? best[d].map(function (k) { return items[k]; }) : null;
+  }
+  function solveNK(pool, target, count) {
+    var used = usedKeys(), seenObj = new Set(), seenKey = new Set();
+    var items = [];
+    pool.forEach(function (q, idx) {
+      if (!q || seenObj.has(q)) return; seenObj.add(q);
+      var uk = String(q.id || '') + '|' + String(q.q || '').slice(0, 200);   // ಒಂದೇ ಪ್ರಶ್ನೆ ಪೂಲ್‌ನಲ್ಲಿ ಎರಡು ಬಾರಿ ಇದ್ದರೂ ಒಮ್ಮೆ ಮಾತ್ರ
+      if (seenKey.has(uk)) return; seenKey.add(uk);
+      var m = marksOf(q); if (!(m >= 1)) return;
+      items.push({ q: q, m: m, f: famKey(q) || ('#' + idx), idx: idx, used: used.has(qKey(q)) });
+    });
+    if (!items.length) return [];
+    var total = items.reduce(function (s, x) { return s + x.m; }, 0);
+    if (target <= 0 || target > total) target = Math.min(Math.max(target, 0) || total, total);
+    var best = null, bestScore = -1e9;
+    for (var t = 0; t < 300; t++) {
+      var order = shuffled(items).sort(function (a, b) { return (a.used ? 1 : 0) - (b.used ? 1 : 0); });
+      var take = [], sum = 0, fam = {};
+      order.forEach(function (x) { if (!fam[x.f] && sum + x.m <= target) { take.push(x); sum += x.m; fam[x.f] = 1; } });
+      if (sum < target) {
+        var rest = order.filter(function (x) { return take.indexOf(x) === -1; });
+        var fix = fillExact(rest, target - sum);
+        if (!fix) {
+          // ಸಾಧ್ಯವಾಗದಿದ್ದರೆ ಕೊನೆಯ ಕೆಲವು ಆಯ್ಕೆಗಳನ್ನು ತೆಗೆದು ಮತ್ತೆ ಪ್ರಯತ್ನ
+          for (var drop = 1; drop <= Math.min(4, take.length) && !fix; drop++) {
+            var tk = take.slice(0, take.length - drop), sm = tk.reduce(function (s, x) { return s + x.m; }, 0);
+            var rs = order.filter(function (x) { return tk.indexOf(x) === -1; });
+            var fx = fillExact(rs, target - sm);
+            if (fx) { take = tk; sum = sm; fix = fx; }
+          }
+        }
+        if (!fix) continue;
+        take = take.concat(fix); sum = target;
+      }
+      var fams = {}, rep = 0, usedN = 0;
+      take.forEach(function (x) { if (fams[x.f]) rep++; fams[x.f] = 1; if (x.used) usedN++; });
+      var score = -rep * 50 - usedN * 8 - Math.abs(take.length - count) * 1 + Math.random();
+      if (score > bestScore) { bestScore = score; best = take; }
+      if (rep === 0 && usedN === 0 && t > 40) break;
+    }
+    if (!best) {
+      // ನಿಖರ ಮೊತ್ತ ಸಾಧ್ಯವೇ ಇಲ್ಲ → ಗರಿಷ್ಠ ಸಾಧ್ಯವಾದ ಕಡಿಮೆ ಮೊತ್ತ
+      for (var d = target - 1; d >= 1 && !best; d--) { var f2 = fillExact(shuffled(items), d); if (f2) best = f2; }
+      if (best && typeof showToast === 'function' && !window.__wySolverQuiet) {
+        var got = best.reduce(function (s, x) { return s + x.m; }, 0);
+        showToast('ℹ️ ಆಯ್ಕೆಮಾಡಿದ ಪಾಠಗಳ ಪ್ರಶ್ನೆಗಳಿಂದ ನಿಖರ ' + target + ' ಅಂಕ ಸಾಧ್ಯವಿಲ್ಲ — ' + got + ' ಅಂಕದ ಪತ್ರಿಕೆ ರಚಿಸಲಾಗಿದೆ.', 'info');
+      }
+    }
+    if (!best) return [];
+    // ಪಠ್ಯಪುಸ್ತಕದ ಕ್ರಮದಲ್ಲೇ (ಪಾಠ → ಬ್ಯಾಂಕ್‌ನ ಕ್ರಮ)
+    return best.sort(function (a, b) { return a.idx - b.idx; }).map(function (x) { return x.q; });
+  }
+  window.wySolveNalikali = solveNK;
+
+  var prevSolve = window.solveStrictExactExamMath;
+  if (typeof prevSolve === 'function') {
+    window.solveStrictExactExamMath = function (pool, targetMarks, targetCount, selectedTypes) {
+      var g = grade();
+      if (g >= 1 && g <= 3 && Array.isArray(pool) && pool.length) {
+        try { var r = solveNK(pool, parseInt(targetMarks, 10) || 0, parseInt(targetCount, 10) || 0); if (r && r.length) return r; } catch (e) { console.warn('nalikali solver', e); }
+      }
+      return prevSolve.apply(this, arguments);
+    };
+    try { solveStrictExactExamMath = window.solveStrictExactExamMath; } catch (e) {}
+  }
+
+  // ---------- ② ತೋರಿಕೆಯಲ್ಲಿ ಒಟ್ಟುಗೂಡಿಸುವಿಕೆ ----------
+  var LIST = { picword: 'items', count: 'items', circle: 'rows', copy: 'words', letters: 'letters' };
+  var NUM_RX = /^\s*\(?([\d೦-೯]{1,2})\s*[.)]\s*/;
+  function unionBank(parts) {
+    var seen = [], out = [];
+    parts.forEach(function (p) { String(instr(p).bank || '').split(/\s*,\s*/).forEach(function (w) { w = w.trim(); if (w && seen.indexOf(w) === -1) { seen.push(w); out.push(w); } }); });
+    return out.length ? ' (' + out.join(', ') + ')' : '';
+  }
+  function plainText(q) {
+    // ಚಿತ್ರ/ಆಯ್ಕೆ/ಹೊಂದಿಸುವಿಕೆ ಇಲ್ಲದ ಸಾಮಾನ್ಯ ಪಠ್ಯ ಪ್ರಶ್ನೆ ಮಾತ್ರ
+    if (!q || act(q)) return false;
+    if (q.image || q.img || q.imageUrl || q.picture || q.a || q.b || q.matchPairs || q.pairs || q.items || q.rows || q.options) return false;
+    if (/match|mcq|true_false|context/.test(ctype(q))) return false;
+    return true;
+  }
+  function anslines(a) { return String(a == null ? '' : a).split('\n').map(function (x) { return x.trim(); }).filter(Boolean); }
+  function oneLineAns(q) {
+    var a = q.ans;
+    if ((a == null || a === '') && typeof window.wyNalikaliActivityAnswer === 'function') { try { a = window.wyNalikaliActivityAnswer(q); } catch (e) {} }
+    return anslines(a).join(', ');
+  }
+
+  function mergeGroup(G) {
+    var I0 = instr(G[0]), a = act(G[0]);
+    var marks = G.reduce(function (s, q) { return s + (marksOf(q) || 0); }, 0);
+    var base = { id: G.map(function (q) { return q.id || ''; }).join('+'), type: G[0].type, chapter: G[0].chapter, marks: marks, __merged: G.length };
+    var noSuffix = G.every(function (q) { return !instr(q).suffix; });
+    var head = I0.prefix + unionBank(G);
+
+    if (a && LIST[a] && noSuffix) {
+      var f = LIST[a], all = [];
+      G.forEach(function (q) { all = all.concat(list(q[f])); });
+      var m = Object.assign({}, G[0], base, { activity: a, q: head });
+      m[f] = all;
+      if (a === 'picword' || a === 'copy') {
+        var h = []; G.forEach(function (q) { list(q.help).forEach(function (w) { if (h.indexOf(w) === -1) h.push(w); }); });
+        if (h.length) m.help = h; else delete m.help;
+      }
+      delete m.img; delete m.image;
+      var ok = (a === 'picword' || a === 'count') && all.every(function (x) { return x && (x.ans != null || x.n != null); });
+      m.ans = ok ? all.map(function (x, i) { return kn(i + 1) + '. ' + (x.ans != null ? x.ans : x.n); }).join('\n')
+                 : G.map(function (q, i) { return kn(i + 1) + ') ' + oneLineAns(q); }).join('\n');
+      return m;
+    }
+    if (a) {
+      return Object.assign({}, base, {
+        activity: 'multi', q: head,
+        parts: G.map(function (q) { return Object.assign({}, q, { __sub: instr(q).suffix }); }),
+        ans: G.map(function (q, i) { var sx = instr(q).suffix; return kn(i + 1) + ') ' + (sx ? sx + ' → ' : '') + oneLineAns(q); }).join('\n')
+      });
+    }
+    // ಸಾಮಾನ್ಯ ಪಠ್ಯ: ಉಪಪ್ರಶ್ನೆಗಳನ್ನು 1, 2, 3 ... ಎಂದು ಮುಂದುವರಿಸಿ ಜೋಡಣೆ
+    var qLines = [], aLines = [], n = 0;
+    for (var gi = 0; gi < G.length; gi++) {
+      var q = G[gi], ins = instr(q);
+      var subs = String(q.q || '').split('\n').slice(1).map(function (x) { return x.replace(/\s+$/, ''); }).filter(function (x) { return x.trim(); });
+      if (ins.suffix && subs.length) return null;          // ಎರಡೂ ಇದ್ದರೆ ಒಟ್ಟುಗೂಡಿಸುವುದಿಲ್ಲ
+      if (!subs.length) subs = [ins.suffix ? ins.suffix : ''];
+      if (subs.length === 1 && !subs[0]) return null;
+      var start = n, local = 0;
+      subs.forEach(function (ln) {
+        if (NUM_RX.test(ln) || local === 0) { n++; local++; qLines.push(n + '. ' + ln.replace(NUM_RX, '').trim()); }
+        else qLines.push(ln);
+      });
+      var al = anslines(q.ans), cnt = n - start;
+      if (al.length && al.every(function (x) { return NUM_RX.test(x); })) {
+        var k2 = start; al.forEach(function (x) { k2++; aLines.push(k2 + '. ' + x.replace(NUM_RX, '').trim()); });
+      } else if (al.length) {
+        aLines.push((cnt === 1 ? (start + 1) + '. ' : (start + 1) + '–' + n + '. ') + al.join(' / '));
+      }
+    }
+    return Object.assign({}, G[0], base, { q: head + '\n' + qLines.join('\n'), ans: aLines.join('\n') });
+  }
+
+  function mergeList(qs) {
+    if (!Array.isArray(qs) || qs.length < 2) return qs;
+    var g = grade(); if (!(g >= 1 && g <= 3)) return qs;
+    var groups = {}, order = [];
+    qs.forEach(function (q, i) {
+      var k = famKey(q);
+      if (!k) { order.push({ one: q }); return; }
+      if (!groups[k]) { groups[k] = []; order.push({ key: k }); }
+      groups[k].push(q);
+    });
+    var any = false, out = [];
+    order.forEach(function (o) {
+      if (o.one) { out.push(o.one); return; }
+      var G = groups[o.key];
+      if (G.length < 2) { out.push(G[0]); return; }
+      var a = act(G[0]);
+      var m = null;
+      if (a || G.every(plainText)) { try { m = mergeGroup(G); } catch (e) { m = null; } }
+      if (m) { out.push(m); any = true; } else G.forEach(function (q) { out.push(q); });
+    });
+    return any ? out : qs;
+  }
+  window.wyMergeSameHeadings = mergeList;
+
+  // ---------- ③ ಪತ್ರಿಕೆ ಮತ್ತು ಕೀ ಉತ್ತರ: ಅಂಕದ ಲೇಬಲ್ ಸರಿಪಡಿಸುವುದು + ಉಳಿದ ಒಂದೇ ಶೀರ್ಷಿಕೆಗಳನ್ನು ಒಂದುಗೂಡಿಸುವುದು ----------
+  var KDIG = { '೦': 0, '೧': 1, '೨': 2, '೩': 3, '೪': 4, '೫': 5, '೬': 6, '೭': 7, '೮': 8, '೯': 9 };
+  function lastNum(t) { t = String(t || '').replace(/[೦-೯]/g, function (c) { return KDIG[c]; }); var m = t.match(/\d+/g); return m ? +m[m.length - 1] : NaN; }
+  var ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX'];
+  var SUBL_KN = ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಋ', 'ಎ'], SUBL_EN = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  function isEnPaper() { var s = (document.getElementById('cfg-subject') || {}).value || ''; return /english/i.test(s) || (document.getElementById('cfg-medium') || {}).value === 'english_medium'; }
+  function label(el, m) {
+    if (!el || !(m >= 1) || lastNum(el.textContent) === m) return;
+    var t = el.textContent, kd = /[೦-೯]/.test(t) || !/\d/.test(t);
+    var f = function (n) { return kd ? kn(n) : String(n); };
+    var x = String(t).replace(/[೦-೯]/g, function (c) { return KDIG[c]; }).match(/(\d+)\s*[×xX]\s*(\d+)/);
+    if (x && +x[1] > 0 && m % +x[1] === 0) el.textContent = f(+x[1]) + ' × ' + f(m / +x[1]) + ' = ' + f(m);
+    else el.textContent = /marks/i.test(t) ? m + ' Marks' : f(m) + ' ಅಂಕ';
+  }
+  function titleKey(txt) { var I = instr({ q: String(txt || '').replace(/^\s*[IVXL]+\.\s*/, '') }); var p = I.prefix.toLowerCase().replace(/\s+/g, ' '); return p.length >= 4 ? p : ''; }
+  // secs: [{el, titleEl, marksEl, headEl, setRoman(fn)}]
+  function fixSections(secs, M) {
+    if (!secs.length) return;
+    if (M && secs.length === M.length) secs.forEach(function (s, i) { s.m = marksOf(M[i]); label(s.marksEl, s.m); });
+    else secs.forEach(function (s) { s.m = lastNum(s.marksEl && s.marksEl.textContent); });
+    var groups = {}, order = [];
+    secs.forEach(function (s) { var k = titleKey(s.titleText()); if (!k) return; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(s); });
+    var en = isEnPaper(), SUB = en ? SUBL_EN : SUBL_KN, changed = false;
+    order.forEach(function (k) {
+      var G = groups[k]; if (G.length < 2) return;
+      changed = true;
+      var first = G[0], after = first.el, tot = 0;
+      G.forEach(function (s, gi) {
+        tot += (s.m >= 1 ? s.m : 0);
+        var I = instr({ q: s.titleText().replace(/^\s*[IVXL]+\.\s*/, '') });
+        var sub = document.createElement('div');
+        sub.className = 'wyk-part-h wy-merge-sub';
+        sub.setAttribute('style', 'font-size:12pt;font-weight:900;margin:2mm 0 1mm;');
+        sub.textContent = SUB[gi % SUB.length] + ') ' + (I.suffix || '');
+        if (s.headEl && s.headEl.nextSibling) s.el.insertBefore(sub, s.headEl.nextSibling); else s.el.appendChild(sub);
+        if (gi > 0) {
+          if (s.headEl) s.headEl.parentNode.removeChild(s.headEl);
+          if (after.nextSibling !== s.el) after.parentNode.insertBefore(s.el, after.nextSibling);
+          after = s.el;
+          s.el.style.marginTop = '0';
+        }
+      });
+      if (tot >= 1 && first.marksEl) first.marksEl.textContent = en ? tot + ' Marks' : kn(tot) + ' ಅಂಕ';
+      var I0 = instr({ q: first.titleText().replace(/^\s*[IVXL]+\.\s*/, '') });
+      first.setTitle(I0.prefix);
+    });
+    if (changed) {
+      var n = 0;
+      secs.forEach(function (s) { if (s.headEl && s.headEl.parentNode) s.setRoman(ROM[n] || String(n + 1)), n++; });
+    }
+  }
+  function paperSecs() {
+    var paper = document.getElementById('rendered-paper'); if (!paper) return [];
+    return Array.prototype.map.call(paper.querySelectorAll('.nk-section-block'), function (b) {
+      var head = b.querySelector('.nk-section-head'), tEl = b.querySelector('.nk-section-title');
+      return {
+        el: b, headEl: head, marksEl: b.querySelector('.nk-section-marks'),
+        titleText: function () { var c = tEl ? tEl.cloneNode(true) : null; if (!c) return ''; var bb = c.querySelector('b'); if (bb) bb.remove(); return c.textContent.trim(); },
+        setTitle: function (txt) { if (!tEl) return; var bb = tEl.querySelector('b'); tEl.innerHTML = ''; if (bb) { tEl.appendChild(bb); tEl.appendChild(document.createTextNode(' ')); } tEl.appendChild(document.createTextNode(txt)); },
+        setRoman: function (r) { var bb = tEl && tEl.querySelector('b'); if (bb) bb.textContent = r + '.'; }
+      };
+    });
+  }
+  function keySecs() {
+    var key = document.getElementById('rendered-key'); if (!key) return [];
+    var secs = Array.prototype.filter.call(key.querySelectorAll('div'), function (d) { return /1\.5px solid (rgb\(203, 213, 225\)|#cbd5e1)/i.test(d.getAttribute('style') || '') && /margin-bottom: 8px/.test(d.getAttribute('style') || ''); });
+    return secs.map(function (sec) {
+      var hd = sec.firstElementChild, bs = hd ? hd.querySelectorAll(':scope > b, :scope > span') : [];
+      var tEl = bs[0], mEl = bs.length > 1 ? bs[bs.length - 1] : null;
+      return {
+        el: sec, headEl: hd, marksEl: mEl,
+        titleText: function () { return tEl ? tEl.textContent.trim() : ''; },
+        setTitle: function (txt) { if (!tEl) return; var r = (tEl.textContent.match(/^\s*([IVXL]+\.)/) || [])[1]; tEl.textContent = (r ? r + ' ' : '') + txt; },
+        setRoman: function (r) { if (tEl) tEl.textContent = tEl.textContent.replace(/^\s*[IVXL]+\./, r + '.'); }
+      };
+    });
+  }
+
+  function wrap(name, after) {
+    var prev = window[name];
+    if (typeof prev !== 'function' || prev.__wyMerge) return;
+    var f = function (allQuestions) {
+      var args = Array.prototype.slice.call(arguments), M = null;
+      try { M = mergeList(allQuestions); args[0] = M; } catch (e) {}
+      var r = prev.apply(this, args);
+      try { var g = grade(); if (g >= 1 && g <= 3) fixSections(after(), M); } catch (e) { console.warn('merge headings', e); }
+      return r;
+    };
+    f.__wyMerge = true;
+    window[name] = f;
+  }
+  wrap('renderDedicatedNalikaliWorksheet', paperSecs);
+  wrap('renderDedicatedNalikaliKeyAnswers', keySecs);
+  try { renderDedicatedNalikaliWorksheet = window.renderDedicatedNalikaliWorksheet; } catch (e) {}
+  try { renderDedicatedNalikaliKeyAnswers = window.renderDedicatedNalikaliKeyAnswers; } catch (e) {}
 })();
 
 </script>
