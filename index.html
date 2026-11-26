@@ -28267,11 +28267,10 @@ function wyRobustParse(raw) {
 })();
 
 // =========================================================================
-// 🎨 3D ಶೈಲಿ (ಪರದೆಗೆ ಮಾತ್ರ — ಪ್ರಶ್ನೆಪತ್ರಿಕೆ / ಮುದ್ರಣಕ್ಕೆ ಯಾವುದೇ ಬದಲಾವಣೆ ಇಲ್ಲ)
-//  • ಮುಖಪುಟದ ಹಸಿರು ಬ್ಯಾನರ್‌ನಲ್ಲಿ ತೇಲುವ 3D ಪ್ರಶ್ನೆಪತ್ರಿಕೆ, ಪೆನ್ಸಿಲ್, A+ ಬ್ಯಾಡ್ಜ್
-//  • ಕಾರ್ಡ್‌ಗಳಿಗೆ ಆಳ (depth), ಬಣ್ಣದ 3D ಐಕಾನ್‌ಗಳು, ಒತ್ತುವ 3D ಬಟನ್‌ಗಳು
-//  • ಸ್ಕ್ರಾಲ್ ಮಾಡಿದಂತೆ ಕಾರ್ಡ್‌ಗಳು 3D ಆಗಿ ಮೇಲೆ ಬರುತ್ತವೆ
-//  • "ಕಡಿಮೆ ಚಲನೆ" ಸೆಟ್ಟಿಂಗ್ ಇರುವ ಫೋನ್‌ಗಳಲ್ಲಿ ಚಲನೆ ಇಲ್ಲ
+// 💛❤️ ಕರ್ನಾಟಕ ಶೈಲಿ (ಹಳದಿ–ಕೆಂಪು) — ಪರದೆಗೆ ಮಾತ್ರ; ಪ್ರಶ್ನೆಪತ್ರಿಕೆ / ಮುದ್ರಣಕ್ಕೆ ಯಾವುದೇ ಬದಲಾವಣೆ ಇಲ್ಲ
+//  • ಮುಖಪುಟ: ತೇಲುವ 3D ಕರ್ನಾಟಕ ನಕ್ಷೆ, 3D ಕನ್ನಡ ಶೀರ್ಷಿಕೆ, ತೂಗಾಡುವ ಸೂಚನಾ ಪತ್ರ, ಕನ್ನಡ ಅಕ್ಷರಗಳ ಹಿನ್ನೆಲೆ
+//  • ಬದಿಯ ಮೆನು, ಕಾರ್ಡ್, ಐಕಾನ್, ಬಟನ್ — ಎಲ್ಲವೂ ಕನ್ನಡ ಧ್ವಜದ ಬಣ್ಣಗಳಲ್ಲಿ
+//  • ಸ್ಕ್ರಾಲ್ ಮಾಡಿದಂತೆ ಕಾರ್ಡ್‌ಗಳು 3D ಆಗಿ ಮೇಲೆ ಬರುತ್ತವೆ; "ಕಡಿಮೆ ಚಲನೆ" ಫೋನ್‌ಗಳಲ್ಲಿ ಚಲನೆ ಇಲ್ಲ
 // =========================================================================
 (function installThreeDTheme() {
   if (window.__wy3d) return; window.__wy3d = true;
@@ -28280,103 +28279,187 @@ function wyRobustParse(raw) {
   var finePointer = false;
   try { finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (e) {}
 
+  var KA = 'M17.5,240.2C18.2,236.1 26.4,232.2 27.9,227.5C29.4,222.7 27.1,217.6 26.1,212.9C25.0,208.1 22.0,204.9 21.8,200.2C21.6,195.4 23.2,190.3 24.8,185.6C26.5,180.8 30.4,177.5 31.0,172.8C31.5,168.2 27.9,164.1 27.9,158.9C27.9,153.7 27.8,147.4 31.0,143.0C34.2,138.6 40.4,136.5 46.3,133.5C52.2,130.5 58.8,129.7 64.7,125.8C70.6,122.0 74.2,116.0 80.1,111.2C86.0,106.5 91.5,102.4 98.5,98.5C105.4,94.6 113.0,92.3 119.9,89.0C126.9,85.7 131.9,83.0 138.3,79.5C144.8,75.9 151.1,72.4 156.7,68.7C162.4,65.0 166.6,62.5 170.9,58.5C175.2,54.5 177.0,50.5 181.3,45.8C185.6,41.2 190.8,36.7 195.4,31.8C200.0,27.0 203.4,21.0 207.7,17.9C212.0,14.8 215.6,13.3 219.9,14.1C224.2,14.8 229.6,18.3 232.2,22.3C234.8,26.3 233.8,31.9 234.7,36.9C235.5,41.9 237.3,45.7 237.1,50.9C236.9,56.1 234.6,61.2 233.4,66.8C232.3,72.3 230.9,77.1 230.4,82.7C229.8,88.2 231.1,93.0 230.4,98.5C229.6,104.1 226.9,109.4 226.1,114.4C225.2,119.4 224.7,122.7 225.5,127.1C226.2,131.6 228.8,135.4 230.4,139.8C232.0,144.3 235.2,148.1 234.7,152.5C234.1,157.0 230.7,161.0 227.3,165.2C223.9,169.5 219.1,172.4 215.0,176.7C211.0,180.9 206.3,184.7 204.0,189.4C201.6,194.0 201.5,198.1 201.5,203.3C201.5,208.6 204.8,213.7 204.0,219.2C203.1,224.8 199.5,230.1 196.6,235.1C193.7,240.1 188.7,242.8 187.4,247.8C186.1,252.8 187.9,258.7 189.3,263.7C190.7,268.7 191.4,273.6 195.4,276.4C199.4,279.2 207.2,277.3 212.0,279.6C216.7,281.8 221.9,285.2 222.4,289.1C222.9,293.0 213.6,298.1 215.0,301.8C216.4,305.4 224.5,310.0 230.4,310.0C236.3,310.0 242.9,301.0 248.8,301.8C254.7,302.6 258.7,310.0 264.1,314.5C269.5,318.9 275.2,322.2 279.4,327.2C283.7,332.2 286.2,337.5 288.6,343.1C291.1,348.6 294.6,353.9 293.6,358.9C292.5,363.9 288.2,368.6 282.5,371.6C276.8,374.6 267.7,374.4 261.0,376.1C254.4,377.8 248.5,378.1 244.5,381.2C240.5,384.3 239.0,388.9 238.3,393.9C237.7,398.9 239.7,405.1 240.8,409.8C241.9,414.4 245.8,416.9 244.5,420.6C243.2,424.2 238.1,427.0 233.4,430.7C228.8,434.4 223.3,438.0 218.1,441.5C212.9,445.1 209.4,449.4 204.0,451.0C198.6,452.7 193.5,451.9 187.4,451.0C181.3,450.1 174.9,448.0 169.0,446.0C163.1,444.0 158.7,442.3 153.7,439.6C148.6,436.9 145.0,433.2 140.2,430.7C135.4,428.3 129.9,428.5 126.1,425.6C122.2,422.7 121.9,418.1 118.1,414.2C114.3,410.3 108.9,407.0 104.6,403.4C100.3,399.8 97.6,396.7 93.6,393.9C89.5,391.1 86.0,390.3 81.3,387.5C76.6,384.7 69.8,381.6 66.6,378.0C63.3,374.4 64.2,372.2 62.9,367.2C61.6,362.2 60.5,355.3 59.2,349.4C57.9,343.5 56.9,339.7 55.5,333.5C54.1,327.4 52.9,320.6 51.2,314.5C49.5,308.4 47.7,304.7 45.7,298.6C43.7,292.5 41.8,285.7 39.6,279.6C37.3,273.4 35.6,268.7 32.8,263.7C30.0,258.7 26.3,255.1 23.6,251.0C20.9,246.9 16.7,244.3 17.5,240.2Z';
+
+  try {
+    var lk = document.createElement('link'); lk.rel = 'stylesheet'; lk.media = 'screen';
+    lk.href = 'https://fonts.googleapis.com/css2?family=Baloo+Tamma+2:wght@600;700;800&display=swap';
+    document.head.appendChild(lk);
+  } catch (e) {}
+
   var C = [
-    // ಹಿನ್ನೆಲೆ
-    'body{background:radial-gradient(900px 520px at 88% -8%,rgba(23,121,90,.13),transparent 62%),radial-gradient(760px 520px at 18% 108%,rgba(217,144,28,.10),transparent 60%),var(--m-bg)!important;background-attachment:scroll!important}',
-    // ಹಸಿರು ಬ್ಯಾನರ್ (hero)
-    '.m-view .m-welcome{background:linear-gradient(135deg,#0b3f2f 0%,#12694d 48%,#1c8f68 100%);border-radius:20px;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 -6px 0 rgba(0,0,0,.12) inset,0 26px 50px -22px rgba(11,63,47,.75),0 8px 18px -10px rgba(11,63,47,.5)}',
-    '.m-view .m-welcome>*{position:relative;z-index:1}',
-    '.m-view .m-welcome h2{text-shadow:0 2px 0 rgba(0,0,0,.18),0 8px 22px rgba(0,0,0,.25)}',
-    '.m-view .m-welcome.wy3d-has{padding-right:330px;min-height:236px;align-content:center}',
-    '@media (max-width:1180px){.m-view .m-welcome.wy3d-has{padding-right:250px}.wy3d-scene{transform:scale(.78);transform-origin:right center}}',
-    // 3D ದೃಶ್ಯ
-    '.wy3d-scene{position:absolute!important;right:22px;top:50%;margin-top:-112px;transform:scale(.9);transform-origin:right center;width:290px;height:236px;perspective:900px;pointer-events:none;z-index:0!important;--rx:0deg;--ry:0deg;--sy:0}',
-    '.wy3d-rig{position:absolute;inset:0;transform-style:preserve-3d;transform:rotateX(calc(16deg + var(--rx))) rotateY(calc(-24deg + var(--ry) + var(--sy) * 26deg));transition:transform .5s cubic-bezier(.2,.7,.2,1)}',
-    '.wy3d-float{position:absolute;inset:0;transform-style:preserve-3d;animation:wy3dFloat 6s ease-in-out infinite}',
-    '@keyframes wy3dFloat{0%,100%{transform:translateY(0) rotateZ(0)}50%{transform:translateY(-10px) rotateZ(-1.5deg)}}',
-    '.wy3d-sheet{position:absolute;left:78px;top:18px;width:142px;height:186px;border-radius:10px;background:#fff;transform-style:preserve-3d;box-shadow:1px 1px 0 #e3ebe7,2px 2px 0 #d3ddd8,3px 3px 0 #c4d0ca,4px 4px 0 #b7c4be,0 24px 38px -10px rgba(0,0,0,.45)}',
-    '.wy3d-sheet.s3{background:#cdebdc;transform:translateZ(-56px) translateX(-30px) translateY(10px) rotateZ(-11deg)}',
-    '.wy3d-sheet.s2{background:#eef8f3;transform:translateZ(-28px) translateX(-15px) translateY(5px) rotateZ(-5deg)}',
-    '.wy3d-sheet.s1{transform:translateZ(0) rotateZ(3deg);padding:12px 12px 0;overflow:hidden}',
-    '.wy3d-sheet .hd{display:flex;align-items:center;gap:6px;margin-bottom:8px}',
-    '.wy3d-sheet .hd span{width:22px;height:22px;border-radius:6px;background:linear-gradient(145deg,#1f9a71,#0f5c44);color:#fff;font:800 8.5px/22px system-ui,sans-serif;text-align:center;box-shadow:0 2px 0 #0a3f2f}',
-    '.wy3d-sheet .hd i{flex:1;height:7px;border-radius:4px;background:#d7e6df}',
-    '.wy3d-sheet .tt{font:700 10.5px/1.3 system-ui,sans-serif;color:#0f5c44;margin-bottom:8px;white-space:nowrap}',
-    '.wy3d-sheet .q{display:flex;align-items:center;gap:6px;margin:0 0 9px}',
-    '.wy3d-sheet .q b{width:12px;height:12px;border-radius:50%;flex:none;background:#e4f2ec;color:#17795a;font:900 8px/12px system-ui,sans-serif;text-align:center}',
-    '.wy3d-sheet .q.ok b{background:#17795a;color:#fff}',
-    '.wy3d-sheet .q i{height:6px;border-radius:3px;background:#e7eeea;flex:1}',
-    '.wy3d-sheet .q i.sh{flex:.6}',
-    '.wy3d-pencil{position:absolute;left:204px;top:58px;width:14px;height:128px;border-radius:3px 3px 0 0;transform:translateZ(62px) rotateZ(28deg);transform-style:preserve-3d;background:linear-gradient(90deg,#ffd35c 0 34%,#f2b02a 34% 67%,#d18c10 67%);box-shadow:0 18px 26px -8px rgba(0,0,0,.45)}',
-    '.wy3d-pencil:before{content:"";position:absolute;left:0;right:0;top:-22px;height:22px;border-radius:5px 5px 0 0;background:linear-gradient(90deg,#ff9ab0,#f06a8a 60%,#d2486b)}',
-    '.wy3d-pencil:after{content:"";position:absolute;left:0;right:0;top:-6px;height:9px;background:linear-gradient(90deg,#f1f4f6,#b9c2c9 60%,#8d979f)}',
-    '.wy3d-pencil i{position:absolute;left:0;right:0;bottom:-26px;height:26px;background:linear-gradient(90deg,#f6dfb7,#e3bf86 60%,#c99f63);clip-path:polygon(0 0,100% 0,50% 100%)}',
-    '.wy3d-pencil i:after{content:"";position:absolute;left:50%;bottom:0;width:6px;height:9px;margin-left:-3px;background:#2b2f33;clip-path:polygon(0 0,100% 0,50% 100%)}',
-    '.wy3d-badge{position:absolute;left:18px;top:22px;width:66px;height:66px;border-radius:50%;transform:translateZ(84px);display:grid;place-items:center;background:radial-gradient(circle at 32% 28%,#fff3c4 0,#ffd166 22%,#f2a516 58%,#c27a05 100%);box-shadow:0 6px 0 #9c5f06,0 18px 26px -8px rgba(0,0,0,.5);animation:wy3dBob 4.5s ease-in-out infinite}',
-    '.wy3d-badge b{font:900 21px/1 system-ui,sans-serif;color:#5a3500;text-shadow:0 1px 0 rgba(255,255,255,.55)}',
-    '@keyframes wy3dBob{0%,100%{transform:translateZ(84px) translateY(0) rotate(-8deg)}50%{transform:translateZ(84px) translateY(-9px) rotate(6deg)}}',
-    '.wy3d-orb{position:absolute;border-radius:50%;animation:wy3dBob2 5s ease-in-out infinite}',
-    '.wy3d-orb.o1{left:8px;top:150px;width:30px;height:30px;background:radial-gradient(circle at 32% 28%,#e9fff5,#57d6a3 45%,#14885f);transform:translateZ(40px);box-shadow:0 10px 16px -6px rgba(0,0,0,.4)}',
-    '.wy3d-orb.o2{left:248px;top:182px;width:22px;height:22px;background:radial-gradient(circle at 32% 28%,#eef6ff,#79b4f5 45%,#2f74d0);transform:translateZ(30px);animation-delay:-1.6s;box-shadow:0 10px 16px -6px rgba(0,0,0,.4)}',
-    '.wy3d-orb.o3{left:236px;top:0;width:16px;height:16px;background:radial-gradient(circle at 32% 28%,#fff,#c6a4f2 45%,#7d51c9);transform:translateZ(20px);animation-delay:-3s}',
-    '@keyframes wy3dBob2{0%,100%{margin-top:0}50%{margin-top:-12px}}',
-    '.wy3d-shadow{position:absolute;left:58px;right:28px;bottom:-4px;height:26px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.38),transparent);animation:wy3dShadow 6s ease-in-out infinite}',
-    '@keyframes wy3dShadow{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(.86);opacity:.6}}',
-    // ಮೊಬೈಲ್: ದೃಶ್ಯ ಬ್ಯಾನರ್‌ನ ಮೇಲ್ಭಾಗದಲ್ಲಿ
-    '@media (max-width:760px){.m-view .m-welcome.wy3d-has{padding-right:20px;min-height:0}.wy3d-scene{position:relative!important;right:auto;top:auto;margin:-4px auto -10px;order:-1;transform:scale(.72);transform-origin:center top;height:236px;margin-bottom:-62px}}',
-    // ಕಾರ್ಡ್‌ಗಳು
-    '.m-card{border-radius:16px;background:linear-gradient(180deg,#fff,#fbfdfc);border-color:rgba(214,225,219,.95);box-shadow:0 1px 0 #fff inset,0 1px 2px rgba(16,38,31,.06),0 3px 0 rgba(16,38,31,.035),0 18px 34px -20px rgba(16,38,31,.32)}',
-    '.m-stat,.m-qa{position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .2s;background-image:radial-gradient(circle at var(--gx,50%) var(--gy,-30%),rgba(255,255,255,.95),rgba(255,255,255,0) 45%),linear-gradient(180deg,#fff,#f8fbfa)}',
-    '.m-stat:hover,.m-qa:hover{box-shadow:0 1px 0 #fff inset,0 4px 0 rgba(16,38,31,.05),0 28px 40px -22px rgba(16,38,31,.45)}',
-    '.m-stats .m-stat b{background:linear-gradient(135deg,var(--a1,#0f5c44),var(--a2,#25a77b));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 2px 0 rgba(16,38,31,.08))}',
-    '.m-stats .m-stat{border-top:3px solid var(--a2,#25a77b)}',
-    '.m-stats>.m-stat:nth-child(4n+1){--a1:#0f5c44;--a2:#25a77b}',
-    '.m-stats>.m-stat:nth-child(4n+2){--a1:#a8680a;--a2:#f0a92a}',
-    '.m-stats>.m-stat:nth-child(4n+3){--a1:#1f529b;--a2:#4f9bf0}',
-    '.m-stats>.m-stat:nth-child(4n+4){--a1:#5a3496;--a2:#a77be8}',
-    // 3D ಐಕಾನ್ ಟೈಲ್‌ಗಳು
-    '.m-qa .ic{--c1:#36c48f;--c2:#14885f;--c3:#0c5f42;background:linear-gradient(145deg,var(--c1),var(--c2))!important;color:#fff!important;border-radius:14px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -3px 0 rgba(0,0,0,.12),0 4px 0 var(--c3),0 12px 18px -8px var(--c2);transition:transform .35s cubic-bezier(.2,.7,.2,1)}',
-    '.m-qa .ic svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}',
-    '.m-quick>.m-qa:nth-child(4n+2) .ic{--c1:#ffc457;--c2:#e0920f;--c3:#a8680a}',
-    '.m-quick>.m-qa:nth-child(4n+3) .ic{--c1:#6aaef7;--c2:#2f74d0;--c3:#1f529b}',
-    '.m-quick>.m-qa:nth-child(4n+4) .ic{--c1:#b993f0;--c2:#7d51c9;--c3:#5a3496}',
-    '.m-qa:hover .ic{transform:translateZ(26px) rotate(-7deg) scale(1.06)}',
-    '.m-unit .no{background:linear-gradient(145deg,#eaf7f1,#cfeadd)!important;color:#0f5c44!important;border-radius:11px!important;box-shadow:inset 0 1px 0 #fff,0 3px 0 #a9d3c0,0 8px 12px -6px rgba(15,92,68,.45)}',
-    // 3D ಬಟನ್‌ಗಳು (ಒತ್ತಿದಾಗ ಒಳಗೆ ಹೋಗುತ್ತವೆ)
-    '.m-btn{border-radius:10px;transition:transform .1s,box-shadow .1s,background .15s}',
-    '.m-btn.pri{background:linear-gradient(180deg,#22966f,#15704f)!important;border-color:#13684a!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 3px 0 #0b4a37,0 10px 18px -8px rgba(15,92,68,.65)}',
-    '.m-btn.pri:hover{background:linear-gradient(180deg,#1d8a65,#0f5c44)!important}',
-    '.m-btn:active{transform:translateY(3px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 #0b4a37!important}',
-    '.m-btn.light{box-shadow:inset 0 -2px 0 #dbe7e1,0 4px 0 rgba(0,0,0,.18),0 12px 20px -8px rgba(0,0,0,.45)}',
-    '.m-hero #wy-hero-member button.px-7{border-radius:12px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(0,0,0,.08),0 4px 0 rgba(0,0,0,.25),0 14px 22px -8px rgba(0,0,0,.5)!important;transition:transform .1s,box-shadow .1s!important}',
-    '.m-hero #wy-hero-member button.px-7:active{transform:translateY(4px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 0 rgba(0,0,0,.25)!important}',
-    // ಬದಿಯ ಮೆನು
-    '.m-nav button.on{background:linear-gradient(90deg,rgba(255,255,255,.16),rgba(255,255,255,.05))!important;box-shadow:inset 3px 0 0 var(--m-amber),inset 0 1px 0 rgba(255,255,255,.08),0 8px 16px -10px rgba(0,0,0,.7)!important}',
-    '.m-brand .mk{box-shadow:inset 0 -3px 0 #d5e3dc,0 3px 0 #0a1c16,0 10px 16px -6px rgba(0,0,0,.6);transition:transform .5s cubic-bezier(.2,.7,.2,1)}',
+    // ---- ಬಣ್ಣಗಳು (ಎಲ್ಲಾ ಪುಟಗಳೂ ಇವುಗಳನ್ನೇ ಬಳಸುತ್ತವೆ) ----
+    ':root{--ka-y:#FFC21A;--ka-y1:#FFE15A;--ka-y0:#FFF7DA;--ka-r:#D4182B;--ka-rd:#9E0F1F;--ka-rx:#5E0712;--ka-ink:#2B1A12;--ka-mut:#6F5E52;--ka-line:#F1DFB4;' +
+      '--ka-disp:"Baloo Tamma 2","Anek Kannada","Noto Sans Kannada",system-ui,sans-serif;' +
+      '--m-side:#5E0712;--m-side-ink:#FFE9C4;--m-bg:#FFFBF0;--m-ink:#2B1A12;--m-muted:#6F5E52;--m-line:#F1DFB4;--m-accent:#C8141F;--m-accent2:#9E0F1F;--m-soft:#FFF1D2;--m-amber:#FFC21A;--m-amber-soft:#FFF4D6;' +
+      '--m-shadow:0 1px 2px rgba(94,7,18,.06),0 6px 18px rgba(94,7,18,.08)}',
+    'body{background:radial-gradient(900px 520px at 90% -10%,rgba(255,194,26,.20),transparent 62%),radial-gradient(760px 520px at 12% 110%,rgba(212,24,43,.08),transparent 60%),#FFFBF0!important}',
+
+    // ---- ಬದಿಯ ಮೆನು ----
+    '.m-side{background:linear-gradient(180deg,#7A0B18 0%,#5E0712 45%,#3E050D 100%)!important}',
+    '@media (min-width:901px){.m-side{box-shadow:inset -6px 0 0 -2px #FFC21A,inset -10px 0 0 -4px #D4182B}}',
+    '@media (max-width:900px){.m-side{box-shadow:inset 0 -4px 0 #FFC21A}}',
+    '.m-bar{background:rgba(255,248,230,.93)!important;border-bottom-color:#F1DFB4!important}',
+    '.m-nav button{color:#FFE9C4}',
+    '.m-nav button:hover{background:rgba(255,194,26,.10)!important}',
+    '.m-nav button.on{background:linear-gradient(90deg,rgba(255,194,26,.26),rgba(255,194,26,.06))!important;color:#fff!important;box-shadow:inset 4px 0 0 #FFC21A,0 8px 16px -10px rgba(0,0,0,.7)!important}',
+    '.m-nav button svg{stroke:currentColor}',
+    '.m-brand b{font-family:var(--ka-disp);font-weight:800;color:#FFE15A!important;letter-spacing:.2px}',
+    '.m-brand small{color:#FFD9A8!important}',
+    '.m-brand .mk{background:linear-gradient(180deg,#FFD23F 0 50%,#E42330 50% 100%)!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,.45);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15),0 3px 0 #2a0307,0 10px 16px -6px rgba(0,0,0,.6);transition:transform .5s cubic-bezier(.2,.7,.2,1)}',
     '.m-brand:hover .mk{transform:perspective(300px) rotateY(-20deg) rotateX(10deg)}',
+
+    // ---- ಮುಖಪುಟ ಬ್ಯಾನರ್ ----
+    '.m-view .m-welcome.wyka-hero{position:relative;overflow:hidden;color:var(--ka-ink);border:1px solid #F3DDA6;border-radius:24px;padding:26px 26px 34px;' +
+      'background:radial-gradient(circle at 16% 30%,rgba(255,194,26,.50),transparent 42%),radial-gradient(circle at 88% 78%,rgba(212,24,43,.16),transparent 45%),linear-gradient(180deg,#FFF6D2 0%,#FFEDBB 100%);' +
+      'box-shadow:0 26px 50px -26px rgba(94,7,18,.55),0 6px 16px -8px rgba(94,7,18,.25);display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) minmax(210px,265px);gap:14px 18px;align-items:center}',
+    '.m-view .m-welcome.wyka-hero.wyka-member{grid-template-columns:minmax(120px,170px) minmax(0,1fr)}',
+    '.m-view .m-welcome.wyka-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;top:auto;width:auto;height:9px;border:0;border-radius:0;transform:none;opacity:1;background:linear-gradient(180deg,#FFC21A 0 50%,#D4182B 50% 100%);pointer-events:none}',
+    '.m-view .m-welcome.wyka-hero::before{content:"";position:absolute;inset:0;opacity:.30;pointer-events:none;background:repeating-radial-gradient(circle at 18% 46%,transparent 0 26px,rgba(158,15,31,.12) 26px 27px)}',
+    '.wyka-letters{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}',
+    '.wyka-letters i{position:absolute;font-style:normal;font-family:var(--ka-disp);font-weight:800;color:#9E0F1F;opacity:.07;line-height:1}',
+    '.wyka-map,.wyka-main,.wyka-notewrap{position:relative;z-index:1}',
+    '.wyka-map{display:flex;flex-direction:column;align-items:center;perspective:700px}',
+    '.wyka-map svg{width:100%;max-width:220px;height:auto;filter:drop-shadow(0 22px 18px rgba(94,7,18,.28));animation:wykaFloat 7s ease-in-out infinite;transition:transform .5s cubic-bezier(.2,.7,.2,1);transform:rotateY(var(--ry,0deg)) rotateX(var(--rx,0deg))}',
+    '.wyka-member .wyka-map svg{max-width:150px}',
+    '@keyframes wykaFloat{0%,100%{translate:0 0}50%{translate:0 -10px}}',
+    '.wyka-map b{font-family:var(--ka-disp);font-weight:800;font-size:22px;color:var(--ka-rd);margin-top:2px;letter-spacing:.5px}',
+    '.wyka-member .wyka-map b{font-size:17px}',
+    '.wyka-main{text-align:center;min-width:0}',
+    '.wyka-main>p:first-child{display:inline-block;margin:0 0 12px!important;background:#fff;color:var(--ka-rd)!important;font-weight:800;font-size:14px;padding:6px 16px;border-radius:999px;box-shadow:0 10px 22px -14px rgba(94,7,18,.6),0 1px 0 #F3DDA6;opacity:1!important;letter-spacing:0!important;text-transform:none!important}',
+    '.wyka-main h2{font-family:var(--ka-disp)!important;color:var(--ka-rd)!important;font-weight:800!important;margin:0!important;line-height:1.12!important;font-size:clamp(26px,3.2vw,44px)!important;text-shadow:0 1px 0 #f7b500,0 2px 0 #e8a600,0 3px 0 #d39400,0 4px 0 #b97f00,0 10px 18px rgba(94,7,18,.25)!important}',
+    '.wyka-main h2 .big{display:block;font-size:clamp(36px,4.6vw,68px)}',
+    '.wyka-main h2 .sub{display:inline-block;margin-top:10px;font-size:clamp(18px,1.9vw,26px);color:#fff;text-shadow:none;background:linear-gradient(180deg,#E42330,#9E0F1F);padding:4px 18px 6px;border-radius:14px;box-shadow:0 4px 0 #5E0712,0 14px 22px -12px rgba(94,7,18,.8)}',
+    '.wyka-main .meta{justify-content:center;margin-top:16px!important;gap:8px!important;flex-wrap:wrap}',
+    '.wyka-main .meta span{background:#FFC21A!important;color:#5E0712!important;border:0!important;font-weight:800;border-radius:999px!important;padding:5px 13px!important;box-shadow:inset 0 -2px 0 rgba(0,0,0,.08),0 3px 0 #C98F00}',
+    '.wyka-member .wyka-main{text-align:left}.wyka-member .wyka-main .meta{justify-content:flex-start}',
+    '.wyka-member .wyka-main h2{font-size:clamp(24px,2.6vw,38px)!important}',
+    '.wyka-main .acts{margin-top:20px!important}',
+    '#view-dashboard .wyka-main #wy-hero-member>div:first-child>button:first-child{background:linear-gradient(180deg,#E42330,#B10F22)!important;color:#fff!important;border-radius:14px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 5px 0 #6A0914,0 16px 24px -10px rgba(94,7,18,.7)!important;transition:transform .1s,box-shadow .1s!important}',
+    '#view-dashboard .wyka-main #wy-hero-member>div:first-child>button:last-child{background:#fff!important;color:#9E0F1F!important;border:2px solid #F3C34A!important;border-radius:14px!important;box-shadow:0 5px 0 #E3B341,0 16px 24px -12px rgba(94,7,18,.45)!important;transition:transform .1s,box-shadow .1s!important}',
+    '#view-dashboard .wyka-main #wy-hero-member>div:first-child>button:active{transform:translateY(5px)!important;box-shadow:0 0 0 transparent!important}',
+    '#view-dashboard .wyka-main #wy-hero-member{align-items:center!important}#view-dashboard .wyka-main #wy-hero-member>div:first-child{justify-content:center!important;gap:12px!important}',
+    '#view-dashboard .wyka-main #wy-hero-member>div:first-child>button{padding:12px 24px!important;font-size:15.5px!important;font-weight:800!important}',
+    '.wyka-main #wy-hero-member p{color:#6F5E52!important}',
+    '.wyka-main #wy-hero-member p.text-emerald-200{color:#9E0F1F!important}',
+    '.wyka-main #wy-hero-member p button{color:#9E0F1F!important}',
+    // ತೂಗಾಡುವ ಸೂಚನಾ ಪತ್ರ
+    '.wyka-notewrap{display:flex;justify-content:center;align-self:start}',
+    '.wyka-hang{position:relative;width:100%;max-width:262px;transform-origin:50% 0;animation:wykaSwing 4.2s ease-in-out infinite;padding-top:50px}',
+    '@keyframes wykaSwing{0%,100%{transform:rotate(3deg)}50%{transform:rotate(-3deg)}}',
+    '.wyka-hang .pin{position:absolute;top:0;left:50%;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a8a,#D4182B 45%,#5E0712);box-shadow:0 4px 6px rgba(0,0,0,.35);z-index:3}',
+    '.wyka-hang .str{position:absolute;top:12px;left:50%;width:110px;height:46px;margin-left:-55px;z-index:1;background:linear-gradient(to top right,transparent calc(50% - 1px),#7a5a3a calc(50% - 1px),#7a5a3a calc(50% + 1px),transparent calc(50% + 1px)) left/50% 100% no-repeat,linear-gradient(to top left,transparent calc(50% - 1px),#7a5a3a calc(50% - 1px),#7a5a3a calc(50% + 1px),transparent calc(50% + 1px)) right/50% 100% no-repeat}',
+    '.wyka-note{position:relative;background:linear-gradient(180deg,#FFFDF5,#FFF3D1);border-radius:6px;padding:18px 16px 14px;text-align:left;box-shadow:0 22px 30px -16px rgba(94,7,18,.5),0 2px 0 #F0D79A;border-top:8px solid #FFC21A}',
+    '.wyka-note::before,.wyka-note::after{content:"";position:absolute;top:-6px;width:11px;height:11px;border-radius:50%;background:#7a5a3a;box-shadow:inset 0 0 0 3px #c9a46d}',
+    '.wyka-note::before{left:12px}.wyka-note::after{right:12px}',
+    '.wyka-note .nh{font-family:var(--ka-disp);font-weight:800;font-size:21px;color:#9E0F1F;text-align:center;margin-bottom:6px}',
+    '.wyka-note .row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1.5px dashed #EBCB86}',
+    '.wyka-note .row:last-of-type{border-bottom:0}',
+    '.wyka-note .row b{display:block;font-family:var(--ka-disp);font-size:15.5px;line-height:1.15;color:#2B1A12}',
+    '.wyka-note .row small{display:block;font-size:11.5px;color:#6F5E52;line-height:1.3}',
+    '.wyka-note .row em{margin-left:auto;font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:900;color:#fff;background:linear-gradient(180deg,#E42330,#9E0F1F);box-shadow:0 2px 0 #5E0712}',
+    '.wyka-note .band{margin-top:9px;text-align:center;background:linear-gradient(180deg,#C8141F,#9E0F1F);color:#fff;font-weight:800;font-size:13px;border-radius:8px;padding:6px 8px;transform:rotate(-1.5deg);box-shadow:0 3px 0 #5E0712}',
+    // ಮೊಬೈಲ್
+    '@media (max-width:1180px){.m-view .m-welcome.wyka-hero{grid-template-columns:minmax(120px,170px) minmax(0,1fr)}.wyka-notewrap{grid-column:1/-1}.wyka-hang{animation:none;padding-top:0;max-width:640px}.wyka-hang .pin,.wyka-hang .str{display:none}.wyka-note .rows{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}}',
+    '@media (max-width:760px){.m-view .m-welcome.wyka-hero,.m-view .m-welcome.wyka-hero.wyka-member{grid-template-columns:1fr;padding:18px 16px 28px}.wyka-map svg{max-width:120px}.wyka-member .wyka-map svg{max-width:96px}.wyka-map b{font-size:17px}.wyka-member .wyka-main{text-align:center}.wyka-member .wyka-main .meta{justify-content:center}.wyka-note .rows{grid-template-columns:1fr}.wyka-main h2 .big{font-size:clamp(32px,10vw,44px)}}',
+
+    // ---- ಕಾರ್ಡ್‌ಗಳು ----
+    '.m-card{border-radius:18px;background:linear-gradient(180deg,#fff,#FFFDF7);border-color:#F1DFB4;box-shadow:0 1px 0 #fff inset,0 1px 2px rgba(94,7,18,.06),0 3px 0 rgba(94,7,18,.04),0 18px 34px -20px rgba(94,7,18,.32)}',
+    '.m-card h3,.m-view h3,.m-head h1,.m-title,#view-dashboard h3{font-family:var(--ka-disp)}',
+    '.m-card h3{color:#9E0F1F}',
+    '.m-stat,.m-qa{position:relative;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .2s;background-image:radial-gradient(circle at var(--gx,50%) var(--gy,-30%),rgba(255,255,255,.95),rgba(255,255,255,0) 45%),linear-gradient(180deg,#fff,#FFFAEE)}',
+    '.m-stat:hover,.m-qa:hover{border-color:#F3C34A;box-shadow:0 1px 0 #fff inset,0 4px 0 rgba(94,7,18,.05),0 28px 40px -22px rgba(94,7,18,.45)}',
+    '.m-stats .m-stat b{font-family:var(--ka-disp);background:linear-gradient(135deg,var(--a1,#9E0F1F),var(--a2,#E42330));-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}',
+    '.m-stats .m-stat{border-top:4px solid var(--a2,#E42330)}',
+    '.m-stats>.m-stat:nth-child(4n+1){--a1:#9E0F1F;--a2:#E42330}',
+    '.m-stats>.m-stat:nth-child(4n+2){--a1:#B47A00;--a2:#FFC21A}',
+    '.m-stats>.m-stat:nth-child(4n+3){--a1:#5E0712;--a2:#B0243A}',
+    '.m-stats>.m-stat:nth-child(4n+4){--a1:#A8480A;--a2:#FF8A2A}',
+    // 3D ಐಕಾನ್ ಟೈಲ್‌ಗಳು
+    '.m-qa .ic{--c1:#F04050;--c2:#C8141F;--c3:#7A0A15;--ct:#fff;background:linear-gradient(145deg,var(--c1),var(--c2))!important;color:var(--ct)!important;border-radius:14px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -3px 0 rgba(0,0,0,.12),0 4px 0 var(--c3),0 12px 18px -8px var(--c2);transition:transform .35s cubic-bezier(.2,.7,.2,1)}',
+    '.m-qa .ic svg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.2))}',
+    '.m-quick>.m-qa:nth-child(4n+2) .ic{--c1:#FFDC5C;--c2:#F5AE00;--c3:#A87200;--ct:#5E0712}',
+    '.m-quick>.m-qa:nth-child(4n+3) .ic{--c1:#B83248;--c2:#7A0F1F;--c3:#45050E}',
+    '.m-quick>.m-qa:nth-child(4n+4) .ic{--c1:#FFA552;--c2:#E86A0B;--c3:#9A4106}',
+    '.m-qa:hover .ic{transform:translateZ(26px) rotate(-7deg) scale(1.06)}',
+    '.m-unit .no{background:linear-gradient(145deg,#FFE58A,#FFC21A)!important;color:#5E0712!important;border-radius:11px!important;box-shadow:inset 0 1px 0 #fff,0 3px 0 #C98F00,0 8px 12px -6px rgba(158,15,31,.35)}',
+    // 3D ಬಟನ್‌ಗಳು
+    '.m-btn{border-radius:11px;transition:transform .1s,box-shadow .1s,background .15s}',
+    '.m-btn.pri{background:linear-gradient(180deg,#E42330,#B10F22)!important;border-color:#9E0F1F!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 3px 0 #6A0914,0 10px 18px -8px rgba(158,15,31,.6)}',
+    '.m-btn.pri:hover{background:linear-gradient(180deg,#D21C2A,#9E0F1F)!important}',
+    '.m-btn:active{transform:translateY(3px)!important;box-shadow:0 0 0 transparent!important}',
+    '.m-btn.light{background:#FFC21A!important;color:#5E0712!important;border-color:#E3A800!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 0 #B47A00,0 10px 18px -8px rgba(94,7,18,.4)}',
     // ಸ್ಕ್ರಾಲ್ ಮಾಡಿದಾಗ 3D ಪ್ರವೇಶ
     'html.wy3d-motion .wy3d-rv{opacity:0;transform:perspective(900px) rotateX(16deg) translateY(34px) scale(.97);transform-origin:50% 0;transition:opacity .6s ease,transform .8s cubic-bezier(.2,.7,.2,1)}',
     'html.wy3d-motion .wy3d-rv.wy3d-in{opacity:1;transform:none}',
     'html.wy3d-motion .m-view .m-welcome.wy3d-intro{animation:wy3dIntro .9s cubic-bezier(.2,.7,.2,1) both}',
-    '@keyframes wy3dIntro{from{opacity:0;transform:perspective(900px) rotateX(-12deg) translateY(-18px) scale(.97)}to{opacity:1;transform:none}}',
-    '@media (prefers-reduced-motion: reduce){.wy3d-float,.wy3d-badge,.wy3d-orb,.wy3d-shadow{animation:none!important}.wy3d-rig{transition:none}}'
+    '@keyframes wy3dIntro{from{opacity:0;transform:perspective(900px) rotateX(-10deg) translateY(-16px) scale(.98)}to{opacity:1;transform:none}}',
+    '@media (prefers-reduced-motion: reduce){.wyka-map svg,.wyka-hang{animation:none!important}}'
   ].join('\n');
 
+  // ---- ಬಳಕೆದಾರರ ಕಿಟಕಿಗಳು (ಲಾಗಿನ್, ನೋಂದಣಿ, ಉಳಿಸಿದ ಪತ್ರಿಕೆ, ರಿಸಲ್ಟ್, ಕಾರ್ಟ್) — ಅಡ್ಮಿನ್ ಕಿಟಕಿ ಹೊರತುಪಡಿಸಿ ----
+  (function () {
+    var S = '.fixed.inset-0:not([id*="admin"]):not(:has(.fa-crown)):not(:has([id*="admin"]))';
+    var COOL = ['emerald', 'teal', 'indigo', 'purple', 'violet', 'blue', 'sky', 'cyan'];
+    function sel(pfx, shades, extra) { var o = []; COOL.forEach(function (c) { shades.forEach(function (n) { o.push(S + ' .' + pfx + c + '-' + n + (extra || '')); }); }); return o.join(','); }
+    function hsel(pfx, shades) { var o = []; COOL.forEach(function (c) { shades.forEach(function (n) { o.push(S + ' .hover\\:' + pfx + c + '-' + n + ':hover'); }); }); return o.join(','); }
+    var grad = COOL.map(function (c) { return S + ' [class*="bg-gradient-to-"][class*="from-' + c + '-"]'; }).join(',');
+    C += '\n' + [
+      sel('bg-', [500, 600]) + '{background-color:#C8141F!important}',
+      sel('bg-', [700, 800, 900]) + '{background-color:#9E0F1F!important}',
+      hsel('bg-', [500, 600, 700, 800]) + '{background-color:#9E0F1F!important}',
+      grad + '{background-image:linear-gradient(135deg,#E42330,#9E0F1F)!important}',
+      S + ' [class*="bg-gradient-to-"][class*="from-slate-9"]{background-image:linear-gradient(135deg,#7A0B18,#3E050D)!important}',
+      S + ' [class*="bg-gradient-to-"][class*="from-slate-8"]{background-image:linear-gradient(135deg,#7A0B18,#3E050D)!important}',
+      S + ' label[class*="has-[:checked]"]:has(input:checked){border-color:#D4182B!important;background-color:#FFF1D2!important}',
+      S + ' [class*="peer-checked:bg-"]:is(.peer:checked ~ *){background-color:#C8141F!important}',
+      sel('text-', [500, 600, 700, 800, 900, 950]) + '{color:#9E0F1F!important}',
+      sel('text-', [100, 200, 300]) + '{color:#FFE15A!important}',
+      sel('bg-', [50]) + '{background-color:#FFF7DA!important}',
+      sel('bg-', [100]) + '{background-color:#FFF1D2!important}',
+      hsel('bg-', [50, 100, 200]) + '{background-color:#FFE9B8!important}',
+      sel('border-', [100, 200, 300, 400]) + '{border-color:#EBCB86!important}',
+      sel('border-', [500, 600, 700]) + '{border-color:#D4182B!important}',
+      hsel('border-', [300, 400, 500]) + '{border-color:#D4182B!important}',
+      S + ' h2,' + S + ' h3{font-family:var(--ka-disp)}'
+    ].join('\n');
+  })();
   var st = document.createElement('style');
   st.id = 'wy3d-style'; st.media = 'screen';
   st.textContent = C;
   document.head.appendChild(st);
   if (!reduce && 'IntersectionObserver' in window) document.documentElement.classList.add('wy3d-motion');
 
-  var SCENE = '<div class="wy3d-rig"><div class="wy3d-float">' +
-    '<div class="wy3d-sheet s3"></div><div class="wy3d-sheet s2"></div>' +
-    '<div class="wy3d-sheet s1"><div class="hd"><span>WY</span><i></i></div><div class="tt">ಪ್ರಶ್ನೆ ಪತ್ರಿಕೆ</div>' +
-      '<div class="q ok"><b>✓</b><i></i></div><div class="q ok"><b>✓</b><i class="sh"></i></div><div class="q ok"><b>✓</b><i></i></div>' +
-      '<div class="q"><b>4</b><i class="sh"></i></div><div class="q"><b>5</b><i></i></div><div class="q"><b>6</b><i class="sh"></i></div></div>' +
-    '<div class="wy3d-pencil"><i></i></div>' +
-    '<div class="wy3d-badge"><b>A+</b></div>' +
-    '<div class="wy3d-orb o1"></div><div class="wy3d-orb o2"></div><div class="wy3d-orb o3"></div>' +
-    '</div></div><div class="wy3d-shadow"></div>';
+  // ಕರ್ನಾಟಕ ನಕ್ಷೆಯ ಆಕಾರ ಮತ್ತು ಬಣ್ಣಗಳು (ಒಮ್ಮೆ ಮಾತ್ರ)
+  function ensureDefs() {
+    if (document.getElementById('wykaPath')) return;
+    var d = document.createElement('div');
+    d.setAttribute('aria-hidden', 'true');
+    d.className = 'no-print';
+    d.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    d.innerHTML = '<svg width="0" height="0"><defs><path id="wykaPath" d="' + KA + '"/>' +
+      '<linearGradient id="wykaTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE15A"/><stop offset=".49" stop-color="#FFC21A"/><stop offset=".51" stop-color="#E42330"/><stop offset="1" stop-color="#B10F22"/></linearGradient>' +
+      '<linearGradient id="wykaSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8E5B00"/><stop offset="1" stop-color="#5E0712"/></linearGradient>' +
+      '<linearGradient id="wykaShine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '</defs></svg>';
+    document.body.appendChild(d);
+  }
+  function mapSvg() {
+    var s = '';
+    for (var i = 12; i > 0; i--) s += '<use href="#wykaPath" transform="translate(0 ' + i + ')" fill="url(#wykaSide)"/>';
+    return '<svg viewBox="-10 -10 320 490" role="img" aria-label="ಕರ್ನಾಟಕ ನಕ್ಷೆ"><ellipse cx="150" cy="468" rx="140" ry="14" fill="#5E0712" opacity=".18"/>' + s +
+      '<use href="#wykaPath" fill="url(#wykaTop)"/><use href="#wykaPath" fill="url(#wykaShine)"/><use href="#wykaPath" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.2"/></svg>';
+  }
+  var LETTERS = [['ಅ', 4, 8, 86], ['ಕ', 30, 70, 64], ['ನ್ನ', 47, 4, 58], ['ಡ', 62, 64, 76], ['ಆ', 78, 10, 60], ['ಇ', 92, 58, 70], ['ಉ', 18, 40, 48], ['ಋ', 70, 36, 44]];
+  function lettersHtml() {
+    return LETTERS.map(function (l) { return '<i style="left:' + l[1] + '%;top:' + l[2] + '%;font-size:' + l[3] + 'px">' + l[0] + '</i>'; }).join('');
+  }
+  var NOTE = '<div class="wyka-hang"><span class="str"></span><span class="pin"></span><div class="wyka-note"><div class="nh">ಈ ವೆಬ್‌ಸೈಟ್‌ನಲ್ಲಿ</div><div class="rows">' +
+    '<div class="row"><span><b>1–10ನೇ ತರಗತಿ</b><small>ಘಟಕ · FA · SA · ಮೌಖಿಕ</small></span><em>✓</em></div>' +
+    '<div class="row"><span><b>ಉತ್ತರ ಸೂಚಿ + ನೀಲನಕ್ಷೆ</b><small>DSERT ಮಾದರಿಯಂತೆ</small></span><em>✓</em></div>' +
+    '<div class="row"><span><b>NMMS · ಮೊರಾರ್ಜಿ · ಆದರ್ಶ</b><small>OMR ಹಾಳೆ ಸಹಿತ</small></span><em>✓</em></div>' +
+    '<div class="row"><span><b>ಕನ್ನಡ · ದ್ವಿಭಾಷಾ · English</b><small>ಮೂರೂ ಮಾಧ್ಯಮ</small></span><em>✓</em></div>' +
+    '</div><div class="band">ನೋಂದಣಿ ಉಚಿತ · 3 ಪ್ರಯೋಗ ಪತ್ರಿಕೆ</div></div></div>';
 
   var io = null;
   if (document.documentElement.classList.contains('wy3d-motion')) {
@@ -28393,6 +28476,26 @@ function wyRobustParse(raw) {
     }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
   }
 
+  function buildHero(hero) {
+    if (hero.querySelector(':scope > .wyka-main')) return;
+    ensureDefs();
+    var guest = hero.classList.contains('m-hero') || !!hero.querySelector('#wy-hero-slot');
+    var main = document.createElement('div'); main.className = 'wyka-main';
+    while (hero.firstChild) main.appendChild(hero.firstChild);
+    var h2 = main.querySelector('h2');
+    if (h2 && guest && !h2.querySelector('.big')) {
+      var t = h2.textContent, k = t.indexOf(' — ');
+      if (k > 0) h2.innerHTML = '<span class="big"></span><span class="sub"></span>', h2.firstChild.textContent = t.slice(0, k), h2.lastChild.textContent = t.slice(k + 3);
+    }
+    var bg = document.createElement('div'); bg.className = 'wyka-letters'; bg.setAttribute('aria-hidden', 'true'); bg.innerHTML = lettersHtml();
+    var mp = document.createElement('div'); mp.className = 'wyka-map'; mp.setAttribute('aria-hidden', 'true'); mp.innerHTML = mapSvg() + '<b>ಕರ್ನಾಟಕ</b>';
+    hero.appendChild(bg); hero.appendChild(mp); hero.appendChild(main);
+    if (guest) { var nw = document.createElement('div'); nw.className = 'wyka-notewrap'; nw.setAttribute('aria-hidden', 'true'); nw.innerHTML = NOTE; hero.appendChild(nw); }
+    hero.classList.add('wyka-hero', 'wy3d-has');
+    if (!guest) hero.classList.add('wyka-member');
+    if (io && !hero.__wy3dIntro) { hero.__wy3dIntro = 1; hero.classList.add('wy3d-intro'); }
+  }
+
   function decorate() {
     var root = document.getElementById('view-dashboard');
     if (!root) return;
@@ -28400,12 +28503,7 @@ function wyRobustParse(raw) {
     for (var i = 0; i < views.length; i++) {
       var v = views[i];
       var hero = v.querySelector('.m-welcome');
-      if (hero && !hero.querySelector('.wy3d-scene')) {
-        var sc = document.createElement('div'); sc.className = 'wy3d-scene'; sc.setAttribute('aria-hidden', 'true');
-        sc.innerHTML = SCENE;
-        hero.appendChild(sc); hero.classList.add('wy3d-has');
-        if (io && !hero.__wy3dIntro) { hero.__wy3dIntro = 1; hero.classList.add('wy3d-intro'); }
-      }
+      if (hero) { try { buildHero(hero); } catch (e) { console.warn('ka hero', e); } }
       if (!io) continue;
       var vh = window.innerHeight || 800;
       var items = v.querySelectorAll(':scope > *:not(.m-welcome), .m-stats > *, .m-quick > *, .m-units > .m-unit');
@@ -28413,10 +28511,8 @@ function wyRobustParse(raw) {
         var el = items[j];
         if (el.__wy3dSeen) continue;
         el.__wy3dSeen = 1;
-        // ಮೊದಲೇ ಪರದೆಯಲ್ಲಿ ಕಾಣುವ ಮೇಲಿನ ಭಾಗವನ್ನು ಮರೆಮಾಡುವುದಿಲ್ಲ — ಕೆಳಗಿನವು ಮಾತ್ರ ಸ್ಕ್ರಾಲ್‌ನಲ್ಲಿ ಬರುತ್ತವೆ
         var r = el.getBoundingClientRect();
         if (r.top < vh * 0.92 && r.bottom > 0) continue;
-        // ಒಳಗಿನ ಸಾಲುಗಳನ್ನು ಹೊಂದಿರುವ ಕಾರ್ಡ್ ಎರಡು ಬಾರಿ ಮರೆಯಾಗದಂತೆ
         if (el.querySelector('.m-unit, .m-stat, .m-qa') && el.parentNode === v) continue;
         el.classList.add('wy3d-rv');
         io.observe(el);
@@ -28435,30 +28531,16 @@ function wyRobustParse(raw) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
 
   window.addEventListener('beforeprint', function () { document.querySelectorAll('.wy3d-rv').forEach(function (el) { el.classList.remove('wy3d-rv'); }); });
-  if (reduce) return;
+  if (reduce || !finePointer) return;
 
-  // ಸ್ಕ್ರಾಲ್ ಮಾಡಿದಂತೆ 3D ಪತ್ರಿಕೆ ತಿರುಗುತ್ತದೆ
-  var ticking = false;
-  window.addEventListener('scroll', function () {
-    if (ticking) return; ticking = true;
-    requestAnimationFrame(function () {
-      ticking = false;
-      var y = window.scrollY || document.documentElement.scrollTop || 0;
-      var s = Math.max(0, Math.min(1, y / 420)).toFixed(3);
-      var sc = document.querySelectorAll('#view-dashboard .wy3d-scene');
-      for (var i = 0; i < sc.length; i++) sc[i].style.setProperty('--sy', s);
-    });
-  }, { passive: true });
-
-  if (!finePointer) return;
-  // ಮೌಸ್ ಚಲಿಸಿದಂತೆ ಬ್ಯಾನರ್ ದೃಶ್ಯ ಮತ್ತು ಕಾರ್ಡ್‌ಗಳು ಓರೆಯಾಗುತ್ತವೆ (ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ಮಾತ್ರ)
+  // ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ: ಮೌಸ್ ಚಲಿಸಿದಂತೆ ನಕ್ಷೆ ಮತ್ತು ಕಾರ್ಡ್‌ಗಳು ಓರೆಯಾಗುತ್ತವೆ
   document.addEventListener('pointermove', function (e) {
     var t = e.target && e.target.closest ? e.target : null; if (!t) return;
-    var hero = t.closest('#view-dashboard .m-welcome.wy3d-has');
+    var hero = t.closest('#view-dashboard .m-welcome.wyka-hero');
     if (hero) {
-      var r = hero.getBoundingClientRect(), sc = hero.querySelector('.wy3d-scene');
+      var r = hero.getBoundingClientRect(), sv = hero.querySelector('.wyka-map svg');
       var px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
-      if (sc) { sc.style.setProperty('--ry', (px * 22).toFixed(1) + 'deg'); sc.style.setProperty('--rx', (-py * 14).toFixed(1) + 'deg'); }
+      if (sv) { sv.style.setProperty('--ry', (px * 24).toFixed(1) + 'deg'); sv.style.setProperty('--rx', (-py * 14).toFixed(1) + 'deg'); }
     }
     var card = t.closest('#view-dashboard .m-stat, #view-dashboard .m-qa');
     if (card && !card.classList.contains('wy3d-rv')) {
@@ -28472,8 +28554,8 @@ function wyRobustParse(raw) {
     var t = e.target; if (!t || !t.closest) return;
     var card = t.closest('.m-stat, .m-qa');
     if (card && !(e.relatedTarget && card.contains(e.relatedTarget))) { card.style.transform = ''; card.style.removeProperty('--gx'); card.style.removeProperty('--gy'); }
-    var hero = t.closest('.m-welcome.wy3d-has');
-    if (hero && !(e.relatedTarget && hero.contains(e.relatedTarget))) { var sc = hero.querySelector('.wy3d-scene'); if (sc) { sc.style.setProperty('--rx', '0deg'); sc.style.setProperty('--ry', '0deg'); } }
+    var hero = t.closest('.m-welcome.wyka-hero');
+    if (hero && !(e.relatedTarget && hero.contains(e.relatedTarget))) { var sv = hero.querySelector('.wyka-map svg'); if (sv) { sv.style.setProperty('--rx', '0deg'); sv.style.setProperty('--ry', '0deg'); } }
   }, { passive: true });
 })();
 
