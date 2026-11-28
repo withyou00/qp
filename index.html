@@ -28890,6 +28890,79 @@ function wyRobustParse(raw) {
   try { renderDedicatedNalikaliKeyAnswers = window.renderDedicatedNalikaliKeyAnswers; } catch (e) {}
 })();
 
+
+// =========================================================================
+// 📐 NMMS SAT: ಅಧಿಕೃತ ನೀಲನಕ್ಷೆಯಂತೆ ವಿಷಯವಾರು ಪ್ರಶ್ನೆ ಹಂಚಿಕೆ
+//    (ಭೌತ 12, ರಸಾಯನ 11, ಜೀವ 12, ಇತಿಹಾಸ 11, ಭೂಗೋಳ 10, ರಾಜ್ಯಶಾಸ್ತ್ರ ಇತ್ಯಾದಿ 14, ಗಣಿತ 20 = 90)
+//    ಕಡಿಮೆ ಪ್ರಶ್ನೆ/ಕೆಲವೇ ವಿಷಯ ಆಯ್ಕೆ ಮಾಡಿದರೆ ಅದೇ ಅನುಪಾತದಲ್ಲಿ ಹಂಚಿಕೆ.
+// =========================================================================
+(function installSATQuota() {
+  var W = [
+    [/ಭೌತ|physics/i, 12],
+    [/ರಸಾಯನ|chemistry/i, 11],
+    [/ಜೀವಶಾಸ್ತ್ರ|ಜೀವ ?ವಿಜ್ಞಾನ|biology/i, 12],
+    [/ಇತಿಹಾಸ|history/i, 11],
+    [/ಭೂಗೋಳ|geography/i, 10],
+    [/ರಾಜ್ಯಶಾಸ್ತ್ರ|ಸಮಾಜಶಾಸ್ತ್ರ|ಅರ್ಥಶಾಸ್ತ್ರ|ವ್ಯವಹಾರ|political|civics|sociology|economics/i, 14],
+    [/ಗಣಿತ|math/i, 20]
+  ];
+  function weightOf(ch) {
+    for (var i = 0; i < W.length; i++) if (W[i][0].test(ch)) return W[i][1];
+    return 0;
+  }
+  function isSAT() {
+    var s = (document.getElementById('cfg-subject') || {}).value || '';
+    return /SAT|ಶೈಕ್ಷಣಿಕ ಸಾಮರ್ಥ್ಯ/.test(s) && !/GMAT|ಬೌದ್ಧಿಕ/.test(s);
+  }
+  function allocate(groups, order, target) {
+    var w = {}, sumW = 0, ex = {}, q = {}, used = 0;
+    order.forEach(function (ch) { w[ch] = weightOf(ch) || 10; sumW += w[ch]; });
+    order.forEach(function (ch) {
+      ex[ch] = target * w[ch] / sumW;
+      q[ch] = Math.min(Math.floor(ex[ch]), groups[ch].length);
+      used += q[ch];
+    });
+    // ಉಳಿದ ಸ್ಥಾನಗಳನ್ನು ಅತಿ ಹೆಚ್ಚು ಕೊರತೆ ಇರುವ (ಪ್ರಶ್ನೆ ಲಭ್ಯವಿರುವ) ವಿಷಯಕ್ಕೆ ಒಂದೊಂದಾಗಿ ನೀಡುವುದು
+    while (used < target) {
+      var best = null, bd = -1e9;
+      order.forEach(function (ch) {
+        if (q[ch] < groups[ch].length && ex[ch] - q[ch] > bd) { bd = ex[ch] - q[ch]; best = ch; }
+      });
+      if (best === null) break;
+      q[best]++; used++;
+    }
+    return q;
+  }
+  var prev = window.solveStrictExactExamMath;
+  if (typeof prev !== 'function') return;
+  window.solveStrictExactExamMath = function (pool, targetMarks, targetCount, selectedTypes) {
+    try {
+      targetCount = parseInt(targetCount, 10) || 0;
+      if (isSAT() && Array.isArray(pool) && pool.length >= targetCount && targetCount > 0 &&
+          pool.every(function (x) { return (parseInt(x && x.marks, 10) || 1) === 1; })) {
+        var order = [], groups = {};
+        pool.forEach(function (x) {
+          var ch = String((x && x.chapter) || '').trim();
+          if (!groups[ch]) { groups[ch] = []; order.push(ch); }
+          groups[ch].push(x);
+        });
+        if (order.length > 1 && order.some(function (ch) { return weightOf(ch) > 0; })) {
+          if (typeof getSerialSortNum === 'function') order.sort(function (a, b) { return (getSerialSortNum(a) || 0) - (getSerialSortNum(b) || 0); });
+          var q = allocate(groups, order, targetCount), out = [];
+          order.forEach(function (ch) {
+            if (!q[ch]) return;
+            var part = prev.call(this, groups[ch], q[ch], q[ch], selectedTypes) || [];
+            out = out.concat(part.slice(0, q[ch]));
+          });
+          if (out.length === targetCount) return out;
+        }
+      }
+    } catch (e) { console.warn('SAT quota', e); }
+    return prev.apply(this, arguments);
+  };
+  try { solveStrictExactExamMath = window.solveStrictExactExamMath; } catch (e) {}
+})();
+
 </script>
 </body>
 </html>
