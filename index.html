@@ -20433,6 +20433,8 @@ window.renderDedicatedNMMSCompetitivePaper = function(allQuestions, actualMarks,
     if (!raw || typeof raw !== 'string') return '';
     var s = raw.trim();
     if (s.length < 3) return '';
+    // 🌟 JSON ಒಳಗೇ ಇರುವ ಚಿತ್ರ (data:image/svg+xml;base64,...) — upload ಬೇಕಿಲ್ಲ, ಹಾಗೆಯೇ ಬಳಸುವುದು
+    if (/^data:image\/(svg\+xml|png|jpe?g|webp|gif)[;,]/i.test(s)) return /;base64,/i.test(s) ? s.replace(/\s+/g, '') : s.replace(/ /g, '%20');
 
     // 🌟 Blogger / ಹೊರಗಿನ ಲಿಂಕ್‌ಗಳು: HTML ಅಥವಾ Markdown ತುಣುಕು ಅಂಟಿಸಿದ್ದರೆ ನಿಜವಾದ src ತೆಗೆಯುವುದು
     var tagSrc = s.match(/<img[^>]+src\s*=\s*["']?([^"'\s>]+)/i);
